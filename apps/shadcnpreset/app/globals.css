@@ -405,23 +405,91 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.preset-filters label {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.preset-filters label span {
-  font-size: 0.8rem;
-  color: var(--muted-foreground);
-}
-
-.preset-filters select {
+.create-picker-trigger {
+  position: relative;
+  width: 100%;
+  text-align: left;
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) - 2px);
   background: var(--background);
   color: var(--foreground);
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+}
+
+.create-picker-trigger:hover {
+  background: color-mix(in oklch, var(--background), var(--muted) 40%);
+}
+
+.create-picker-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.1rem;
+}
+
+.create-picker-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.create-picker-value {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.create-picker-caret {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.create-picker-positioner {
+  z-index: 70;
+  isolation: isolate;
+  outline: none;
+}
+
+.create-picker-popup {
+  max-height: min(340px, var(--available-height));
+  overflow-y: auto;
+  min-width: max(180px, var(--anchor-width));
+  border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 10%);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--card), black 10%);
+  color: var(--card-foreground);
+  padding: 0.35rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px color-mix(in oklch, black, transparent 70%);
+}
+
+.create-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0.5rem;
   padding: 0.45rem 0.55rem;
-  font: inherit;
+  font-size: 0.9rem;
+  cursor: default;
+  outline: none;
+}
+
+.create-picker-item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.create-picker-item:focus {
+  background: color-mix(in oklch, var(--accent), transparent 35%);
+}
+
+.create-picker-check {
+  color: var(--primary);
+  font-weight: 700;
 }
 
 .filter-actions {

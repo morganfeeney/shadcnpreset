@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { CSSProperties } from "react"
 
+import { PresetFilterBar } from "@/components/preset-filter-bar"
 import { PresetForm } from "@/components/preset-form"
 import { getThemeSwatchPair } from "@/lib/oklch-swatch"
 import {
@@ -69,20 +70,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const totalPages = Math.max(1, Math.ceil(filteredTotal / pageSize))
   const safePage = Math.min(page, totalPages)
   const presets = getPresetPage(safePage, pageSize, filters)
-  const filterFormKey = [
-    filters.style ?? "all",
-    filters.baseColor ?? "all",
-    filters.theme ?? "all",
-    filters.chartColor ?? "all",
-    filters.font ?? "all",
-    filters.iconLibrary ?? "all",
-    pageSize,
-  ].join("|")
   const hasPrevious = page > 1
   const hasNext = safePage < totalPages
   const from = presets.length ? presets[0].index + 1 : 0
   const to = presets.length ? presets[presets.length - 1].index + 1 : 0
-  const clearFiltersHref = `/?size=${pageSize}`
   const queryParams = new URLSearchParams()
   queryParams.set("size", String(pageSize))
   if (filters.style) queryParams.set("style", filters.style)
@@ -135,83 +126,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </div>
 
-        <form className="preset-filters" method="get" key={filterFormKey}>
-          <label>
-            <span>Style</span>
-            <select defaultValue={filters.style ?? "all"} name="style">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.styles.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Base Color</span>
-            <select defaultValue={filters.baseColor ?? "all"} name="baseColor">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.baseColors.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Theme</span>
-            <select defaultValue={filters.theme ?? "all"} name="theme">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.themes.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Chart</span>
-            <select defaultValue={filters.chartColor ?? "all"} name="chartColor">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.chartColors.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Font</span>
-            <select defaultValue={filters.font ?? "all"} name="font">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.fonts.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Icons</span>
-            <select defaultValue={filters.iconLibrary ?? "all"} name="iconLibrary">
-              <option value="all">All</option>
-              {PRESET_FILTER_OPTIONS.iconLibraries.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input name="size" type="hidden" value={pageSize} />
-          <div className="filter-actions">
-            <button className="btn btn-primary" type="submit">
-              Apply filters
-            </button>
-            <Link className="btn btn-secondary" href={clearFiltersHref}>
-              Clear filters
-            </Link>
-          </div>
-        </form>
+        <PresetFilterBar
+          filters={filters}
+          options={PRESET_FILTER_OPTIONS}
+          pageSize={pageSize}
+        />
 
         <div className="preset-nav">
           {hasPrevious ? <Link href={pageHref(safePage - 1)}>Previous</Link> : <span>Previous</span>}
