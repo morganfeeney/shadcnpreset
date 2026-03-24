@@ -96,7 +96,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   }
 
   return (
-    <main className="page-wrap preset-page">
+    <div
+      data-slot="layout"
+      className="group/layout section-soft relative z-10 grid h-svh gap-(--gap) p-(--gap) pt-[calc(var(--gap)*0.25)] [--gap:--spacing(4)] md:[--gap:--spacing(6)] 2xl:[--customizer-width:--spacing(56)]"
+    >
       <section className="preset-hero">
         <p className="eyebrow">shadcnpreset</p>
         <h1>Preset route viewer</h1>
@@ -113,52 +116,52 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           and copy the `preset` query value.
         </p>
       </section>
+      <main className="gap-(--gap) grid-cols-[224px_1fr] grid">
+        <PresetFilterBar
+          filters={filters}
+          options={PRESET_FILTER_OPTIONS}
+          pageSize={pageSize}
+        />
 
-      <section className="preset-browser">
-        <div className="preset-browser-layout">
-          <aside className="preset-browser-sidebar">
-            <div className="preset-browser-head">
-              <h2>Preset browser</h2>
-            </div>
-            <PresetFilterBar
-              filters={filters}
-              options={PRESET_FILTER_OPTIONS}
-              pageSize={pageSize}
-            />
-          </aside>
-
-          <div className="preset-browser-content">
-            <div className="preset-stats">
-              <span>
-                Total: <code>{PRESET_TOTAL_COMBINATIONS.toLocaleString()}</code>
-              </span>
-              <span>
-                Filtered: <code>{filteredTotal.toLocaleString()}</code>
-              </span>
-              <span>
-                Showing <code>{from.toLocaleString()}</code>-
-                <code>{to.toLocaleString()}</code>
-              </span>
-              <span>Mode: works in both light and dark</span>
-            </div>
-
-            <div className="preset-nav">
-              {hasPrevious ? <Link href={pageHref(safePage - 1)}>Previous</Link> : <span>Previous</span>}
-              <span>
-                Page <code>{safePage.toLocaleString()}</code> of{" "}
-                <code>{totalPages.toLocaleString()}</code>
-              </span>
-              {hasNext ? <Link href={pageHref(safePage + 1)}>Next</Link> : <span>Next</span>}
-            </div>
-
-            <ul className="preset-grid">
-              {presets.map((item) => (
-                <PresetCard item={item} key={item.index} />
-              ))}
-            </ul>
+        <div className="preset-browser-content">
+          <div className="preset-stats">
+            <span>
+              Total: <code>{PRESET_TOTAL_COMBINATIONS.toLocaleString()}</code>
+            </span>
+            <span>
+              Filtered: <code>{filteredTotal.toLocaleString()}</code>
+            </span>
+            <span>
+              Showing <code>{from.toLocaleString()}</code>-
+              <code>{to.toLocaleString()}</code>
+            </span>
+            <span>Mode: works in both light and dark</span>
           </div>
+
+          <div className="preset-nav">
+            {hasPrevious ? (
+              <Link href={pageHref(safePage - 1)}>Previous</Link>
+            ) : (
+              <span>Previous</span>
+            )}
+            <span>
+              Page <code>{safePage.toLocaleString()}</code> of{" "}
+              <code>{totalPages.toLocaleString()}</code>
+            </span>
+            {hasNext ? (
+              <Link href={pageHref(safePage + 1)}>Next</Link>
+            ) : (
+              <span>Next</span>
+            )}
+          </div>
+
+          <ul className="preset-grid">
+            {presets.map((item) => (
+              <PresetCard item={item} key={item.index} />
+            ))}
+          </ul>
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   )
 }

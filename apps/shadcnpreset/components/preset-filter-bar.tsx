@@ -7,6 +7,7 @@ import * as React from "react"
 import { CreatePicker } from "@/components/create-picker"
 import type { PresetFilters } from "@/lib/preset-catalog"
 import { THEMES } from "../../v4/registry/themes"
+import { Card } from "../../v4/examples/base/ui/card"
 
 type PresetFilterBarProps = {
   filters: PresetFilters
@@ -162,7 +163,7 @@ export function PresetFilterBar({
   }
 
   return (
-    <div className="preset-customizer">
+    <Card>
       <div className="preset-customizer-menu">
         <span>Menu</span>
         <span className="preset-customizer-menu-icon" aria-hidden="true">
@@ -279,6 +280,6 @@ export function PresetFilterBar({
           Clear
         </Link>
       </div>
-    </div>
+    </Card>
   )
 }
