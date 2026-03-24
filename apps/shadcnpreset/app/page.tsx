@@ -1,9 +1,8 @@
 import Link from "next/link"
-import type { CSSProperties } from "react"
 
 import { PresetFilterBar } from "@/components/preset-filter-bar"
+import { PresetCard } from "@/components/preset-card"
 import { PresetForm } from "@/components/preset-form"
-import { getThemeSwatchPair } from "@/lib/oklch-swatch"
 import {
   PRESET_TOTAL_COMBINATIONS,
   PRESET_FILTER_OPTIONS,
@@ -35,17 +34,6 @@ function readFilterParam(value: string | undefined) {
     return undefined
   }
   return value
-}
-
-function swatchStyle(light: string, dark: string) {
-  return {
-    "--swatch-light": light,
-    "--swatch-dark": dark,
-  } as CSSProperties
-}
-
-function chartColorLabel(chartColor?: string) {
-  return `chart:${chartColor ?? "neutral"}`
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -143,62 +131,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <ul className="preset-grid">
           {presets.map((item) => (
-            <li className="preset-card" key={item.index}>
-              <div className="preset-card-top">
-                <Link href={`/preset/${item.code}`}>Preset {item.index + 1}</Link>
-                <code>{item.code}</code>
-              </div>
-              <div className="preset-swatches">
-                {(() => {
-                  const chartColor = item.config.chartColor ?? "neutral"
-                  const basePair = getThemeSwatchPair(
-                    item.config.baseColor,
-                    "background"
-                  )
-                  const themePair = getThemeSwatchPair(item.config.theme, "primary")
-                  const chartPair = getThemeSwatchPair(chartColor, "primary")
-
-                  return (
-                    <>
-                      <span
-                        className="swatch"
-                        style={swatchStyle(basePair.light, basePair.dark)}
-                        title={`Base OKLCH: ${basePair.light} / ${basePair.dark}`}
-                      />
-                      <span
-                        className="swatch"
-                        style={swatchStyle(themePair.light, themePair.dark)}
-                        title={`Theme OKLCH: ${themePair.light} / ${themePair.dark}`}
-                      />
-                      <span
-                        className="swatch"
-                        style={swatchStyle(chartPair.light, chartPair.dark)}
-                        title={`Chart color OKLCH: ${chartPair.light} / ${chartPair.dark}`}
-                      />
-                    </>
-                  )
-                })()}
-              </div>
-              <div className="preset-tags">
-                <span>{item.config.style}</span>
-                <span>{item.config.baseColor}</span>
-                <span>{item.config.theme}</span>
-                <span>{chartColorLabel(item.config.chartColor)}</span>
-                <span>{item.config.font}</span>
-                <span>{item.config.iconLibrary}</span>
-              </div>
-              <div className="preset-actions">
-                <Link href={`/preset/${item.code}`}>Open</Link>
-                <Link
-                  href={`${
-                    process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
-                  }/create?preset=${item.code}`}
-                  target="_blank"
-                >
-                  Open in v4
-                </Link>
-              </div>
-            </li>
+            <PresetCard item={item} key={item.index} />
           ))}
         </ul>
       </section>
