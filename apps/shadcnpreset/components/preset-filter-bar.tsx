@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 
 import { CreatePicker } from "@/components/create-picker"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import type { PresetFilters } from "@/lib/preset-catalog"
 import { THEMES } from "../../v4/registry/themes"
-import { Card } from "../../v4/examples/base/ui/card"
 
 type PresetFilterBarProps = {
   filters: PresetFilters
@@ -163,8 +163,8 @@ export function PresetFilterBar({
   }
 
   return (
-    <Card>
-      <div className="preset-customizer-menu">
+    <Card className="preset-filter-card" size="sm">
+      <CardHeader className="preset-customizer-menu">
         <span>Menu</span>
         <span className="preset-customizer-menu-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -172,8 +172,8 @@ export function PresetFilterBar({
             <path d="M9 10H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </span>
-      </div>
-      <div className="preset-filters">
+      </CardHeader>
+      <CardContent className="preset-filters">
         <CreatePicker
           label="Style"
           indicator={<span className="indicator-square" />}
@@ -271,15 +271,15 @@ export function PresetFilterBar({
           options={["all", ...options.menuAccents]}
           value={localFilters.menuAccent}
         />
-      </div>
-      <div className="filter-actions">
+      </CardContent>
+      <CardFooter className="filter-actions">
         <button className="btn btn-primary" onClick={applyFilters} type="button">
           Apply Filters
         </button>
         <Link className="btn btn-secondary" href={`/?size=${pageSize}`}>
           Clear
         </Link>
-      </div>
+      </CardFooter>
     </Card>
   )
 }

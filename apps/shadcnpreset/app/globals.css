@@ -413,14 +413,17 @@ a {
   padding: 0;
 }
 
-.preset-customizer {
+.preset-filter-card {
   margin: 0;
+  width: 100%;
   max-width: 21rem;
   border-radius: 1.2rem;
   border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 20%);
   background: color-mix(in oklch, var(--card), black 16%);
   box-shadow: 0 16px 46px color-mix(in oklch, black, transparent 72%);
   overflow: hidden;
+  gap: 0;
+  padding-top: 0;
 }
 
 .preset-customizer-menu {
@@ -428,10 +431,12 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.85rem 0.9rem;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid color-mix(in oklch, var(--border), var(--foreground) 15%);
   font-size: 0.95rem;
   font-weight: 500;
+  margin-bottom: 0;
 }
 
 .preset-customizer-menu-icon {
@@ -446,7 +451,8 @@ a {
 .preset-filters {
   display: grid;
   gap: 0;
-  padding: 0.8rem 0.9rem;
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
   grid-template-columns: 1fr;
 }
 
@@ -620,8 +626,11 @@ a {
 .filter-actions {
   display: grid;
   gap: 0.55rem;
-  padding: 0.82rem 0.9rem 0.95rem;
-  border-top: 1px solid color-mix(in oklch, var(--border), var(--foreground) 15%);
+  width: 100%;
+  padding-top: 0.82rem;
+  padding-bottom: 0.95rem;
+  margin-top: 0;
+  background: color-mix(in oklch, var(--muted), transparent 55%);
 }
 
 .filter-actions .btn {
