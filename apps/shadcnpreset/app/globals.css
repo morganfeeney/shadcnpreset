@@ -398,53 +398,153 @@ a {
   padding: 0;
 }
 
+.preset-customizer {
+  margin: 0.95rem 0;
+  max-width: 21rem;
+  border-radius: 1.2rem;
+  border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 20%);
+  background: color-mix(in oklch, var(--card), black 16%);
+  box-shadow: 0 16px 46px color-mix(in oklch, black, transparent 72%);
+  overflow: hidden;
+}
+
+.preset-customizer-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--border), var(--foreground) 15%);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.preset-customizer-menu-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in oklch, var(--muted-foreground), white 26%);
+}
+
 .preset-filters {
-  margin: 0.9rem 0;
   display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: 0.8rem 0.9rem;
+  grid-template-columns: 1fr;
 }
 
 .create-picker-trigger {
   position: relative;
   width: 100%;
   text-align: left;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius) - 2px);
-  background: var(--background);
-  color: var(--foreground);
-  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 14%);
+  border-radius: 0.82rem;
+  background: color-mix(in oklch, var(--card), black 12%);
+  color: var(--card-foreground);
+  padding: 0.58rem 0.72rem;
   cursor: pointer;
+  backdrop-filter: blur(8px);
+  margin: 0.32rem 0;
 }
 
 .create-picker-trigger:hover {
-  background: color-mix(in oklch, var(--background), var(--muted) 40%);
+  background: color-mix(in oklch, var(--card), var(--muted) 28%);
+}
+
+.create-picker-trigger:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklch, var(--foreground), transparent 50%);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--foreground), transparent 85%);
 }
 
 .create-picker-label {
   display: block;
-  font-size: 0.75rem;
-  color: var(--muted-foreground);
-  margin-bottom: 0.1rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklch, var(--muted-foreground), white 12%);
+  margin-bottom: 0.22rem;
 }
 
 .create-picker-value-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .create-picker-value {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-transform: capitalize;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--card-foreground), white 8%);
+  line-height: 1.2;
 }
 
 .create-picker-caret {
-  color: var(--muted-foreground);
-  font-size: 0.85rem;
+  color: color-mix(in oklch, var(--muted-foreground), white 18%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-picker-indicator {
+  color: color-mix(in oklch, var(--muted-foreground), white 24%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+}
+
+.create-picker-caret-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.indicator-square {
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: 0.32rem;
+  border: 1px solid currentColor;
+}
+
+.indicator-dot {
+  width: 0.86rem;
+  height: 0.86rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.indicator-color {
+  background: var(--indicator-color, currentColor);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground), transparent 82%);
+}
+
+.indicator-aa {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.indicator-swirl {
+  font-size: 1rem;
+}
+
+.indicator-corner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  border-top-right-radius: 0.38rem;
+}
+
+.indicator-menu {
+  font-size: 0.95rem;
+}
+
+.indicator-gem {
+  font-size: 0.95rem;
 }
 
 .create-picker-positioner {
@@ -456,23 +556,26 @@ a {
 .create-picker-popup {
   max-height: min(340px, var(--available-height));
   overflow-y: auto;
-  min-width: max(180px, var(--anchor-width));
-  border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 10%);
-  border-radius: 0.75rem;
-  background: color-mix(in oklch, var(--card), black 10%);
-  color: var(--card-foreground);
-  padding: 0.35rem;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 12px 30px color-mix(in oklch, black, transparent 70%);
+  min-width: max(220px, var(--anchor-width));
+  border: 1px solid color-mix(in oklch, var(--border), var(--foreground) 24%);
+  border-radius: 0.95rem;
+  background: color-mix(in oklch, var(--card), black 28%);
+  color: color-mix(in oklch, var(--card-foreground), white 12%);
+  padding: 0.34rem;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 18px 36px color-mix(in oklch, black, transparent 72%),
+    inset 0 1px 0 color-mix(in oklch, white, transparent 88%);
 }
 
 .create-picker-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 0.5rem;
-  padding: 0.45rem 0.55rem;
-  font-size: 0.9rem;
+  border-radius: 0.62rem;
+  padding: 0.48rem 0.56rem;
+  font-size: 0.86rem;
+  font-weight: 500;
   cursor: default;
   outline: none;
 }
@@ -484,22 +587,36 @@ a {
 }
 
 .create-picker-item:focus {
-  background: color-mix(in oklch, var(--accent), transparent 35%);
+  background: color-mix(in oklch, var(--muted), black 30%);
 }
 
 .create-picker-check {
-  color: var(--primary);
-  font-weight: 700;
+  color: color-mix(in oklch, var(--foreground), white 12%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-picker-check-icon {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
 .filter-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: end;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.82rem 0.9rem 0.95rem;
+  border-top: 1px solid color-mix(in oklch, var(--border), var(--foreground) 15%);
 }
 
 .filter-actions .btn {
   text-decoration: none;
+  border-radius: 0.75rem;
+  border-color: color-mix(in oklch, var(--border), var(--foreground) 20%);
+  padding: 0.48rem 0.78rem;
+  font-size: 0.82rem;
+  width: 100%;
+  text-align: center;
 }
 
 .preset-grid {
@@ -613,12 +730,8 @@ html[data-theme="dark"] .swatch {
     grid-template-columns: 1fr;
   }
 
-  .preset-filters {
-    grid-template-columns: 1fr 1fr;
-  }
-
   .filter-actions {
-    grid-column: 1 / -1;
+    margin-top: 0.65rem;
   }
 
   .preset-browser-head {
@@ -628,5 +741,11 @@ html[data-theme="dark"] .swatch {
 
   .preset-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-actions {
+    margin-top: 0;
   }
 }

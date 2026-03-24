@@ -19,8 +19,12 @@ type HomePageProps = {
     baseColor?: string
     theme?: string
     chartColor?: string
+    fontHeading?: string
     font?: string
     iconLibrary?: string
+    radius?: string
+    menuColor?: string
+    menuAccent?: string
   }>
 }
 
@@ -49,10 +53,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     chartColor: readFilterParam(
       resolvedSearchParams.chartColor
     ) as PresetFilters["chartColor"],
+    fontHeading: readFilterParam(
+      resolvedSearchParams.fontHeading
+    ) as PresetFilters["fontHeading"],
     font: readFilterParam(resolvedSearchParams.font) as PresetFilters["font"],
     iconLibrary: readFilterParam(
       resolvedSearchParams.iconLibrary
     ) as PresetFilters["iconLibrary"],
+    radius: readFilterParam(resolvedSearchParams.radius) as PresetFilters["radius"],
+    menuColor: readFilterParam(
+      resolvedSearchParams.menuColor
+    ) as PresetFilters["menuColor"],
+    menuAccent: readFilterParam(
+      resolvedSearchParams.menuAccent
+    ) as PresetFilters["menuAccent"],
   }
   const filteredTotal = getPresetTotalCombinations(filters)
   const totalPages = Math.max(1, Math.ceil(filteredTotal / pageSize))
@@ -68,8 +82,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (filters.baseColor) queryParams.set("baseColor", filters.baseColor)
   if (filters.theme) queryParams.set("theme", filters.theme)
   if (filters.chartColor) queryParams.set("chartColor", filters.chartColor)
+  if (filters.fontHeading) queryParams.set("fontHeading", filters.fontHeading)
   if (filters.font) queryParams.set("font", filters.font)
   if (filters.iconLibrary) queryParams.set("iconLibrary", filters.iconLibrary)
+  if (filters.radius) queryParams.set("radius", filters.radius)
+  if (filters.menuColor) queryParams.set("menuColor", filters.menuColor)
+  if (filters.menuAccent) queryParams.set("menuAccent", filters.menuAccent)
 
   function pageHref(nextPage: number) {
     const params = new URLSearchParams(queryParams)
