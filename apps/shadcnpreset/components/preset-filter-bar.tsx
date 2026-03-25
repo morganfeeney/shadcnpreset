@@ -258,7 +258,7 @@ export function PresetFilterBar({
       ref={anchorRef}
       className="dark top-24 right-12 isolate z-10 max-h-full min-h-0 w-full self-start rounded-2xl bg-card/90 shadow-xl backdrop-blur-xl md:w-(--customizer-width)"
     >
-      <CardHeader className="preset-customizer-menu">
+      <CardHeader className="hidden items-center justify-between gap-2 border-b group-data-reversed/layout:flex-row-reverse md:flex">
         <span>Filter presets</span>
         <span className="preset-customizer-menu-icon" aria-hidden="true">
           <svg
@@ -414,7 +414,12 @@ export function PresetFilterBar({
       </CardContent>
       <CardFooter className="flex min-w-0 gap-2 md:flex-col md:**:[button,a]:w-full">
         <Button onClick={applyFilters}>Apply Filters</Button>
-          <Link className={buttonVariants({variant: "secondary"})} href={`/?size=${pageSize}`}>Clear</Link>
+        <Link
+          className={buttonVariants({ variant: "secondary" })}
+          href={`/?size=${pageSize}`}
+        >
+          Clear
+        </Link>
       </CardFooter>
     </Card>
   )
