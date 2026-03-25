@@ -124,9 +124,15 @@ importers:
       '@base-ui/react':
         specifier: 1.1.0
         version: 1.1.0(@types/react@19.2.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      lucide-react:
+        specifier: 0.474.0
+        version: 0.474.0(react@19.2.4)
       next:
         specifier: 16.1.7
         version: 16.1.7(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -143,8 +149,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shadcn
       tailwind-merge:
-        specifier: ^3.0.1
+        specifier: ^3.3.1
         version: 3.3.1
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -14560,6 +14569,10 @@ snapshots:
   lucide-react@0.474.0(react@19.2.3):
     dependencies:
       react: 19.2.3
+
+  lucide-react@0.474.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   magic-string@0.30.17:
     dependencies:
