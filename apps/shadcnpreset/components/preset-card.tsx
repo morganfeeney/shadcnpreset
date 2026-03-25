@@ -49,12 +49,16 @@ export function PresetCard({ item }: PresetCardProps) {
         />
       </div>
       <div className="preset-tags">
-        <span>{item.config.style}</span>
-        <span>{item.config.baseColor}</span>
-        <span>{item.config.theme}</span>
+        <span>{`style:${item.config.style}`}</span>
+        <span>{`base:${item.config.baseColor}`}</span>
+        <span>{`theme:${item.config.theme}`}</span>
         <span>{chartColorLabel(item.config.chartColor)}</span>
-        <span>{item.config.font}</span>
-        <span>{item.config.iconLibrary}</span>
+        <span>{`heading:${item.config.fontHeading}`}</span>
+        <span>{`font:${item.config.font}`}</span>
+        <span>{`icons:${item.config.iconLibrary}`}</span>
+        <span>{`radius:${item.config.radius}`}</span>
+        <span>{`menu:${item.config.menuColor}`}</span>
+        <span>{`accent:${item.config.menuAccent}`}</span>
       </div>
       <div className="preset-actions">
         <Link href={`/preset/${item.code}`}>Open</Link>
