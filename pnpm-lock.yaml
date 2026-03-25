@@ -124,12 +124,30 @@ importers:
       '@base-ui/react':
         specifier: 1.1.0
         version: 1.1.0(@types/react@19.2.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@hugeicons/core-free-icons':
+        specifier: ^1.2.1
+        version: 1.2.1
+      '@hugeicons/react':
+        specifier: ^1.1.1
+        version: 1.1.1(react@19.2.4)
+      '@phosphor-icons/react':
+        specifier: ^2.1.10
+        version: 2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@remixicon/react':
+        specifier: ^4.7.0
+        version: 4.7.0(react@19.2.4)
+      '@tabler/icons-react':
+        specifier: ^3.31.0
+        version: 3.34.1(react@19.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      jotai:
+        specifier: ^2.15.0
+        version: 2.15.0(@babel/core@7.28.0)(@babel/template@7.27.2)(@types/react@19.2.2)(react@19.2.4)
       lucide-react:
         specifier: 0.474.0
         version: 0.474.0(react@19.2.4)
@@ -148,12 +166,18 @@ importers:
       shadcn:
         specifier: workspace:*
         version: link:../../packages/shadcn
+      swr:
+        specifier: ^2.3.6
+        version: 2.3.6(react@19.2.4)
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -9367,6 +9391,10 @@ snapshots:
     dependencies:
       react: 19.2.3
 
+  '@hugeicons/react@1.1.1(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -9835,6 +9863,11 @@ snapshots:
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
+
+  '@phosphor-icons/react@2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -10671,6 +10704,10 @@ snapshots:
     dependencies:
       react: 19.2.3
 
+  '@remixicon/react@4.7.0(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+
   '@rollup/rollup-android-arm-eabi@4.46.2':
     optional: true
 
@@ -10847,6 +10884,11 @@ snapshots:
     dependencies:
       '@tabler/icons': 3.34.1
       react: 19.2.3
+
+  '@tabler/icons-react@3.34.1(react@19.2.4)':
+    dependencies:
+      '@tabler/icons': 3.34.1
+      react: 19.2.4
 
   '@tabler/icons@3.34.1': {}
 
@@ -14302,6 +14344,13 @@ snapshots:
       '@types/react': 19.2.2
       react: 19.2.3
 
+  jotai@2.15.0(@babel/core@7.28.0)(@babel/template@7.27.2)(@types/react@19.2.2)(react@19.2.4):
+    optionalDependencies:
+      '@babel/core': 7.28.0
+      '@babel/template': 7.27.2
+      '@types/react': 19.2.2
+      react: 19.2.4
+
   joycon@3.1.1: {}
 
   js-tokens@4.0.0: {}
@@ -16630,6 +16679,12 @@ snapshots:
       dequal: 2.0.3
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
+
+  swr@2.3.6(react@19.2.4):
+    dependencies:
+      dequal: 2.0.3
+      react: 19.2.4
+      use-sync-external-store: 1.6.0(react@19.2.4)
 
   tabbable@6.4.0: {}
 
