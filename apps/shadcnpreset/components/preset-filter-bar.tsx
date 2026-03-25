@@ -12,6 +12,9 @@ import {
   PickerRadioItem,
   PickerTrigger,
 } from "@/app/(create)/components/picker"
+import { FieldGroup, FieldSeparator } from "@/components/ui/field"
+import { Button, buttonVariants } from "@/components/ui/button"
+
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type { PresetFilters } from "@/lib/preset-catalog"
@@ -250,142 +253,168 @@ export function PresetFilterBar({
   }
 
   return (
-    <Card size="sm" ref={anchorRef}>
+    <Card
+      size="sm"
+      ref={anchorRef}
+      className="dark top-24 right-12 isolate z-10 max-h-full min-h-0 w-full self-start rounded-2xl bg-card/90 shadow-xl backdrop-blur-xl md:w-(--customizer-width)"
+    >
       <CardHeader className="preset-customizer-menu">
-        <span>Menu</span>
+        <span>Filter presets</span>
         <span className="preset-customizer-menu-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5 6H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M9 10H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 6H15"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M9 10H15"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
         </span>
       </CardHeader>
-      <CardContent className="preset-filters">
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Style"
-          indicator={<span className="indicator-square" />}
-          onValueChange={(value) => updateFilter("style", value)}
-          options={["all", ...options.styles]}
-          value={localFilters.style}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Base Color"
-          indicator={
-            <span
-              className="indicator-dot indicator-color"
-              style={
-                baseColorIndicator
-                  ? ({ "--indicator-color": baseColorIndicator } as React.CSSProperties)
-                  : undefined
-              }
-            />
-          }
-          onValueChange={(value) => updateFilter("baseColor", value)}
-          options={["all", ...options.baseColors]}
-          value={localFilters.baseColor}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Theme"
-          indicator={
-            <span
-              className="indicator-dot indicator-color"
-              style={
-                themeIndicator
-                  ? ({ "--indicator-color": themeIndicator } as React.CSSProperties)
-                  : undefined
-              }
-            />
-          }
-          onValueChange={(value) => updateFilter("theme", value)}
-          options={["all", ...themeOptions]}
-          value={localFilters.theme}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Chart Color"
-          indicator={
-            <span
-              className="indicator-dot indicator-color"
-              style={
-                chartColorIndicator
-                  ? ({ "--indicator-color": chartColorIndicator } as React.CSSProperties)
-                  : undefined
-              }
-            />
-          }
-          onValueChange={(value) => updateFilter("chartColor", value)}
-          options={["all", ...options.chartColors]}
-          value={localFilters.chartColor}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Heading"
-          indicator={<span className="indicator-aa">Aa</span>}
-          onValueChange={(value) => updateFilter("fontHeading", value)}
-          options={["all", ...options.fontHeadings]}
-          value={localFilters.fontHeading}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Font"
-          indicator={<span className="indicator-aa">Aa</span>}
-          onValueChange={(value) => updateFilter("font", value)}
-          options={["all", ...options.fonts]}
-          value={localFilters.font}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Icon Library"
-          indicator={<span className="indicator-swirl">◌</span>}
-          onValueChange={(value) => updateFilter("iconLibrary", value)}
-          options={["all", ...options.iconLibraries]}
-          value={localFilters.iconLibrary}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Radius"
-          indicator={<span className="indicator-corner" />}
-          onValueChange={(value) => updateFilter("radius", value)}
-          options={["all", ...options.radii]}
-          value={localFilters.radius}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Menu"
-          indicator={<span className="indicator-menu">☰</span>}
-          onValueChange={(value) => updateFilter("menuColor", value)}
-          options={["all", ...options.menuColors]}
-          value={localFilters.menuColor}
-        />
-        <FilterPicker
-          anchorRef={anchorRef}
-          isMobile={isMobile}
-          label="Menu Accent"
-          indicator={<span className="indicator-gem">◈</span>}
-          onValueChange={(value) => updateFilter("menuAccent", value)}
-          options={["all", ...options.menuAccents]}
-          value={localFilters.menuAccent}
-        />
+      <CardContent className="no-scrollbar min-h-0 flex-1 overflow-x-auto overflow-y-hidden md:overflow-y-auto">
+        <FieldGroup className="flex-row gap-2.5 py-px **:data-[slot=field-separator]:-mx-4 **:data-[slot=field-separator]:w-auto md:flex-col md:gap-3.25">
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Style"
+            indicator={<span className="indicator-square" />}
+            onValueChange={(value) => updateFilter("style", value)}
+            options={["all", ...options.styles]}
+            value={localFilters.style}
+          />
+          <FieldSeparator className="hidden md:block" />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Base Color"
+            indicator={
+              <span
+                className="indicator-dot indicator-color"
+                style={
+                  baseColorIndicator
+                    ? ({
+                        "--indicator-color": baseColorIndicator,
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              />
+            }
+            onValueChange={(value) => updateFilter("baseColor", value)}
+            options={["all", ...options.baseColors]}
+            value={localFilters.baseColor}
+          />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Theme"
+            indicator={
+              <span
+                className="indicator-dot indicator-color"
+                style={
+                  themeIndicator
+                    ? ({
+                        "--indicator-color": themeIndicator,
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              />
+            }
+            onValueChange={(value) => updateFilter("theme", value)}
+            options={["all", ...themeOptions]}
+            value={localFilters.theme}
+          />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Chart Color"
+            indicator={
+              <span
+                className="indicator-dot indicator-color"
+                style={
+                  chartColorIndicator
+                    ? ({
+                        "--indicator-color": chartColorIndicator,
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              />
+            }
+            onValueChange={(value) => updateFilter("chartColor", value)}
+            options={["all", ...options.chartColors]}
+            value={localFilters.chartColor}
+          />
+          <FieldSeparator className="hidden md:block" />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Heading"
+            indicator={<span className="indicator-aa">Aa</span>}
+            onValueChange={(value) => updateFilter("fontHeading", value)}
+            options={["all", ...options.fontHeadings]}
+            value={localFilters.fontHeading}
+          />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Font"
+            indicator={<span className="indicator-aa">Aa</span>}
+            onValueChange={(value) => updateFilter("font", value)}
+            options={["all", ...options.fonts]}
+            value={localFilters.font}
+          />
+          <FieldSeparator className="hidden md:block" />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Icon Library"
+            indicator={<span className="indicator-swirl">◌</span>}
+            onValueChange={(value) => updateFilter("iconLibrary", value)}
+            options={["all", ...options.iconLibraries]}
+            value={localFilters.iconLibrary}
+          />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Radius"
+            indicator={<span className="indicator-corner" />}
+            onValueChange={(value) => updateFilter("radius", value)}
+            options={["all", ...options.radii]}
+            value={localFilters.radius}
+          />
+          <FieldSeparator className="hidden md:block" />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Menu"
+            indicator={<span className="indicator-menu">☰</span>}
+            onValueChange={(value) => updateFilter("menuColor", value)}
+            options={["all", ...options.menuColors]}
+            value={localFilters.menuColor}
+          />
+          <FilterPicker
+            anchorRef={anchorRef}
+            isMobile={isMobile}
+            label="Menu Accent"
+            indicator={<span className="indicator-gem">◈</span>}
+            onValueChange={(value) => updateFilter("menuAccent", value)}
+            options={["all", ...options.menuAccents]}
+            value={localFilters.menuAccent}
+          />
+        </FieldGroup>
       </CardContent>
-      <CardFooter className="filter-actions">
-        <button className="btn btn-primary" onClick={applyFilters} type="button">
-          Apply Filters
-        </button>
-        <Link className="btn btn-secondary" href={`/?size=${pageSize}`}>
-          Clear
-        </Link>
+      <CardFooter className="flex min-w-0 gap-2 md:flex-col md:**:[button,a]:w-full">
+        <Button onClick={applyFilters}>Apply Filters</Button>
+          <Link className={buttonVariants({variant: "secondary"})} href={`/?size=${pageSize}`}>Clear</Link>
       </CardFooter>
     </Card>
   )
