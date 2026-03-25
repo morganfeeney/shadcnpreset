@@ -4,10 +4,19 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 
-import { CreatePicker } from "@/components/create-picker"
+import {
+  Picker,
+  PickerContent,
+  PickerGroup,
+  PickerRadioGroup,
+  PickerRadioItem,
+  PickerTrigger,
+} from "@/app/(create)/components/picker"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { PresetFilters } from "@/lib/preset-catalog"
-import { THEMES } from "../../v4/registry/themes"
+import { THEMES } from "@/registry/themes"
+
 
 type PresetFilterBarProps = {
   filters: PresetFilters
@@ -68,6 +77,82 @@ function getThemeByName(name: string) {
   return THEMES.find((theme) => theme.name === name)
 }
 
+function formatPickerValue(value: string) {
+  return value
+    .split("-")
+    .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : part))
+    .join(" ")
+}
+
+type FilterPickerProps = {
+  label: string
+  value: string
+  options: readonly string[]
+  onValueChange: (value: string) => void
+  indicator?: React.ReactNode
+  isMobile: boolean
+  anchorRef: React.RefObject<HTMLDivElement | null>
+}
+
+function FilterPicker({
+  label,
+  value,
+  options,
+  onValueChange,
+  indicator,
+  isMobile,
+  anchorRef,
+}: FilterPickerProps) {
+  return (
+    <Picker>
+      <PickerTrigger className="w-full text-left">
+        <span className="create-picker-label">{label}</span>
+        <span className="create-picker-value-row">
+          <span className="create-picker-value">{formatPickerValue(value)}</span>
+          {indicator ? (
+            <span aria-hidden="true" className="create-picker-indicator">
+              {indicator}
+            </span>
+          ) : (
+            <span aria-hidden="true" className="create-picker-caret">
+              <svg
+                aria-hidden="true"
+                className="create-picker-caret-icon"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          )}
+        </span>
+      </PickerTrigger>
+      <PickerContent
+        anchor={isMobile ? anchorRef : undefined}
+        side={isMobile ? "top" : "right"}
+        align={isMobile ? "center" : "start"}
+      >
+        <PickerRadioGroup value={value} onValueChange={onValueChange}>
+          <PickerGroup>
+            {options.map((option) => (
+              <PickerRadioItem key={option} value={option} closeOnClick={isMobile}>
+                {formatPickerValue(option)}
+              </PickerRadioItem>
+            ))}
+          </PickerGroup>
+        </PickerRadioGroup>
+      </PickerContent>
+    </Picker>
+  )
+}
+
 export function PresetFilterBar({
   filters,
   pageSize,
@@ -75,6 +160,8 @@ export function PresetFilterBar({
 }: PresetFilterBarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const isMobile = useIsMobile()
+  const anchorRef = React.useRef<HTMLDivElement | null>(null)
   const [localFilters, setLocalFilters] = React.useState<LocalFilters>(
     toLocalFilters(filters)
   )
@@ -88,7 +175,7 @@ export function PresetFilterBar({
       options.themes.filter(
         (theme) => !options.baseColors.includes(theme as (typeof options.baseColors)[number])
       ),
-    [options.baseColors, options.themes]
+    [options]
   )
 
   const baseColorIndicator = React.useMemo(() => {
@@ -163,7 +250,7 @@ export function PresetFilterBar({
   }
 
   return (
-    <Card className="preset-filter-card" size="sm">
+    <Card size="sm" ref={anchorRef}>
       <CardHeader className="preset-customizer-menu">
         <span>Menu</span>
         <span className="preset-customizer-menu-icon" aria-hidden="true">
@@ -174,14 +261,18 @@ export function PresetFilterBar({
         </span>
       </CardHeader>
       <CardContent className="preset-filters">
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Style"
           indicator={<span className="indicator-square" />}
           onValueChange={(value) => updateFilter("style", value)}
           options={["all", ...options.styles]}
           value={localFilters.style}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Base Color"
           indicator={
             <span
@@ -197,7 +288,9 @@ export function PresetFilterBar({
           options={["all", ...options.baseColors]}
           value={localFilters.baseColor}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Theme"
           indicator={
             <span
@@ -213,7 +306,9 @@ export function PresetFilterBar({
           options={["all", ...themeOptions]}
           value={localFilters.theme}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Chart Color"
           indicator={
             <span
@@ -229,42 +324,54 @@ export function PresetFilterBar({
           options={["all", ...options.chartColors]}
           value={localFilters.chartColor}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Heading"
           indicator={<span className="indicator-aa">Aa</span>}
           onValueChange={(value) => updateFilter("fontHeading", value)}
           options={["all", ...options.fontHeadings]}
           value={localFilters.fontHeading}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Font"
           indicator={<span className="indicator-aa">Aa</span>}
           onValueChange={(value) => updateFilter("font", value)}
           options={["all", ...options.fonts]}
           value={localFilters.font}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Icon Library"
           indicator={<span className="indicator-swirl">◌</span>}
           onValueChange={(value) => updateFilter("iconLibrary", value)}
           options={["all", ...options.iconLibraries]}
           value={localFilters.iconLibrary}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Radius"
           indicator={<span className="indicator-corner" />}
           onValueChange={(value) => updateFilter("radius", value)}
           options={["all", ...options.radii]}
           value={localFilters.radius}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Menu"
           indicator={<span className="indicator-menu">☰</span>}
           onValueChange={(value) => updateFilter("menuColor", value)}
           options={["all", ...options.menuColors]}
           value={localFilters.menuColor}
         />
-        <CreatePicker
+        <FilterPicker
+          anchorRef={anchorRef}
+          isMobile={isMobile}
           label="Menu Accent"
           indicator={<span className="indicator-gem">◈</span>}
           onValueChange={(value) => updateFilter("menuAccent", value)}

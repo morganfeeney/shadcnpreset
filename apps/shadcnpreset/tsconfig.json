@@ -20,7 +20,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/app/(create)/components/*": ["./app/(create)/components/*"],
+      "@/*": ["./*"],
+      "@/examples/*": ["../v4/examples/*"]
     }
   },
   "include": [

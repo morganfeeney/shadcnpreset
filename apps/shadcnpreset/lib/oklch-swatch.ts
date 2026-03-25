@@ -1,4 +1,4 @@
-import { THEMES } from "../../v4/registry/themes"
+import { THEMES } from "@/registry/themes"
 
 type ThemeMode = "light" | "dark"
 type ThemeToken = "primary" | "chart-1" | "background" | "muted-foreground"
