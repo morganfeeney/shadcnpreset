@@ -1,6 +1,12 @@
 import { THEMES } from "@/registry/themes"
-import { buildThemeCssVars } from "@/lib/theme"
 import type { PresetConfig } from "@/lib/preset-codec"
+import { BASE_COLORS } from "@/registry/base-colors"
+import {
+  buildRegistryTheme,
+  DEFAULT_CONFIG,
+  type BaseColorName,
+  type ThemeName,
+} from "@/registry/config"
 
 type ThemeMode = "light" | "dark"
 type ThemeToken =
@@ -24,8 +30,20 @@ type ThemeWithVars = {
 const FALLBACK_LIGHT = "oklch(0.205 0 0)"
 const FALLBACK_DARK = "oklch(0.922 0 0)"
 const THEMES_WITH_VARS = THEMES as unknown as ThemeWithVars[]
+const REGISTRY_THEME_NAMES = new Set<string>(THEMES.map((theme) => theme.name))
+const REGISTRY_BASE_COLOR_NAMES = new Set<string>(
+  BASE_COLORS.map((color) => color.name)
+)
 
-function getTheme(name: string) {
+function isRegistryThemeName(value: string): value is ThemeName {
+  return REGISTRY_THEME_NAMES.has(value)
+}
+
+function isRegistryBaseColorName(value: string): value is BaseColorName {
+  return REGISTRY_BASE_COLOR_NAMES.has(value)
+}
+
+function getThemeFromList(name: string) {
   return (
     THEMES_WITH_VARS.find((theme) => theme.name === name) ??
     THEMES_WITH_VARS.find((theme) => theme.name === "neutral") ??
@@ -38,7 +56,7 @@ function getThemeToken(
   mode: ThemeMode,
   token: ThemeToken
 ): string | null {
-  const theme = getTheme(themeName)
+  const theme = getThemeFromList(themeName)
   if (!theme) {
     return null
   }
@@ -121,16 +139,46 @@ export function getPresetSwatchPair(
           ? "muted-foreground"
           : "primary"
 
-  const cssVars = buildThemeCssVars({
-    baseColor: config.baseColor,
-    theme: config.theme,
-    chartColor: config.chartColor,
-    menuAccent: config.menuAccent,
-    radius: config.radius,
-  })
+  const safeBaseColor = isRegistryBaseColorName(config.baseColor)
+    ? config.baseColor
+    : DEFAULT_CONFIG.baseColor
+  const safeTheme = isRegistryThemeName(config.theme)
+    ? config.theme
+    : DEFAULT_CONFIG.theme
+  const safeChartColor =
+    typeof config.chartColor === "string" && isRegistryThemeName(config.chartColor)
+      ? config.chartColor
+      : DEFAULT_CONFIG.chartColor
+  const safeMenuAccent =
+    config.menuAccent === "bold" || config.menuAccent === "subtle"
+      ? config.menuAccent
+      : DEFAULT_CONFIG.menuAccent
+  const safeRadius =
+    config.radius === "default" ||
+    config.radius === "none" ||
+    config.radius === "small" ||
+    config.radius === "medium" ||
+    config.radius === "large"
+      ? config.radius
+      : DEFAULT_CONFIG.radius
 
-  const light = cssVars.light[token] ?? cssVars.light.primary ?? FALLBACK_LIGHT
-  const dark = cssVars.dark[token] ?? cssVars.dark.primary ?? FALLBACK_DARK
+  let registryTheme: ReturnType<typeof buildRegistryTheme>
+  try {
+    registryTheme = buildRegistryTheme({
+      ...DEFAULT_CONFIG,
+      baseColor: safeBaseColor,
+      theme: safeTheme,
+      chartColor: safeChartColor,
+      menuAccent: safeMenuAccent,
+      radius: safeRadius,
+    })
+  } catch {
+    registryTheme = buildRegistryTheme(DEFAULT_CONFIG)
+  }
+  const lightVars = registryTheme.cssVars?.light ?? {}
+  const darkVars = registryTheme.cssVars?.dark ?? {}
+  const light = lightVars[token] ?? lightVars.primary ?? FALLBACK_LIGHT
+  const dark = darkVars[token] ?? darkVars.primary ?? FALLBACK_DARK
 
   return { light, dark }
 }

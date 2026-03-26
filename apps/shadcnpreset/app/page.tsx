@@ -33,8 +33,14 @@ function parsePositiveInt(value: string | undefined, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
-function readFilterParam(value: string | undefined) {
+function readFilterParam(
+  value: string | undefined,
+  allowedValues?: readonly string[]
+) {
   if (!value || value === "all") {
+    return undefined
+  }
+  if (allowedValues && !allowedValues.includes(value)) {
     return undefined
   }
   return value
@@ -45,27 +51,45 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const pageSize = Math.min(100, parsePositiveInt(resolvedSearchParams.size, 20))
   const page = parsePositiveInt(resolvedSearchParams.page, 1)
   const filters: PresetFilters = {
-    style: readFilterParam(resolvedSearchParams.style) as PresetFilters["style"],
+    style: readFilterParam(
+      resolvedSearchParams.style,
+      PRESET_FILTER_OPTIONS.styles
+    ) as PresetFilters["style"],
     baseColor: readFilterParam(
-      resolvedSearchParams.baseColor
+      resolvedSearchParams.baseColor,
+      PRESET_FILTER_OPTIONS.baseColors
     ) as PresetFilters["baseColor"],
-    theme: readFilterParam(resolvedSearchParams.theme) as PresetFilters["theme"],
+    theme: readFilterParam(
+      resolvedSearchParams.theme,
+      PRESET_FILTER_OPTIONS.themes
+    ) as PresetFilters["theme"],
     chartColor: readFilterParam(
-      resolvedSearchParams.chartColor
+      resolvedSearchParams.chartColor,
+      PRESET_FILTER_OPTIONS.chartColors
     ) as PresetFilters["chartColor"],
     fontHeading: readFilterParam(
-      resolvedSearchParams.fontHeading
+      resolvedSearchParams.fontHeading,
+      PRESET_FILTER_OPTIONS.fontHeadings
     ) as PresetFilters["fontHeading"],
-    font: readFilterParam(resolvedSearchParams.font) as PresetFilters["font"],
+    font: readFilterParam(
+      resolvedSearchParams.font,
+      PRESET_FILTER_OPTIONS.fonts
+    ) as PresetFilters["font"],
     iconLibrary: readFilterParam(
-      resolvedSearchParams.iconLibrary
+      resolvedSearchParams.iconLibrary,
+      PRESET_FILTER_OPTIONS.iconLibraries
     ) as PresetFilters["iconLibrary"],
-    radius: readFilterParam(resolvedSearchParams.radius) as PresetFilters["radius"],
+    radius: readFilterParam(
+      resolvedSearchParams.radius,
+      PRESET_FILTER_OPTIONS.radii
+    ) as PresetFilters["radius"],
     menuColor: readFilterParam(
-      resolvedSearchParams.menuColor
+      resolvedSearchParams.menuColor,
+      PRESET_FILTER_OPTIONS.menuColors
     ) as PresetFilters["menuColor"],
     menuAccent: readFilterParam(
-      resolvedSearchParams.menuAccent
+      resolvedSearchParams.menuAccent,
+      PRESET_FILTER_OPTIONS.menuAccents
     ) as PresetFilters["menuAccent"],
   }
   const filteredTotal = getPresetTotalCombinations(filters)

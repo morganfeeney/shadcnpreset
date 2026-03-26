@@ -17,9 +17,9 @@ import { Button, buttonVariants } from "@/components/ui/button"
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import type { PresetFilters } from "@/lib/preset-catalog"
-import { buildThemeCssVars } from "@/lib/theme"
-import { THEMES } from "@/registry/themes"
+import type { PresetConfig } from "@/lib/preset-codec"
 
 
 type PresetFilterBarProps = {
@@ -65,20 +65,6 @@ function toLocalFilters(filters: PresetFilters): LocalFilters {
     menuColor: filters.menuColor ?? "all",
     menuAccent: filters.menuAccent ?? "all",
   }
-}
-
-const V4_BASE_COLORS = new Set([
-  "neutral",
-  "stone",
-  "zinc",
-  "mauve",
-  "olive",
-  "mist",
-  "taupe",
-])
-
-function getThemeByName(name: string) {
-  return THEMES.find((theme) => theme.name === name)
 }
 
 function formatPickerValue(value: string) {
@@ -182,66 +168,62 @@ export function PresetFilterBar({
     [options]
   )
 
+  const indicatorConfig = React.useMemo(
+    () =>
+      ({
+        baseColor:
+          localFilters.baseColor === "all"
+            ? "neutral"
+            : localFilters.baseColor,
+        theme: localFilters.theme === "all" ? "neutral" : localFilters.theme,
+        chartColor:
+          localFilters.chartColor === "all"
+            ? "neutral"
+            : localFilters.chartColor,
+        menuAccent: localFilters.menuAccent === "bold" ? "bold" : "subtle",
+        radius:
+          localFilters.radius === "none" ||
+          localFilters.radius === "small" ||
+          localFilters.radius === "medium" ||
+          localFilters.radius === "large"
+            ? localFilters.radius
+            : "default",
+      }) as Pick<
+        PresetConfig,
+        "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius"
+      >,
+    [
+      localFilters.baseColor,
+      localFilters.theme,
+      localFilters.chartColor,
+      localFilters.menuAccent,
+      localFilters.radius,
+    ]
+  )
+
   const baseColorIndicator = React.useMemo(() => {
     if (localFilters.baseColor === "all") {
       return undefined
     }
 
-    const cssVars = buildThemeCssVars({
-      baseColor: localFilters.baseColor,
-      theme: localFilters.theme === "all" ? "neutral" : localFilters.theme,
-      chartColor:
-        localFilters.chartColor === "all" ? "neutral" : localFilters.chartColor,
-      menuAccent: localFilters.menuAccent === "bold" ? "bold" : "subtle",
-      radius:
-        localFilters.radius === "none" ||
-        localFilters.radius === "small" ||
-        localFilters.radius === "medium" ||
-        localFilters.radius === "large"
-          ? localFilters.radius
-          : "default",
-    })
-
-    return cssVars.dark["muted-foreground"]
-  }, [
-    localFilters.baseColor,
-    localFilters.theme,
-    localFilters.chartColor,
-    localFilters.menuAccent,
-    localFilters.radius,
-  ])
+    return getPresetSwatchPair(indicatorConfig, "mutedForeground").dark
+  }, [indicatorConfig, localFilters.baseColor])
 
   const themeIndicator = React.useMemo(() => {
     if (localFilters.theme === "all") {
       return undefined
     }
 
-    const theme = getThemeByName(localFilters.theme)
-    if (!theme) {
-      return undefined
-    }
-
-    const key = V4_BASE_COLORS.has(localFilters.theme)
-      ? "muted-foreground"
-      : "primary"
-    return theme.cssVars?.dark?.[key]
-  }, [localFilters.theme])
+    return getPresetSwatchPair(indicatorConfig, "primary").dark
+  }, [indicatorConfig, localFilters.theme])
 
   const chartColorIndicator = React.useMemo(() => {
     if (localFilters.chartColor === "all") {
       return undefined
     }
 
-    const theme = getThemeByName(localFilters.chartColor)
-    if (!theme) {
-      return undefined
-    }
-
-    const key = V4_BASE_COLORS.has(localFilters.chartColor)
-      ? "muted-foreground"
-      : "primary"
-    return theme.cssVars?.dark?.[key]
-  }, [localFilters.chartColor])
+    return getPresetSwatchPair(indicatorConfig, "chart1").dark
+  }, [indicatorConfig, localFilters.chartColor])
 
   function updateFilter<K extends keyof LocalFilters>(
     key: K,
@@ -250,27 +232,41 @@ export function PresetFilterBar({
     setLocalFilters((prev) => ({ ...prev, [key]: value }))
   }
 
-  function applyFilters() {
+  function buildFilterParams(nextFilters: LocalFilters) {
     const params = new URLSearchParams()
     params.set("size", String(pageSize))
     params.set("page", "1")
-    if (localFilters.style !== "all") params.set("style", localFilters.style)
-    if (localFilters.baseColor !== "all")
-      params.set("baseColor", localFilters.baseColor)
-    if (localFilters.theme !== "all") params.set("theme", localFilters.theme)
-    if (localFilters.chartColor !== "all")
-      params.set("chartColor", localFilters.chartColor)
-    if (localFilters.fontHeading !== "all")
-      params.set("fontHeading", localFilters.fontHeading)
-    if (localFilters.font !== "all") params.set("font", localFilters.font)
-    if (localFilters.iconLibrary !== "all")
-      params.set("iconLibrary", localFilters.iconLibrary)
-    if (localFilters.radius !== "all") params.set("radius", localFilters.radius)
-    if (localFilters.menuColor !== "all")
-      params.set("menuColor", localFilters.menuColor)
-    if (localFilters.menuAccent !== "all")
-      params.set("menuAccent", localFilters.menuAccent)
+    if (nextFilters.style !== "all") params.set("style", nextFilters.style)
+    if (nextFilters.baseColor !== "all")
+      params.set("baseColor", nextFilters.baseColor)
+    if (nextFilters.theme !== "all") params.set("theme", nextFilters.theme)
+    if (nextFilters.chartColor !== "all")
+      params.set("chartColor", nextFilters.chartColor)
+    if (nextFilters.fontHeading !== "all")
+      params.set("fontHeading", nextFilters.fontHeading)
+    if (nextFilters.font !== "all") params.set("font", nextFilters.font)
+    if (nextFilters.iconLibrary !== "all")
+      params.set("iconLibrary", nextFilters.iconLibrary)
+    if (nextFilters.radius !== "all") params.set("radius", nextFilters.radius)
+    if (nextFilters.menuColor !== "all")
+      params.set("menuColor", nextFilters.menuColor)
+    if (nextFilters.menuAccent !== "all")
+      params.set("menuAccent", nextFilters.menuAccent)
+    return params
+  }
+
+  function applyFilters(nextFilters = localFilters) {
+    const params = buildFilterParams(nextFilters)
     router.push(`${pathname}?${params.toString()}`)
+  }
+
+  function updateFilterAndApply<K extends keyof LocalFilters>(
+    key: K,
+    value: LocalFilters[K]
+  ) {
+    const nextFilters = { ...localFilters, [key]: value }
+    updateFilter(key, value)
+    applyFilters(nextFilters)
   }
 
   return (
@@ -309,7 +305,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Style"
             indicator={<span className="indicator-square" />}
-            onValueChange={(value) => updateFilter("style", value)}
+            onValueChange={(value) => updateFilterAndApply("style", value)}
             options={["all", ...options.styles]}
             value={localFilters.style}
           />
@@ -330,7 +326,7 @@ export function PresetFilterBar({
                 }
               />
             }
-            onValueChange={(value) => updateFilter("baseColor", value)}
+            onValueChange={(value) => updateFilterAndApply("baseColor", value)}
             options={["all", ...options.baseColors]}
             value={localFilters.baseColor}
           />
@@ -350,7 +346,7 @@ export function PresetFilterBar({
                 }
               />
             }
-            onValueChange={(value) => updateFilter("theme", value)}
+            onValueChange={(value) => updateFilterAndApply("theme", value)}
             options={["all", ...themeOptions]}
             value={localFilters.theme}
           />
@@ -370,7 +366,7 @@ export function PresetFilterBar({
                 }
               />
             }
-            onValueChange={(value) => updateFilter("chartColor", value)}
+            onValueChange={(value) => updateFilterAndApply("chartColor", value)}
             options={["all", ...options.chartColors]}
             value={localFilters.chartColor}
           />
@@ -380,7 +376,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Heading"
             indicator={<span className="indicator-aa">Aa</span>}
-            onValueChange={(value) => updateFilter("fontHeading", value)}
+            onValueChange={(value) => updateFilterAndApply("fontHeading", value)}
             options={["all", ...options.fontHeadings]}
             value={localFilters.fontHeading}
           />
@@ -389,7 +385,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Font"
             indicator={<span className="indicator-aa">Aa</span>}
-            onValueChange={(value) => updateFilter("font", value)}
+            onValueChange={(value) => updateFilterAndApply("font", value)}
             options={["all", ...options.fonts]}
             value={localFilters.font}
           />
@@ -399,7 +395,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Icon Library"
             indicator={<span className="indicator-swirl">◌</span>}
-            onValueChange={(value) => updateFilter("iconLibrary", value)}
+            onValueChange={(value) => updateFilterAndApply("iconLibrary", value)}
             options={["all", ...options.iconLibraries]}
             value={localFilters.iconLibrary}
           />
@@ -408,7 +404,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Radius"
             indicator={<span className="indicator-corner" />}
-            onValueChange={(value) => updateFilter("radius", value)}
+            onValueChange={(value) => updateFilterAndApply("radius", value)}
             options={["all", ...options.radii]}
             value={localFilters.radius}
           />
@@ -418,7 +414,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Menu"
             indicator={<span className="indicator-menu">☰</span>}
-            onValueChange={(value) => updateFilter("menuColor", value)}
+            onValueChange={(value) => updateFilterAndApply("menuColor", value)}
             options={["all", ...options.menuColors]}
             value={localFilters.menuColor}
           />
@@ -427,7 +423,7 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Menu Accent"
             indicator={<span className="indicator-gem">◈</span>}
-            onValueChange={(value) => updateFilter("menuAccent", value)}
+            onValueChange={(value) => updateFilterAndApply("menuAccent", value)}
             options={["all", ...options.menuAccents]}
             value={localFilters.menuAccent}
           />

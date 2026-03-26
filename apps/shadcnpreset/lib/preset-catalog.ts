@@ -10,6 +10,7 @@ import {
   encodePreset,
   type PresetConfig,
 } from "@/lib/preset-codec"
+import { THEMES } from "@/registry/themes"
 
 const V4_BASE_COLORS = [
   "neutral",
@@ -21,16 +22,23 @@ const V4_BASE_COLORS = [
   "taupe",
 ] as const
 
+const APP_THEME_NAMES = THEMES.map((theme) => theme.name)
+const V4_THEME_NAMES = APP_THEME_NAMES
+const V4_THEME_NAME_SET = new Set<string>(V4_THEME_NAMES)
+const V4_BASE_COLOR_SET = new Set<string>(V4_BASE_COLORS)
+
 const NON_BASE_THEMES = PRESET_THEMES.filter(
-  (theme) => !V4_BASE_COLORS.includes(theme as (typeof V4_BASE_COLORS)[number])
+  (theme) =>
+    V4_THEME_NAME_SET.has(theme) &&
+    !V4_BASE_COLOR_SET.has(theme)
 )
 
 function getV4ThemesForBaseColor(baseColor: (typeof V4_BASE_COLORS)[number]) {
-  return PRESET_THEMES.filter((theme) => {
+  return V4_THEME_NAMES.filter((theme) => {
     if (theme === baseColor) {
       return true
     }
-    return !V4_BASE_COLORS.includes(theme as (typeof V4_BASE_COLORS)[number])
+    return !V4_BASE_COLOR_SET.has(theme)
   })
 }
 
@@ -50,7 +58,7 @@ export type PresetFilters = Partial<{
 export const PRESET_FILTER_OPTIONS = {
   styles: PRESET_STYLES,
   baseColors: V4_BASE_COLORS,
-  themes: PRESET_THEMES,
+  themes: V4_THEME_NAMES,
   chartColors: NON_BASE_THEMES,
   fontHeadings: PRESET_FONT_HEADINGS,
   fonts: PRESET_FONTS,

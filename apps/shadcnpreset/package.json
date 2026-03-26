@@ -8,6 +8,7 @@
     "build": "pnpm --filter=shadcn build && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test \"./**/*.test.ts\"",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"
   },
