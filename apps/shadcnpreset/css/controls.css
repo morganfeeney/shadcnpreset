@@ -612,11 +612,6 @@
   color: var(--muted-foreground);
 }
 
-.preset-swatches {
-  display: flex;
-  gap: 0.4rem;
-}
-
 .swatch {
   display: inline-block;
   width: 1.2rem;
@@ -624,10 +619,6 @@
   background: var(--swatch-light);
   border-radius: 999px;
   border: 1px solid color-mix(in oklch, var(--foreground), transparent 75%);
-}
-
-html[data-theme="dark"] .swatch {
-  background: var(--swatch-dark);
 }
 
 .preset-tags {
