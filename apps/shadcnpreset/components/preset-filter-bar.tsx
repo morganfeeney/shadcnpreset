@@ -18,6 +18,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type { PresetFilters } from "@/lib/preset-catalog"
+import { buildThemeCssVars } from "@/lib/theme"
 import { THEMES } from "@/registry/themes"
 
 
@@ -186,9 +187,29 @@ export function PresetFilterBar({
       return undefined
     }
 
-    const theme = getThemeByName(localFilters.baseColor)
-    return theme?.cssVars?.dark?.["muted-foreground"]
-  }, [localFilters.baseColor])
+    const cssVars = buildThemeCssVars({
+      baseColor: localFilters.baseColor,
+      theme: localFilters.theme === "all" ? "neutral" : localFilters.theme,
+      chartColor:
+        localFilters.chartColor === "all" ? "neutral" : localFilters.chartColor,
+      menuAccent: localFilters.menuAccent === "bold" ? "bold" : "subtle",
+      radius:
+        localFilters.radius === "none" ||
+        localFilters.radius === "small" ||
+        localFilters.radius === "medium" ||
+        localFilters.radius === "large"
+          ? localFilters.radius
+          : "default",
+    })
+
+    return cssVars.dark["muted-foreground"]
+  }, [
+    localFilters.baseColor,
+    localFilters.theme,
+    localFilters.chartColor,
+    localFilters.menuAccent,
+    localFilters.radius,
+  ])
 
   const themeIndicator = React.useMemo(() => {
     if (localFilters.theme === "all") {

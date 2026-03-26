@@ -1,7 +1,17 @@
 import { THEMES } from "@/registry/themes"
+import { buildThemeCssVars } from "@/lib/theme"
+import type { PresetConfig } from "@/lib/preset-codec"
 
 type ThemeMode = "light" | "dark"
-type ThemeToken = "primary" | "chart-1" | "background" | "muted-foreground"
+type ThemeToken =
+  | "primary"
+  | "chart-1"
+  | "chart-2"
+  | "chart-3"
+  | "chart-4"
+  | "chart-5"
+  | "background"
+  | "muted-foreground"
 
 type ThemeWithVars = {
   name: string
@@ -43,11 +53,27 @@ function getThemeToken(
 
 export function getThemeSwatchPair(
   themeName: string,
-  role: "primary" | "chart1" | "background" | "mutedForeground"
+  role:
+    | "primary"
+    | "chart1"
+    | "chart2"
+    | "chart3"
+    | "chart4"
+    | "chart5"
+    | "background"
+    | "mutedForeground"
 ) {
   const token: ThemeToken =
     role === "chart1"
       ? "chart-1"
+      : role === "chart2"
+        ? "chart-2"
+        : role === "chart3"
+          ? "chart-3"
+          : role === "chart4"
+            ? "chart-4"
+            : role === "chart5"
+              ? "chart-5"
       : role === "background"
         ? "background"
         : role === "mutedForeground"
@@ -62,6 +88,49 @@ export function getThemeSwatchPair(
     getThemeToken(themeName, "dark", token) ??
     getThemeToken(themeName, "dark", "primary") ??
     FALLBACK_DARK
+
+  return { light, dark }
+}
+
+export function getPresetSwatchPair(
+  config: Pick<PresetConfig, "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius">,
+  role:
+    | "primary"
+    | "chart1"
+    | "chart2"
+    | "chart3"
+    | "chart4"
+    | "chart5"
+    | "background"
+    | "mutedForeground"
+) {
+  const token: ThemeToken =
+    role === "chart1"
+      ? "chart-1"
+      : role === "chart2"
+        ? "chart-2"
+        : role === "chart3"
+          ? "chart-3"
+          : role === "chart4"
+            ? "chart-4"
+            : role === "chart5"
+              ? "chart-5"
+      : role === "background"
+        ? "background"
+        : role === "mutedForeground"
+          ? "muted-foreground"
+          : "primary"
+
+  const cssVars = buildThemeCssVars({
+    baseColor: config.baseColor,
+    theme: config.theme,
+    chartColor: config.chartColor,
+    menuAccent: config.menuAccent,
+    radius: config.radius,
+  })
+
+  const light = cssVars.light[token] ?? cssVars.light.primary ?? FALLBACK_LIGHT
+  const dark = cssVars.dark[token] ?? cssVars.dark.primary ?? FALLBACK_DARK
 
   return { light, dark }
 }
