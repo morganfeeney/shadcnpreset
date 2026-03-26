@@ -1,8 +1,8 @@
 import Link from "next/link"
 
+import { HomeHero } from "@/components/home-hero"
 import { PresetFilterBar } from "@/components/preset-filter-bar"
 import { PresetCard } from "@/components/preset-card"
-import { PresetForm } from "@/components/preset-form"
 import {
   PRESET_TOTAL_COMBINATIONS,
   PRESET_FILTER_OPTIONS,
@@ -98,25 +98,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <div
       data-slot="layout"
-      className="group/layout section-soft relative z-10 grid h-svh gap-(--gap) p-(--gap) pt-[calc(var(--gap)*0.25)] [--gap:--spacing(4)] md:[--gap:--spacing(6)] 2xl:[--customizer-width:--spacing(56)]"
+      className="group/layout section-soft relative z-10 mx-auto grid w-full max-w-[1800px] gap-(--gap) p-(--gap) [--gap:--spacing(4)] md:[--gap:--spacing(6)] 2xl:[--customizer-width:--spacing(56)]"
     >
-      <section className="preset-hero">
-        <p className="eyebrow">shadcnpreset</p>
-        <h1>Preset route viewer</h1>
-        <p>
-          Explore generated preset codes and open each one against the real v4
-          create UI with the preset applied.
-        </p>
-        <PresetForm />
-        <p>
-          Need a reference? Open{" "}
-          <Link href="http://localhost:4000/create" target="_blank">
-            shadcn create
-          </Link>{" "}
-          and copy the `preset` query value.
-        </p>
-      </section>
-      <main className="gap-(--gap) grid-cols-[224px_1fr] grid">
+      <HomeHero />
+      <main id="browse" className="gap-(--gap) grid-cols-[224px_1fr] grid">
         <PresetFilterBar
           filters={filters}
           options={PRESET_FILTER_OPTIONS}

@@ -24,21 +24,27 @@ export function PresetForm() {
   }
 
   return (
-    <form className="input-row" onSubmit={onSubmit}>
+    <form className="grid gap-2.5" onSubmit={onSubmit}>
       <label className="sr-only" htmlFor="preset-code">
         Preset code
       </label>
-      <input
-        id="preset-code"
-        autoComplete="off"
-        placeholder="Enter preset code (example: b2xA9)"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-      />
-      <button className="btn btn-primary" type="submit">
-        Open preset route
-      </button>
-      {error ? <p className="error-text">{error}</p> : null}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          id="preset-code"
+          autoComplete="off"
+          placeholder="Enter preset code (example: b2xA9)"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+        />
+        <button
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          type="submit"
+        >
+          Open preset
+        </button>
+      </div>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </form>
   )
 }
