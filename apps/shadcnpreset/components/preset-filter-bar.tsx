@@ -17,9 +17,9 @@ import { Button, buttonVariants } from "@/components/ui/button"
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import type { PresetFilters } from "@/lib/preset-catalog"
-import type { PresetConfig } from "@/lib/preset-codec"
+import { BASE_COLORS } from "@/registry/base-colors"
+import { THEMES } from "@/registry/themes"
 
 
 type PresetFilterBarProps = {
@@ -51,6 +51,26 @@ type LocalFilters = {
   menuColor: string
   menuAccent: string
 }
+
+const BASE_COLOR_SWATCHES = Object.fromEntries(
+  BASE_COLORS.map((color) => [
+    color.name,
+    color.cssVars?.dark?.["muted-foreground"] ??
+      color.cssVars?.dark?.primary ??
+      color.cssVars?.light?.["muted-foreground"] ??
+      color.cssVars?.light?.primary,
+  ])
+) as Record<string, string | undefined>
+
+const THEME_SWATCHES = Object.fromEntries(
+  THEMES.map((theme) => [
+    theme.name,
+    theme.cssVars?.dark?.primary ??
+      theme.cssVars?.light?.primary ??
+      theme.cssVars?.dark?.["chart-1"] ??
+      theme.cssVars?.light?.["chart-1"],
+  ])
+) as Record<string, string | undefined>
 
 function toLocalFilters(filters: PresetFilters): LocalFilters {
   return {
@@ -168,62 +188,26 @@ export function PresetFilterBar({
     [options]
   )
 
-  const indicatorConfig = React.useMemo(
-    () =>
-      ({
-        baseColor:
-          localFilters.baseColor === "all"
-            ? "neutral"
-            : localFilters.baseColor,
-        theme: localFilters.theme === "all" ? "neutral" : localFilters.theme,
-        chartColor:
-          localFilters.chartColor === "all"
-            ? "neutral"
-            : localFilters.chartColor,
-        menuAccent: localFilters.menuAccent === "bold" ? "bold" : "subtle",
-        radius:
-          localFilters.radius === "none" ||
-          localFilters.radius === "small" ||
-          localFilters.radius === "medium" ||
-          localFilters.radius === "large"
-            ? localFilters.radius
-            : "default",
-      }) as Pick<
-        PresetConfig,
-        "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius"
-      >,
-    [
-      localFilters.baseColor,
-      localFilters.theme,
-      localFilters.chartColor,
-      localFilters.menuAccent,
-      localFilters.radius,
-    ]
-  )
-
   const baseColorIndicator = React.useMemo(() => {
     if (localFilters.baseColor === "all") {
       return undefined
     }
-
-    return getPresetSwatchPair(indicatorConfig, "mutedForeground").dark
-  }, [indicatorConfig, localFilters.baseColor])
+    return BASE_COLOR_SWATCHES[localFilters.baseColor] ?? undefined
+  }, [localFilters.baseColor])
 
   const themeIndicator = React.useMemo(() => {
     if (localFilters.theme === "all") {
       return undefined
     }
-
-    return getPresetSwatchPair(indicatorConfig, "primary").dark
-  }, [indicatorConfig, localFilters.theme])
+    return THEME_SWATCHES[localFilters.theme] ?? undefined
+  }, [localFilters.theme])
 
   const chartColorIndicator = React.useMemo(() => {
     if (localFilters.chartColor === "all") {
       return undefined
     }
-
-    return getPresetSwatchPair(indicatorConfig, "chart1").dark
-  }, [indicatorConfig, localFilters.chartColor])
+    return THEME_SWATCHES[localFilters.chartColor] ?? undefined
+  }, [localFilters.chartColor])
 
   function updateFilter<K extends keyof LocalFilters>(
     key: K,

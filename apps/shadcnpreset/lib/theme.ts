@@ -50,8 +50,13 @@ function getHue(name: string) {
   return HUE_MAP[name] ?? HUE_MAP.neutral
 }
 
-function hsl(hue: number, saturation: number, lightness: number) {
-  return `hsl(${hue} ${saturation}% ${lightness}%)`
+function wrapHue(hue: number) {
+  const value = hue % 360
+  return value < 0 ? value + 360 : value
+}
+
+function oklch(lightness: number, chroma: number, hue: number) {
+  return `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${wrapHue(hue).toFixed(3)})`
 }
 
 export function buildThemeCssVars(config: ThemeConfig): ThemeCssVars {
@@ -60,45 +65,45 @@ export function buildThemeCssVars(config: ThemeConfig): ThemeCssVars {
   const chartHue = getHue(config.chartColor)
 
   const light = {
-    background: hsl(baseHue, 20, 98),
-    foreground: hsl(baseHue, 16, 12),
-    card: hsl(baseHue, 24, 99),
-    "card-foreground": hsl(baseHue, 16, 12),
-    border: hsl(baseHue, 16, 86),
-    primary: hsl(themeHue, 70, 45),
-    "primary-foreground": hsl(themeHue, 30, 98),
-    secondary: hsl(baseHue, 24, 94),
-    "secondary-foreground": hsl(baseHue, 16, 20),
-    muted: hsl(baseHue, 22, 94),
-    "muted-foreground": hsl(baseHue, 10, 42),
-    accent: hsl(baseHue, 22, 93),
-    "accent-foreground": hsl(baseHue, 16, 16),
-    "chart-1": hsl(chartHue, 68, 46),
-    "chart-2": hsl((chartHue + 20) % 360, 58, 49),
-    "chart-3": hsl((chartHue + 40) % 360, 56, 52),
-    "chart-4": hsl((chartHue + 60) % 360, 56, 56),
-    "chart-5": hsl((chartHue + 80) % 360, 52, 60),
+    background: oklch(0.985, 0.006, baseHue),
+    foreground: oklch(0.185, 0.020, baseHue),
+    card: oklch(0.994, 0.004, baseHue),
+    "card-foreground": oklch(0.185, 0.020, baseHue),
+    border: oklch(0.885, 0.012, baseHue),
+    primary: oklch(0.615, 0.180, themeHue),
+    "primary-foreground": oklch(0.975, 0.012, themeHue),
+    secondary: oklch(0.940, 0.016, baseHue),
+    "secondary-foreground": oklch(0.245, 0.028, baseHue),
+    muted: oklch(0.944, 0.012, baseHue),
+    "muted-foreground": oklch(0.520, 0.020, baseHue),
+    accent: oklch(0.932, 0.016, baseHue),
+    "accent-foreground": oklch(0.220, 0.026, baseHue),
+    "chart-1": oklch(0.620, 0.175, chartHue),
+    "chart-2": oklch(0.640, 0.155, chartHue + 20),
+    "chart-3": oklch(0.665, 0.145, chartHue + 40),
+    "chart-4": oklch(0.695, 0.130, chartHue + 60),
+    "chart-5": oklch(0.725, 0.120, chartHue + 80),
     radius: "0.625rem",
   }
   const dark = {
-    background: hsl(baseHue, 15, 10),
-    foreground: hsl(baseHue, 18, 95),
-    card: hsl(baseHue, 16, 15),
-    "card-foreground": hsl(baseHue, 18, 95),
-    border: hsl(baseHue, 12, 28),
-    primary: hsl(themeHue, 72, 62),
-    "primary-foreground": hsl(themeHue, 36, 12),
-    secondary: hsl(baseHue, 14, 22),
-    "secondary-foreground": hsl(baseHue, 16, 95),
-    muted: hsl(baseHue, 12, 24),
-    "muted-foreground": hsl(baseHue, 14, 70),
-    accent: hsl(baseHue, 12, 25),
-    "accent-foreground": hsl(baseHue, 16, 95),
-    "chart-1": hsl(chartHue, 68, 58),
-    "chart-2": hsl((chartHue + 20) % 360, 58, 62),
-    "chart-3": hsl((chartHue + 40) % 360, 56, 66),
-    "chart-4": hsl((chartHue + 60) % 360, 56, 70),
-    "chart-5": hsl((chartHue + 80) % 360, 52, 73),
+    background: oklch(0.175, 0.010, baseHue),
+    foreground: oklch(0.955, 0.010, baseHue),
+    card: oklch(0.220, 0.014, baseHue),
+    "card-foreground": oklch(0.955, 0.010, baseHue),
+    border: oklch(0.330, 0.014, baseHue),
+    primary: oklch(0.735, 0.170, themeHue),
+    "primary-foreground": oklch(0.205, 0.038, themeHue),
+    secondary: oklch(0.285, 0.018, baseHue),
+    "secondary-foreground": oklch(0.950, 0.012, baseHue),
+    muted: oklch(0.305, 0.014, baseHue),
+    "muted-foreground": oklch(0.760, 0.016, baseHue),
+    accent: oklch(0.320, 0.014, baseHue),
+    "accent-foreground": oklch(0.950, 0.012, baseHue),
+    "chart-1": oklch(0.700, 0.165, chartHue),
+    "chart-2": oklch(0.725, 0.150, chartHue + 20),
+    "chart-3": oklch(0.750, 0.140, chartHue + 40),
+    "chart-4": oklch(0.775, 0.128, chartHue + 60),
+    "chart-5": oklch(0.800, 0.116, chartHue + 80),
     radius: "0.625rem",
   }
 
