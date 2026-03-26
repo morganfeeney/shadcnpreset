@@ -62,15 +62,7 @@ const BASE_COLOR_SWATCHES = Object.fromEntries(
   ])
 ) as Record<string, string | undefined>
 
-const THEME_SWATCHES = Object.fromEntries(
-  THEMES.map((theme) => [
-    theme.name,
-    theme.cssVars?.dark?.primary ??
-      theme.cssVars?.light?.primary ??
-      theme.cssVars?.dark?.["chart-1"] ??
-      theme.cssVars?.light?.["chart-1"],
-  ])
-) as Record<string, string | undefined>
+const BASE_COLOR_NAME_SET = new Set<string>(BASE_COLORS.map((color) => color.name))
 
 function toLocalFilters(filters: PresetFilters): LocalFilters {
   return {
@@ -199,14 +191,28 @@ export function PresetFilterBar({
     if (localFilters.theme === "all") {
       return undefined
     }
-    return THEME_SWATCHES[localFilters.theme] ?? undefined
+    const theme = THEMES.find((item) => item.name === localFilters.theme)
+    if (!theme) {
+      return undefined
+    }
+    return BASE_COLOR_NAME_SET.has(localFilters.theme)
+      ? (theme.cssVars?.dark?.["muted-foreground"] ??
+          theme.cssVars?.light?.["muted-foreground"])
+      : (theme.cssVars?.dark?.primary ?? theme.cssVars?.light?.primary)
   }, [localFilters.theme])
 
   const chartColorIndicator = React.useMemo(() => {
     if (localFilters.chartColor === "all") {
       return undefined
     }
-    return THEME_SWATCHES[localFilters.chartColor] ?? undefined
+    const chartTheme = THEMES.find((item) => item.name === localFilters.chartColor)
+    if (!chartTheme) {
+      return undefined
+    }
+    return BASE_COLOR_NAME_SET.has(localFilters.chartColor)
+      ? (chartTheme.cssVars?.dark?.["muted-foreground"] ??
+          chartTheme.cssVars?.light?.["muted-foreground"])
+      : (chartTheme.cssVars?.dark?.primary ?? chartTheme.cssVars?.light?.primary)
   }, [localFilters.chartColor])
 
   function updateFilter<K extends keyof LocalFilters>(

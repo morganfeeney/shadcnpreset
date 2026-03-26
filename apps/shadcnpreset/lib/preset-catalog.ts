@@ -23,7 +23,9 @@ const V4_BASE_COLORS = [
 ] as const
 
 const APP_THEME_NAMES = THEMES.map((theme) => theme.name)
-const V4_THEME_NAMES = APP_THEME_NAMES
+const V4_THEME_NAMES = APP_THEME_NAMES.filter(
+  (theme): theme is Exclude<PresetConfig["theme"], "gray"> => theme !== "gray"
+)
 const V4_THEME_NAME_SET = new Set<string>(V4_THEME_NAMES)
 const V4_BASE_COLOR_SET = new Set<string>(V4_BASE_COLORS)
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { decodePreset } from "@/lib/preset-codec"
+import { decodePreset, type PresetConfig } from "@/lib/preset-codec"
 import { getPresetPage } from "@/lib/preset-catalog"
 import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
@@ -16,10 +16,19 @@ const ROLE_TO_TOKEN = [
   ["chart5", "chart-5"],
 ] as const
 
-function assertPresetSwatchesMatchRegistry(config: Parameters<typeof buildRegistryTheme>[0]) {
-  const registryTheme = buildRegistryTheme({ ...DEFAULT_CONFIG, ...config })
-  const lightVars = registryTheme.cssVars.light
-  const darkVars = registryTheme.cssVars.dark
+function assertPresetSwatchesMatchBuilder(
+  config: Pick<
+    PresetConfig,
+    "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius"
+  >
+) {
+  const theme = buildRegistryTheme({
+    ...DEFAULT_CONFIG,
+    ...config,
+    chartColor: config.chartColor ?? config.theme,
+  })
+  const lightVars = theme.cssVars.light ?? {}
+  const darkVars = theme.cssVars.dark ?? {}
 
   for (const [role, token] of ROLE_TO_TOKEN) {
     const pair = getPresetSwatchPair(config, role)
@@ -36,16 +45,25 @@ function assertPresetSwatchesMatchRegistry(config: Parameters<typeof buildRegist
   }
 }
 
-test("swatches match registry theme for preset bw4UuDRY", () => {
+test("swatches match builder for preset bw4UuDRY", () => {
   const config = decodePreset("bw4UuDRY")
-  assertPresetSwatchesMatchRegistry(config)
+  assert.ok(config, "Expected preset code bw4UuDRY to decode")
+  assertPresetSwatchesMatchBuilder({
+    ...DEFAULT_CONFIG,
+    ...config,
+    chartColor: config.chartColor ?? config.theme,
+  })
 })
 
-test("swatches match registry theme for a page of generated presets", () => {
+test("swatches match builder for a page of generated presets", () => {
   const presets = getPresetPage(1, 40, {})
   assert.ok(presets.length > 0, "Expected at least one generated preset")
 
   for (const preset of presets) {
-    assertPresetSwatchesMatchRegistry(preset.config)
+    assertPresetSwatchesMatchBuilder({
+      ...DEFAULT_CONFIG,
+      ...preset.config,
+      chartColor: preset.config.chartColor ?? preset.config.theme,
+    })
   }
 })
