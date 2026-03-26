@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { Heart, Sparkles } from "lucide-react"
+import { useTheme } from "next-themes"
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 
+import { useMounted } from "@/hooks/use-mounted"
 import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buttonVariants } from "@/components/ui/button"
@@ -86,6 +88,9 @@ const ICON_LIBRARY_LOGOS: Record<string, ReactNode> = {
 }
 
 export function PresetCard({ item }: PresetCardProps) {
+  const { resolvedTheme } = useTheme()
+  const mounted = useMounted()
+  const isDark = mounted && resolvedTheme === "dark"
   const basePair = getPresetSwatchPair(item.config, "background")
   const themePair = getPresetSwatchPair(item.config, "primary")
   const chartPair = getPresetSwatchPair(item.config, "chart1")
@@ -116,24 +121,19 @@ export function PresetCard({ item }: PresetCardProps) {
   }
 
   const previewStyle = {
-    "--preview-bg-light": basePair.light,
-    "--preview-bg-dark": basePair.dark,
-    "--preview-fg-light": themePair.light,
-    "--preview-fg-dark": themePair.dark,
-    "--preview-chart-light": chartPair.light,
-    "--preview-chart-dark": chartPair.dark,
-    "--preview-chart2-light": chartPair2.light,
-    "--preview-chart2-dark": chartPair2.dark,
-    "--preview-chart3-light": chartPair3.light,
-    "--preview-chart3-dark": chartPair3.dark,
-    "--preview-border-light":
-      "color-mix(in oklch, var(--preview-fg-light), transparent 76%)",
-    "--preview-border-dark":
-      "color-mix(in oklch, var(--preview-fg-dark), transparent 72%)",
-    "--preview-muted-light":
-      "color-mix(in oklch, var(--preview-bg-light), white 18%)",
-    "--preview-muted-dark":
-      "color-mix(in oklch, var(--preview-bg-dark), white 38%)",
+    "--preview-bg": isDark ? basePair.dark : basePair.light,
+    "--preview-fg": isDark ? themePair.dark : themePair.light,
+    "--preview-chart": isDark ? chartPair.dark : chartPair.light,
+    "--preview-chart2": isDark ? chartPair2.dark : chartPair2.light,
+    "--preview-chart3": isDark ? chartPair3.dark : chartPair3.light,
+    "--preview-dot-theme": isDark ? themePair.dark : themePair.light,
+    "--preview-dot-chart": isDark ? chartPair.dark : chartPair.light,
+    "--preview-dot-base": isDark ? basePair.dark : basePair.light,
+    "--preview-dot-chart2": isDark ? chartPair2.dark : chartPair2.light,
+    "--preview-border":
+      "color-mix(in oklch, var(--preview-fg), transparent 74%)",
+    "--preview-muted":
+      "color-mix(in oklch, var(--preview-bg), white 28%)",
   } as CSSProperties
 
   return (
@@ -144,52 +144,48 @@ export function PresetCard({ item }: PresetCardProps) {
       >
         <div className="absolute top-3 right-3 z-10 flex gap-1">
           <span
-            className="size-1.5 rounded-full border border-white/40"
-            style={{ backgroundColor: themePair.light }}
+            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-theme)"
             title={`Theme: ${themePair.light} / ${themePair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40"
-            style={{ backgroundColor: chartPair.light }}
+            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-chart)"
             title={`Chart: ${chartPair.light} / ${chartPair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40"
-            style={{ backgroundColor: basePair.light }}
+            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-base)"
             title={`Base: ${basePair.light} / ${basePair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40"
-            style={{ backgroundColor: themePair.dark }}
+            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-chart2)"
             title={`Theme dark: ${themePair.dark}`}
           />
         </div>
 
-        <div className="relative h-40 overflow-hidden bg-(--preview-bg-light) text-(--preview-fg-light) dark:bg-(--preview-bg-dark) dark:text-(--preview-fg-dark)">
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart-light),transparent_75%)_0%,transparent_70%)] dark:bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart-dark),transparent_72%)_0%,transparent_70%)]" />
+        <div className="relative h-40 overflow-hidden bg-(--preview-bg) text-(--preview-fg)">
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart),transparent_74%)_0%,transparent_70%)]" />
           <div className="grid h-full grid-cols-2 gap-2 p-2">
-            <section className="rounded-lg border border-(--preview-border-light) bg-black/15 p-2 shadow-sm dark:border-(--preview-border-dark)">
-              <p className="text-[10px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
+            <section className="rounded-lg border border-(--preview-border) bg-black/15 p-2 shadow-sm">
+              <p className="text-[10px] text-(--preview-muted)">
                 Subscribe to updates
               </p>
-              <div className="mt-1 h-5 rounded border border-(--preview-border-light) bg-black/20 px-1.5 text-[7px] leading-5 text-(--preview-muted-light) dark:border-(--preview-border-dark) dark:text-(--preview-muted-dark)">
+              <div className="mt-1 h-5 rounded border border-(--preview-border) bg-black/20 px-1.5 text-[7px] leading-5 text-(--preview-muted)">
                 Enter email
               </div>
-              <div className="mt-1 h-4 rounded bg-(--preview-fg-light) px-2 text-[8px] leading-4 font-medium text-(--preview-bg-light) dark:bg-(--preview-fg-dark) dark:text-(--preview-bg-dark)">
+              <div className="mt-1 h-4 rounded bg-(--preview-fg) px-2 text-[8px] leading-4 font-medium text-(--preview-bg)">
                 Subscribe
               </div>
-              <div className="mt-1.5 flex items-center gap-1 text-[8px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
-                <span className="size-2.5 rounded-[4px] border border-(--preview-border-light) bg-black/30 dark:border-(--preview-border-dark)" />
+              <div className="mt-1.5 flex items-center gap-1 text-[8px] text-(--preview-muted)">
+                <span className="size-2.5 rounded-[4px] border border-(--preview-border) bg-black/30" />
                 Remember me
               </div>
             </section>
 
-            <section className="rounded-lg border border-(--preview-border-light) bg-black/15 p-2 shadow-sm dark:border-(--preview-border-dark)">
-              <p className="text-[10px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
+            <section className="rounded-lg border border-(--preview-border) bg-black/15 p-2 shadow-sm">
+              <p className="text-[10px] text-(--preview-muted)">
                 Subscriptions
               </p>
               <p className="text-xs font-semibold">+2,350</p>
-              <p className="mt-0.5 text-[9px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
+              <p className="mt-0.5 text-[9px] text-(--preview-muted)">
                 View More
               </p>
               <div className="mt-1.5 flex items-center justify-between gap-2">
@@ -200,7 +196,7 @@ export function PresetCard({ item }: PresetCardProps) {
                     r="15.9155"
                     fill="none"
                     strokeWidth="5"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart-light),transparent_82%)] dark:stroke-[color-mix(in_oklch,var(--preview-chart-dark),transparent_78%)]"
+                    className="stroke-[color-mix(in_oklch,var(--preview-chart),transparent_80%)]"
                   />
                   <circle
                     cx="21"
@@ -210,7 +206,7 @@ export function PresetCard({ item }: PresetCardProps) {
                     strokeWidth="5"
                     strokeDasharray="38 62"
                     strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart-light),white_6%)] dark:stroke-[color-mix(in_oklch,var(--preview-chart-dark),white_4%)]"
+                    className="stroke-[color-mix(in_oklch,var(--preview-chart),white_4%)]"
                   />
                   <circle
                     cx="21"
@@ -221,7 +217,7 @@ export function PresetCard({ item }: PresetCardProps) {
                     strokeDasharray="24 76"
                     strokeDashoffset="-42"
                     strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart2-light),black_12%)] dark:stroke-[color-mix(in_oklch,var(--preview-chart2-dark),black_6%)]"
+                    className="stroke-[color-mix(in_oklch,var(--preview-chart2),black_8%)]"
                   />
                   <circle
                     cx="21"
@@ -232,43 +228,43 @@ export function PresetCard({ item }: PresetCardProps) {
                     strokeDasharray="18 82"
                     strokeDashoffset="-70"
                     strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart3-light),black_8%)] dark:stroke-[color-mix(in_oklch,var(--preview-chart3-dark),black_4%)]"
+                    className="stroke-[color-mix(in_oklch,var(--preview-chart3),black_6%)]"
                   />
                 </svg>
                 <div className="min-w-0 flex-1">
                   <svg viewBox="0 0 120 40" className="h-10 w-full" aria-hidden="true">
                     <path
                       d="M2 30 C18 26, 30 14, 44 16 C57 18, 70 28, 84 24 C96 21, 106 13, 118 14 L118 39 L2 39 Z"
-                      className="fill-[color-mix(in_oklch,var(--preview-chart-light),transparent_82%)] dark:fill-[color-mix(in_oklch,var(--preview-chart-dark),transparent_78%)]"
+                      className="fill-[color-mix(in_oklch,var(--preview-chart),transparent_80%)]"
                     />
                     <path
                       d="M2 30 C18 26, 30 14, 44 16 C57 18, 70 28, 84 24 C96 21, 106 13, 118 14"
                       fill="none"
-                      className="stroke-[color-mix(in_oklch,var(--preview-chart-light),white_4%)] dark:stroke-[color-mix(in_oklch,var(--preview-chart-dark),white_2%)]"
+                      className="stroke-[color-mix(in_oklch,var(--preview-chart),white_3%)]"
                       strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                   <div className="mt-1 space-y-1">
-                    <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_78%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_74%)]" />
-                    <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_62%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_56%)]" />
+                    <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart),transparent_76%)]" />
+                    <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart),transparent_60%)]" />
                   </div>
                 </div>
               </div>
             </section>
 
-            <section className="col-span-2 rounded-lg border border-(--preview-border-light) bg-black/15 p-2 shadow-sm dark:border-(--preview-border-dark)">
+            <section className="col-span-2 rounded-lg border border-(--preview-border) bg-black/15 p-2 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
-                  <span className="rounded-full bg-(--preview-fg-light)/15 px-1 py-0.5 text-[6px] font-medium dark:bg-(--preview-fg-dark)/20">
+                  <span className="rounded-full bg-(--preview-fg)/15 px-1 py-0.5 text-[6px] font-medium">
                     New
                   </span>
-                  <span className="rounded-full border border-(--preview-border-light) px-1 py-0.5 text-[6px] dark:border-(--preview-border-dark)">
+                  <span className="rounded-full border border-(--preview-border) px-1 py-0.5 text-[6px]">
                     Beta
                   </span>
                 </div>
-                <span className="h-4 rounded bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_10%)] px-2 text-[7px] leading-4 text-(--preview-bg-light) dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_8%)] dark:text-(--preview-bg-dark)">
+                <span className="h-4 rounded bg-[color-mix(in_oklch,var(--preview-chart),transparent_10%)] px-2 text-[7px] leading-4 text-(--preview-bg)">
                   Settings
                 </span>
               </div>
