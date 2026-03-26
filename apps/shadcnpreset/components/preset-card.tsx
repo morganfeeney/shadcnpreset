@@ -114,11 +114,20 @@ export function PresetCard({ item }: PresetCardProps) {
   }
 
   const previewStyle = {
-    "--preview-bg": basePair.light,
-    "--preview-fg": themePair.light,
-    "--preview-chart": chartPair.light,
-    "--preview-border": "color-mix(in oklch, var(--preview-fg), transparent 76%)",
-    "--preview-muted": "color-mix(in oklch, var(--preview-bg), white 18%)",
+    "--preview-bg-light": basePair.light,
+    "--preview-bg-dark": basePair.dark,
+    "--preview-fg-light": themePair.light,
+    "--preview-fg-dark": themePair.dark,
+    "--preview-chart-light": chartPair.light,
+    "--preview-chart-dark": chartPair.dark,
+    "--preview-border-light":
+      "color-mix(in oklch, var(--preview-fg-light), transparent 76%)",
+    "--preview-border-dark":
+      "color-mix(in oklch, var(--preview-fg-dark), transparent 72%)",
+    "--preview-muted-light":
+      "color-mix(in oklch, var(--preview-bg-light), white 18%)",
+    "--preview-muted-dark":
+      "color-mix(in oklch, var(--preview-bg-dark), white 38%)",
   } as CSSProperties
 
   return (
@@ -150,50 +159,54 @@ export function PresetCard({ item }: PresetCardProps) {
           />
         </div>
 
-        <div className="relative h-40 overflow-hidden bg-[var(--preview-bg)] text-[var(--preview-fg)]">
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart),transparent_75%)_0%,transparent_70%)]" />
+        <div className="relative h-40 overflow-hidden bg-[var(--preview-bg-light)] text-[var(--preview-fg-light)] dark:bg-[var(--preview-bg-dark)] dark:text-[var(--preview-fg-dark)]">
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart-light),transparent_75%)_0%,transparent_70%)] dark:bg-[radial-gradient(120%_90%_at_100%_0%,color-mix(in_oklch,var(--preview-chart-dark),transparent_72%)_0%,transparent_70%)]" />
           <div className="grid h-full grid-cols-2 gap-2 p-2">
-            <section className="rounded-lg border border-[var(--preview-border)] bg-black/15 p-2 shadow-sm">
-              <p className="text-[10px] text-[var(--preview-muted)]">Subscribe to updates</p>
-              <div className="mt-1 h-5 rounded border border-[var(--preview-border)] bg-black/20 px-1.5 text-[7px] leading-5 text-[var(--preview-muted)]">
+            <section className="rounded-lg border border-[var(--preview-border-light)] bg-black/15 p-2 shadow-sm dark:border-[var(--preview-border-dark)]">
+              <p className="text-[10px] text-[var(--preview-muted-light)] dark:text-[var(--preview-muted-dark)]">
+                Subscribe to updates
+              </p>
+              <div className="mt-1 h-5 rounded border border-[var(--preview-border-light)] bg-black/20 px-1.5 text-[7px] leading-5 text-[var(--preview-muted-light)] dark:border-[var(--preview-border-dark)] dark:text-[var(--preview-muted-dark)]">
                 Enter email
               </div>
-              <div className="mt-1 h-4 rounded bg-[var(--preview-fg)] px-2 text-[8px] leading-4 font-medium text-[var(--preview-bg)]">
+              <div className="mt-1 h-4 rounded bg-[var(--preview-fg-light)] px-2 text-[8px] leading-4 font-medium text-[var(--preview-bg-light)] dark:bg-[var(--preview-fg-dark)] dark:text-[var(--preview-bg-dark)]">
                 Subscribe
               </div>
-              <div className="mt-1.5 flex items-center gap-1 text-[8px] text-[var(--preview-muted)]">
-                <span className="size-2.5 rounded-[4px] border border-[var(--preview-border)] bg-black/30" />
+              <div className="mt-1.5 flex items-center gap-1 text-[8px] text-[var(--preview-muted-light)] dark:text-[var(--preview-muted-dark)]">
+                <span className="size-2.5 rounded-[4px] border border-[var(--preview-border-light)] bg-black/30 dark:border-[var(--preview-border-dark)]" />
                 Remember me
               </div>
             </section>
 
-            <section className="rounded-lg border border-[var(--preview-border)] bg-black/15 p-2 shadow-sm">
-              <p className="text-[10px] text-[var(--preview-muted)]">Subscriptions</p>
+            <section className="rounded-lg border border-[var(--preview-border-light)] bg-black/15 p-2 shadow-sm dark:border-[var(--preview-border-dark)]">
+              <p className="text-[10px] text-[var(--preview-muted-light)] dark:text-[var(--preview-muted-dark)]">
+                Subscriptions
+              </p>
               <p className="text-xs font-semibold">+2,350</p>
               <div className="mt-1.5 space-y-1">
-                <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart),transparent_80%)]" />
-                <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart),transparent_65%)]" />
-                <div className="h-1.5 w-4/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart),transparent_50%)]" />
+                <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_80%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_78%)]" />
+                <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_65%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_60%)]" />
+                <div className="h-1.5 w-4/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_50%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_45%)]" />
               </div>
               <div className="mt-2 flex items-end gap-0.5">
-                <span className="h-2 w-2 rounded-sm bg-[var(--preview-chart)]/35" />
-                <span className="h-3.5 w-2 rounded-sm bg-[var(--preview-chart)]/55" />
-                <span className="h-5 w-2 rounded-sm bg-[var(--preview-chart)]/75" />
-                <span className="h-3 w-2 rounded-sm bg-[var(--preview-chart)]/45" />
+                <span className="h-2 w-2 rounded-sm bg-[var(--preview-chart-light)]/35 dark:bg-[var(--preview-chart-dark)]/35" />
+                <span className="h-3.5 w-2 rounded-sm bg-[var(--preview-chart-light)]/55 dark:bg-[var(--preview-chart-dark)]/55" />
+                <span className="h-5 w-2 rounded-sm bg-[var(--preview-chart-light)]/75 dark:bg-[var(--preview-chart-dark)]/75" />
+                <span className="h-3 w-2 rounded-sm bg-[var(--preview-chart-light)]/45 dark:bg-[var(--preview-chart-dark)]/45" />
               </div>
             </section>
 
-            <section className="col-span-2 rounded-lg border border-[var(--preview-border)] bg-black/15 p-2 shadow-sm">
+            <section className="col-span-2 rounded-lg border border-[var(--preview-border-light)] bg-black/15 p-2 shadow-sm dark:border-[var(--preview-border-dark)]">
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
-                  <span className="rounded-full bg-[var(--preview-fg)]/15 px-1 py-0.5 text-[6px] font-medium">
+                  <span className="rounded-full bg-[var(--preview-fg-light)]/15 px-1 py-0.5 text-[6px] font-medium dark:bg-[var(--preview-fg-dark)]/20">
                     New
                   </span>
-                  <span className="rounded-full border border-[var(--preview-border)] px-1 py-0.5 text-[6px]">
+                  <span className="rounded-full border border-[var(--preview-border-light)] px-1 py-0.5 text-[6px] dark:border-[var(--preview-border-dark)]">
                     Beta
                   </span>
                 </div>
-                <span className="h-4 rounded bg-[color-mix(in_oklch,var(--preview-chart),transparent_10%)] px-2 text-[7px] leading-4 text-black/80">
+                <span className="h-4 rounded bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_10%)] px-2 text-[7px] leading-4 text-[var(--preview-bg-light)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_8%)] dark:text-[var(--preview-bg-dark)]">
                   Settings
                 </span>
               </div>
