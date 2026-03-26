@@ -20,6 +20,11 @@ const V4_BASE_COLORS = [
   "mist",
   "taupe",
 ] as const
+
+const NON_BASE_THEMES = PRESET_THEMES.filter(
+  (theme) => !V4_BASE_COLORS.includes(theme as (typeof V4_BASE_COLORS)[number])
+)
+
 function getV4ThemesForBaseColor(baseColor: (typeof V4_BASE_COLORS)[number]) {
   return PRESET_THEMES.filter((theme) => {
     if (theme === baseColor) {
@@ -46,7 +51,7 @@ export const PRESET_FILTER_OPTIONS = {
   styles: PRESET_STYLES,
   baseColors: V4_BASE_COLORS,
   themes: PRESET_THEMES,
-  chartColors: PRESET_THEMES,
+  chartColors: NON_BASE_THEMES,
   fontHeadings: PRESET_FONT_HEADINGS,
   fonts: PRESET_FONTS,
   iconLibraries: PRESET_ICON_LIBRARIES,
@@ -74,7 +79,7 @@ function getThemeChoicesForBase(
 ) {
   const availableThemes = getV4ThemesForBaseColor(baseColor)
   const themes = pickValues(availableThemes, filters.theme)
-  const chartColors = pickValues(availableThemes, filters.chartColor)
+  const chartColors = pickValues(NON_BASE_THEMES, filters.chartColor)
   return { themes, chartColors }
 }
 

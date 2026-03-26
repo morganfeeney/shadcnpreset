@@ -96,6 +96,8 @@ export function PresetCard({ item }: PresetCardProps) {
   const chartPair = getPresetSwatchPair(item.config, "chart1")
   const chartPair2 = getPresetSwatchPair(item.config, "chart2")
   const chartPair3 = getPresetSwatchPair(item.config, "chart3")
+  const chartPair4 = getPresetSwatchPair(item.config, "chart4")
+  const chartPair5 = getPresetSwatchPair(item.config, "chart5")
   const iconLibrary = item.config.iconLibrary
   const iconLibraryTitle = ICON_LIBRARY_TITLES[iconLibrary] ?? iconLibrary
   const voteCountKey = useMemo(() => `preset-vote-count:${item.code}`, [item.code])
@@ -126,6 +128,8 @@ export function PresetCard({ item }: PresetCardProps) {
     "--preview-chart": isDark ? chartPair.dark : chartPair.light,
     "--preview-chart2": isDark ? chartPair2.dark : chartPair2.light,
     "--preview-chart3": isDark ? chartPair3.dark : chartPair3.light,
+    "--preview-chart4": isDark ? chartPair4.dark : chartPair4.light,
+    "--preview-chart5": isDark ? chartPair5.dark : chartPair5.light,
     "--preview-dot-theme": isDark ? themePair.dark : themePair.light,
     "--preview-dot-chart": isDark ? chartPair.dark : chartPair.light,
     "--preview-dot-base": isDark ? basePair.dark : basePair.light,
@@ -196,28 +200,10 @@ export function PresetCard({ item }: PresetCardProps) {
                     r="15.9155"
                     fill="none"
                     strokeWidth="5"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart),transparent_80%)]"
-                  />
-                  <circle
-                    cx="21"
-                    cy="21"
-                    r="15.9155"
-                    fill="none"
-                    strokeWidth="5"
-                    strokeDasharray="38 62"
+                    strokeDasharray="26 74"
+                    strokeDashoffset="0"
                     strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart),white_4%)]"
-                  />
-                  <circle
-                    cx="21"
-                    cy="21"
-                    r="15.9155"
-                    fill="none"
-                    strokeWidth="5"
-                    strokeDasharray="24 76"
-                    strokeDashoffset="-42"
-                    strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart2),black_8%)]"
+                    className="stroke-(--preview-chart)"
                   />
                   <circle
                     cx="21"
@@ -226,9 +212,42 @@ export function PresetCard({ item }: PresetCardProps) {
                     fill="none"
                     strokeWidth="5"
                     strokeDasharray="18 82"
-                    strokeDashoffset="-70"
+                    strokeDashoffset="-26"
                     strokeLinecap="butt"
-                    className="stroke-[color-mix(in_oklch,var(--preview-chart3),black_6%)]"
+                    className="stroke-(--preview-chart2)"
+                  />
+                  <circle
+                    cx="21"
+                    cy="21"
+                    r="15.9155"
+                    fill="none"
+                    strokeWidth="5"
+                    strokeDasharray="22 78"
+                    strokeDashoffset="-44"
+                    strokeLinecap="butt"
+                    className="stroke-(--preview-chart3)"
+                  />
+                  <circle
+                    cx="21"
+                    cy="21"
+                    r="15.9155"
+                    fill="none"
+                    strokeWidth="5"
+                    strokeDasharray="14 86"
+                    strokeDashoffset="-66"
+                    strokeLinecap="butt"
+                    className="stroke-(--preview-chart4)"
+                  />
+                  <circle
+                    cx="21"
+                    cy="21"
+                    r="15.9155"
+                    fill="none"
+                    strokeWidth="5"
+                    strokeDasharray="20 80"
+                    strokeDashoffset="-80"
+                    strokeLinecap="butt"
+                    className="stroke-(--preview-chart5)"
                   />
                 </svg>
                 <div className="min-w-0 flex-1">
