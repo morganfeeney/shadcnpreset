@@ -20,6 +20,25 @@ type ThemeToken =
   | "card-foreground"
   | "muted-foreground"
 
+const ROLE_TOKEN_MAP = {
+  foreground: "foreground",
+  primary: "primary",
+  primaryForeground: "primary-foreground",
+  input: "input",
+  border: "border",
+  chart1: "chart-1",
+  chart2: "chart-2",
+  chart3: "chart-3",
+  chart4: "chart-4",
+  chart5: "chart-5",
+  background: "background",
+  card: "card",
+  cardForeground: "card-foreground",
+  mutedForeground: "muted-foreground",
+} as const satisfies Record<string, ThemeToken>
+
+type SwatchRole = keyof typeof ROLE_TOKEN_MAP
+
 type ThemeWithVars = {
   name: string
   cssVars?: {
@@ -72,56 +91,13 @@ function getThemeToken(
   return vars[token] ?? null
 }
 
-function resolveThemeToken(
-  role:
-    | "foreground"
-    | "primary"
-    | "primaryForeground"
-    | "input"
-    | "border"
-    | "chart1"
-    | "chart2"
-    | "chart3"
-    | "chart4"
-    | "chart5"
-    | "background"
-    | "card"
-    | "cardForeground"
-    | "mutedForeground"
-): ThemeToken {
-  if (role === "chart1") return "chart-1"
-  if (role === "chart2") return "chart-2"
-  if (role === "chart3") return "chart-3"
-  if (role === "chart4") return "chart-4"
-  if (role === "chart5") return "chart-5"
-  if (role === "background") return "background"
-  if (role === "foreground") return "foreground"
-  if (role === "input") return "input"
-  if (role === "border") return "border"
-  if (role === "card") return "card"
-  if (role === "cardForeground") return "card-foreground"
-  if (role === "primaryForeground") return "primary-foreground"
-  if (role === "mutedForeground") return "muted-foreground"
-  return "primary"
+function resolveThemeToken(role: SwatchRole): ThemeToken {
+  return ROLE_TOKEN_MAP[role]
 }
 
 export function getThemeSwatchPair(
   themeName: string,
-  role:
-    | "foreground"
-    | "primary"
-    | "primaryForeground"
-    | "input"
-    | "border"
-    | "chart1"
-    | "chart2"
-    | "chart3"
-    | "chart4"
-    | "chart5"
-    | "background"
-    | "card"
-    | "cardForeground"
-    | "mutedForeground"
+  role: SwatchRole
 ) {
   const token = resolveThemeToken(role)
 
@@ -139,21 +115,7 @@ export function getThemeSwatchPair(
 
 export function getPresetSwatchPair(
   config: Pick<PresetConfig, "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius">,
-  role:
-    | "foreground"
-    | "primary"
-    | "primaryForeground"
-    | "input"
-    | "border"
-    | "chart1"
-    | "chart2"
-    | "chart3"
-    | "chart4"
-    | "chart5"
-    | "background"
-    | "card"
-    | "cardForeground"
-    | "mutedForeground"
+  role: SwatchRole
 ) {
   const token = resolveThemeToken(role)
 
