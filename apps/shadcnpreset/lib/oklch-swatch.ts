@@ -5,13 +5,19 @@ import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 
 type ThemeMode = "light" | "dark"
 type ThemeToken =
+  | "foreground"
   | "primary"
+  | "primary-foreground"
+  | "input"
+  | "border"
   | "chart-1"
   | "chart-2"
   | "chart-3"
   | "chart-4"
   | "chart-5"
   | "background"
+  | "card"
+  | "card-foreground"
   | "muted-foreground"
 
 type ThemeWithVars = {
@@ -66,34 +72,58 @@ function getThemeToken(
   return vars[token] ?? null
 }
 
-export function getThemeSwatchPair(
-  themeName: string,
+function resolveThemeToken(
   role:
+    | "foreground"
     | "primary"
+    | "primaryForeground"
+    | "input"
+    | "border"
     | "chart1"
     | "chart2"
     | "chart3"
     | "chart4"
     | "chart5"
     | "background"
+    | "card"
+    | "cardForeground"
+    | "mutedForeground"
+): ThemeToken {
+  if (role === "chart1") return "chart-1"
+  if (role === "chart2") return "chart-2"
+  if (role === "chart3") return "chart-3"
+  if (role === "chart4") return "chart-4"
+  if (role === "chart5") return "chart-5"
+  if (role === "background") return "background"
+  if (role === "foreground") return "foreground"
+  if (role === "input") return "input"
+  if (role === "border") return "border"
+  if (role === "card") return "card"
+  if (role === "cardForeground") return "card-foreground"
+  if (role === "primaryForeground") return "primary-foreground"
+  if (role === "mutedForeground") return "muted-foreground"
+  return "primary"
+}
+
+export function getThemeSwatchPair(
+  themeName: string,
+  role:
+    | "foreground"
+    | "primary"
+    | "primaryForeground"
+    | "input"
+    | "border"
+    | "chart1"
+    | "chart2"
+    | "chart3"
+    | "chart4"
+    | "chart5"
+    | "background"
+    | "card"
+    | "cardForeground"
     | "mutedForeground"
 ) {
-  const token: ThemeToken =
-    role === "chart1"
-      ? "chart-1"
-      : role === "chart2"
-        ? "chart-2"
-        : role === "chart3"
-          ? "chart-3"
-          : role === "chart4"
-            ? "chart-4"
-            : role === "chart5"
-              ? "chart-5"
-      : role === "background"
-        ? "background"
-        : role === "mutedForeground"
-          ? "muted-foreground"
-          : "primary"
+  const token = resolveThemeToken(role)
 
   const light =
     getThemeToken(themeName, "light", token) ??
@@ -110,31 +140,22 @@ export function getThemeSwatchPair(
 export function getPresetSwatchPair(
   config: Pick<PresetConfig, "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius">,
   role:
+    | "foreground"
     | "primary"
+    | "primaryForeground"
+    | "input"
+    | "border"
     | "chart1"
     | "chart2"
     | "chart3"
     | "chart4"
     | "chart5"
     | "background"
+    | "card"
+    | "cardForeground"
     | "mutedForeground"
 ) {
-  const token: ThemeToken =
-    role === "chart1"
-      ? "chart-1"
-      : role === "chart2"
-        ? "chart-2"
-        : role === "chart3"
-          ? "chart-3"
-          : role === "chart4"
-            ? "chart-4"
-            : role === "chart5"
-              ? "chart-5"
-      : role === "background"
-        ? "background"
-        : role === "mutedForeground"
-          ? "muted-foreground"
-          : "primary"
+  const token = resolveThemeToken(role)
 
   const safeBaseColor = isBaseColorName(config.baseColor)
     ? config.baseColor
