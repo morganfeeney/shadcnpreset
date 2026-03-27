@@ -298,8 +298,8 @@ export function PresetCard({ item }: PresetCardProps) {
                     />
                   </svg>
                   <div className="mt-1 space-y-1">
-                    <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_78%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_74%)]" />
-                    <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart-light),transparent_62%)] dark:bg-[color-mix(in_oklch,var(--preview-chart-dark),transparent_56%)]" />
+                    <div className="h-1.5 w-full rounded-full bg-[color-mix(in_oklch,var(--preview-chart2-light),transparent_78%)] dark:bg-[color-mix(in_oklch,var(--preview-chart2-dark),transparent_74%)]" />
+                    <div className="h-1.5 w-5/6 rounded-full bg-[color-mix(in_oklch,var(--preview-chart3-light),transparent_62%)] dark:bg-[color-mix(in_oklch,var(--preview-chart5-dark),transparent_56%)]" />
                   </div>
                 </div>
               </div>
@@ -335,18 +335,9 @@ export function PresetCard({ item }: PresetCardProps) {
             <div className="flex flex-col gap-2">
               <Link
                 href={`/preset/${item.code}`}
-                className={buttonVariants({ size: "sm", variant: "secondary" })}
-              >
-                Apply Theme
-              </Link>
-              <Link
-                href={`${
-                  process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
-                }/create?preset=${item.code}`}
-                target="_blank"
                 className={buttonVariants({ size: "sm" })}
               >
-                Open in Editor
+                Apply Theme
               </Link>
             </div>
           </div>

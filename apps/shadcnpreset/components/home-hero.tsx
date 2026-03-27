@@ -21,27 +21,27 @@ export function HomeHero() {
         <PresetForm />
       </div>
 
-      <PageActions>
-        <Link
-          className={buttonVariants({
-            size: "sm",
-            className: "h-[31px] rounded-lg",
-          })}
-          href="#browse"
-        >
-          Browse presets
-        </Link>
-        <Link
-          className={buttonVariants({
-            size: "sm",
-            variant: "ghost",
-            className: "rounded-lg",
-          })}
-          href="http://localhost:4000/create"
-        >
-          Open shadcn create
-        </Link>
-      </PageActions>
+      {/*<PageActions>*/}
+      {/*  <Link*/}
+      {/*    className={buttonVariants({*/}
+      {/*      size: "sm",*/}
+      {/*      className: "h-[31px] rounded-lg",*/}
+      {/*    })}*/}
+      {/*    href="#browse"*/}
+      {/*  >*/}
+      {/*    Browse presets*/}
+      {/*  </Link>*/}
+      {/*  <Link*/}
+      {/*    className={buttonVariants({*/}
+      {/*      size: "sm",*/}
+      {/*      variant: "ghost",*/}
+      {/*      className: "rounded-lg",*/}
+      {/*    })}*/}
+      {/*    href="http://localhost:4000/create"*/}
+      {/*  >*/}
+      {/*    Open shadcn create*/}
+      {/*  </Link>*/}
+      {/*</PageActions>*/}
     </PageHeader>
   )
 }
