@@ -4,6 +4,7 @@ import { siteConfig } from "@/lib/config"
 import { absoluteUrl } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { Customizer } from "@/app/(create)/components/customizer"
+import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
 import { PresetHandler } from "@/app/(create)/components/preset-handler"
 import { Preview } from "@/app/(create)/components/preview"
 import { WelcomeDialog } from "@/app/(create)/components/welcome-dialog"
@@ -47,6 +48,7 @@ export default async function CreatePage() {
       className="group/layout relative z-10 flex h-svh flex-col overflow-hidden section-soft [--customizer-width:--spacing(48)] [--gap:--spacing(4)] md:[--gap:--spacing(6)] 2xl:[--customizer-width:--spacing(56)]"
     >
       <SiteHeader />
+      <ThemeModeListener relayToChildFrames />
       <main
         data-slot="designer"
         className="flex min-h-0 flex-1 flex-col gap-(--gap) p-(--gap) pt-[calc(var(--gap)*0.25)] md:flex-row-reverse"

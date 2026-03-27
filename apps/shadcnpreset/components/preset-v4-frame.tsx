@@ -1,0 +1,84 @@
+"use client"
+
+import * as React from "react"
+import { useTheme } from "next-themes"
+
+const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
+
+type ThemeMode = "light" | "dark"
+
+type PresetV4FrameProps = {
+  src: string
+  title: string
+  className?: string
+}
+
+export function PresetV4Frame({ src, title, className }: PresetV4FrameProps) {
+  const iframeRef = React.useRef<HTMLIFrameElement>(null)
+  const { resolvedTheme } = useTheme()
+  const retryTimersRef = React.useRef<number[]>([])
+
+  const targetOrigin = React.useMemo(() => {
+    try {
+      return new URL(src).origin
+    } catch {
+      return "*"
+    }
+  }, [src])
+
+  const mode: ThemeMode = React.useMemo(
+    () => (resolvedTheme === "dark" ? "dark" : "light"),
+    [resolvedTheme]
+  )
+
+  const postThemeMode = React.useCallback(() => {
+    const frameWindow = iframeRef.current?.contentWindow
+    if (!frameWindow) {
+      return
+    }
+
+    frameWindow.postMessage(
+      {
+        type: THEME_SYNC_MESSAGE_TYPE,
+        mode,
+      },
+      targetOrigin
+    )
+  }, [mode, targetOrigin])
+
+  const clearRetryTimers = React.useCallback(() => {
+    retryTimersRef.current.forEach((id) => {
+      window.clearTimeout(id)
+    })
+    retryTimersRef.current = []
+  }, [])
+
+  const postThemeModeWithRetry = React.useCallback(() => {
+    clearRetryTimers()
+    postThemeMode()
+
+    // The iframe app can hydrate after load; resend for a short window to avoid races.
+    retryTimersRef.current = [120, 400, 900, 1800, 3200].map((delay) =>
+      window.setTimeout(() => {
+        postThemeMode()
+      }, delay)
+    )
+  }, [clearRetryTimers, postThemeMode])
+
+  React.useEffect(() => {
+    postThemeModeWithRetry()
+    return () => {
+      clearRetryTimers()
+    }
+  }, [clearRetryTimers, postThemeModeWithRetry])
+
+  return (
+    <iframe
+      ref={iframeRef}
+      className={className}
+      src={src}
+      title={title}
+      onLoad={postThemeModeWithRetry}
+    />
+  )
+}

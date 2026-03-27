@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
-type ThemeMode = "light" | "dark" | "system"
+type ThemeMode = "light" | "dark"
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme()
@@ -17,7 +17,7 @@ export function ThemeSwitcher() {
     return null
   }
 
-  const mode = (theme ?? "system") as ThemeMode
+  const mode: ThemeMode = theme === "dark" ? "dark" : "light"
 
   return (
     <div className="theme-switcher" role="group" aria-label="Theme mode">
@@ -34,13 +34,6 @@ export function ThemeSwitcher() {
         type="button"
       >
         Dark
-      </button>
-      <button
-        className={mode === "system" ? "is-active" : ""}
-        onClick={() => setTheme("system")}
-        type="button"
-      >
-        System
       </button>
     </div>
   )

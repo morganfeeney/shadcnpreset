@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { getCanonicalPresetCode, resolvePresetFromCode } from "@/lib/preset"
 
 type PresetPageProps = {
@@ -51,7 +52,7 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
         </p>
       </section>
       <section className="v4-frame-wrap">
-        <iframe
+        <PresetV4Frame
           className="v4-frame"
           src={createUrl.toString()}
           title={`v4 create preset ${code}`}

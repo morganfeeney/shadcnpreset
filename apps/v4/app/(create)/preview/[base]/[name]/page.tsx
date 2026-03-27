@@ -12,6 +12,7 @@ import { HistoryScript } from "@/app/(create)/components/history-buttons"
 import { DarkModeScript } from "@/app/(create)/components/mode-switcher"
 import { PreviewStyle } from "@/app/(create)/components/preview-style"
 import { RandomizeScript } from "@/app/(create)/components/random-button"
+import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
 import {
   getBaseComponent,
   getBaseItem,
@@ -136,6 +137,7 @@ export default async function BlockPage({
 
   return (
     <div className="relative bg-background">
+      <ThemeModeListener />
       <PreventScrollOnFocusScript />
       <PreviewStyle />
       <ActionMenuScript />
