@@ -247,7 +247,7 @@ export function PresetFilterBar({
 
   function applyFilters(nextFilters = localFilters) {
     const params = buildFilterParams(nextFilters)
-    router.push(`${pathname}?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   function updateFilterAndApply<K extends keyof LocalFilters>(
