@@ -174,19 +174,19 @@ export function PresetCard({ item }: PresetCardProps) {
       >
         <div className="absolute top-3 right-3 z-10 flex gap-1">
           <span
-            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-theme-light) dark:bg-(--preview-dot-theme-dark)"
+            className="size-1.5 rounded-full bg-(--preview-dot-theme-light) dark:bg-(--preview-dot-theme-dark)"
             title={`Primary: ${primaryPair.light} / ${primaryPair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-chart-light) dark:bg-(--preview-dot-chart-dark)"
+            className="size-1.5 rounded-full bg-(--preview-dot-chart-light) dark:bg-(--preview-dot-chart-dark)"
             title={`Chart: ${chartPair.light} / ${chartPair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-base-light) dark:bg-(--preview-dot-base-dark)"
+            className="size-1.5 rounded-full bg-(--preview-dot-base-light) dark:bg-(--preview-dot-base-dark)"
             title={`Background: ${backgroundPair.light} / ${backgroundPair.dark}`}
           />
           <span
-            className="size-1.5 rounded-full border border-white/40 bg-(--preview-dot-chart2-light) dark:bg-(--preview-dot-chart2-dark)"
+            className="size-1.5 rounded-full bg-(--preview-dot-chart2-light) dark:bg-(--preview-dot-chart2-dark)"
             title={`Primary foreground: ${primaryForegroundPair.light} / ${primaryForegroundPair.dark}`}
           />
         </div>
@@ -216,7 +216,7 @@ export function PresetCard({ item }: PresetCardProps) {
               </div>
             </section>
 
-            <section className="group/card flex flex-col gap-1.5 overflow-hidden rounded-md bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
+            <section className="group/card flex flex-col overflow-hidden rounded-md bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
               <div data-slot="card-header" className="grid auto-rows-min gap-0.5 px-2 pt-2">
                 <p className="text-[10px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
                   Subscriptions
@@ -224,7 +224,7 @@ export function PresetCard({ item }: PresetCardProps) {
                 <p className="text-xs font-semibold">+2,350</p>
               </div>
               <div data-slot="card-content" className="px-2 pb-1">
-                <div className="mt-1.5 flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                 <svg viewBox="0 0 42 42" className="size-10 -rotate-90" aria-hidden="true">
                   <circle
                     cx="21"
