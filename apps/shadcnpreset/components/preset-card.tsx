@@ -170,7 +170,7 @@ export function PresetCard({ item }: PresetCardProps) {
     <li>
       <article
         style={previewStyle}
-        className="group relative overflow-hidden rounded-xl border border-border/60 bg-background/50 backdrop-blur-sm transition-colors hover:border-border/80 hover:shadow-sm"
+        className="group relative overflow-hidden rounded-xl border bg-background backdrop-blur-sm transition-colors hover:border-border/80 hover:shadow-sm"
       >
         <div className="absolute top-3 right-3 z-10 flex gap-1">
           <span
@@ -193,17 +193,17 @@ export function PresetCard({ item }: PresetCardProps) {
 
         <div className="relative h-40 overflow-hidden bg-(--preview-bg-light) text-(--preview-fg-light) dark:bg-(--preview-bg-dark) dark:text-(--preview-fg-dark)">
           <div className="grid h-full grid-cols-2 gap-2 p-2">
-            <section className="group/card flex flex-col gap-1.5 overflow-hidden rounded-xl bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
+            <section className="group/card flex flex-col gap-1.5 overflow-hidden rounded-md bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
               <div data-slot="card-header" className="grid auto-rows-min gap-0.5 px-2 pt-2">
-                <p className="text-[10px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
+                <p className="text-[10px] text-(--preview-foreground-light) dark:text-(--preview-muted-dark)">
                   Subscribe to updates
                 </p>
               </div>
               <div data-slot="card-content" className="space-y-1 px-2">
-                <div className="h-5 rounded-md border border-(--preview-border-light) bg-(--preview-input-light) px-1.5 text-[7px] leading-5 text-(--preview-muted-light) dark:border-(--preview-border-dark) dark:bg-(--preview-input-dark) dark:text-(--preview-muted-dark)">
+                <div className="flex items-center h-5 rounded-md border border-(--preview-border-light) bg-(--preview-input-light) px-1.5 text-[7px] text-(--preview-muted-light) dark:border-(--preview-border-dark) dark:bg-(--preview-input-dark) dark:text-(--preview-muted-dark)">
                   Enter email
                 </div>
-                <div className="h-4 rounded-md bg-(--preview-primary-light) px-2 text-[8px] leading-4 font-medium text-(--preview-primary-fg-light) dark:bg-(--preview-primary-dark) dark:text-(--preview-primary-fg-dark)">
+                <div className="h-4 rounded-lg bg-(--preview-primary-light) px-2 text-[8px] leading-4 font-medium text-(--preview-primary-fg-light) dark:bg-(--preview-primary-dark) dark:text-(--preview-primary-fg-dark)">
                   Subscribe
                 </div>
               </div>
@@ -211,12 +211,12 @@ export function PresetCard({ item }: PresetCardProps) {
                 data-slot="card-footer"
                 className="mt-auto flex items-center gap-1 border-t border-(--preview-border-light) bg-[color-mix(in_oklch,var(--preview-card-fg-light),transparent_94%)] px-2 py-1 text-[8px] text-(--preview-muted-light) dark:border-(--preview-border-dark) dark:bg-[color-mix(in_oklch,var(--preview-card-fg-dark),transparent_92%)] dark:text-(--preview-muted-dark)"
               >
-                <span className="size-2.5 rounded-[4px] border border-(--preview-border-light) bg-(--preview-input-light) dark:border-(--preview-border-dark) dark:bg-(--preview-input-dark)" />
+                <span className="size-2.5 rounded-[3px] border border-(--preview-border-light) bg-(--preview-input-light) dark:border-(--preview-border-dark) dark:bg-(--preview-input-dark)" />
                 Remember me
               </div>
             </section>
 
-            <section className="group/card flex flex-col gap-1.5 overflow-hidden rounded-xl bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
+            <section className="group/card flex flex-col gap-1.5 overflow-hidden rounded-md bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
               <div data-slot="card-header" className="grid auto-rows-min gap-0.5 px-2 pt-2">
                 <p className="text-[10px] text-(--preview-muted-light) dark:text-(--preview-muted-dark)">
                   Subscriptions
@@ -312,7 +312,7 @@ export function PresetCard({ item }: PresetCardProps) {
               </div>
             </section>
 
-            <section className="group/card col-span-2 flex flex-col gap-1 overflow-hidden rounded-xl bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
+            <section className="group/card col-span-2 flex flex-col gap-1 overflow-hidden rounded-md bg-(--preview-card-light) text-(--preview-card-fg-light) ring-1 ring-(--preview-border-light) dark:bg-(--preview-card-dark) dark:text-(--preview-card-fg-dark) dark:ring-(--preview-border-dark)">
               <div data-slot="card-header" className="grid auto-rows-min gap-1 px-2 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex gap-1">
