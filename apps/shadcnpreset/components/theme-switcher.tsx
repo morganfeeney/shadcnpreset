@@ -1,12 +1,14 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
 
 type ThemeMode = "light" | "dark"
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme()
+  const searchParams = useSearchParams()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -14,6 +16,10 @@ export function ThemeSwitcher() {
   }, [])
 
   if (!mounted) {
+    return null
+  }
+
+  if (searchParams.get("embed") === "1") {
     return null
   }
 
