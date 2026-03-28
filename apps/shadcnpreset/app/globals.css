@@ -140,3 +140,16 @@
 @utility container {
   @apply 3xl:max-w-screen-2xl mx-auto max-w-[1400px] px-4 lg:px-8;
 }
+
+@keyframes preset-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.preset-marquee-track {
+  animation: preset-marquee 34s linear infinite;
+}

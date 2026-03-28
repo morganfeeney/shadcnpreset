@@ -6,10 +6,17 @@ type PresetPageProps = {
   params: Promise<{
     code: string
   }>
+  searchParams: Promise<{
+    embed?: string
+  }>
 }
 
-export default async function PresetCodePage({ params }: PresetPageProps) {
+export default async function PresetCodePage({
+  params,
+  searchParams,
+}: PresetPageProps) {
   const { code } = await params
+  const { embed } = await searchParams
   const preset = resolvePresetFromCode(code)
 
   if (!preset) {
@@ -31,6 +38,21 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
   const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
   const createUrl = new URL("/create", v4BaseUrl)
   createUrl.searchParams.set("preset", code)
+  const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
+  previewUrl.searchParams.set("preset", code)
+  const isEmbedMode = embed === "1"
+
+  if (isEmbedMode) {
+    return (
+      <main className="v4-embed-page">
+        <PresetV4Frame
+          className="v4-frame v4-frame-embed"
+          src={previewUrl.toString()}
+          title={`v4 preview preset ${code} embed`}
+        />
+      </main>
+    )
+  }
 
   return (
     <main className="page-wrap">

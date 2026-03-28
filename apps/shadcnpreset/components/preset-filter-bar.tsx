@@ -420,10 +420,10 @@ export function PresetFilterBar({
         </FieldGroup>
       </CardContent>
       <CardFooter className="flex min-w-0 gap-2 md:flex-col md:**:[button,a]:w-full">
-        <Button onClick={applyFilters}>Apply Filters</Button>
+        <Button onClick={() => applyFilters()}>Apply Filters</Button>
         <Link
           className={buttonVariants({ variant: "secondary" })}
-          href={`/?size=${pageSize}`}
+          href={`/browse?size=${pageSize}`}
         >
           Clear
         </Link>
