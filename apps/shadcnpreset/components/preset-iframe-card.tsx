@@ -5,7 +5,8 @@ import { ExternalLink, Heart } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
-import { VoteAuthDialog } from "@/components/vote-auth-dialog"
+import { useAuthStore } from "@/stores/auth-store"
+import { Button, buttonVariants } from "@/components/ui/button"
 
 type PresetIframeCardProps = {
   code: string
@@ -23,15 +24,13 @@ export function PresetIframeCard({
   virtualHeight = 575,
 }: PresetIframeCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const ensureAuth = useAuthStore((state) => state.ensureAuthenticated)
+  const authStatus = useAuthStore((state) => state.status)
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldLoad, setShouldLoad] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [hasVoted, setHasVoted] = useState(false)
-  const [authenticated, setAuthenticated] = useState(false)
   const [isVoting, setIsVoting] = useState(false)
-  const [authDialogOpen, setAuthDialogOpen] = useState(false)
-  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false)
-  const authResolverRef = useRef<((name: string | null) => void) | null>(null)
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -68,12 +67,9 @@ export function PresetIframeCard({
         if (!cancelled) {
           setVoteCount(payload.votes)
           setHasVoted(payload.hasVoted)
-          setAuthenticated(payload.authenticated)
         }
       } catch {
-        if (!cancelled) {
-          setAuthenticated(false)
-        }
+        // Ignore network failures here and keep existing UI state.
       }
     }
 
@@ -83,44 +79,8 @@ export function PresetIframeCard({
     }
   }, [code])
 
-  function resolveAuthDialog(name: string | null) {
-    setAuthDialogOpen(false)
-    const resolver = authResolverRef.current
-    authResolverRef.current = null
-    resolver?.(name)
-  }
-
-  function requestDisplayName() {
-    return new Promise<string | null>((resolve) => {
-      authResolverRef.current = resolve
-      setAuthDialogOpen(true)
-    })
-  }
-
   async function ensureAuthenticated() {
-    if (authenticated) {
-      return true
-    }
-
-    const name = await requestDisplayName()
-    if (!name?.trim()) {
-      return false
-    }
-
-    setIsAuthSubmitting(true)
-    const sessionResponse = await fetch("/api/auth/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    })
-    setIsAuthSubmitting(false)
-
-    if (!sessionResponse.ok) {
-      return false
-    }
-
-    setAuthenticated(true)
-    return true
+    return ensureAuth()
   }
 
   async function toggleVote() {
@@ -145,12 +105,10 @@ export function PresetIframeCard({
       const payload = (await response.json()) as {
         votes: number
         hasVoted: boolean
-        authenticated: boolean
       }
 
       setVoteCount(payload.votes)
       setHasVoted(payload.hasVoted)
-      setAuthenticated(payload.authenticated)
     } finally {
       setIsVoting(false)
     }
@@ -182,31 +140,43 @@ export function PresetIframeCard({
   const scaledHeight = Math.max(180, Math.round(virtualHeight * scale))
 
   return (
-    <Card className="overflow-hidden rounded-xl border bg-card/60 pt-0">
+    <Card className="pt-0 gap-0">
       <div
         ref={wrapperRef}
-        className="relative w-full overflow-hidden"
+        className="group relative w-full overflow-hidden"
         style={{ height: scaledHeight }}
       >
         {shouldLoad ? (
-          <CardContent
-            className="p-0 will-change-transform"
-            style={{
-              width: virtualWidth,
-              height: virtualHeight,
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            <iframe
-              title={`Preset preview ${code}`}
-              src={`/preset/${code}?embed=1`}
-              loading="lazy"
-              sandbox="allow-scripts allow-same-origin"
-              tabIndex={-1}
-              className="pointer-events-none h-full w-full border-0"
-            />
-          </CardContent>
+          <>
+            <CardContent
+              className="p-0 will-change-transform"
+              style={{
+                width: virtualWidth,
+                height: virtualHeight,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }}
+            >
+              <iframe
+                title={`Preset preview ${code}`}
+                src={`/preset/${code}?embed=1`}
+                loading="lazy"
+                sandbox="allow-scripts allow-same-origin"
+                tabIndex={-1}
+                className="pointer-events-none h-full w-full border-0"
+              />
+            </CardContent>
+            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-black/5 to-black/25 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <div className="flex flex-col gap-2">
+                <Link
+                  href={`/preset/${code}`}
+                  className={buttonVariants({ size: "sm" })}
+                >
+                  Open Preset
+                </Link>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
             Loading preview...
@@ -222,13 +192,16 @@ export function PresetIframeCard({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
+          <Button
             onClick={toggleVote}
             disabled={isVoting}
             aria-pressed={hasVoted}
-            className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-60"
-            title={authenticated ? "Vote for this preset" : "Sign in to vote"}
+            variant="ghost"
+            title={
+              authStatus === "authenticated"
+                ? "Vote for this preset"
+                : "Sign in to vote"
+            }
           >
             <Heart
               className={`size-3.5 ${
@@ -238,28 +211,9 @@ export function PresetIframeCard({
               }`}
             />
             <span>{voteCount}</span>
-          </button>
-          <Link
-            href={`/preset/${code}`}
-            className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-xs font-medium hover:bg-muted/50"
-          >
-            Open
-            <ExternalLink className="size-3" />
-          </Link>
+          </Button>
         </div>
       </CardFooter>
-      <VoteAuthDialog
-        open={authDialogOpen}
-        isSubmitting={isAuthSubmitting}
-        onOpenChange={(open) => {
-          if (!open) {
-            resolveAuthDialog(null)
-          } else {
-            setAuthDialogOpen(true)
-          }
-        }}
-        onSubmit={(name) => resolveAuthDialog(name)}
-      />
     </Card>
   )
 }
