@@ -17,7 +17,7 @@ export function PresetIframeCard({
   title,
   description,
   virtualWidth = 700,
-  virtualHeight = 920,
+  virtualHeight = 570,
 }: PresetIframeCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -85,7 +85,9 @@ export function PresetIframeCard({
               src={`/preset/${code}?embed=1`}
               loading="lazy"
               sandbox="allow-scripts allow-same-origin"
-              className="h-full w-full border-0"
+              scrolling="no"
+              tabIndex={-1}
+              className="pointer-events-none h-full w-full border-0"
             />
           </div>
         ) : (

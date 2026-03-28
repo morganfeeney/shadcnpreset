@@ -1,5 +1,4 @@
-import { HomeTopHeader } from "@/components/home-top-header"
-import { HomeCuratedMarqueeSection } from "@/components/home-curated-marquee-section"
+
 import { HomeFeaturedSection } from "@/components/home-featured-section"
 import { HomeLeaderboardSection } from "@/components/home-leaderboard-section"
 import {
@@ -10,7 +9,12 @@ import {
 import { resolvePresetFromCode } from "@/lib/preset"
 import { HomeHero } from "@/components/home-hero"
 
-const CURATED_CODES = ["b4aRK5K0fb", "b4ZVZIPi9h"] as const
+const CURATED_CODES = [
+  "b4aRK5K0fb",
+  "b4ZVZIPi9h",
+  "a1D3DApV",
+  "adbu3Hc",
+] as const
 
 function stableHash(input: string) {
   let hash = 2166136261
