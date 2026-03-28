@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/auth-store"
 export function VoteAuthDialogHost() {
   const dialogOpen = useAuthStore((state) => state.dialogOpen)
   const isSubmitting = useAuthStore((state) => state.isSubmitting)
+  const submittingProvider = useAuthStore((state) => state.submittingProvider)
   const authError = useAuthStore((state) => state.authError)
   const bootstrapSession = useAuthStore((state) => state.bootstrapSession)
   const closeDialog = useAuthStore((state) => state.closeDialog)
@@ -30,6 +31,7 @@ export function VoteAuthDialogHost() {
     <VoteAuthDialog
       open={dialogOpen}
       isSubmitting={isSubmitting}
+      submittingProvider={submittingProvider}
       authError={authError}
       onOpenChange={(open) => {
         if (!open) {

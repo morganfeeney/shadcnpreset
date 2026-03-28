@@ -12,15 +12,17 @@ type SessionUser = {
 }
 
 type AuthStatus = "unknown" | "authenticated" | "anonymous"
+type OAuthProvider = "google" | "github"
 
 type AuthStore = {
   user: SessionUser | null
   status: AuthStatus
   dialogOpen: boolean
   isSubmitting: boolean
+  submittingProvider: OAuthProvider | null
   authError: string
   bootstrapSession: () => Promise<void>
-  beginOAuth: (provider: "google" | "github") => Promise<void>
+  beginOAuth: (provider: OAuthProvider) => Promise<void>
   endOAuth: () => void
   ensureAuthenticated: () => Promise<boolean>
   closeDialog: () => void
@@ -31,6 +33,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "unknown",
   dialogOpen: false,
   isSubmitting: false,
+  submittingProvider: null,
   authError: "",
 
   bootstrapSession: async () => {
@@ -54,7 +57,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   beginOAuth: async (provider) => {
-    set({ isSubmitting: true, authError: "" })
+    set({ isSubmitting: true, submittingProvider: provider, authError: "" })
     try {
       await authClient.signIn.social({
         provider,
@@ -62,13 +65,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       })
     } catch {
       set({
+        isSubmitting: false,
+        submittingProvider: null,
         authError: "Could not sign in right now. Please try again.",
       })
     }
   },
 
   endOAuth: () => {
-    set({ isSubmitting: false })
+    set({ isSubmitting: false, submittingProvider: null })
   },
 
   ensureAuthenticated: async () => {
@@ -87,6 +92,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       dialogOpen: false,
       authError: "",
       isSubmitting: false,
+      submittingProvider: null,
     })
   },
 }))
