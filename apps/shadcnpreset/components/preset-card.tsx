@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { Heart, Sparkles } from "lucide-react"
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 
 import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buttonVariants } from "@/components/ui/button"
+import { useAuthStore } from "@/stores/auth-store"
 
 type PresetCardProps = {
   item: PresetPageItem
@@ -101,26 +102,77 @@ export function PresetCard({ item }: PresetCardProps) {
   const chartPair5 = getPresetSwatchPair(item.config, "chart5")
   const iconLibrary = item.config.iconLibrary
   const iconLibraryTitle = ICON_LIBRARY_TITLES[iconLibrary] ?? iconLibrary
-  const voteCountKey = useMemo(() => `preset-vote-count:${item.code}`, [item.code])
-  const votedKey = useMemo(() => `preset-voted:${item.code}`, [item.code])
+  const ensureAuth = useAuthStore((state) => state.ensureAuthenticated)
+  const authStatus = useAuthStore((state) => state.status)
   const [voteCount, setVoteCount] = useState(0)
   const [hasVoted, setHasVoted] = useState(false)
+  const [isVoting, setIsVoting] = useState(false)
 
   useEffect(() => {
-    const storedCount = Number.parseInt(localStorage.getItem(voteCountKey) ?? "0", 10)
-    setVoteCount(Number.isFinite(storedCount) ? storedCount : 0)
-    setHasVoted(localStorage.getItem(votedKey) === "1")
-  }, [voteCountKey, votedKey])
+    let cancelled = false
 
-  function toggleVote() {
-    setHasVoted((prev) => {
-      const nextVoted = !prev
-      const nextCount = Math.max(0, voteCount + (nextVoted ? 1 : -1))
-      setVoteCount(nextCount)
-      localStorage.setItem(votedKey, nextVoted ? "1" : "0")
-      localStorage.setItem(voteCountKey, String(nextCount))
-      return nextVoted
-    })
+    async function loadVoteState() {
+      try {
+        const response = await fetch(`/api/presets/${item.code}/vote`, {
+          method: "GET",
+          cache: "no-store",
+        })
+        if (!response.ok) return
+
+        const payload = (await response.json()) as {
+          votes: number
+          hasVoted: boolean
+          authenticated: boolean
+        }
+
+        if (!cancelled) {
+          setVoteCount(payload.votes)
+          setHasVoted(payload.hasVoted)
+        }
+      } catch {
+        // Ignore network failures here and keep existing UI state.
+      }
+    }
+
+    void loadVoteState()
+    return () => {
+      cancelled = true
+    }
+  }, [item.code])
+
+  async function ensureAuthenticated() {
+    return ensureAuth()
+  }
+
+  async function toggleVote() {
+    if (isVoting) {
+      return
+    }
+
+    setIsVoting(true)
+    try {
+      const canVote = await ensureAuthenticated()
+      if (!canVote) {
+        return
+      }
+
+      const response = await fetch(`/api/presets/${item.code}/vote`, {
+        method: "POST",
+      })
+      if (!response.ok) {
+        return
+      }
+
+      const payload = (await response.json()) as {
+        votes: number
+        hasVoted: boolean
+      }
+
+      setVoteCount(payload.votes)
+      setHasVoted(payload.hasVoted)
+    } finally {
+      setIsVoting(false)
+    }
   }
 
   const previewStyle = {
@@ -356,8 +408,10 @@ export function PresetCard({ item }: PresetCardProps) {
               <button
                 type="button"
                 onClick={toggleVote}
+                disabled={isVoting}
                 aria-pressed={hasVoted}
-                className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-muted/70 hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:bg-muted/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                title={authStatus === "authenticated" ? "Vote for this preset" : "Sign in to vote"}
               >
                 <Heart
                   className={`size-3 ${

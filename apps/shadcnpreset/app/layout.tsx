@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google"
+import { Geist_Mono, Inter } from "next/font/google"
 import type { Metadata } from "next"
 
 import "./globals.css"
@@ -6,6 +6,7 @@ import "../css/controls.css";
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
 import { cn } from "@/lib/utils";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'})
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <ThemeSwitcher />
+          <VoteAuthDialogHost />
           {children}
         </ThemeProvider>
       </body>

@@ -166,15 +166,13 @@ export function PresetIframeCard({
                 className="pointer-events-none h-full w-full border-0"
               />
             </CardContent>
-            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-black/5 to-black/25 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <div className="flex flex-col gap-2">
-                <Link
-                  href={`/preset/${code}`}
-                  className={buttonVariants({ size: "sm" })}
-                >
-                  Open Preset
-                </Link>
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <Link
+                href={`/preset/${code}`}
+                className={buttonVariants({})}
+              >
+                Open Preset
+              </Link>
             </div>
           </>
         ) : (

@@ -11,12 +11,12 @@ export function HomeFeaturedSection({ items }: HomeFeaturedSectionProps) {
       <h2 className="text-lg font-semibold tracking-tight md:text-xl">
         Featured presets
       </h2>
-      <ul className="grid sm:grid-cols-2 gap-4 xl:grid-cols-3 2xl:grid-cols-3">
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
         {items.map((item) => (
           <li key={item.index}>
             <PresetIframeCard
               code={item.code}
-              title={`${item.config.style} / ${item.config.theme}`}
+              title={item.code}
               description={`${item.config.baseColor} base, ${item.config.iconLibrary} icons, ${item.config.font} body`}
             />
           </li>

@@ -62,10 +62,6 @@ export default function HomePage() {
       <HomeHero />
 
       <main className="space-y-8 md:space-y-10">
-        {/*<HomeCuratedMarqueeSection*/}
-        {/*  items={marqueeItems}*/}
-        {/*  totalCombinations={PRESET_TOTAL_COMBINATIONS}*/}
-        {/*/>*/}
         <HomeFeaturedSection items={featuredItems} />
         <HomeLeaderboardSection items={leaderboardItems} />
       </main>

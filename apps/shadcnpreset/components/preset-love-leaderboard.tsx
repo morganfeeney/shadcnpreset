@@ -20,25 +20,56 @@ type RankedItem = PresetLoveLeaderboardItem & {
 }
 
 export function PresetLoveLeaderboard({ items }: PresetLoveLeaderboardProps) {
-  const [rankedItems, setRankedItems] = useState<RankedItem[]>(() =>
-    items.map((item, index) => ({
-      ...item,
-      votes: 0,
-      seedOrder: index,
-    }))
-  )
+  const [rankedItems, setRankedItems] = useState<RankedItem[]>([])
 
   useEffect(() => {
-    setRankedItems(
-      items.map((item, index) => ({
-        ...item,
-        votes: Math.max(
-          0,
-          Number.parseInt(localStorage.getItem(`preset-vote-count:${item.code}`) ?? "0", 10) || 0
-        ),
-        seedOrder: index,
-      }))
-    )
+    let cancelled = false
+
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch("/api/presets/leaderboard?limit=8", {
+          method: "GET",
+          cache: "no-store",
+        })
+        if (response.ok) {
+          const payload = (await response.json()) as {
+            items: Array<{
+              code: string
+              label: string
+              href: string
+              votes: number
+            }>
+          }
+
+          if (!cancelled && payload.items.length > 0) {
+            setRankedItems(
+              payload.items.map((item, index) => ({
+                ...item,
+                seedOrder: index,
+              }))
+            )
+            return
+          }
+        }
+      } catch {
+        // Fall through to static items.
+      }
+
+      if (!cancelled) {
+        setRankedItems(
+          items.map((item, index) => ({
+            ...item,
+            votes: 0,
+            seedOrder: index,
+          }))
+        )
+      }
+    }
+
+    void loadLeaderboard()
+    return () => {
+      cancelled = true
+    }
   }, [items])
 
   const topItems = useMemo(
