@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { ExternalLink, Heart } from "lucide-react"
+import { Heart } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Spinner } from "@/components/ui/spinner"
 
 import { useAuthStore } from "@/stores/auth-store"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -28,6 +29,7 @@ export function PresetIframeCard({
   const authStatus = useAuthStore((state) => state.status)
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
   const [hasVoted, setHasVoted] = useState(false)
   const [isVoting, setIsVoting] = useState(false)
@@ -134,27 +136,30 @@ export function PresetIframeCard({
   }, [])
 
   const scale = useMemo(() => {
-    if (!containerWidth) return 0.001
+    if (!containerWidth) return 1
     return containerWidth / virtualWidth
   }, [containerWidth, virtualWidth])
-  const scaledHeight = Math.max(180, Math.round(virtualHeight * scale))
+
+  const canRenderIframe = shouldLoad && containerWidth > 0
 
   return (
-    <Card className="pt-0 gap-0">
+    <Card className="gap-0 pt-0">
       <div
         ref={wrapperRef}
         className="group relative w-full overflow-hidden"
-        style={{ height: scaledHeight }}
+        style={{ aspectRatio: `${virtualWidth} / ${virtualHeight}` }}
       >
-        {shouldLoad ? (
+        {canRenderIframe ? (
           <>
             <CardContent
-              className="p-0 will-change-transform"
+              className="absolute inset-0 p-0 will-change-transform"
               style={{
                 width: virtualWidth,
                 height: virtualHeight,
                 transform: `scale(${scale})`,
                 transformOrigin: "top left",
+                opacity: iframeLoaded ? 1 : 0,
+                transition: "opacity 180ms ease",
               }}
             >
               <iframe
@@ -164,53 +169,52 @@ export function PresetIframeCard({
                 sandbox="allow-scripts allow-same-origin"
                 tabIndex={-1}
                 className="pointer-events-none h-full w-full border-0"
+                onLoad={() => setIframeLoaded(true)}
               />
             </CardContent>
+            {!iframeLoaded ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Spinner />
+              </div>
+            ) : null}
             <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <Link
-                href={`/preset/${code}`}
-                className={buttonVariants({})}
-              >
+              <Link href={`/preset/${code}`} className={buttonVariants({})}>
                 Open Preset
               </Link>
             </div>
           </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-            Loading preview...
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Spinner />
           </div>
         )}
       </div>
 
-      <CardFooter className="flex items-start justify-between gap-2 p-3">
+      <CardFooter className="justify-between">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{title}</p>
           <p className="line-clamp-1 text-xs text-muted-foreground">
             {description}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button
-            onClick={toggleVote}
-            disabled={isVoting}
-            aria-pressed={hasVoted}
-            variant="ghost"
-            title={
-              authStatus === "authenticated"
-                ? "Vote for this preset"
-                : "Sign in to vote"
-            }
-          >
-            <Heart
-              className={`size-3.5 ${
-                hasVoted
-                  ? "fill-rose-500 text-rose-500"
-                  : "text-muted-foreground"
-              }`}
-            />
-            <span>{voteCount}</span>
-          </Button>
-        </div>
+        <Button
+          onClick={toggleVote}
+          disabled={isVoting}
+          aria-pressed={hasVoted}
+          variant="outline"
+          title={
+            authStatus === "authenticated"
+              ? "Vote for this preset"
+              : "Sign in to vote"
+          }
+        >
+          <Heart
+            className={`size-3.5 ${
+              hasVoted ? "fill-rose-500 text-rose-500" : "text-muted-foreground"
+            }`}
+          />
+          {voteCount}
+        </Button>
       </CardFooter>
     </Card>
   )
