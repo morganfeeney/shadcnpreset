@@ -19,6 +19,18 @@ async function getVoteCount(code: string) {
   return row?.votes ?? 0
 }
 
+async function ensureUserRecord(user: { id: string; name: string }) {
+  await query(
+    `
+    INSERT INTO users (id, name, created_at)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (id)
+    DO UPDATE SET name = EXCLUDED.name
+    `,
+    [user.id, user.name, Date.now()]
+  )
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ code: string }> }
@@ -62,6 +74,7 @@ export async function POST(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  await ensureUserRecord(user)
 
   const existingResult = await query<VoteExistsRow>(
     "SELECT 1 as exists FROM preset_votes WHERE user_id = $1 AND preset_code = $2 LIMIT 1",

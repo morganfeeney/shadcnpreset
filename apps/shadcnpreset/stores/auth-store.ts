@@ -2,9 +2,13 @@
 
 import { create } from "zustand"
 
+import { authClient } from "@/lib/auth-client"
+
 type SessionUser = {
   id: string
-  name: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
 }
 
 type AuthStatus = "unknown" | "authenticated" | "anonymous"
@@ -15,10 +19,9 @@ type AuthStore = {
   dialogOpen: boolean
   isSubmitting: boolean
   authError: string
-  resolver: ((ok: boolean) => void) | null
   bootstrapSession: () => Promise<void>
-  loginWithName: (name: string) => Promise<boolean>
-  logout: () => Promise<void>
+  beginOAuth: (provider: "google" | "github") => Promise<void>
+  endOAuth: () => void
   ensureAuthenticated: () => Promise<boolean>
   closeDialog: () => void
 }
@@ -29,7 +32,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   dialogOpen: false,
   isSubmitting: false,
   authError: "",
-  resolver: null,
 
   bootstrapSession: async () => {
     if (get().status !== "unknown") {
@@ -37,72 +39,36 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      const response = await fetch("/api/auth/session", {
-        method: "GET",
-        cache: "no-store",
-      })
-      if (!response.ok) {
-        set({ user: null, status: "anonymous" })
-        return
-      }
-
-      const payload = (await response.json()) as { user: SessionUser | null }
+      const result = await authClient.getSession()
+      const payload = result.data
       set({
-        user: payload.user ?? null,
-        status: payload.user ? "authenticated" : "anonymous",
+        user:
+          payload?.user && "id" in payload.user
+            ? (payload.user as SessionUser)
+            : null,
+        status: payload?.user && "id" in payload.user ? "authenticated" : "anonymous",
       })
     } catch {
       set({ user: null, status: "anonymous" })
     }
   },
 
-  loginWithName: async (name: string) => {
+  beginOAuth: async (provider) => {
     set({ isSubmitting: true, authError: "" })
     try {
-      const response = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+      await authClient.signIn.social({
+        provider,
+        callbackURL: window.location.href,
       })
-
-      if (!response.ok) {
-        set({
-          isSubmitting: false,
-          authError: "Could not sign in right now. Please try again.",
-        })
-        return false
-      }
-
-      const payload = (await response.json()) as { user: SessionUser }
-      const resolver = get().resolver
-      set({
-        user: payload.user,
-        status: "authenticated",
-        dialogOpen: false,
-        resolver: null,
-        isSubmitting: false,
-        authError: "",
-      })
-      resolver?.(true)
-      return true
     } catch {
       set({
-        isSubmitting: false,
         authError: "Could not sign in right now. Please try again.",
       })
-      return false
     }
   },
 
-  logout: async () => {
-    try {
-      await fetch("/api/auth/session", { method: "DELETE" })
-    } finally {
-      set({
-        user: null,
-        status: "anonymous",
-      })
-    }
+  endOAuth: () => {
+    set({ isSubmitting: false })
   },
 
   ensureAuthenticated: async () => {
@@ -112,24 +78,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (get().status === "authenticated") {
       return true
     }
-
-    return new Promise<boolean>((resolve) => {
-      set({
-        dialogOpen: true,
-        authError: "",
-        resolver: resolve,
-      })
-    })
+    set({ dialogOpen: true, authError: "" })
+    return false
   },
 
   closeDialog: () => {
-    const resolver = get().resolver
     set({
       dialogOpen: false,
-      resolver: null,
       authError: "",
       isSubmitting: false,
     })
-    resolver?.(false)
   },
 }))

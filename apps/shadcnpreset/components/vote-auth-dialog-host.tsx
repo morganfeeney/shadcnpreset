@@ -11,11 +11,20 @@ export function VoteAuthDialogHost() {
   const authError = useAuthStore((state) => state.authError)
   const bootstrapSession = useAuthStore((state) => state.bootstrapSession)
   const closeDialog = useAuthStore((state) => state.closeDialog)
-  const loginWithName = useAuthStore((state) => state.loginWithName)
+  const beginOAuth = useAuthStore((state) => state.beginOAuth)
+  const endOAuth = useAuthStore((state) => state.endOAuth)
 
   useEffect(() => {
     void bootstrapSession()
   }, [bootstrapSession])
+
+  async function handleProviderSignIn(provider: "google" | "github") {
+    try {
+      await beginOAuth(provider)
+    } finally {
+      endOAuth()
+    }
+  }
 
   return (
     <VoteAuthDialog
@@ -27,8 +36,11 @@ export function VoteAuthDialogHost() {
           closeDialog()
         }
       }}
-      onSubmit={(name) => {
-        void loginWithName(name)
+      onGoogleClick={() => {
+        void handleProviderSignIn("google")
+      }}
+      onGitHubClick={() => {
+        void handleProviderSignIn("github")
       }}
     />
   )

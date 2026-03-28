@@ -59,6 +59,8 @@ async function ensureDbInitialized() {
   return initPromise
 }
 
+export const pool = getPool()
+
 export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params: unknown[] = []
