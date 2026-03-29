@@ -1,8 +1,9 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 type HomePaginationNavProps = {
   previousHref?: string
@@ -17,43 +18,49 @@ export function HomePaginationNav({
   safePage,
   totalPages,
 }: HomePaginationNavProps) {
-  const router = useRouter()
-
-  function navigate(href: string) {
-    router.push(href)
-  }
-
   return (
     <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-4">
       {previousHref ? (
-        <Button
-          className="col-start-1"
-          variant="secondary"
-          onClick={() => navigate(previousHref)}
+        <Link
+          href={previousHref}
+          prefetch={false}
+          className={cn("col-start-1", buttonVariants({ variant: "secondary" }))}
         >
           <ChevronLeft /> Previous
-        </Button>
+        </Link>
       ) : (
-        <Button variant="secondary" disabled>
+        <span
+          className={cn(
+            buttonVariants({ variant: "secondary" }),
+            "pointer-events-none opacity-50"
+          )}
+          aria-disabled="true"
+        >
           <ChevronLeft /> Previous
-        </Button>
+        </span>
       )}
       <span className="col-start-2 text-center text-sm">
         Page <code>{safePage.toLocaleString()}</code> of{" "}
         <code>{totalPages.toLocaleString()}</code>
       </span>
       {nextHref ? (
-        <Button
-          className="col-start-3"
-          variant="secondary"
-          onClick={() => navigate(nextHref)}
+        <Link
+          href={nextHref}
+          prefetch={false}
+          className={cn("col-start-3", buttonVariants({ variant: "secondary" }))}
         >
           Next <ChevronRight />
-        </Button>
+        </Link>
       ) : (
-        <Button variant="secondary" disabled>
+        <span
+          className={cn(
+            buttonVariants({ variant: "secondary" }),
+            "pointer-events-none opacity-50"
+          )}
+          aria-disabled="true"
+        >
           Next <ChevronRight />
-        </Button>
+        </span>
       )}
     </div>
   )

@@ -29,13 +29,13 @@ export function HomeResultsSkeleton() {
   return (
     <main className="grid gap-4">
       <div className="grid grid-cols-[auto_1fr_auto] gap-4">
-        <Button disabled className="invisible">
+        <Button disabled>
           <ChevronLeft /> Previous
         </Button>
-        <span>
-          <Skeleton className="inline-block h-4 w-44 align-middle" />
+        <span className="col-start-2 justify-self-center">
+          <Skeleton className="inline-block h-8 w-44 align-middle" />
         </span>
-        <Button disabled className="invisible">
+        <Button disabled>
           Next <ChevronRight />
         </Button>
       </div>
