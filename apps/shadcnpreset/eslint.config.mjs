@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-]);
+  {
+    rules: {
+      "react/jsx-curly-brace-presence": [
+        "warn",
+        {
+          props: "never",
+          children: "ignore",
+        },
+      ],
+    },
+  },
+])
 
 export default eslintConfig;

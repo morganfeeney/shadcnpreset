@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import * as React from "react"
 
-import { HomeLoadingState } from "@/components/home-loading-state"
+import { buildSearchHref } from "@/lib/search-route"
 
 export function PresetForm() {
   const router = useRouter()
@@ -22,13 +22,8 @@ export function PresetForm() {
       return
     }
 
-    const params = new URLSearchParams()
-    params.set("mode", mode)
-    params.set("query", normalized)
-    params.set("page", "1")
-    params.set("size", "24")
     startTransition(() => {
-      router.push(`/?${params.toString()}`)
+      router.push(buildSearchHref(mode, normalized, 1))
     })
   }
 
@@ -69,14 +64,6 @@ export function PresetForm() {
           {isPending ? "Searching..." : "Search"}
         </button>
       </div>
-      {isPending ? (
-        <>
-          <p className="text-sm text-muted-foreground">Loading results...</p>
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
-            <HomeLoadingState />
-          </div>
-        </>
-      ) : null}
     </form>
   )
 }

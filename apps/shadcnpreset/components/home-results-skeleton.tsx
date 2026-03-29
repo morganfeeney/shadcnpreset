@@ -1,5 +1,7 @@
 import { Card, CardFooter } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 function CardSkeleton() {
   return (
@@ -26,12 +28,16 @@ function CardSkeleton() {
 export function HomeResultsSkeleton() {
   return (
     <main className="space-y-8 md:space-y-10">
-      <div className="preset-nav">
-        <span>Previous</span>
+      <div className="grid grid-cols-[auto_1fr_auto] gap-4">
+        <Button disabled className="invisible">
+          <ChevronLeft /> Previous
+        </Button>
         <span>
           <Skeleton className="inline-block h-4 w-44 align-middle" />
         </span>
-        <span>Next</span>
+        <Button disabled className="invisible">
+          Next <ChevronRight />
+        </Button>
       </div>
 
       <section className="space-y-4">
