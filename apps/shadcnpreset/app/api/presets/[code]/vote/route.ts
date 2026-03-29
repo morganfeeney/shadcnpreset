@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
 import { getSessionUser } from "@/lib/auth"
 import { query } from "@/lib/db"
@@ -97,6 +98,9 @@ export async function POST(
     )
     hasVoted = true
   }
+
+  revalidatePath("/")
+  revalidatePath(`/preset/${code}`)
 
   return NextResponse.json({
     votes: await getVoteCount(code),

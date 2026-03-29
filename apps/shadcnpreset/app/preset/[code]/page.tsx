@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
+import { PresetVoteButton } from "@/components/preset-vote-button"
 import { getCanonicalPresetCode, resolvePresetFromCode } from "@/lib/preset"
 
 type PresetPageProps = {
@@ -67,6 +68,9 @@ export default async function PresetCodePage({
           Canonical code: <code>{canonicalCode}</code>
           {preset.isLegacyCode ? " (legacy v1 input)" : ""}
         </p>
+        <div className="inline-flex items-center justify-center">
+          <PresetVoteButton code={canonicalCode} />
+        </div>
         <p>
           <Link href={createUrl.toString()} target="_blank">
             Open v4 create page directly

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 
-import { useAuthStore } from "@/stores/auth-store"
+import useVote from "@/hooks/use-vote"
 import { Button, buttonVariants } from "@/components/ui/button"
 
 type PresetIframeCardProps = {
@@ -25,14 +25,10 @@ export function PresetIframeCard({
   virtualHeight = 575,
 }: PresetIframeCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const ensureAuth = useAuthStore((state) => state.ensureAuthenticated)
-  const authStatus = useAuthStore((state) => state.status)
+  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code)
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldLoad, setShouldLoad] = useState(false)
   const [iframeLoaded, setIframeLoaded] = useState(false)
-  const [voteCount, setVoteCount] = useState(0)
-  const [hasVoted, setHasVoted] = useState(false)
-  const [isVoting, setIsVoting] = useState(false)
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -48,73 +44,6 @@ export function PresetIframeCard({
 
     return () => resizeObserver.disconnect()
   }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadVoteState() {
-      try {
-        const response = await fetch(`/api/presets/${code}/vote`, {
-          method: "GET",
-          cache: "no-store",
-        })
-        if (!response.ok) return
-
-        const payload = (await response.json()) as {
-          votes: number
-          hasVoted: boolean
-          authenticated: boolean
-        }
-
-        if (!cancelled) {
-          setVoteCount(payload.votes)
-          setHasVoted(payload.hasVoted)
-        }
-      } catch {
-        // Ignore network failures here and keep existing UI state.
-      }
-    }
-
-    void loadVoteState()
-    return () => {
-      cancelled = true
-    }
-  }, [code])
-
-  async function ensureAuthenticated() {
-    return ensureAuth()
-  }
-
-  async function toggleVote() {
-    if (isVoting) {
-      return
-    }
-
-    setIsVoting(true)
-    try {
-      const canVote = await ensureAuthenticated()
-      if (!canVote) {
-        return
-      }
-
-      const response = await fetch(`/api/presets/${code}/vote`, {
-        method: "POST",
-      })
-      if (!response.ok) {
-        return
-      }
-
-      const payload = (await response.json()) as {
-        votes: number
-        hasVoted: boolean
-      }
-
-      setVoteCount(payload.votes)
-      setHasVoted(payload.hasVoted)
-    } finally {
-      setIsVoting(false)
-    }
-  }
 
   useEffect(() => {
     const node = wrapperRef.current
