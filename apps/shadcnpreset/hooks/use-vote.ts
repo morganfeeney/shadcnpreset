@@ -13,6 +13,14 @@ type VoteBatchResponse = {
   votesByCode: Record<string, number>
 }
 
+type PresetFeedItem = {
+  code: string
+}
+
+type PresetFeedResponse = {
+  items: PresetFeedItem[]
+}
+
 type UseVoteOptions = {
   enabled?: boolean
 }
@@ -65,8 +73,18 @@ export default function useVote(code: string, options: UseVoteOptions = {}) {
           }
         }
       )
+
+      const feedQueries = queryClient.getQueriesData<PresetFeedResponse>({
+        queryKey: ["presetFeed"],
+      })
+      const appearsInCachedFeed = feedQueries.some(([, feed]) =>
+        (feed?.items ?? []).some((item) => item.code === code)
+      )
+
       void queryClient.invalidateQueries({ queryKey: ["presetVotes"] })
-      void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
+      if (!appearsInCachedFeed) {
+        void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
+      }
       void queryClient.invalidateQueries({ queryKey: ["presetVote", code] })
     },
   })
