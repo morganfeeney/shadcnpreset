@@ -9,18 +9,6 @@ type VoteStateResponse = {
   hasVoted: boolean
 }
 
-type VoteBatchResponse = {
-  votesByCode: Record<string, number>
-}
-
-type PresetFeedItem = {
-  code: string
-}
-
-type PresetFeedResponse = {
-  items: PresetFeedItem[]
-}
-
 type UseVoteOptions = {
   enabled?: boolean
 }
@@ -58,34 +46,7 @@ export default function useVote(code: string, options: UseVoteOptions = {}) {
     },
     onSuccess: (payload) => {
       queryClient.setQueryData<VoteStateResponse>(["presetVote", code], payload)
-      queryClient.setQueriesData(
-        { queryKey: ["presetVotes"] },
-        (previous: VoteBatchResponse | undefined) => {
-          if (!previous?.votesByCode) {
-            return previous
-          }
-          return {
-            ...previous,
-            votesByCode: {
-              ...previous.votesByCode,
-              [code]: payload.votes,
-            },
-          }
-        }
-      )
-
-      const feedQueries = queryClient.getQueriesData<PresetFeedResponse>({
-        queryKey: ["presetFeed"],
-      })
-      const appearsInCachedFeed = feedQueries.some(([, feed]) =>
-        (feed?.items ?? []).some((item) => item.code === code)
-      )
-      const shouldInvalidateFeed = !payload.hasVoted || !appearsInCachedFeed
-
-      void queryClient.invalidateQueries({ queryKey: ["presetVotes"] })
-      if (shouldInvalidateFeed) {
-        void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
-      }
+      void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
     },
   })
 
