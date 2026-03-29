@@ -423,7 +423,7 @@ export function PresetFilterBar({
         <Button onClick={() => applyFilters()}>Apply Filters</Button>
         <Link
           className={buttonVariants({ variant: "secondary" })}
-          href={`/browse?size=${pageSize}`}
+          href={`${pathname}?size=${pageSize}`}
         >
           Clear
         </Link>
