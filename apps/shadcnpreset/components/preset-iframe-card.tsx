@@ -25,7 +25,6 @@ export function PresetIframeCard({
   virtualHeight = 575,
 }: PresetIframeCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code)
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldLoad, setShouldLoad] = useState(false)
   const [iframeLoaded, setIframeLoaded] = useState(false)
@@ -70,6 +69,9 @@ export function PresetIframeCard({
   }, [containerWidth, virtualWidth])
 
   const canRenderIframe = shouldLoad && containerWidth > 0
+  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code, {
+    enabled: shouldLoad,
+  })
 
   return (
     <Card className="gap-0 pt-0">

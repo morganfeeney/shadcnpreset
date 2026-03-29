@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -9,77 +9,92 @@ type VoteStateResponse = {
   hasVoted: boolean
 }
 
-export default function useVote(code: string) {
+type VoteBatchResponse = {
+  votesByCode: Record<string, number>
+}
+
+type UseVoteOptions = {
+  enabled?: boolean
+}
+
+export default function useVote(code: string, options: UseVoteOptions = {}) {
+  const enabled = options.enabled ?? true
   const ensureAuth = useAuthStore((state) => state.ensureAuthenticated)
   const authStatus = useAuthStore((state) => state.status)
+  const queryClient = useQueryClient()
 
-  const [voteCount, setVoteCount] = useState(0)
-  const [hasVoted, setHasVoted] = useState(false)
-  const [isVoting, setIsVoting] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadVoteState() {
-      try {
-        const response = await fetch(`/api/presets/${code}/vote`, {
-          method: "GET",
-          cache: "no-store",
-        })
-        if (!response.ok) return
-
-        const payload = (await response.json()) as VoteStateResponse
-        if (!cancelled) {
-          setVoteCount(payload.votes)
-          setHasVoted(payload.hasVoted)
-        }
-      } catch {
-        // Keep current UI state on fetch failure.
+  const { data } = useQuery({
+    queryKey: ["presetVote", code],
+    enabled,
+    queryFn: async (): Promise<VoteStateResponse> => {
+      const response = await fetch(`/api/presets/${code}/vote`, {
+        method: "GET",
+        cache: "no-store",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to fetch vote state")
       }
-    }
+      return (await response.json()) as VoteStateResponse
+    },
+  })
 
-    void loadVoteState()
-    return () => {
-      cancelled = true
-    }
-  }, [code])
+  const voteMutation = useMutation({
+    mutationFn: async (): Promise<VoteStateResponse> => {
+      const response = await fetch(`/api/presets/${code}/vote`, {
+        method: "POST",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to toggle vote")
+      }
+      return (await response.json()) as VoteStateResponse
+    },
+    onSuccess: (payload) => {
+      queryClient.setQueryData<VoteStateResponse>(["presetVote", code], payload)
+      queryClient.setQueriesData(
+        { queryKey: ["presetVotes"] },
+        (previous: VoteBatchResponse | undefined) => {
+          if (!previous?.votesByCode) {
+            return previous
+          }
+          return {
+            ...previous,
+            votesByCode: {
+              ...previous.votesByCode,
+              [code]: payload.votes,
+            },
+          }
+        }
+      )
+      void queryClient.invalidateQueries({ queryKey: ["presetVotes"] })
+      void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
+      void queryClient.invalidateQueries({ queryKey: ["presetVote", code] })
+    },
+  })
 
   async function ensureAuthenticated() {
     return ensureAuth()
   }
 
   async function toggleVote() {
-    if (isVoting) {
+    if (voteMutation.isPending) {
       return
     }
 
-    setIsVoting(true)
-    try {
-      const canVote = await ensureAuthenticated()
-      if (!canVote) {
-        return
-      }
-
-      const response = await fetch(`/api/presets/${code}/vote`, {
-        method: "POST",
-      })
-      if (!response.ok) {
-        return
-      }
-
-      const payload = (await response.json()) as VoteStateResponse
-
-      setVoteCount(payload.votes)
-      setHasVoted(payload.hasVoted)
-    } finally {
-      setIsVoting(false)
+    const canVote = await ensureAuthenticated()
+    if (!canVote) {
+      return
     }
+
+    await voteMutation.mutateAsync()
   }
+
+  const voteCount = data?.votes ?? 0
+  const hasVoted = data?.hasVoted ?? false
 
   return {
     toggleVote,
     voteCount,
-    isVoting,
+    isVoting: voteMutation.isPending,
     hasVoted,
     authStatus,
   }

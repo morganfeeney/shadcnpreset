@@ -2,9 +2,7 @@ import Link from "next/link"
 
 import { HomeFeaturedSection } from "@/components/home-featured-section"
 import { HomeHero } from "@/components/home-hero"
-import { PresetLoveLeaderboard } from "@/components/preset-love-leaderboard"
 import {
-  getPresetPage,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
 import { getPresetFeedPage } from "@/lib/preset-feed"
@@ -31,11 +29,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const feed = await getPresetFeedPage(page, pageSize)
 
   const featuredItems: PresetPageItem[] = feed.items
-  const leaderboardItems = getPresetPage(1, 30).map((item) => ({
-    code: item.code,
-    href: `/preset/${item.code}`,
-    label: `${item.config.style} / ${item.config.theme}`,
-  }))
   const hasPrevious = feed.safePage > 1
   const hasNext = feed.safePage < feed.totalPages
 
@@ -71,7 +64,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           )}
         </div>
 
-        <HomeFeaturedSection items={featuredItems} />
+        <HomeFeaturedSection
+          items={featuredItems}
+          safePage={feed.safePage}
+          totalPages={feed.totalPages}
+          pageSize={pageSize}
+        />
       </main>
     </div>
   )

@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import "../css/controls.css";
 
+import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
@@ -34,11 +35,13 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body>
-        <ThemeProvider>
-          <ThemeSwitcher />
-          <VoteAuthDialogHost />
-          {children}
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <ThemeSwitcher />
+            <VoteAuthDialogHost />
+            {children}
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )
