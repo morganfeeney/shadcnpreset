@@ -1,7 +1,6 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -19,27 +18,23 @@ export function HomePaginationNav({
   totalPages,
 }: HomePaginationNavProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
 
   function navigate(href: string) {
-    startTransition(() => {
-      router.push(href)
-    })
+    router.push(href)
   }
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] gap-4">
+    <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-4">
       {previousHref ? (
         <Button
           className="col-start-1"
           variant="secondary"
-          disabled={isPending}
           onClick={() => navigate(previousHref)}
         >
           <ChevronLeft /> Previous
         </Button>
       ) : (
-        <Button disabled className="invisible">
+        <Button variant="secondary" disabled>
           <ChevronLeft /> Previous
         </Button>
       )}
@@ -51,13 +46,12 @@ export function HomePaginationNav({
         <Button
           className="col-start-3"
           variant="secondary"
-          disabled={isPending}
           onClick={() => navigate(nextHref)}
         >
           Next <ChevronRight />
         </Button>
       ) : (
-        <Button disabled className="invisible">
+        <Button variant="secondary" disabled>
           Next <ChevronRight />
         </Button>
       )}

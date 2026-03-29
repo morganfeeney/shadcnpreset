@@ -42,7 +42,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <HomeLayout>
       <HomeHero />
 
-      <main className="space-y-8 md:space-y-10">
+      <main className="grid gap-4">
         <HomePaginationNav
           previousHref={hasPrevious ? pageHref(safePage - 1) : undefined}
           nextHref={hasNext ? pageHref(safePage + 1) : undefined}

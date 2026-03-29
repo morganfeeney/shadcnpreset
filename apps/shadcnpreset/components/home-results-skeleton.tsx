@@ -27,7 +27,7 @@ function CardSkeleton() {
 
 export function HomeResultsSkeleton() {
   return (
-    <main className="space-y-8 md:space-y-10">
+    <main className="grid gap-4">
       <div className="grid grid-cols-[auto_1fr_auto] gap-4">
         <Button disabled className="invisible">
           <ChevronLeft /> Previous

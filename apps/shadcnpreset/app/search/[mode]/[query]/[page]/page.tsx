@@ -6,7 +6,11 @@ import { HomeHero } from "@/components/home-hero"
 import { HomeLayout } from "@/components/home-layout"
 import { HomePaginationNav } from "@/components/home-pagination-nav"
 import { type PresetPageItem } from "@/lib/preset-catalog"
-import { buildSearchHref, isSearchMode, SEARCH_PAGE_SIZE } from "@/lib/search-route"
+import {
+  buildSearchHref,
+  isSearchMode,
+  SEARCH_PAGE_SIZE,
+} from "@/lib/search-route"
 
 type SearchPageProps = {
   params: Promise<{
@@ -38,7 +42,8 @@ export default async function SearchPage({ params }: SearchPageProps) {
   }
 
   const requestHeaders = await headers()
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
   if (!host) {
     notFound()
   }
@@ -61,10 +66,12 @@ export default async function SearchPage({ params }: SearchPageProps) {
     <HomeLayout>
       <HomeHero />
 
-      <main className="space-y-8 md:space-y-10">
+      <main className="grid gap-4">
         <header className="space-y-2">
           <h2 className="text-lg font-semibold tracking-tight md:text-xl">
-            {payload.mode === "smart" ? "Smart search results" : "Code search result"}
+            {payload.mode === "smart"
+              ? "Smart search results"
+              : "Code search result"}
           </h2>
           <p className="text-sm text-muted-foreground">
             {payload.mode === "smart"
@@ -75,10 +82,14 @@ export default async function SearchPage({ params }: SearchPageProps) {
 
         <HomePaginationNav
           previousHref={
-            hasPrevious ? buildSearchHref(payload.mode, payload.query, safePage - 1) : undefined
+            hasPrevious
+              ? buildSearchHref(payload.mode, payload.query, safePage - 1)
+              : undefined
           }
           nextHref={
-            hasNext ? buildSearchHref(payload.mode, payload.query, safePage + 1) : undefined
+            hasNext
+              ? buildSearchHref(payload.mode, payload.query, safePage + 1)
+              : undefined
           }
           safePage={safePage}
           totalPages={totalPages}

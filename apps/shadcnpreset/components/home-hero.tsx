@@ -1,7 +1,11 @@
 "use client"
 
 import { PresetForm } from "@/components/preset-form"
-import { PageHeader, PageHeaderDescription, PageHeaderHeading } from "@/components/page-header"
+import {
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderHeading,
+} from "@/components/page-header"
 import { Announcement } from "@/components/announcement"
 
 export function HomeHero() {
@@ -16,7 +20,7 @@ export function HomeHero() {
         then preview real component behavior and vote from the feed.
       </PageHeaderDescription>
       <div className="w-full max-w-2xl">
-        <PresetForm />
+        <PresetForm className="pt-2" />
       </div>
     </PageHeader>
   )

@@ -2,48 +2,79 @@
 
 import { useRouter } from "next/navigation"
 import * as React from "react"
+import { ChevronDownIcon } from "lucide-react"
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { buildSearchHref } from "@/lib/search-route"
+import { cn } from "@/lib/utils"
 
-export function PresetForm() {
+export function PresetForm({ className }: { className?: string }) {
   const router = useRouter()
   const [mode, setMode] = React.useState<"code" | "smart">("code")
   const [query, setQuery] = React.useState("")
-  const [isPending, startTransition] = React.useTransition()
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const normalized = query.trim()
 
     if (!normalized) {
-      startTransition(() => {
-        router.push("/")
-      })
+      router.push("/")
       return
     }
 
-    startTransition(() => {
-      router.push(buildSearchHref(mode, normalized, 1))
-    })
+    if (mode === "code") {
+      router.push(`/preset/${encodeURIComponent(normalized)}`)
+      return
+    }
+
+    router.push(buildSearchHref(mode, normalized, 1))
   }
 
   return (
-    <form className="grid gap-2.5" onSubmit={onSubmit}>
+    <form className={cn("grid gap-2.5", className)} onSubmit={onSubmit}>
       <label className="sr-only" htmlFor="preset-query">
         Search presets
       </label>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <select
-          aria-label="Search mode"
-          value={mode}
-          onChange={(event) => setMode(event.target.value as "code" | "smart")}
-          disabled={isPending}
-          className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
-        >
-          <option value="code">Preset code</option>
-          <option value="smart">Smart search</option>
-        </select>
-        <input
+      <InputGroup className="h-9">
+        <InputGroupAddon align="inline-start">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <InputGroupButton
+                  variant="ghost"
+                  className="pr-1.5! text-xs"
+                  aria-label="Search mode"
+                >
+                  {mode === "code" ? "Preset code" : "Smart search"}
+                  <ChevronDownIcon className="size-3" />
+                </InputGroupButton>
+              }
+            />
+            <DropdownMenuContent align="start" sideOffset={8} className="w-40">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => setMode("code")}>
+                  Preset code
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setMode("smart")}>
+                  Smart search
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </InputGroupAddon>
+        <InputGroupInput
           id="preset-query"
           autoComplete="off"
           placeholder={
@@ -53,17 +84,13 @@ export function PresetForm() {
           }
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          disabled={isPending}
-          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
         />
-        <button
-          className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          type="submit"
-          disabled={isPending}
-        >
-          {isPending ? "Searching..." : "Search"}
-        </button>
-      </div>
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton type="submit" variant="secondary">
+            {mode === "code" ? "Open preset" : "Search"}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   )
 }

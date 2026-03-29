@@ -7,8 +7,8 @@ export function Announcement() {
   return (
     <Badge
       render={
-        <Link href="/docs/changelog/2026-03-cli-v4">
-          shadcn/skills, presets and more <ArrowRightIcon />
+        <Link href="">
+          Something cool goes here <ArrowRightIcon />
         </Link>
       }
       variant="secondary"
