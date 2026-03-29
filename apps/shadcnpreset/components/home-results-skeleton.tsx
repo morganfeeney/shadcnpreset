@@ -5,7 +5,10 @@ function CardSkeleton() {
   return (
     <li>
       <Card className="gap-0 pt-0">
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "700 / 575" }}>
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ aspectRatio: "700 / 575" }}
+        >
           <Skeleton className="absolute inset-0 rounded-none" />
         </div>
         <CardFooter className="justify-between">
@@ -32,9 +35,6 @@ export function HomeResultsSkeleton() {
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold tracking-tight md:text-xl">
-          Featured presets
-        </h2>
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
           {Array.from({ length: 12 }, (_, index) => (
             <CardSkeleton key={`preset-skeleton-${index}`} />

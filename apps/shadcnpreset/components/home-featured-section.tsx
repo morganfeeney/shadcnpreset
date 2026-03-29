@@ -33,9 +33,6 @@ export function ListView({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold tracking-tight md:text-xl">
-        Featured presets
-      </h2>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
         {feedItems.map((item) => (
           <li key={item.code}>
