@@ -72,13 +72,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <HomeFeaturedSection items={featuredItems} />
-
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight md:text-xl">
-            Most liked presets
-          </h2>
-          <PresetLoveLeaderboard items={leaderboardItems} />
-        </section>
       </main>
     </div>
   )
