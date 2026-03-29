@@ -80,12 +80,12 @@ export default function useVote(code: string, options: UseVoteOptions = {}) {
       const appearsInCachedFeed = feedQueries.some(([, feed]) =>
         (feed?.items ?? []).some((item) => item.code === code)
       )
+      const shouldInvalidateFeed = !payload.hasVoted || !appearsInCachedFeed
 
       void queryClient.invalidateQueries({ queryKey: ["presetVotes"] })
-      if (!appearsInCachedFeed) {
+      if (shouldInvalidateFeed) {
         void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
       }
-      void queryClient.invalidateQueries({ queryKey: ["presetVote", code] })
     },
   })
 
