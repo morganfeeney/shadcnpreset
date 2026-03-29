@@ -13,17 +13,17 @@ export function HomeTopHeader() {
           Discover and apply great presets in seconds
         </h1>
         <p className="text-sm text-muted-foreground md:text-base">
-          Curated picks up top, full filterable catalog in browse.
+          Curated picks up top, plus smart/code search directly on home.
         </p>
         <div className="mx-auto w-full max-w-2xl">
           <PresetForm />
         </div>
         <div className="flex items-center justify-center gap-2">
           <Link
-            href="/browse"
+            href="/?mode=smart&query=diverse+preset+mix"
             className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Browse all presets
+            Explore presets
           </Link>
           <Link
             href="/create"

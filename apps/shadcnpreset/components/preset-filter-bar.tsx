@@ -25,6 +25,7 @@ import { THEMES } from "@/registry/themes"
 type PresetFilterBarProps = {
   filters: PresetFilters
   pageSize: number
+  extraParams?: Record<string, string>
   options: {
     styles: readonly string[]
     baseColors: readonly string[]
@@ -158,6 +159,7 @@ function FilterPicker({
 export function PresetFilterBar({
   filters,
   pageSize,
+  extraParams = {},
   options,
 }: PresetFilterBarProps) {
   const router = useRouter()
@@ -226,6 +228,11 @@ export function PresetFilterBar({
     const params = new URLSearchParams()
     params.set("size", String(pageSize))
     params.set("page", "1")
+    for (const [key, value] of Object.entries(extraParams)) {
+      if (value) {
+        params.set(key, value)
+      }
+    }
     if (nextFilters.style !== "all") params.set("style", nextFilters.style)
     if (nextFilters.baseColor !== "all")
       params.set("baseColor", nextFilters.baseColor)
@@ -243,6 +250,17 @@ export function PresetFilterBar({
     if (nextFilters.menuAccent !== "all")
       params.set("menuAccent", nextFilters.menuAccent)
     return params
+  }
+
+  function buildClearHref() {
+    const params = new URLSearchParams()
+    params.set("size", String(pageSize))
+    for (const [key, value] of Object.entries(extraParams)) {
+      if (value) {
+        params.set(key, value)
+      }
+    }
+    return `${pathname}?${params.toString()}`
   }
 
   function applyFilters(nextFilters = localFilters) {
@@ -423,7 +441,7 @@ export function PresetFilterBar({
         <Button onClick={() => applyFilters()}>Apply Filters</Button>
         <Link
           className={buttonVariants({ variant: "secondary" })}
-          href={`${pathname}?size=${pageSize}`}
+          href={buildClearHref()}
         >
           Clear
         </Link>

@@ -12,8 +12,8 @@ export function HomeHero() {
         Discover and apply great shadcn presets in seconds
       </PageHeaderHeading>
       <PageHeaderDescription>
-        Search generated presets, preview real component behavior, and jump
-        straight into create with the preset prefilled.
+        Search by exact preset code or use smart search for diverse results,
+        then preview real component behavior and vote from the feed.
       </PageHeaderDescription>
       <div className="w-full max-w-2xl">
         <PresetForm />

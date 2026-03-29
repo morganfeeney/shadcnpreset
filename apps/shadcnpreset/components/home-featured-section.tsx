@@ -4,25 +4,32 @@ import { PresetIframeCard } from "@/components/preset-iframe-card"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 
-type HomeFeaturedSectionProps = {
+interface ListViewProps {
   items: PresetPageItem[]
   safePage: number
   totalPages: number
   pageSize: number
+  useLiveFeed?: boolean
 }
 
-export function HomeFeaturedSection({
+export function ListView({
   items,
   safePage,
   totalPages,
   pageSize,
-}: HomeFeaturedSectionProps) {
-  const feedQuery = usePresetFeed(safePage, pageSize, {
-    items,
+  useLiveFeed = true,
+}: ListViewProps) {
+  const feedQuery = usePresetFeed(
     safePage,
-    totalPages,
-  })
-  const feedItems = feedQuery.data?.items ?? items
+    pageSize,
+    {
+      items,
+      safePage,
+      totalPages,
+    },
+    useLiveFeed
+  )
+  const feedItems = useLiveFeed ? (feedQuery.data?.items ?? items) : items
 
   return (
     <section className="space-y-4">

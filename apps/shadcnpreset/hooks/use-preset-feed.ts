@@ -13,10 +13,12 @@ type PresetFeedResponse = {
 export function usePresetFeed(
   page: number,
   size: number,
-  initialData?: PresetFeedResponse
+  initialData?: PresetFeedResponse,
+  enabled = true
 ) {
   return useQuery({
     queryKey: ["presetFeed", page, size],
+    enabled,
     queryFn: async (): Promise<PresetFeedResponse> => {
       const response = await fetch(`/api/presets/feed?page=${page}&size=${size}`, {
         method: "GET",
