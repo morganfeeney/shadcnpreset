@@ -7,6 +7,17 @@ import { useTheme } from "next-themes"
 type ThemeMode = "light" | "dark"
 
 export function ThemeSwitcher() {
+  // `useSearchParams()` requires a Suspense boundary in Next.js App Router.
+  // Since this component is mounted from the root layout, we centralize the
+  // boundary here so 404 / _not-found can be pre-rendered safely.
+  return (
+    <React.Suspense fallback={null}>
+      <ThemeSwitcherInner />
+    </React.Suspense>
+  )
+}
+
+function ThemeSwitcherInner() {
   const { theme, setTheme } = useTheme()
   const searchParams = useSearchParams()
   const [mounted, setMounted] = React.useState(false)
