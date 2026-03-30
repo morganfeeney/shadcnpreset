@@ -6,18 +6,19 @@ import { siteConfig } from "@/lib/config"
 import { absoluteUrl } from "@/lib/utils"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { BASES, type Base, type BaseName } from "@/registry/config"
-import { ActionMenuScript } from "@/app/(create)/components/action-menu"
-import { DesignSystemProvider } from "@/app/(create)/components/design-system-provider"
-import { HistoryScript } from "@/app/(create)/components/history-buttons"
-import { DarkModeScript } from "@/app/(create)/components/mode-switcher"
-import { PreviewStyle } from "@/app/(create)/components/preview-style"
-import { RandomizeScript } from "@/app/(create)/components/random-button"
-import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
+import { ActionMenuScript } from "@/app/(app)/create/components/action-menu"
+import { DesignSystemProvider } from "@/app/(app)/create/components/design-system-provider"
+import { HistoryScript } from "@/app/(app)/create/components/history-buttons"
+import { DarkModeScript } from "@/app/(app)/create/components/mode-switcher"
+import { PreviewStyle } from "@/app/(app)/create/components/preview-style"
+import { RandomizeScript } from "@/app/(app)/create/components/random-button"
 import {
   getBaseComponent,
   getBaseItem,
   getItemsForBase,
-} from "@/app/(create)/lib/api"
+} from "@/app/(app)/create/lib/api"
+import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
+
 
 export const revalidate = false
 export const dynamic = "force-static"
