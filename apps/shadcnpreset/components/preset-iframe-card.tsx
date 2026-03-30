@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 
 import useVote from "@/hooks/use-vote"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button, buttonVariants } from "@/components/ui/button"
 
 type PresetIframeCardProps = {
@@ -26,8 +27,9 @@ export function PresetIframeCard({
 }: PresetIframeCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldRender, setShouldRender] = useState(false)
   const [iframeLoaded, setIframeLoaded] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -51,26 +53,29 @@ export function PresetIframeCard({
     const intersectionObserver = new IntersectionObserver(
       (entries) => {
         const isVisible = entries.some((entry) => entry.isIntersecting)
-        if (isVisible) {
-          setShouldLoad(true)
-          intersectionObserver.disconnect()
+        if (!isVisible) {
+          setIframeLoaded(false)
         }
+        setShouldRender(isVisible)
       },
-      { rootMargin: "220px 0px" }
+      {
+        rootMargin: isMobile ? "96px 0px" : "220px 0px",
+        threshold: 0.01,
+      }
     )
     intersectionObserver.observe(node)
 
     return () => intersectionObserver.disconnect()
-  }, [])
+  }, [isMobile])
 
   const scale = useMemo(() => {
     if (!containerWidth) return 1
     return containerWidth / virtualWidth
   }, [containerWidth, virtualWidth])
 
-  const canRenderIframe = shouldLoad && containerWidth > 0
+  const canRenderIframe = shouldRender && containerWidth > 0
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code, {
-    enabled: shouldLoad,
+    enabled: shouldRender,
   })
 
   return (
