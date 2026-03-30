@@ -50,9 +50,18 @@ export function PresetIframeCard({
     const node = wrapperRef.current
     if (!node) return
 
-    const intersectionObserver = new IntersectionObserver(
+    let intersectionObserver: IntersectionObserver | null = null
+
+    intersectionObserver = new IntersectionObserver(
       (entries) => {
         const isVisible = entries.some((entry) => entry.isIntersecting)
+
+        if (!isMobile && isVisible) {
+          setShouldRender(true)
+          intersectionObserver?.disconnect()
+          return
+        }
+
         if (!isVisible) {
           setIframeLoaded(false)
         }
@@ -65,7 +74,7 @@ export function PresetIframeCard({
     )
     intersectionObserver.observe(node)
 
-    return () => intersectionObserver.disconnect()
+    return () => intersectionObserver?.disconnect()
   }, [isMobile])
 
   const scale = useMemo(() => {
