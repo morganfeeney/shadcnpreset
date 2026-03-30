@@ -1,13 +1,8 @@
 "use client"
 
 import * as React from "react"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/examples/base/ui/card"
-import { FieldGroup, FieldSeparator } from "@/examples/base/ui/field"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { FieldGroup, FieldSeparator } from "@/components/ui/field"
 import { type RegistryItem } from "shadcn/schema"
 
 import { useIsMobile } from "@/hooks/use-mobile"

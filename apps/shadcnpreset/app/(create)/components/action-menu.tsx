@@ -9,7 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/examples/base/ui/command"
+} from "@/components/ui/command"
 import { type RegistryItem } from "shadcn/schema"
 
 import { useActionMenu } from "@/app/(create)/hooks/use-action-menu"

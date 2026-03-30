@@ -1,7 +1,7 @@
 "use client"
 
 import Script from "next/script"
-import { Button } from "@/examples/base/ui/button"
+import { Button } from "@/components/ui/button"
 import { Redo02Icon, Undo02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 

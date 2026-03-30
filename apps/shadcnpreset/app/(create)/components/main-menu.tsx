@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { type Button } from "@/examples/base/ui/button"
+import { type Button } from "@/components/ui/button"
 import { Menu09Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 

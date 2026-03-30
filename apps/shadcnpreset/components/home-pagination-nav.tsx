@@ -9,7 +9,7 @@ type HomePaginationNavProps = {
   previousHref?: string
   nextHref?: string
   safePage: number
-  totalPages: number
+  totalPages?: number
 }
 
 export function HomePaginationNav({
@@ -40,8 +40,16 @@ export function HomePaginationNav({
         </span>
       )}
       <span className="col-start-2 text-center text-sm">
-        Page <code>{safePage.toLocaleString()}</code> of{" "}
-        <code>{totalPages.toLocaleString()}</code>
+        {typeof totalPages === "number" ? (
+          <>
+            Page <code>{safePage.toLocaleString()}</code> of{" "}
+            <code>{totalPages.toLocaleString()}</code>
+          </>
+        ) : (
+          <>
+            Page <code>{safePage.toLocaleString()}</code>
+          </>
+        )}
       </span>
       {nextHref ? (
         <Link

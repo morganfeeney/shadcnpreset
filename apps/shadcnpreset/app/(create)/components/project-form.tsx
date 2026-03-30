@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/examples/base/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/examples/base/ui/dialog"
+} from "@/components/ui/dialog"
 import {
   Field,
   FieldContent,
@@ -20,15 +20,10 @@ import {
   FieldSeparator,
   FieldSet,
   FieldTitle,
-} from "@/examples/base/ui/field"
-import { RadioGroup, RadioGroupItem } from "@/examples/base/ui/radio-group"
-import { Switch } from "@/examples/base/ui/switch"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/examples/base/ui/tabs"
+} from "@/components/ui/field"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Copy01Icon, Globe02Icon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 

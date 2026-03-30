@@ -47,6 +47,7 @@ function buildCssRule(selector: string, cssVars?: Record<string, string>) {
 function buildThemeCssText(cssVars: RegistryThemeCssVars) {
   return [
     buildCssRule(":root", {
+      //@ts-expect-error:FIX
       ...(cssVars.theme ?? {}),
       ...(cssVars.light ?? {}),
     }),

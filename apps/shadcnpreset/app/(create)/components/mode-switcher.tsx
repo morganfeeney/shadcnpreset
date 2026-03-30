@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Script from "next/script"
-import { Button } from "@/examples/base/ui/button"
+import { Button } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
 import { useThemeToggle } from "@/app/(create)/hooks/use-theme-toggle"

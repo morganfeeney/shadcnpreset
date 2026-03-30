@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/examples/base/ui/alert-dialog"
+} from "@/components/ui/alert-dialog"
 
 import { useReset } from "@/app/(create)/hooks/use-reset"
 

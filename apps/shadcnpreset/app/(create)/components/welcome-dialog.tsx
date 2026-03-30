@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/examples/base/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/examples/base/ui/dialog"
+} from "@/components/ui/dialog"
 
 import { Icons } from "@/components/icons"
 

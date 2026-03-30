@@ -4,12 +4,29 @@ import { PresetIframeCard } from "@/components/preset-iframe-card"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 
+export type ListViewItem = {
+  code: string
+  baseColor: string
+  iconLibrary: string
+  font: string
+}
+
 interface ListViewProps {
-  items: PresetPageItem[]
+  items: ListViewItem[]
   safePage: number
   totalPages: number
   pageSize: number
   useLiveFeed?: boolean
+  initialFeedItems?: PresetPageItem[]
+}
+
+function toListViewItem(item: PresetPageItem): ListViewItem {
+  return {
+    code: item.code,
+    baseColor: item.config.baseColor,
+    iconLibrary: item.config.iconLibrary,
+    font: item.config.font,
+  }
 }
 
 export function ListView({
@@ -18,18 +35,23 @@ export function ListView({
   totalPages,
   pageSize,
   useLiveFeed = true,
+  initialFeedItems = [],
 }: ListViewProps) {
   const feedQuery = usePresetFeed(
     safePage,
     pageSize,
-    {
-      items,
-      safePage,
-      totalPages,
-    },
+    useLiveFeed
+      ? {
+          items: initialFeedItems,
+          safePage,
+          totalPages,
+        }
+      : undefined,
     useLiveFeed
   )
-  const feedItems = useLiveFeed ? (feedQuery.data?.items ?? items) : items
+  const feedItems = useLiveFeed
+    ? (feedQuery.data?.items ?? initialFeedItems).map(toListViewItem)
+    : items
 
   return (
     <section className="space-y-4">
@@ -39,7 +61,7 @@ export function ListView({
             <PresetIframeCard
               code={item.code}
               title={item.code}
-              description={`${item.config.baseColor} base, ${item.config.iconLibrary} icons, ${item.config.font} body`}
+              description={`${item.baseColor} base, ${item.iconLibrary} icons, ${item.font} body`}
             />
           </li>
         ))}

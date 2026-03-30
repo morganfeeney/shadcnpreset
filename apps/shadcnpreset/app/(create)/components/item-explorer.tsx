@@ -6,7 +6,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/examples/base/ui/collapsible"
+} from "@/components/ui/collapsible"
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/examples/base/ui/sidebar"
+} from "@/components/ui/sidebar"
 import { ChevronRightIcon } from "lucide-react"
 import { type RegistryItem } from "shadcn/schema"
 

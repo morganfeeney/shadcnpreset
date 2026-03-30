@@ -1,34 +1,11 @@
 import { NextResponse } from "next/server"
 
-import { type PresetPageItem } from "@/lib/preset-catalog"
-import { resolvePresetFromCode } from "@/lib/preset"
-import { getSmartPresetResults } from "@/lib/preset-smart-search"
-import { isSearchMode, SEARCH_PAGE_SIZE } from "@/lib/search-route"
-
-type SearchPayload = {
-  mode: "code" | "smart"
-  query: string
-  safePage: number
-  totalPages: number
-  totalResults: number
-  items: PresetPageItem[]
-}
+import { getSearchPageData } from "@/lib/search-data"
+import { isSearchMode } from "@/lib/search-route"
 
 function parsePositiveInt(value: string, fallback: number) {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-function getSearchItems(mode: "code" | "smart", query: string) {
-  if (mode === "code") {
-    const resolved = resolvePresetFromCode(query)
-    if (!resolved) {
-      return [] as PresetPageItem[]
-    }
-    return [{ index: 0, code: resolved.code, config: resolved }]
-  }
-
-  return getSmartPresetResults(query, {}, 360)
 }
 
 export async function GET(
@@ -49,23 +26,7 @@ export async function GET(
   }
 
   const requestedPage = parsePositiveInt(rawPage, 1)
-  const allItems = getSearchItems(mode, query)
-  const totalResults = allItems.length
-  const totalPages = Math.max(1, Math.ceil(totalResults / SEARCH_PAGE_SIZE))
-  const safePage = Math.min(requestedPage, totalPages)
-
-  const start = (safePage - 1) * SEARCH_PAGE_SIZE
-  const end = start + SEARCH_PAGE_SIZE
-  const items = allItems.slice(start, end)
-
-  const payload: SearchPayload = {
-    mode,
-    query,
-    safePage,
-    totalPages,
-    totalResults,
-    items,
-  }
+  const payload = await getSearchPageData(mode, query, requestedPage)
 
   return NextResponse.json(payload)
 }

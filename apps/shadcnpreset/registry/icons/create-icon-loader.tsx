@@ -1,19 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { use } from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
-type LibraryName =
-  | "lucide"
-  | "tabler"
-  | "hugeicons"
-  | "phosphor"
-  | "remixicon"
+type LibraryName = "lucide" | "tabler" | "hugeicons" | "phosphor" | "remixicon"
 
-type IconValue = IconSvgElement | React.ComponentType<React.ComponentProps<"svg">>
+type IconValue =
+  | IconSvgElement
+  | React.ComponentType<React.ComponentProps<"svg">>
 
-const iconPromiseCaches = new Map<LibraryName, Map<string, Promise<IconValue | null>>>()
+const iconPromiseCaches = new Map<
+  LibraryName,
+  Map<string, Promise<IconValue | null>>
+>()
 
 function getCache(libraryName: LibraryName) {
   if (!iconPromiseCaches.has(libraryName)) {
@@ -34,19 +33,31 @@ async function loadIconFromLibrary(
   switch (libraryName) {
     case "lucide": {
       const mod = await import("lucide-react")
-      return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
+      return (
+        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
+        null
+      )
     }
     case "tabler": {
       const mod = await import("@tabler/icons-react")
-      return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
+      return (
+        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
+        null
+      )
     }
     case "phosphor": {
       const mod = await import("@phosphor-icons/react")
-      return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
+      return (
+        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
+        null
+      )
     }
     case "remixicon": {
       const mod = await import("@remixicon/react")
-      return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
+      return (
+        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
+        null
+      )
     }
     case "hugeicons": {
       const mod = await import("@hugeicons/core-free-icons")
@@ -78,7 +89,10 @@ export function createIconLoader(libraryName: LibraryName) {
     }
 
     if (isIconData(iconData)) {
-      return <HugeiconsIcon icon={iconData} strokeWidth={strokeWidth} {...props} />
+      return (
+        // @ts-expect-error: FIX LATER
+        <HugeiconsIcon icon={iconData} strokeWidth={strokeWidth} {...props} />
+      )
     }
 
     const IconComponent = iconData

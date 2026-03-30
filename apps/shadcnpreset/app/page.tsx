@@ -1,7 +1,6 @@
 import { ListView } from "@/components/home-featured-section"
 import { HomeHero } from "@/components/home-hero"
 import { HomePaginationNav } from "@/components/home-pagination-nav"
-import { type PresetPageItem } from "@/lib/preset-catalog"
 import { getPresetFeedPage } from "@/lib/preset-feed"
 import { HomeLayout } from "@/components/home-layout"
 
@@ -51,7 +50,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         />
 
         <ListView
-          items={feed.items as PresetPageItem[]}
+          items={feed.items.map((item) => ({
+            code: item.code,
+            baseColor: item.config.baseColor,
+            iconLibrary: item.config.iconLibrary,
+            font: item.config.font,
+          }))}
+          initialFeedItems={feed.items}
           safePage={safePage}
           totalPages={totalPages}
           pageSize={pageSize}
