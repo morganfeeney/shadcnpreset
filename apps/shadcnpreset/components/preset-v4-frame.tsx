@@ -11,9 +11,20 @@ type PresetV4FrameProps = {
   src: string
   title: string
   className?: string
+} & Omit<
+  React.ComponentPropsWithoutRef<"iframe">,
+  "src" | "title" | "className" | "onLoad"
+> & {
+  onLoad?: React.ComponentPropsWithoutRef<"iframe">["onLoad"]
 }
 
-export function PresetV4Frame({ src, title, className }: PresetV4FrameProps) {
+export function PresetV4Frame({
+  src,
+  title,
+  className,
+  onLoad,
+  ...props
+}: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
@@ -78,7 +89,11 @@ export function PresetV4Frame({ src, title, className }: PresetV4FrameProps) {
       className={className}
       src={src}
       title={title}
-      onLoad={postThemeModeWithRetry}
+      onLoad={(event) => {
+        postThemeModeWithRetry()
+        onLoad?.(event)
+      }}
+      {...props}
     />
   )
 }

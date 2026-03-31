@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner"
 
 import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button, buttonVariants } from "@/components/ui/button"
 
 type PresetIframeCardProps = {
@@ -82,6 +83,13 @@ export function PresetIframeCard({
     return containerWidth / virtualWidth
   }, [containerWidth, virtualWidth])
 
+  const iframeSrc = useMemo(() => {
+    const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
+    const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
+    previewUrl.searchParams.set("preset", code)
+    return previewUrl.toString()
+  }, [code])
+
   const canRenderIframe = shouldRender && containerWidth > 0
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code, {
     enabled: shouldRender,
@@ -107,9 +115,9 @@ export function PresetIframeCard({
                 transition: "opacity 180ms ease",
               }}
             >
-              <iframe
+              <PresetV4Frame
                 title={`Preset preview ${code}`}
-                src={`/preset/${code}?embed=1`}
+                src={iframeSrc}
                 loading="lazy"
                 sandbox="allow-scripts allow-same-origin"
                 tabIndex={-1}
