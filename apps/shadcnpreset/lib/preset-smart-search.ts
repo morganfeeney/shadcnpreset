@@ -47,7 +47,7 @@ const TOKEN_HINTS: Record<string, WeightedTokenMatch> = {
   light: { menuColor: 3, theme: 1, baseColor: 1 },
 }
 
-const SANS_FONTS = new Set([
+export const SANS_FONTS = new Set([
   "inter",
   "noto-sans",
   "nunito-sans",
@@ -67,7 +67,7 @@ const SANS_FONTS = new Set([
   "instrument-sans",
 ])
 
-const SERIF_FONTS = new Set([
+export const SERIF_FONTS = new Set([
   "lora",
   "merriweather",
   "playfair-display",
@@ -75,12 +75,17 @@ const SERIF_FONTS = new Set([
   "roboto-slab",
 ])
 
-const MONO_FONTS = new Set(["jetbrains-mono", "geist-mono"])
-const TOKEN_ALIASES: Record<string, string> = {
-  "hero icons": "heroicons",
-  "hero icon": "heroicons",
+export const MONO_FONTS = new Set(["jetbrains-mono", "geist-mono"])
+export const TOKEN_ALIASES: Record<string, string> = {
+  "hero icons": "lucide",
+  "hero icon": "lucide",
+  heroicons: "lucide",
   "huge icons": "hugeicons",
   "huge icon": "hugeicons",
+  "tabler icons": "tabler",
+  "tabler icon": "tabler",
+  "phosphor icons": "phosphor",
+  "phosphor icon": "phosphor",
   "remix icon": "remixicon",
   "remix icons": "remixicon",
 }
@@ -94,16 +99,18 @@ function stableHash(input: string) {
   return hash >>> 0
 }
 
-function tokenize(query: string) {
+export function tokenizeSearchQuery(query: string) {
   const normalizedQuery = Object.entries(TOKEN_ALIASES).reduce(
     (currentQuery, [source, target]) => currentQuery.replaceAll(source, target),
     query.toLowerCase()
   )
 
-  return normalizedQuery
-    .split(/[^a-z0-9-]+/)
-    .map((token) => token.trim())
-    .filter(Boolean)
+  return [...new Set(
+    normalizedQuery
+      .split(/[^a-z0-9-]+/)
+      .map((token) => token.trim())
+      .filter(Boolean)
+  )]
 }
 
 function scoreTokenHint(token: string, item: PresetPageItem) {
@@ -180,7 +187,7 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
 
 function scorePreset(item: PresetPageItem, query: string) {
   const queryText = query.toLowerCase()
-  const tokens = tokenize(query)
+  const tokens = tokenizeSearchQuery(query)
   if (!tokens.length) return 0
 
   const featureValues = [
@@ -223,27 +230,29 @@ function scorePreset(item: PresetPageItem, query: string) {
 }
 
 function similarity(a: PresetPageItem, b: PresetPageItem) {
-  const keys: Array<keyof PresetPageItem["config"]> = [
-    "style",
-    "baseColor",
-    "theme",
-    "chartColor",
-    "fontHeading",
-    "font",
-    "iconLibrary",
-    "radius",
-    "menuColor",
-    "menuAccent",
+  const weights: Array<[keyof PresetPageItem["config"], number]> = [
+    ["style", 1.4],
+    ["baseColor", 1.3],
+    ["theme", 1.2],
+    ["chartColor", 1.2],
+    ["fontHeading", 1],
+    ["font", 1.8],
+    ["iconLibrary", 0.8],
+    ["radius", 0.6],
+    ["menuColor", 0.35],
+    ["menuAccent", 0.25],
   ]
 
-  let same = 0
-  for (const key of keys) {
+  let sameWeight = 0
+  let totalWeight = 0
+  for (const [key, weight] of weights) {
+    totalWeight += weight
     if (a.config[key] === b.config[key]) {
-      same += 1
+      sameWeight += weight
     }
   }
 
-  return same / keys.length
+  return totalWeight > 0 ? sameWeight / totalWeight : 0
 }
 
 function getSampledCandidates(
@@ -302,6 +311,14 @@ export function getSmartPresetResults(
   maxResults: number
 ) {
   const candidates = getSampledCandidates(query, filters, 1600)
+  return rankPresetCandidates(query, candidates, maxResults)
+}
+
+export function rankPresetCandidates(
+  query: string,
+  candidates: PresetPageItem[],
+  maxResults: number
+) {
   if (!candidates.length) return []
 
   const ranked = candidates

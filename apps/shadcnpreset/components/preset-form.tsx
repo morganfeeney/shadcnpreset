@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import { ChevronDownIcon } from "lucide-react"
 
@@ -17,13 +17,35 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { buildSearchHref } from "@/lib/search-route"
+import { buildSearchHref, parseSearchRouteFromLocation } from "@/lib/search-route"
 import { cn } from "@/lib/utils"
 
 export function PresetForm({ className }: { className?: string }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const routeParams = useParams()
+
   const [mode, setMode] = React.useState<"code" | "smart">("code")
   const [query, setQuery] = React.useState("")
+
+  const routeMode = routeParams.mode
+  const routeQuery = routeParams.query
+
+  React.useEffect(() => {
+    const parsed = parseSearchRouteFromLocation(pathname, {
+      mode: routeMode as string | string[] | undefined,
+      query: routeQuery as string | string[] | undefined,
+    })
+    if (parsed) {
+      setMode(parsed.mode)
+      setQuery(parsed.query)
+      return
+    }
+    if (pathname === "/") {
+      setMode("code")
+      setQuery("")
+    }
+  }, [pathname, routeMode, routeQuery])
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

@@ -19,7 +19,13 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
     notFound()
   }
 
-  const query = resolvedParams.query.trim()
+  let query = resolvedParams.query.trim()
+  try {
+    query = decodeURIComponent(query.replace(/\+/g, "%20"))
+  } catch {
+    /* keep trimmed segment */
+  }
+  query = query.trim()
   if (!query) {
     notFound()
   }

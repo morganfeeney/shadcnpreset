@@ -1,10 +1,11 @@
 "use client"
 
+import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 
 import { ListView } from "@/components/home-featured-section"
 import { HomeResultsSkeleton } from "@/components/home-results-skeleton"
-import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
+import { SEARCH_PAGE_SIZE, isSearchMode, type SearchMode } from "@/lib/search-route"
 import type { SearchPageData } from "@/lib/search-data"
 
 type SearchResultsClientProps = {
@@ -12,15 +13,35 @@ type SearchResultsClientProps = {
   query: string
 }
 
+function segmentToString(value: string | string[] | undefined, fallback: string) {
+  if (typeof value === "string") return value.trim()
+  if (Array.isArray(value) && value[0]) return value[0].trim()
+  return fallback.trim()
+}
+
 export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
+  const params = useParams()
+
+  const routeMode = segmentToString(params.mode as string | string[] | undefined, mode)
+  const routeQuery = segmentToString(params.query as string | string[] | undefined, query)
+
+  const effectiveMode: SearchMode = isSearchMode(routeMode) ? routeMode : mode
+  const effectiveQuery = routeQuery || query
+
   const searchQuery = useQuery({
-    queryKey: ["searchPage", mode, query],
+    queryKey: ["searchPage", effectiveMode, effectiveQuery],
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
     queryFn: async ({ signal }): Promise<SearchPageData> => {
-      const response = await fetch(`/api/search/${mode}/${encodeURIComponent(query)}`, {
-        method: "GET",
-        cache: "no-store",
-        signal,
-      })
+      const response = await fetch(
+        `/api/search/${effectiveMode}/${encodeURIComponent(effectiveQuery)}`,
+        {
+          method: "GET",
+          cache: "no-store",
+          signal,
+        }
+      )
 
       if (!response.ok) {
         throw new Error("Failed to fetch search results")
@@ -56,7 +77,12 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
         </div>
       ) : null}
 
-      <ListView items={results} pageSize={SEARCH_PAGE_SIZE} useLiveFeed={false} />
+      <ListView
+        key={`${effectiveMode}-${effectiveQuery}`}
+        items={results}
+        pageSize={SEARCH_PAGE_SIZE}
+        useLiveFeed={false}
+      />
     </main>
   )
 }

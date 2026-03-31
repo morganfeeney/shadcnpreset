@@ -10,6 +10,7 @@ import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { resolvePresetFromCode } from "@/lib/preset"
 
 type PresetIframeCardProps = {
   code: string
@@ -87,6 +88,10 @@ export function PresetIframeCard({
     const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
     const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
     previewUrl.searchParams.set("preset", code)
+    const resolved = resolvePresetFromCode(code)
+    if (resolved) {
+      previewUrl.searchParams.set("iconLibrary", resolved.iconLibrary)
+    }
     return previewUrl.toString()
   }, [code])
 

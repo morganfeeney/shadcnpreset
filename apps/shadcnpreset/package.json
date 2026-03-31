@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test \"./**/*.test.ts\"",
+    "verify:search": "node --import tsx/esm ./scripts/verify-search.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"
   },
