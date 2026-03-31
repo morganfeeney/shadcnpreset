@@ -14,7 +14,7 @@ export function HomeLoadingState() {
       <PageHeader>
         <Announcement />
         <PageHeaderHeading className="max-w-4xl">
-          Discover and apply great shadcn presets in seconds
+          Find and compare the best shadcn presets in seconds
         </PageHeaderHeading>
         <PageHeaderDescription>
           Search by exact preset code or use smart search for diverse results,

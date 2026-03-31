@@ -21,17 +21,24 @@ const TOKEN_NORMALIZATION: Record<string, string> = {
   playfair: "playfair-display",
 }
 
-export function tokenizeSearchQuery(query: string) {
+function splitSearchTokens(query: string) {
   const normalizedQuery = Object.entries(TOKEN_ALIASES).reduce(
     (currentQuery, [source, target]) => currentQuery.replaceAll(source, target),
     query.toLowerCase()
   )
 
-  const tokens = normalizedQuery
+  return normalizedQuery
     .split(/[^a-z0-9-]+/)
     .map((token) => token.trim())
     .filter(Boolean)
     .map((token) => TOKEN_NORMALIZATION[token] ?? token)
+}
 
-  return [...new Set(tokens)]
+export function tokenizeSearchQuery(query: string) {
+  return [...new Set(splitSearchTokens(query))]
+}
+
+/** Same tokenization as `tokenizeSearchQuery` but preserves order and duplicates (for constraints). */
+export function tokenizeSearchQueryOrdered(query: string) {
+  return splitSearchTokens(query)
 }

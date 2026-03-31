@@ -200,23 +200,39 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
   return score
 }
 
+/**
+ * Avoid treating heading font as a match for a body-font token when the heading is a
+ * hyphenated variant (e.g. token "geist" vs heading "geist-mono"), or relevance
+ * collapses to geist-mono headings while body is already pinned to geist.
+ */
+function isMisleadingHeadingPrefixMatch(
+  fontHeadingValue: string,
+  token: string
+): boolean {
+  const v = fontHeadingValue.toLowerCase()
+  const t = token.toLowerCase()
+  if (v === t) return false
+  return v.startsWith(`${t}-`)
+}
+
 function scorePreset(item: PresetPageItem, query: string) {
   const queryText = query.toLowerCase()
   const tokens = tokenizeSearchQuery(query)
   if (!tokens.length) return 0
 
-  const featureValues = [
-    item.config.style,
-    item.config.baseColor,
-    item.config.theme,
-    item.config.chartColor,
-    item.config.fontHeading,
-    item.config.font,
-    item.config.iconLibrary,
-    item.config.radius,
-    item.config.menuColor,
-    item.config.menuAccent,
-  ]
+  const featureEntries: Array<[keyof PresetPageItem["config"], string | undefined]> =
+    [
+      ["style", item.config.style],
+      ["baseColor", item.config.baseColor],
+      ["theme", item.config.theme],
+      ["chartColor", item.config.chartColor],
+      ["fontHeading", item.config.fontHeading],
+      ["font", item.config.font],
+      ["iconLibrary", item.config.iconLibrary],
+      ["radius", item.config.radius],
+      ["menuColor", item.config.menuColor],
+      ["menuAccent", item.config.menuAccent],
+    ]
 
   let score = 0
   for (const token of tokens) {
@@ -224,12 +240,18 @@ function scorePreset(item: PresetPageItem, query: string) {
       score += 10
     }
 
-    for (const value of featureValues) {
+    for (const [key, value] of featureEntries) {
       const valueLower = String(value ?? "").toLowerCase()
       if (!valueLower) continue
       if (valueLower === token) {
         score += 8
       } else if (valueLower.includes(token)) {
+        if (
+          key === "fontHeading" &&
+          isMisleadingHeadingPrefixMatch(valueLower, token)
+        ) {
+          continue
+        }
         score += 3
       }
     }

@@ -10,9 +10,9 @@ import {
   SERIF_FONTS,
   getSampledCandidates,
   rankPresetCandidates,
-  tokenizeSearchQuery,
   wantsPaletteVariety,
 } from "@/lib/preset-smart-search"
+import { tokenizeSearchQueryOrdered } from "@/lib/search-tokenize"
 import { buildSearchCorpus } from "@/lib/search-corpus"
 import { getLexicalScoresForQuery } from "@/lib/search-minisearch"
 import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
@@ -47,6 +47,22 @@ function headingMatchesBodyFontFacet(
   if (facet === "serif") return SERIF_FONTS.has(h)
   if (facet === "sans") return SANS_FONTS.has(h)
   return MONO_FONTS.has(h)
+}
+
+/** Body + heading pair: first font token = heading, second = body (matches Customizer order). */
+function matchesBodyHeadingPair(
+  item: PresetPageItem,
+  body: string,
+  heading: string
+) {
+  if (item.config.font !== body) return false
+  if (heading === body) {
+    return (
+      item.config.fontHeading === "inherit" ||
+      item.config.fontHeading === body
+    )
+  }
+  return item.config.fontHeading === heading
 }
 
 function addUniqueCandidates(
@@ -167,7 +183,7 @@ function extractThemeChartFromChartsConnector(rawTokens: string[]): {
 }
 
 function getQueryConstraints(query: string): QueryConstraints {
-  const raw = tokenizeSearchQuery(query)
+  const raw = tokenizeSearchQueryOrdered(query)
   const { tokens: afterChartsPhrase, paired: chartsConnectorPair } =
     extractThemeChartFromChartsConnector(raw)
   const tokens = afterChartsPhrase.filter(
@@ -176,6 +192,7 @@ function getQueryConstraints(query: string): QueryConstraints {
   const predicates: QueryConstraints["predicates"] = []
   const exactFilters: PresetFilters = {}
   const themeTokens: string[] = []
+  const fontTokens: string[] = []
   let fontOptions: string[] = []
   let strictFacetMode = false
 
@@ -217,8 +234,7 @@ function getQueryConstraints(query: string): QueryConstraints {
     }
 
     if (PRESET_FILTER_OPTIONS.fonts.includes(token as never)) {
-      fontOptions = [token]
-      predicates.push((item) => item.config.font === token)
+      fontTokens.push(token)
       continue
     }
 
@@ -277,6 +293,28 @@ function getQueryConstraints(query: string): QueryConstraints {
         item.config.theme === themeTokens[0] ||
         item.config.chartColor === themeTokens[0]
     )
+  }
+
+  if (!strictFacetMode) {
+    if (fontTokens.length >= 2) {
+      const heading = fontTokens[0]
+      const body = fontTokens[1]
+      exactFilters.font = body as PresetFilters["font"]
+      exactFilters.fontHeading =
+        heading === body ? "inherit" : (heading as PresetFilters["fontHeading"])
+      predicates.push((item) => matchesBodyHeadingPair(item, body, heading))
+      fontOptions = []
+    } else if (fontTokens.length === 1) {
+      const f = fontTokens[0]
+      exactFilters.font = f as PresetFilters["font"]
+      predicates.push((item) => item.config.font === f)
+      fontOptions = [f]
+    }
+  } else if (fontTokens.length >= 1) {
+    const narrow = fontTokens[fontTokens.length - 1]!
+    if (fontOptions.length && fontOptions.includes(narrow as never)) {
+      fontOptions = [narrow]
+    }
   }
 
   return {
