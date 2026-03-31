@@ -8,9 +8,7 @@ export function isSearchMode(value: string): value is SearchMode {
 
 export function buildSearchHref(
   mode: SearchMode,
-  query: string,
-  page = 1
+  query: string
 ) {
-  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
-  return `/search/${mode}/${encodeURIComponent(query)}/${safePage}`
+  return `/search/${mode}/${encodeURIComponent(query)}`
 }

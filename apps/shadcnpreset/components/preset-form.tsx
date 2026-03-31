@@ -39,7 +39,7 @@ export function PresetForm({ className }: { className?: string }) {
       return
     }
 
-    router.push(buildSearchHref(mode, normalized, 1))
+    router.push(buildSearchHref(mode, normalized))
   }
 
   return (

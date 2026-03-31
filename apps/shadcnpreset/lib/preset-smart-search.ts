@@ -6,10 +6,6 @@ import {
 } from "@/lib/preset-catalog"
 
 type WeightedTokenMatch = Partial<Record<keyof PresetPageItem["config"], number>>
-type QueryContext = {
-  queryText: string
-  tokens: string[]
-}
 
 const BRIGHT_THEMES = new Set([
   "amber",
@@ -154,7 +150,10 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
       continue
     }
 
-    if ((token === "mono" || token === "monospaced") && (key === "font" || key === "fontHeading")) {
+    if (
+      (token === "mono" || token === "monospaced") &&
+      (key === "font" || key === "fontHeading")
+    ) {
       if (MONO_FONTS.has(value)) score += 2 * weight
       continue
     }
@@ -167,10 +166,12 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
   return score
 }
 
-function scorePreset(item: PresetPageItem, context: QueryContext) {
-  if (!context.tokens.length) return 0
+function scorePreset(item: PresetPageItem, query: string) {
+  const queryText = query.toLowerCase()
+  const tokens = tokenize(query)
+  if (!tokens.length) return 0
 
-  const featureValuesLower = [
+  const featureValues = [
     item.config.style,
     item.config.baseColor,
     item.config.theme,
@@ -181,16 +182,16 @@ function scorePreset(item: PresetPageItem, context: QueryContext) {
     item.config.radius,
     item.config.menuColor,
     item.config.menuAccent,
-  ].map((value) => String(value ?? "").toLowerCase())
-  const codeLower = item.code.toLowerCase()
+  ]
 
   let score = 0
-  for (const token of context.tokens) {
-    if (codeLower.includes(token)) {
+  for (const token of tokens) {
+    if (item.code.toLowerCase().includes(token)) {
       score += 10
     }
 
-    for (const valueLower of featureValuesLower) {
+    for (const value of featureValues) {
+      const valueLower = String(value ?? "").toLowerCase()
       if (!valueLower) continue
       if (valueLower === token) {
         score += 8
@@ -202,57 +203,35 @@ function scorePreset(item: PresetPageItem, context: QueryContext) {
     score += scoreTokenHint(token, item)
   }
 
-  if (codeLower === context.queryText) {
+  if (item.code.toLowerCase() === queryText) {
     score += 20
   }
 
   return score
 }
 
-function diversityBucket(item: PresetPageItem) {
-  return `${item.config.baseColor}|${item.config.theme}|${item.config.iconLibrary}|${item.config.font}|${item.config.radius}`
-}
+function similarity(a: PresetPageItem, b: PresetPageItem) {
+  const keys: Array<keyof PresetPageItem["config"]> = [
+    "style",
+    "baseColor",
+    "theme",
+    "chartColor",
+    "fontHeading",
+    "font",
+    "iconLibrary",
+    "radius",
+    "menuColor",
+    "menuAccent",
+  ]
 
-function selectDiverse(
-  ranked: Array<{ item: PresetPageItem; relevance: number }>,
-  maxResults: number
-) {
-  const selected: Array<{ item: PresetPageItem; relevance: number }> = []
-  let pool = [...ranked]
-  const bucketCounts = new Map<string, number>()
-  let pass = 0
-
-  while (selected.length < maxResults && pool.length) {
-    const maxPerBucket = 1 + Math.floor(pass / 2)
-    const nextPool: typeof pool = []
-    let pickedInPass = 0
-
-    for (const candidate of pool) {
-      if (selected.length >= maxResults) {
-        break
-      }
-
-      const bucket = diversityBucket(candidate.item)
-      const count = bucketCounts.get(bucket) ?? 0
-      if (count < maxPerBucket) {
-        selected.push(candidate)
-        bucketCounts.set(bucket, count + 1)
-        pickedInPass += 1
-      } else {
-        nextPool.push(candidate)
-      }
+  let same = 0
+  for (const key of keys) {
+    if (a.config[key] === b.config[key]) {
+      same += 1
     }
-
-    if (!pickedInPass) {
-      selected.push(...nextPool.slice(0, maxResults - selected.length))
-      break
-    }
-
-    pool = nextPool
-    pass += 1
   }
 
-  return selected
+  return same / keys.length
 }
 
 function getSampledCandidates(
@@ -310,28 +289,38 @@ export function getSmartPresetResults(
   filters: PresetFilters,
   maxResults: number
 ) {
-  const safeMaxResults = Math.max(1, maxResults)
-  const maxCandidates = Math.min(700, Math.max(160, safeMaxResults * 6))
-  const candidates = getSampledCandidates(query, filters, maxCandidates)
+  const candidates = getSampledCandidates(query, filters, 1600)
   if (!candidates.length) return []
 
-  const context: QueryContext = {
-    queryText: query.toLowerCase(),
-    tokens: tokenize(query),
-  }
-
   const ranked = candidates
-    .map((item) => ({ item, relevance: scorePreset(item, context) }))
+    .map((item) => ({ item, relevance: scorePreset(item, query) }))
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 
-  const shortlistSize = Math.min(
-    ranked.length,
-    Math.max(Math.ceil(safeMaxResults * 2), Math.min(240, maxCandidates))
-  )
-  const shortlist = ranked.slice(0, shortlistSize)
+  const shortlist = ranked.slice(0, 500)
   if (!shortlist.length) return []
 
-  const selected = selectDiverse(shortlist, safeMaxResults)
+  const selected: Array<(typeof shortlist)[number]> = []
+  const remaining = [...shortlist]
+  const lambda = 0.6
+
+  while (selected.length < maxResults && remaining.length) {
+    let bestIndex = 0
+    let bestScore = -Infinity
+
+    for (let i = 0; i < remaining.length; i++) {
+      const candidate = remaining[i]
+      const maxSimilarity = selected.length
+        ? Math.max(...selected.map((chosen) => similarity(candidate.item, chosen.item)))
+        : 0
+      const mmrScore = lambda * candidate.relevance - (1 - lambda) * maxSimilarity * 12
+      if (mmrScore > bestScore) {
+        bestScore = mmrScore
+        bestIndex = i
+      }
+    }
+
+    selected.push(remaining.splice(bestIndex, 1)[0])
+  }
 
   return selected.map((entry) => entry.item)
 }

@@ -1,6 +1,9 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 
-import { buildSearchHref, isSearchMode } from "@/lib/search-route"
+import { HomeHero } from "@/components/home-hero"
+import { HomeLayout } from "@/components/home-layout"
+import { isSearchMode } from "@/lib/search-route"
+import { SearchResultsClient } from "./search-results-client"
 
 type SearchBasePageProps = {
   params: Promise<{
@@ -21,5 +24,10 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
     notFound()
   }
 
-  redirect(buildSearchHref(resolvedParams.mode, query, 1))
+  return (
+    <HomeLayout>
+      <HomeHero />
+      <SearchResultsClient mode={resolvedParams.mode} query={query} />
+    </HomeLayout>
+  )
 }
