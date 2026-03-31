@@ -9,8 +9,10 @@ import {
   MONO_FONTS,
   SANS_FONTS,
   SERIF_FONTS,
+  getSampledCandidates,
   rankPresetCandidates,
   tokenizeSearchQuery,
+  wantsPaletteVariety,
 } from "@/lib/preset-smart-search"
 import { buildSearchCorpus } from "@/lib/search-corpus"
 import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
@@ -220,16 +222,25 @@ async function getRankedSmartResults(query: string, neededCount: number) {
     ? constraints.focusedFilters
     : [{}]
 
-  for (const filters of focusedFilters.slice(0, 24)) {
-    for (const page of FOCUSED_PAGE_SEQUENCE) {
-      addUniqueCandidates(focusedCandidates, getPresetPage(page, 24, filters))
+  if (wantsPaletteVariety(query)) {
+    for (const filters of focusedFilters.slice(0, 24)) {
+      addUniqueCandidates(
+        focusedCandidates,
+        getSampledCandidates(query, filters, 1600)
+      )
+    }
+  } else {
+    for (const filters of focusedFilters.slice(0, 24)) {
+      for (const page of FOCUSED_PAGE_SEQUENCE) {
+        addUniqueCandidates(focusedCandidates, getPresetPage(page, 24, filters))
+        if (focusedCandidates.size >= Math.max(neededCount * 8, 96)) {
+          break
+        }
+      }
+
       if (focusedCandidates.size >= Math.max(neededCount * 8, 96)) {
         break
       }
-    }
-
-    if (focusedCandidates.size >= Math.max(neededCount * 8, 96)) {
-      break
     }
   }
 

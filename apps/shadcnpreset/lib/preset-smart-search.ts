@@ -1,6 +1,7 @@
 import {
   getPresetPage,
   getPresetTotalCombinations,
+  PRESET_FILTER_OPTIONS,
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
@@ -255,7 +256,118 @@ function similarity(a: PresetPageItem, b: PresetPageItem) {
   return totalWeight > 0 ? sameWeight / totalWeight : 0
 }
 
-function getSampledCandidates(
+/** How similar two presets are on palette-driving fields (for MMR diversity). */
+function paletteSimilarity(a: PresetPageItem, b: PresetPageItem) {
+  const keys: Array<[keyof PresetPageItem["config"], number]> = [
+    ["baseColor", 1.2],
+    ["theme", 1.2],
+    ["chartColor", 1.2],
+    ["menuColor", 0.45],
+  ]
+
+  let sameWeight = 0
+  let totalWeight = 0
+  for (const [key, weight] of keys) {
+    totalWeight += weight
+    if (a.config[key] === b.config[key]) {
+      sameWeight += weight
+    }
+  }
+
+  return totalWeight > 0 ? sameWeight / totalWeight : 0
+}
+
+/**
+ * Vibe tokens that describe mood/lighting but should not collapse results to one palette.
+ * When present, MMR weights palette dimensions more so queries like "lyra dark" spread
+ * baseColor / theme / chartColor.
+ */
+const PALETTE_VIBE_TOKENS = new Set([
+  "dark",
+  "light",
+  "minimal",
+  "bold",
+  "vibrant",
+  "colorful",
+  "clean",
+  "simple",
+  "punchy",
+])
+
+export function wantsPaletteVariety(query: string) {
+  const tokens = tokenizeSearchQuery(query)
+  if (!tokens.some((t) => PALETTE_VIBE_TOKENS.has(t))) {
+    return false
+  }
+  const pinnedThemeOrBase = tokens.filter(
+    (t) =>
+      PRESET_FILTER_OPTIONS.themes.includes(t as never) ||
+      PRESET_FILTER_OPTIONS.baseColors.includes(t as never)
+  )
+  if (pinnedThemeOrBase.length >= 2) {
+    return false
+  }
+  return true
+}
+
+function mmrSimilarity(a: PresetPageItem, b: PresetPageItem, paletteMode: boolean) {
+  if (!paletteMode) return similarity(a, b)
+  const p = paletteSimilarity(a, b)
+  const s = similarity(a, b)
+  return 0.74 * p + 0.26 * s
+}
+
+function paletteTripleKey(item: PresetPageItem) {
+  return `${item.config.baseColor}|${item.config.theme}|${item.config.chartColor}`
+}
+
+type RankedEntry = { item: PresetPageItem; relevance: number }
+
+/**
+ * When vibe queries should show many colourways, the top-N by relevance alone can be
+ * almost one palette. Round-robin across palette triples so MMR sees a mixed pool.
+ */
+function buildPaletteAwareShortlist(
+  ranked: RankedEntry[],
+  limit: number,
+  paletteMode: boolean
+): RankedEntry[] {
+  if (!paletteMode || ranked.length <= limit) {
+    return ranked.slice(0, limit)
+  }
+
+  const buckets = new Map<string, RankedEntry[]>()
+  for (const entry of ranked) {
+    const key = paletteTripleKey(entry.item)
+    const list = buckets.get(key)
+    if (list) list.push(entry)
+    else buckets.set(key, [entry])
+  }
+
+  const bucketOrder = [...buckets.entries()].sort(
+    (a, b) =>
+      b[1][0].relevance - a[1][0].relevance ||
+      a[0].localeCompare(b[0])
+  )
+
+  const out: RankedEntry[] = []
+  let round = 0
+  while (out.length < limit) {
+    let added = false
+    for (const [, bucket] of bucketOrder) {
+      if (round < bucket.length && out.length < limit) {
+        out.push(bucket[round])
+        added = true
+      }
+    }
+    if (!added) break
+    round++
+  }
+
+  return out
+}
+
+export function getSampledCandidates(
   query: string,
   filters: PresetFilters,
   maxCandidates: number
@@ -326,12 +438,15 @@ export function rankPresetCandidates(
     .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 
-  const shortlist = ranked.slice(0, 500)
+  const paletteMode = wantsPaletteVariety(query)
+  const shortlist = buildPaletteAwareShortlist(ranked, 500, paletteMode)
   if (!shortlist.length) return []
+
+  const lambda = paletteMode ? 0.42 : 0.6
+  const diversityScale = paletteMode ? 16 : 12
 
   const selected: Array<(typeof shortlist)[number]> = []
   const remaining = [...shortlist]
-  const lambda = 0.6
 
   while (selected.length < maxResults && remaining.length) {
     let bestIndex = 0
@@ -340,9 +455,14 @@ export function rankPresetCandidates(
     for (let i = 0; i < remaining.length; i++) {
       const candidate = remaining[i]
       const maxSimilarity = selected.length
-        ? Math.max(...selected.map((chosen) => similarity(candidate.item, chosen.item)))
+        ? Math.max(
+            ...selected.map((chosen) =>
+              mmrSimilarity(candidate.item, chosen.item, paletteMode)
+            )
+          )
         : 0
-      const mmrScore = lambda * candidate.relevance - (1 - lambda) * maxSimilarity * 12
+      const mmrScore =
+        lambda * candidate.relevance - (1 - lambda) * maxSimilarity * diversityScale
       if (mmrScore > bestScore) {
         bestScore = mmrScore
         bestIndex = i
