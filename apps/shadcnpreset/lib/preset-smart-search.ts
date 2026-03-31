@@ -5,6 +5,9 @@ import {
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
+import { getLexicalScoresForQuery } from "@/lib/search-minisearch"
+import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
+import { tokenizeSearchQuery } from "@/lib/search-tokenize"
 
 type WeightedTokenMatch = Partial<Record<keyof PresetPageItem["config"], number>>
 
@@ -46,6 +49,8 @@ const TOKEN_HINTS: Record<string, WeightedTokenMatch> = {
   sharp: { radius: 3 },
   dark: { menuColor: 3, theme: 1, baseColor: 1 },
   light: { menuColor: 3, theme: 1, baseColor: 1 },
+  futuristic: { font: 3, fontHeading: 2, chartColor: 1, theme: 1 },
+  saas: { font: 3, fontHeading: 2, radius: 2 },
 }
 
 export const SANS_FONTS = new Set([
@@ -77,19 +82,9 @@ export const SERIF_FONTS = new Set([
 ])
 
 export const MONO_FONTS = new Set(["jetbrains-mono", "geist-mono"])
-export const TOKEN_ALIASES: Record<string, string> = {
-  "hero icons": "lucide",
-  "hero icon": "lucide",
-  heroicons: "lucide",
-  "huge icons": "hugeicons",
-  "huge icon": "hugeicons",
-  "tabler icons": "tabler",
-  "tabler icon": "tabler",
-  "phosphor icons": "phosphor",
-  "phosphor icon": "phosphor",
-  "remix icon": "remixicon",
-  "remix icons": "remixicon",
-}
+
+export { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
+export { TOKEN_ALIASES, tokenizeSearchQuery } from "@/lib/search-tokenize"
 
 function stableHash(input: string) {
   let hash = 2166136261
@@ -98,20 +93,6 @@ function stableHash(input: string) {
     hash = Math.imul(hash, 16777619)
   }
   return hash >>> 0
-}
-
-export function tokenizeSearchQuery(query: string) {
-  const normalizedQuery = Object.entries(TOKEN_ALIASES).reduce(
-    (currentQuery, [source, target]) => currentQuery.replaceAll(source, target),
-    query.toLowerCase()
-  )
-
-  return [...new Set(
-    normalizedQuery
-      .split(/[^a-z0-9-]+/)
-      .map((token) => token.trim())
-      .filter(Boolean)
-  )]
 }
 
 function scoreTokenHint(token: string, item: PresetPageItem) {
@@ -175,6 +156,39 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
       (key === "font" || key === "fontHeading")
     ) {
       if (MONO_FONTS.has(value)) score += 2 * weight
+      continue
+    }
+
+    if (token === "futuristic" && (key === "font" || key === "fontHeading")) {
+      if (FUTURISTIC_FONTS.has(value)) score += 2 * weight
+      continue
+    }
+
+    if (
+      token === "futuristic" &&
+      (key === "theme" || key === "chartColor") &&
+      BRIGHT_THEMES.has(value)
+    ) {
+      score += 2 * weight
+      continue
+    }
+
+    if (token === "saas" && (key === "font" || key === "fontHeading")) {
+      if (SAAS_FONTS.has(value)) score += 2 * weight
+      continue
+    }
+
+    if (
+      token === "saas" &&
+      key === "radius" &&
+      (value === "large" || value === "medium")
+    ) {
+      score += 2 * weight
+      continue
+    }
+
+    if (token === "saas" && key === "menuAccent" && value === "subtle") {
+      score += 2 * weight
       continue
     }
 
@@ -256,12 +270,13 @@ function similarity(a: PresetPageItem, b: PresetPageItem) {
   return totalWeight > 0 ? sameWeight / totalWeight : 0
 }
 
-/** How similar two presets are on palette-driving fields (for MMR diversity). */
+/** How similar two presets are on palette + icon (for MMR diversity). */
 function paletteSimilarity(a: PresetPageItem, b: PresetPageItem) {
   const keys: Array<[keyof PresetPageItem["config"], number]> = [
     ["baseColor", 1.2],
     ["theme", 1.2],
     ["chartColor", 1.2],
+    ["iconLibrary", 1.05],
     ["menuColor", 0.45],
   ]
 
@@ -294,16 +309,69 @@ const PALETTE_VIBE_TOKENS = new Set([
   "punchy",
 ])
 
+/** Open-vocabulary / intent terms where BM25 + hints should still show varied palettes & icons. */
+const LEXICAL_VARIETY_TOKENS = new Set([
+  "futuristic",
+  "saas",
+  "dashboard",
+  "startup",
+  "product",
+  "founder",
+  "ui",
+  "app",
+  "web",
+  "elegant",
+  "playful",
+  "crypto",
+  "corporate",
+  "glass",
+  "admin",
+  "interface",
+  "design",
+  "application",
+])
+
+const RESULT_VARIETY_TOKENS = new Set([
+  ...PALETTE_VIBE_TOKENS,
+  ...LEXICAL_VARIETY_TOKENS,
+])
+
 export function wantsPaletteVariety(query: string) {
   const tokens = tokenizeSearchQuery(query)
-  if (!tokens.some((t) => PALETTE_VIBE_TOKENS.has(t))) {
-    return false
-  }
+
+  const styleTokens = tokens.filter((t) =>
+    PRESET_FILTER_OPTIONS.styles.includes(t as never)
+  )
+  const baseColors = tokens.filter((t) =>
+    PRESET_FILTER_OPTIONS.baseColors.includes(t as never)
+  )
+  // Names like "stone" / "neutral" exist in both theme and base lists; search matches
+  // base first. Do not treat those as an explicit theme pin for variety heuristics.
+  const themePins = tokens.filter((t) => {
+    if (!PRESET_FILTER_OPTIONS.themes.includes(t as never)) return false
+    if (PRESET_FILTER_OPTIONS.baseColors.includes(t as never)) return false
+    return true
+  })
+
   const pinnedThemeOrBase = tokens.filter(
     (t) =>
       PRESET_FILTER_OPTIONS.themes.includes(t as never) ||
       PRESET_FILTER_OPTIONS.baseColors.includes(t as never)
   )
+
+  // Explicit semantic theme/chart token (e.g. "pink", "lime"): honour a tight accent
+  if (themePins.length >= 1) {
+    return false
+  }
+
+  // One style + one base (e.g. "nova stone"): theme & chart still vary — show variety
+  if (styleTokens.length === 1 && baseColors.length === 1) {
+    return true
+  }
+
+  if (!tokens.some((t) => RESULT_VARIETY_TOKENS.has(t))) {
+    return false
+  }
   if (pinnedThemeOrBase.length >= 2) {
     return false
   }
@@ -314,18 +382,20 @@ function mmrSimilarity(a: PresetPageItem, b: PresetPageItem, paletteMode: boolea
   if (!paletteMode) return similarity(a, b)
   const p = paletteSimilarity(a, b)
   const s = similarity(a, b)
-  return 0.74 * p + 0.26 * s
+  return 0.78 * p + 0.22 * s
 }
 
-function paletteTripleKey(item: PresetPageItem) {
-  return `${item.config.baseColor}|${item.config.theme}|${item.config.chartColor}`
+/** Bucket key for shortlist round-robin: palette + icon set. */
+function diversityBucketKey(item: PresetPageItem) {
+  return `${item.config.baseColor}|${item.config.theme}|${item.config.chartColor}|${item.config.iconLibrary}`
 }
 
 type RankedEntry = { item: PresetPageItem; relevance: number }
 
 /**
- * When vibe queries should show many colourways, the top-N by relevance alone can be
- * almost one palette. Round-robin across palette triples so MMR sees a mixed pool.
+ * When vibe queries should show many colourways and icon sets, the top-N by relevance
+ * alone can be almost one palette + one icon library. Round-robin across buckets so
+ * MMR sees a mixed pool.
  */
 function buildPaletteAwareShortlist(
   ranked: RankedEntry[],
@@ -338,7 +408,7 @@ function buildPaletteAwareShortlist(
 
   const buckets = new Map<string, RankedEntry[]>()
   for (const entry of ranked) {
-    const key = paletteTripleKey(entry.item)
+    const key = diversityBucketKey(entry.item)
     const list = buckets.get(key)
     if (list) list.push(entry)
     else buckets.set(key, [entry])
@@ -423,18 +493,28 @@ export function getSmartPresetResults(
   maxResults: number
 ) {
   const candidates = getSampledCandidates(query, filters, 1600)
-  return rankPresetCandidates(query, candidates, maxResults)
+  const lexicalScores = getLexicalScoresForQuery(candidates, query)
+  return rankPresetCandidates(query, candidates, maxResults, lexicalScores)
 }
 
 export function rankPresetCandidates(
   query: string,
   candidates: PresetPageItem[],
-  maxResults: number
+  maxResults: number,
+  /** BM25-style scores from Minisearch (`getLexicalScoresForQuery` in search-minisearch). */
+  lexicalScores?: Map<string, number>
 ) {
   if (!candidates.length) return []
 
   const ranked = candidates
-    .map((item) => ({ item, relevance: scorePreset(item, query) }))
+    .map((item) => {
+      let relevance = scorePreset(item, query)
+      const lex = lexicalScores?.get(item.code) ?? 0
+      if (lex > 0) {
+        relevance += 12 + lex * 0.45
+      }
+      return { item, relevance }
+    })
     .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 

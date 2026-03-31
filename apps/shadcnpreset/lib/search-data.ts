@@ -15,6 +15,7 @@ import {
   wantsPaletteVariety,
 } from "@/lib/preset-smart-search"
 import { buildSearchCorpus } from "@/lib/search-corpus"
+import { getLexicalScoresForQuery } from "@/lib/search-minisearch"
 import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
 
 export type SearchListItem = {
@@ -204,11 +205,38 @@ function getQueryConstraints(query: string): QueryConstraints {
   }
 }
 
+function mergeCorpusWithStratifiedSample(
+  corpus: PresetPageItem[],
+  query: string
+): PresetPageItem[] {
+  const byCode = new Map<string, PresetPageItem>()
+  for (const item of corpus) {
+    byCode.set(item.code, item)
+  }
+  for (const item of getSampledCandidates(query, {}, 1600)) {
+    byCode.set(item.code, item)
+  }
+  return [...byCode.values()]
+}
+
 async function getRankedSmartResults(query: string, neededCount: number) {
   const corpus = await buildSearchCorpus()
   const constraints = getQueryConstraints(query)
+
+  const candidatePool =
+    !constraints.predicates.length && wantsPaletteVariety(query)
+      ? mergeCorpusWithStratifiedSample(corpus, query)
+      : corpus
+
+  const lexicalScores = getLexicalScoresForQuery(candidatePool, query)
+
   if (!constraints.predicates.length) {
-    return rankPresetCandidates(query, corpus, neededCount)
+    return rankPresetCandidates(
+      query,
+      candidatePool,
+      neededCount,
+      lexicalScores
+    )
   }
 
   const { strictFacetMode } = constraints
@@ -250,18 +278,28 @@ async function getRankedSmartResults(query: string, neededCount: number) {
   )
 
   if (constrainedCandidates.length) {
-    return rankPresetCandidates(query, constrainedCandidates, neededCount)
+    return rankPresetCandidates(
+      query,
+      constrainedCandidates,
+      neededCount,
+      lexicalScores
+    )
   }
 
   if (constrainedCorpus.length) {
-    return rankPresetCandidates(query, constrainedCorpus, neededCount)
+    return rankPresetCandidates(
+      query,
+      constrainedCorpus,
+      neededCount,
+      lexicalScores
+    )
   }
 
   if (strictFacetMode) {
     return []
   }
 
-  return rankPresetCandidates(query, corpus, neededCount)
+  return rankPresetCandidates(query, corpus, neededCount, lexicalScores)
 }
 
 async function getSearchItemsWindow(
