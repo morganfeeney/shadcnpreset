@@ -1,7 +1,6 @@
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
   PRESET_FILTER_OPTIONS,
-  getPresetPage,
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
@@ -49,8 +48,6 @@ function headingMatchesBodyFontFacet(
   if (facet === "sans") return SANS_FONTS.has(h)
   return MONO_FONTS.has(h)
 }
-
-const FOCUSED_PAGE_SEQUENCE = [1, 2, 3, 4, 5, 6, 8, 10]
 
 function addUniqueCandidates(
   byCode: Map<string, PresetPageItem>,
@@ -120,11 +117,60 @@ function buildFocusedFilters(
   )
 }
 
-/** Strips intent-only words that should not become filters. */
-const SEARCH_INTENT_STOPWORDS = new Set(["chart", "charts"])
+/** Strips connector words once patterns are resolved (see extractThemeChartFromChartsConnector). */
+const SEARCH_INTENT_STOPWORDS = new Set([
+  "chart",
+  "charts",
+  "graphs",
+  "graph",
+])
+
+/**
+ * When a semantic colour is followed by charts/graphs/chart/graph and another colour,
+ * the first is theme and the second is chart color (explicit chart intent).
+ */
+function extractThemeChartFromChartsConnector(rawTokens: string[]): {
+  tokens: string[]
+  paired?: { theme: string; chart: string }
+} {
+  const CONNECTORS = new Set(["charts", "graphs", "chart", "graph"])
+
+  for (let i = 0; i < rawTokens.length; i++) {
+    if (!CONNECTORS.has(rawTokens[i])) continue
+
+    const before = rawTokens[i - 1]
+    const after = rawTokens[i + 1]
+    if (
+      i === 0 ||
+      i >= rawTokens.length - 1 ||
+      !before ||
+      !after
+    ) {
+      continue
+    }
+
+    if (
+      !PRESET_FILTER_OPTIONS.themes.includes(before as never) ||
+      !PRESET_FILTER_OPTIONS.themes.includes(after as never)
+    ) {
+      continue
+    }
+
+    const paired = { theme: before, chart: after }
+    const tokens = rawTokens.filter(
+      (_, j) => j !== i - 1 && j !== i && j !== i + 1
+    )
+    return { tokens, paired }
+  }
+
+  return { tokens: rawTokens }
+}
 
 function getQueryConstraints(query: string): QueryConstraints {
-  const tokens = tokenizeSearchQuery(query).filter(
+  const raw = tokenizeSearchQuery(query)
+  const { tokens: afterChartsPhrase, paired: chartsConnectorPair } =
+    extractThemeChartFromChartsConnector(raw)
+  const tokens = afterChartsPhrase.filter(
     (t) => !SEARCH_INTENT_STOPWORDS.has(t)
   )
   const predicates: QueryConstraints["predicates"] = []
@@ -214,6 +260,11 @@ function getQueryConstraints(query: string): QueryConstraints {
     }
   }
 
+  if (chartsConnectorPair) {
+    themeTokens.length = 0
+    themeTokens.push(chartsConnectorPair.theme, chartsConnectorPair.chart)
+  }
+
   if (themeTokens.length >= 2) {
     predicates.push(
       (item) =>
@@ -280,26 +331,13 @@ async function getRankedSmartResults(query: string, neededCount: number) {
     ? constraints.focusedFilters
     : [{}]
 
-  if (wantsPaletteVariety(query)) {
-    for (const filters of focusedFilters.slice(0, 24)) {
-      addUniqueCandidates(
-        focusedCandidates,
-        getSampledCandidates(query, filters, 1600)
-      )
-    }
-  } else {
-    for (const filters of focusedFilters.slice(0, 24)) {
-      for (const page of FOCUSED_PAGE_SEQUENCE) {
-        addUniqueCandidates(focusedCandidates, getPresetPage(page, 24, filters))
-        if (focusedCandidates.size >= Math.max(neededCount * 8, 96)) {
-          break
-        }
-      }
-
-      if (focusedCandidates.size >= Math.max(neededCount * 8, 96)) {
-        break
-      }
-    }
+  // Always stratify across the filtered combination space (early catalog pages cluster
+  // on one palette; serif/sans/mono + theme pairs often miss the corpus entirely).
+  for (const filters of focusedFilters.slice(0, 24)) {
+    addUniqueCandidates(
+      focusedCandidates,
+      getSampledCandidates(query, filters, 1600)
+    )
   }
 
   const constrainedCandidates = filterByPredicates(

@@ -69,8 +69,9 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
             <>
               Showing the best diverse matches for &quot;{payload.query}&quot;.
               <span className="mt-1.5 block text-xs text-muted-foreground">
-                Two semantic colours pair as theme then chart (e.g. indigo orange). The
-                words chart or charts are optional hints only.
+                Put charts, graphs, chart, or graph between two semantic colours to set
+                theme then chart (e.g. indigo charts orange). Without that, two colours
+                in order still mean theme then chart.
               </span>
             </>
           ) : (

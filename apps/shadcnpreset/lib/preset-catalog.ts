@@ -76,11 +76,31 @@ export type PresetPageItem = {
   config: PresetConfig
 }
 
+/** Non-optional chart color key (iteration / filters always use concrete values). */
+type ChartColorKey = NonNullable<PresetConfig["chartColor"]>
+
 function pickValues<T extends string>(all: readonly T[], selected?: string) {
   if (selected && all.includes(selected as T)) {
     return [selected as T]
   }
   return [...all]
+}
+
+/**
+ * Default chart iteration uses NON_BASE_THEMES (accent palettes). Semantic names that
+ * overlap base greys (e.g. mauve) are still valid chartColor keys — include them when
+ * explicitly filtered so pickValues narrows instead of expanding to all accents.
+ */
+function getChartColorUniverse(filters: PresetFilters): readonly ChartColorKey[] {
+  const selected = filters.chartColor
+  if (
+    selected &&
+    !NON_BASE_THEMES.includes(selected as (typeof NON_BASE_THEMES)[number]) &&
+    PRESET_THEMES.includes(selected as (typeof PRESET_THEMES)[number])
+  ) {
+    return [...NON_BASE_THEMES, selected] as ChartColorKey[]
+  }
+  return NON_BASE_THEMES as readonly ChartColorKey[]
 }
 
 function getThemeChoicesForBase(
@@ -89,7 +109,7 @@ function getThemeChoicesForBase(
 ) {
   const availableThemes = getV4ThemesForBaseColor(baseColor)
   const themes = pickValues(availableThemes, filters.theme)
-  const chartColors = pickValues(NON_BASE_THEMES, filters.chartColor)
+  const chartColors = pickValues(getChartColorUniverse(filters), filters.chartColor)
   return { themes, chartColors }
 }
 
