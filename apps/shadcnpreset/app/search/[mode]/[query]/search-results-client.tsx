@@ -65,9 +65,17 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
           {payload.mode === "smart" ? "Smart search results" : "Code search result"}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {payload.mode === "smart"
-            ? `Showing the best diverse matches for "${payload.query}".`
-            : `Showing exact code match for "${payload.query}".`}
+          {payload.mode === "smart" ? (
+            <>
+              Showing the best diverse matches for &quot;{payload.query}&quot;.
+              <span className="mt-1.5 block text-xs text-muted-foreground">
+                Two semantic colours pair as theme then chart (e.g. indigo orange). The
+                words chart or charts are optional hints only.
+              </span>
+            </>
+          ) : (
+            `Showing exact code match for "${payload.query}".`
+          )}
         </p>
       </header>
 

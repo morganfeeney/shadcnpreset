@@ -87,12 +87,26 @@ function buildFocusedFilters(
   themeTokens: string[],
   fontOptions: string[]
 ) {
-  const themeVariants = themeTokens.length
-    ? themeTokens.flatMap((token) => [
-        { ...baseFilters, theme: token as PresetFilters["theme"] },
-        { ...baseFilters, chartColor: token as PresetFilters["chartColor"] },
-      ])
-    : [{ ...baseFilters }]
+  let themeVariants: PresetFilters[]
+  if (themeTokens.length >= 2) {
+    themeVariants = [
+      {
+        ...baseFilters,
+        theme: themeTokens[0] as PresetFilters["theme"],
+        chartColor: themeTokens[1] as PresetFilters["chartColor"],
+      },
+    ]
+  } else if (themeTokens.length === 1) {
+    themeVariants = [
+      { ...baseFilters, theme: themeTokens[0] as PresetFilters["theme"] },
+      {
+        ...baseFilters,
+        chartColor: themeTokens[0] as PresetFilters["chartColor"],
+      },
+    ]
+  } else {
+    themeVariants = [{ ...baseFilters }]
+  }
 
   if (!fontOptions.length) {
     return themeVariants
@@ -106,8 +120,13 @@ function buildFocusedFilters(
   )
 }
 
+/** Strips intent-only words that should not become filters. */
+const SEARCH_INTENT_STOPWORDS = new Set(["chart", "charts"])
+
 function getQueryConstraints(query: string): QueryConstraints {
-  const tokens = tokenizeSearchQuery(query)
+  const tokens = tokenizeSearchQuery(query).filter(
+    (t) => !SEARCH_INTENT_STOPWORDS.has(t)
+  )
   const predicates: QueryConstraints["predicates"] = []
   const exactFilters: PresetFilters = {}
   const themeTokens: string[] = []
@@ -159,9 +178,6 @@ function getQueryConstraints(query: string): QueryConstraints {
 
     if (PRESET_FILTER_OPTIONS.themes.includes(token as never)) {
       themeTokens.push(token)
-      predicates.push(
-        (item) => item.config.theme === token || item.config.chartColor === token
-      )
       continue
     }
 
@@ -196,6 +212,20 @@ function getQueryConstraints(query: string): QueryConstraints {
           MONO_FONTS.has(item.config.font) && headingMatchesBodyFontFacet(item, "mono")
       )
     }
+  }
+
+  if (themeTokens.length >= 2) {
+    predicates.push(
+      (item) =>
+        item.config.theme === themeTokens[0] &&
+        item.config.chartColor === themeTokens[1]
+    )
+  } else if (themeTokens.length === 1) {
+    predicates.push(
+      (item) =>
+        item.config.theme === themeTokens[0] ||
+        item.config.chartColor === themeTokens[0]
+    )
   }
 
   return {
