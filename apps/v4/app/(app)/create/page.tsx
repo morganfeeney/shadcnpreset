@@ -50,9 +50,9 @@ export default async function CreatePage() {
         <ThemeModeListener relayToChildFrames />
         <Preview />
         <Customizer itemsByBase={itemsByBase} />
-        <PresetHandler />
-        <WelcomeDialog />
       </div>
+      <PresetHandler />
+      <WelcomeDialog />
     </div>
   )
 }
