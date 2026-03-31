@@ -31,6 +31,20 @@ export type SearchPageData = {
 type QueryConstraints = {
   predicates: Array<(item: PresetPageItem) => boolean>
   focusedFilters: PresetFilters[]
+  /** Serif/sans/mono queries must not fall back to unrelated presets. */
+  strictFacetMode: boolean
+}
+
+function headingMatchesBodyFontFacet(
+  item: PresetPageItem,
+  facet: "serif" | "sans" | "mono"
+) {
+  const h = item.config.fontHeading
+  const body = item.config.font
+  if (h === "inherit" || h === body) return true
+  if (facet === "serif") return SERIF_FONTS.has(h)
+  if (facet === "sans") return SANS_FONTS.has(h)
+  return MONO_FONTS.has(h)
 }
 
 const FOCUSED_PAGE_SEQUENCE = [1, 2, 3, 4, 5, 6, 8, 10]
@@ -95,6 +109,7 @@ function getQueryConstraints(query: string): QueryConstraints {
   const exactFilters: PresetFilters = {}
   const themeTokens: string[] = []
   let fontOptions: string[] = []
+  let strictFacetMode = false
 
   for (const token of tokens) {
     if (PRESET_FILTER_OPTIONS.styles.includes(token as never)) {
@@ -148,26 +163,42 @@ function getQueryConstraints(query: string): QueryConstraints {
     }
 
     if (token === "serif") {
+      strictFacetMode = true
+      exactFilters.fontHeading = "inherit"
       fontOptions = PRESET_FILTER_OPTIONS.fonts.filter((font) => SERIF_FONTS.has(font))
-      predicates.push((item) => SERIF_FONTS.has(item.config.font))
+      predicates.push(
+        (item) =>
+          SERIF_FONTS.has(item.config.font) && headingMatchesBodyFontFacet(item, "serif")
+      )
       continue
     }
 
     if (token === "sans") {
+      strictFacetMode = true
+      exactFilters.fontHeading = "inherit"
       fontOptions = PRESET_FILTER_OPTIONS.fonts.filter((font) => SANS_FONTS.has(font))
-      predicates.push((item) => SANS_FONTS.has(item.config.font))
+      predicates.push(
+        (item) =>
+          SANS_FONTS.has(item.config.font) && headingMatchesBodyFontFacet(item, "sans")
+      )
       continue
     }
 
     if (token === "mono" || token === "monospaced") {
+      strictFacetMode = true
+      exactFilters.fontHeading = "inherit"
       fontOptions = PRESET_FILTER_OPTIONS.fonts.filter((font) => MONO_FONTS.has(font))
-      predicates.push((item) => MONO_FONTS.has(item.config.font))
+      predicates.push(
+        (item) =>
+          MONO_FONTS.has(item.config.font) && headingMatchesBodyFontFacet(item, "mono")
+      )
     }
   }
 
   return {
     predicates,
     focusedFilters: buildFocusedFilters(exactFilters, themeTokens, fontOptions),
+    strictFacetMode,
   }
 }
 
@@ -177,6 +208,8 @@ async function getRankedSmartResults(query: string, neededCount: number) {
   if (!constraints.predicates.length) {
     return rankPresetCandidates(query, corpus, neededCount)
   }
+
+  const { strictFacetMode } = constraints
 
   const constrainedCorpus = filterByPredicates(corpus, constraints.predicates)
   const focusedCandidates = new Map<string, PresetPageItem>()
@@ -211,6 +244,10 @@ async function getRankedSmartResults(query: string, neededCount: number) {
 
   if (constrainedCorpus.length) {
     return rankPresetCandidates(query, constrainedCorpus, neededCount)
+  }
+
+  if (strictFacetMode) {
+    return []
   }
 
   return rankPresetCandidates(query, corpus, neededCount)
