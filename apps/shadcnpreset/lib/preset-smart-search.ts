@@ -76,6 +76,14 @@ const SERIF_FONTS = new Set([
 ])
 
 const MONO_FONTS = new Set(["jetbrains-mono", "geist-mono"])
+const TOKEN_ALIASES: Record<string, string> = {
+  "hero icons": "heroicons",
+  "hero icon": "heroicons",
+  "huge icons": "hugeicons",
+  "huge icon": "hugeicons",
+  "remix icon": "remixicon",
+  "remix icons": "remixicon",
+}
 
 function stableHash(input: string) {
   let hash = 2166136261
@@ -87,8 +95,12 @@ function stableHash(input: string) {
 }
 
 function tokenize(query: string) {
-  return query
-    .toLowerCase()
+  const normalizedQuery = Object.entries(TOKEN_ALIASES).reduce(
+    (currentQuery, [source, target]) => currentQuery.replaceAll(source, target),
+    query.toLowerCase()
+  )
+
+  return normalizedQuery
     .split(/[^a-z0-9-]+/)
     .map((token) => token.trim())
     .filter(Boolean)
@@ -294,6 +306,7 @@ export function getSmartPresetResults(
 
   const ranked = candidates
     .map((item) => ({ item, relevance: scorePreset(item, query) }))
+    .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 
   const shortlist = ranked.slice(0, 500)
