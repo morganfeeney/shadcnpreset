@@ -17,6 +17,37 @@ type PresetFeedPage = {
   totalPages: number
 }
 
+export async function getHomepageFeed(limit = 100): Promise<PresetPageItem[]> {
+  const safeLimit = Math.max(1, limit)
+  const lovedItems = await getLovedItems()
+  const homepageItems: PresetPageItem[] = []
+
+  for (let index = 0; index < Math.min(lovedItems.length, safeLimit); index++) {
+    homepageItems.push({
+      ...lovedItems[index],
+      index,
+    })
+  }
+
+  if (homepageItems.length < safeLimit) {
+    const excludedCodes = new Set(lovedItems.map((item) => item.code))
+    const defaultItems = collectDefaultItems(
+      excludedCodes,
+      0,
+      safeLimit - homepageItems.length
+    )
+
+    for (let index = 0; index < defaultItems.length; index++) {
+      homepageItems.push({
+        ...defaultItems[index],
+        index: homepageItems.length,
+      })
+    }
+  }
+
+  return homepageItems
+}
+
 async function getLovedItems() {
   const result = await query<VoteRow>(
     `

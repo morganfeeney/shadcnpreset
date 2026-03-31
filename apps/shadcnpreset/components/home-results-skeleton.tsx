@@ -28,18 +28,6 @@ function CardSkeleton() {
 export function HomeResultsSkeleton() {
   return (
     <main className="grid gap-4">
-      <div className="grid grid-cols-[auto_1fr_auto] gap-4">
-        <Button disabled>
-          <ChevronLeft /> Previous
-        </Button>
-        <span className="col-start-2 justify-self-center">
-          <Skeleton className="inline-block h-8 w-44 align-middle" />
-        </span>
-        <Button disabled>
-          Next <ChevronRight />
-        </Button>
-      </div>
-
       <section className="space-y-4">
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
           {Array.from({ length: 12 }, (_, index) => (
