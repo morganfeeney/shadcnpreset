@@ -26,6 +26,7 @@ export function PresetV4Frame({
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
+  const hasLoadedRef = React.useRef(false)
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
 
@@ -69,7 +70,7 @@ export function PresetV4Frame({
     postThemeMode()
 
     // The iframe app can hydrate after load; resend for a short window to avoid races.
-    retryTimersRef.current = [120, 400, 900, 1800, 3200].map((delay) =>
+    retryTimersRef.current = [200, 800].map((delay) =>
       window.setTimeout(() => {
         postThemeMode()
       }, delay)
@@ -77,11 +78,18 @@ export function PresetV4Frame({
   }, [clearRetryTimers, postThemeMode])
 
   React.useEffect(() => {
-    postThemeModeWithRetry()
+    if (!hasLoadedRef.current) {
+      return
+    }
+
+    postThemeMode()
+  }, [postThemeMode])
+
+  React.useEffect(() => {
     return () => {
       clearRetryTimers()
     }
-  }, [clearRetryTimers, postThemeModeWithRetry])
+  }, [clearRetryTimers])
 
   return (
     <iframe
@@ -90,6 +98,7 @@ export function PresetV4Frame({
       src={src}
       title={title}
       onLoad={(event) => {
+        hasLoadedRef.current = true
         postThemeModeWithRetry()
         onLoad?.(event)
       }}
