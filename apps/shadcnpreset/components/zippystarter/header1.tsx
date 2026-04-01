@@ -1,6 +1,8 @@
 "use client"
 
 import React, { PropsWithChildren, ReactNode } from "react"
+import { usePathname } from "next/navigation"
+
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -19,8 +21,12 @@ import { Separator } from "@/components/ui/separator"
 import { Logo } from "@/components/zippystarter/logo"
 import { ModeSwitcher } from "@/components/mode-switcher"
 import { GitHubLink } from "@/components/github-link"
+import { UserMenu } from "@/components/user-menu"
 
-const HEADER_LINKS = [{ href: "/contact", label: "Contact" }]
+const HEADER_LINKS = [
+  { href: "/contact", label: "Contact" },
+  { href: "/my-votes", label: "My votes" },
+]
 
 const isPathActive = (pathname: string, href: string) => {
   const regex = new RegExp(`^${href}`)
@@ -50,7 +56,7 @@ function NavItemDesktop({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 font-display hover:text-header-foreground relative inline-grid h-8 items-center text-sm transition",
+        "text-header-foreground/60 hover:text-header-foreground relative inline-grid h-8 items-center text-sm font-semibold transition",
         {
           "text-header-foreground": isActive,
         }
@@ -67,7 +73,7 @@ function NavItemMobile({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 font-display hover:text-header-foreground inline-grid h-10 items-center px-4 py-2 text-sm transition",
+        "text-header-foreground/60 hover:text-header-foreground inline-grid h-10 items-center px-4 py-2 text-sm font-semibold transition",
         {
           "text-foreground": isActive,
         }
@@ -88,7 +94,12 @@ interface DesktopNavProps {
 
 function DesktopNav({ links, pathname, className }: DesktopNavProps) {
   return (
-    <div className={cn("flex items-center gap-8", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-8 md:flex md:flex-1 md:justify-between",
+        className
+      )}
+    >
       <nav className="flex items-center gap-8">
         {links.map(({ href, label }) => (
           <NavItemDesktop
@@ -100,11 +111,12 @@ function DesktopNav({ links, pathname, className }: DesktopNavProps) {
           </NavItemDesktop>
         ))}
       </nav>
-      <Separator orientation="vertical" className="h-6" />
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2">
         <ModeSwitcher />
+        <Separator orientation="vertical" className="h-6" />
         <GitHubLink />
-        <Button className="-mt-0.5">Sign in</Button>
+        <Separator orientation="vertical" className="h-6" />
+        <UserMenu />
       </div>
     </div>
   )
@@ -129,8 +141,8 @@ function MobileNav({ logo, links, pathname, className }: MobileNavProps) {
   return (
     <div className={className}>
       <Sheet open={isOpen} onOpenChange={setOpen}>
-        <div className="flex gap-2">
-          <Button>Sign up</Button>
+        <div className="flex items-center gap-2">
+          <UserMenu variant="sm" />
           <SheetTrigger render={<Button size="icon" variant="outline" />}>
             <MenuIcon />
           </SheetTrigger>
@@ -175,10 +187,13 @@ export interface Header1Props {
 export function Header1({
   logo = <LogoLink />,
   links = HEADER_LINKS,
-  pathname = "",
+  pathname: pathnameProp,
   className,
   wrapperClassName,
 }: Header1Props) {
+  const pathnameFromRouter = usePathname()
+  const pathname = pathnameProp ?? pathnameFromRouter ?? ""
+
   return (
     <Container
       component="header"

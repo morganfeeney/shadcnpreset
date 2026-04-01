@@ -100,6 +100,7 @@ export async function POST(
   }
 
   revalidatePath("/")
+  revalidatePath("/my-votes")
   revalidatePath(`/preset/${code}`)
 
   return NextResponse.json({

@@ -115,7 +115,6 @@ export function ListView({
     [feedItems, visibleCount]
   )
   const hasMore = visibleItems.length < feedItems.length
-
   return (
     <section className="space-y-4">
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">

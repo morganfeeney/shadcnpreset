@@ -4,7 +4,7 @@ import { create } from "zustand"
 
 import { authClient } from "@/lib/auth-client"
 
-type SessionUser = {
+export type SessionUser = {
   id: string
   name?: string | null
   email?: string | null
@@ -26,6 +26,7 @@ type AuthStore = {
   endOAuth: () => void
   ensureAuthenticated: () => Promise<boolean>
   closeDialog: () => void
+  signOut: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -89,6 +90,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   closeDialog: () => {
     set({
+      dialogOpen: false,
+      authError: "",
+      isSubmitting: false,
+      submittingProvider: null,
+    })
+  },
+
+  signOut: async () => {
+    await authClient.signOut()
+    set({
+      user: null,
+      status: "anonymous",
       dialogOpen: false,
       authError: "",
       isSubmitting: false,
