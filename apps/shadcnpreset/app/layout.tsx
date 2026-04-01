@@ -19,7 +19,7 @@ const fontMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: siteConfig.title,
-  description: siteConfig.description,
+  description: `${siteConfig.description} | shadcnpreset`,
 }
 
 export default function RootLayout({
