@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 
 import { Icons } from "@/components/icons"
 import { Button } from "@/styles/base-nova/ui/button"
@@ -17,14 +18,19 @@ import {
 const STORAGE_KEY = "shadcn-create-welcome-dialog"
 
 export function WelcomeDialog() {
+  const searchParams = useSearchParams()
+  const embed =
+    searchParams.get("embed") === "1" ||
+    searchParams.get("embed") === "true"
   const [isOpen, setIsOpen] = React.useState(false)
 
   React.useEffect(() => {
+    if (embed) return
     const dismissed = localStorage.getItem(STORAGE_KEY)
     if (!dismissed) {
       setIsOpen(true)
     }
-  }, [])
+  }, [embed])
 
   // Stable callback — avoids re-creation on every render. (rerender-functional-setstate)
   const handleOpenChange = React.useCallback((open: boolean) => {
@@ -33,6 +39,10 @@ export function WelcomeDialog() {
       localStorage.setItem(STORAGE_KEY, "true")
     }
   }, [])
+
+  if (embed) {
+    return null
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

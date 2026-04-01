@@ -93,6 +93,8 @@ const designSystemSearchParams = {
   rtl: parseAsBoolean.withDefault(false),
   size: parseAsInteger.withDefault(100),
   custom: parseAsBoolean.withDefault(false),
+  /** When true (e.g. ?embed=1 from shadcnpreset iframe), outer marketing chrome is hidden. */
+  embed: parseAsBoolean.withDefault(false),
 }
 
 // Design system param keys that get encoded into the preset code.
@@ -128,6 +130,7 @@ const NON_DESIGN_SYSTEM_KEYS = [
   "rtl",
   "size",
   "custom",
+  "embed",
 ] as const
 
 export const loadDesignSystemSearchParams = createLoader(
@@ -226,6 +229,7 @@ function resolvePresetParams(
         rtl: rawParams.rtl,
         size: rawParams.size,
         custom: rawParams.custom,
+        embed: rawParams.embed,
       })
     }
   }

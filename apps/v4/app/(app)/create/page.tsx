@@ -1,4 +1,5 @@
 import { type Metadata } from "next"
+import { Suspense } from "react"
 
 import { siteConfig } from "@/lib/config"
 import { absoluteUrl } from "@/lib/utils"
@@ -52,7 +53,9 @@ export default async function CreatePage() {
         <Customizer itemsByBase={itemsByBase} />
       </div>
       <PresetHandler />
-      <WelcomeDialog />
+      <Suspense fallback={null}>
+        <WelcomeDialog />
+      </Suspense>
     </div>
   )
 }
