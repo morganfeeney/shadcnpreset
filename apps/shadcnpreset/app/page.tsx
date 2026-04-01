@@ -27,7 +27,11 @@ export default async function HomePage() {
             iconLibrary: item.config.iconLibrary,
             font: item.config.font,
           }))}
-          useLiveFeed={false}
+          useLiveFeed
+          safePage={1}
+          totalPages={1}
+          pageSize={HOMEPAGE_FEED_LIMIT}
+          initialFeedItems={feedItems}
           useIncrementalReveal
           initialVisibleCount={HOMEPAGE_INITIAL_VISIBLE}
           visibleStep={HOMEPAGE_VISIBLE_STEP}
