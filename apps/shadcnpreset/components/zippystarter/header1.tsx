@@ -24,7 +24,7 @@ import { GitHubLink } from "@/components/github-link"
 import { UserMenu } from "@/components/user-menu"
 
 const HEADER_LINKS = [
-  { href: "/contact", label: "Contact" },
+  { href: "https://x.com/morganfeeney", label: "Contact" },
   { href: "/my-votes", label: "My votes" },
 ]
 
