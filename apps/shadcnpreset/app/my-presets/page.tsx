@@ -37,14 +37,14 @@ export default async function MyVotesPage() {
       <ListLayout>
         <main className="grid gap-6">
           <SimpleHeader />
-          <Empty className="border border-border">
+          <Empty className="min-h-[50vh] border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
             </EmptyMedia>
             <EmptyHeader>
-              <EmptyTitle>Sign in to see your votes</EmptyTitle>
+              <EmptyTitle>No presets yet :(</EmptyTitle>
               <EmptyDescription>
-                Sign in to view presets you have voted for and manage your list.
+                Sign in to add, view & manage your favourite presets.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>

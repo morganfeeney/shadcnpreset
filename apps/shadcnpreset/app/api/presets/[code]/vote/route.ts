@@ -86,10 +86,10 @@ export async function POST(
   const now = Date.now()
   let hasVoted: boolean
   if (existing?.exists) {
-    await query("DELETE FROM preset_votes WHERE user_id = $1 AND preset_code = $2", [
-      user.id,
-      code,
-    ])
+    await query(
+      "DELETE FROM preset_votes WHERE user_id = $1 AND preset_code = $2",
+      [user.id, code]
+    )
     hasVoted = false
   } else {
     await query(
@@ -100,7 +100,7 @@ export async function POST(
   }
 
   revalidatePath("/")
-  revalidatePath("/my-votes")
+  revalidatePath("/my-presets")
   revalidatePath(`/preset/${code}`)
 
   return NextResponse.json({

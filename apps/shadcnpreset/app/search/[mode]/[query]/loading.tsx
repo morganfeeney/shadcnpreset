@@ -1,5 +1,5 @@
-import { HomeLoadingState } from "@/components/home-loading-state"
+import { AppRouteLoading } from "@/components/app-route-loading"
 
 export default function SearchQueryLoading() {
-  return <HomeLoadingState />
+  return <AppRouteLoading />
 }
