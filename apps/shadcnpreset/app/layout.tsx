@@ -2,15 +2,14 @@ import { Geist_Mono, Inter } from "next/font/google"
 import type { Metadata } from "next"
 
 import "./globals.css"
-import "../css/controls.css";
+import "../css/controls.css"
 
 import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeSwitcher } from "@/components/theme-switcher"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'})
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -32,12 +31,16 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
+      className={cn(
+        "antialiased",
+        fontMono.variable,
+        "font-sans",
+        inter.variable
+      )}
     >
       <body>
         <QueryProvider>
           <ThemeProvider>
-            <ThemeSwitcher />
             <VoteAuthDialogHost />
             {children}
           </ThemeProvider>

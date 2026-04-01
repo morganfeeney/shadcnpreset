@@ -48,6 +48,10 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --m: --spacing(4);
+  --g: --spacing(4);
+  --safe-area-left: max(var(--m), env(safe-area-inset-left));
+  --safe-area-right: max(var(--m), env(safe-area-inset-right));
 }
 
 :root {
@@ -152,4 +156,9 @@
 
 .preset-marquee-track {
   animation: preset-marquee 34s linear infinite;
+}
+
+@utility px-safe {
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
 }
