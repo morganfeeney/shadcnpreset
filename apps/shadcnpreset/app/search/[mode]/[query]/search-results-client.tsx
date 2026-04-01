@@ -1,12 +1,24 @@
 "use client"
 
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { Search } from "lucide-react"
 
 import { ListView } from "@/components/list-view"
 import { HomeResultsSkeleton } from "@/components/home-results-skeleton"
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
+import { SMART_SEARCH_SUGGESTIONS } from "@/lib/search-suggestions"
+import {
   SEARCH_PAGE_SIZE,
+  buildSearchHref,
   isSearchMode,
   type SearchMode,
 } from "@/lib/search-route"
@@ -70,36 +82,69 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
 
   const payload = searchQuery.data
   const results = payload.items
+  const keyword = payload.query
+
+  if (!results.length) {
+    const normalizedKeyword = keyword.trim().toLowerCase()
+    const suggestionLinks = SMART_SEARCH_SUGGESTIONS.filter(
+      (s) => s.query.trim().toLowerCase() !== normalizedKeyword
+    )
+    const links =
+      suggestionLinks.length > 0
+        ? suggestionLinks
+        : [...SMART_SEARCH_SUGGESTIONS]
+
+    return (
+      <main className="grid gap-4">
+        <Empty className="min-h-[30vh] border border-border">
+          <EmptyMedia variant="icon">
+            <Search className="text-muted-foreground" />
+          </EmptyMedia>
+          <EmptyHeader>
+            <EmptyTitle>
+              No results were found for &quot;{keyword}&quot;
+            </EmptyTitle>
+            <EmptyDescription>
+              {payload.mode === "code"
+                ? "No preset used that exact code. Try smart search with a description, or start from one of these."
+                : "Try different words, switch mode in the search bar, or explore one of these example searches."}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ul className="flex flex-wrap justify-center gap-2">
+              {links.map(({ label, query: suggestionQuery }) => (
+                <li key={suggestionQuery}>
+                  <Link
+                    href={buildSearchHref("smart", suggestionQuery)}
+                    className="inline-flex rounded-md border border-border bg-background px-2.5 py-1 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </EmptyContent>
+        </Empty>
+      </main>
+    )
+  }
 
   return (
     <main className="grid gap-4">
       <header className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight md:text-xl">
+        <h2 className="text-lg font-display md:text-xl">
           {payload.mode === "smart"
-            ? "Smart search results"
+            ? "Your search results"
             : "Code search result"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {payload.mode === "smart" ? (
-            <>
-              Showing the best diverse matches for &quot;{payload.query}&quot;.
-              <span className="mt-1.5 block text-xs text-muted-foreground">
-                Put charts, graphs, chart, or graph between two semantic colours
-                to set theme then chart (e.g. indigo charts orange). Without
-                that, two colours in order still mean theme then chart.
-              </span>
-            </>
+            <>Showing the best matches for &quot;{keyword}&quot;.</>
           ) : (
-            `Showing exact code match for "${payload.query}".`
+            `Showing exact code match for "${keyword}".`
           )}
         </p>
       </header>
-
-      {!results.length ? (
-        <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-          No presets matched this search. Try a different mode or query.
-        </div>
-      ) : null}
 
       <ListView
         key={`${effectiveMode}-${effectiveQuery}`}

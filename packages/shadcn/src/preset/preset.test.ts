@@ -6,6 +6,7 @@ import {
   encodePreset,
   fromBase62,
   generateRandomPreset,
+  isCanonicalPresetCode,
   isPresetCode,
   isValidPreset,
   PRESET_BASE_COLORS,
@@ -243,6 +244,18 @@ describe("isPresetCode", () => {
 
   it("should return false for invalid characters after version", () => {
     expect(isPresetCode("A!@#")).toBe(false)
+  })
+})
+
+describe("isCanonicalPresetCode", () => {
+  it("should reject syntactically valid but non-canonical encodings", () => {
+    expect(isPresetCode("bollocks")).toBe(true)
+    expect(isCanonicalPresetCode("bollocks")).toBe(false)
+  })
+
+  it("should accept codes produced by encodePreset", () => {
+    const code = encodePreset(DEFAULT_PRESET_CONFIG)
+    expect(isCanonicalPresetCode(code)).toBe(true)
   })
 })
 

@@ -268,6 +268,14 @@ export function isValidPreset(code: string) {
   return decodePreset(code) !== null
 }
 
+/** True only for the single canonical encoding for a preset (what {@link encodePreset} emits). */
+export function isCanonicalPresetCode(code: string): boolean {
+  if (!isPresetCode(code)) return false
+  const decoded = decodePreset(code)
+  if (!decoded) return false
+  return encodePreset(decoded) === code
+}
+
 // Generate a random PresetConfig.
 export function generateRandomConfig(): PresetConfig {
   const pick = <T>(arr: readonly T[]) =>

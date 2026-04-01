@@ -19,6 +19,7 @@ export {
   encodePreset,
   decodePreset,
   isPresetCode,
+  isCanonicalPresetCode,
   isValidPreset,
   generateRandomConfig,
   generateRandomPreset,

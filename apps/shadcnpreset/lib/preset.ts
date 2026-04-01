@@ -50,6 +50,10 @@ export function resolvePresetFromCode(code: string): ResolvedPreset | null {
     return null
   }
 
+  if (encodePreset(decoded) !== code) {
+    return null
+  }
+
   const effectiveChartColor =
     decoded.chartColor ??
     (V1_CHART_COLOR_MAP[decoded.theme] as PresetConfig["theme"] | undefined) ??

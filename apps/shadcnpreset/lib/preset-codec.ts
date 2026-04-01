@@ -12,6 +12,7 @@ export {
   V1_CHART_COLOR_MAP,
   decodePreset,
   encodePreset,
+  isCanonicalPresetCode,
   isPresetCode,
   type PresetConfig,
 } from "../../../packages/shadcn/src/preset/preset"

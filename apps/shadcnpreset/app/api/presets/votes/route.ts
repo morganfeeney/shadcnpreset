@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { query } from "@/lib/db"
-import { isPresetCode } from "@/lib/preset-codec"
+import { isCanonicalPresetCode } from "@/lib/preset-codec"
 
 type VoteRow = {
   preset_code: string
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     .split(",")
     .map((code) => code.trim())
     .filter((code): code is string => Boolean(code))
-    .filter((code) => isPresetCode(code))
+    .filter((code) => isCanonicalPresetCode(code))
 
   const codes = [...new Set(parsedCodes)].slice(0, 120)
 

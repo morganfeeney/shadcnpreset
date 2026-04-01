@@ -66,7 +66,7 @@ export function Footer1({ className }: Footer1Props) {
   return (
     <Container
       component="footer"
-      className="mx-auto max-w-7xl gap-4 gap-y-8 pb-8 text-sm md:pt-20"
+      className="mx-auto max-w-7xl gap-4 gap-y-8 pt-10 pb-8 text-sm md:pt-20"
       wrapperClassName={cn("bg-footer", className)}
     >
       <div className="grid grid-cols-12 gap-4 gap-y-16">

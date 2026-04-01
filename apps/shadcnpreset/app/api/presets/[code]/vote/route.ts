@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache"
 
 import { getSessionUser } from "@/lib/auth"
 import { query } from "@/lib/db"
-import { isPresetCode } from "@/lib/preset-codec"
+import { isCanonicalPresetCode } from "@/lib/preset-codec"
 
 type CountRow = {
   votes: number
@@ -37,7 +37,7 @@ export async function GET(
   context: { params: Promise<{ code: string }> }
 ) {
   const { code } = await context.params
-  if (!isPresetCode(code)) {
+  if (!isCanonicalPresetCode(code)) {
     return NextResponse.json({ error: "Invalid preset code" }, { status: 400 })
   }
 
@@ -67,7 +67,7 @@ export async function POST(
   context: { params: Promise<{ code: string }> }
 ) {
   const { code } = await context.params
-  if (!isPresetCode(code)) {
+  if (!isCanonicalPresetCode(code)) {
     return NextResponse.json({ error: "Invalid preset code" }, { status: 400 })
   }
 
