@@ -46,8 +46,12 @@ interface NavItemProps extends PropsWithChildren {
 
 function LogoLink({ size = "lg" }: { size?: "sm" | "lg" }) {
   return (
-    <Link href="/">
-      <Logo className="size-7" />
+    <Link
+      href="/"
+      className="flex items-center gap-2 text-sm font-medium tracking-tighter"
+    >
+      <Logo className="size-5" />
+      shadcnpreset
     </Link>
   )
 }
@@ -56,7 +60,7 @@ function NavItemDesktop({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 hover:text-header-foreground relative inline-grid h-8 items-center text-sm font-semibold transition",
+        "text-header-foreground/60 hover:text-header-foreground relative inline-grid h-8 items-center text-sm font-medium transition",
         {
           "text-header-foreground": isActive,
         }
@@ -73,7 +77,7 @@ function NavItemMobile({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 hover:text-header-foreground inline-grid h-10 items-center px-4 py-2 text-sm font-semibold transition",
+        "text-header-foreground/60 hover:text-header-foreground inline-grid h-10 items-center px-4 py-2 text-sm font-medium transition",
         {
           "text-foreground": isActive,
         }
@@ -100,7 +104,7 @@ function DesktopNav({ links, pathname, className }: DesktopNavProps) {
         className
       )}
     >
-      <nav className="flex items-center gap-8">
+      <nav className="flex items-center gap-6">
         {links.map(({ href, label }) => (
           <NavItemDesktop
             key={href}
