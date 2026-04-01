@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Heart, LogOutIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -18,7 +20,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth-store"
 import type { SessionUser } from "@/stores/auth-store"
-import Image from "next/image"
 
 function initialsFor(user: SessionUser) {
   const raw = user.name?.trim() || user.email?.split("@")[0] || ""
@@ -68,6 +69,7 @@ type UserMenuProps = {
 }
 
 export function UserMenu({ variant = "icon" }: UserMenuProps) {
+  const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const status = useAuthStore((s) => s.status)
   const bootstrapSession = useAuthStore((s) => s.bootstrapSession)
@@ -130,16 +132,17 @@ export function UserMenu({ variant = "icon" }: UserMenuProps) {
           <DropdownMenuItem
             className="gap-2"
             nativeButton={false}
-            render={<Link href="/my-votes" />}
+            render={<Link href="/my-presets" />}
           >
             <Heart className="size-4" />
-            My votes
+            My presets
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             className="gap-2"
-            onClick={() => {
-              void signOut()
+            onClick={async () => {
+              await signOut()
+              router.refresh()
             }}
           >
             <LogOutIcon className="size-4" />
