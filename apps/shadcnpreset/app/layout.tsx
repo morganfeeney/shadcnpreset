@@ -8,6 +8,7 @@ import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
 import { cn } from "@/lib/utils"
+import { siteConfig } from "@/lib/config"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -17,9 +18,8 @@ const fontMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "shadcnpreset",
-  description:
-    "Decode a shadcn preset route and preview how it affects a create-style UI.",
+  title: siteConfig.title,
+  description: siteConfig.description,
 }
 
 export default function RootLayout({

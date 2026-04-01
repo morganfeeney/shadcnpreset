@@ -7,18 +7,16 @@ import {
   PageHeaderHeading,
 } from "@/components/page-header"
 import { Announcement } from "@/components/announcement"
+import { siteConfig } from "@/lib/config"
 
 export function HomeHero() {
   return (
     <PageHeader>
       <Announcement />
       <PageHeaderHeading className="max-w-4xl">
-        Find and compare the best shadcn presets in seconds
+        {siteConfig.title}
       </PageHeaderHeading>
-      <PageHeaderDescription>
-        Search by exact preset code or use smart search for diverse results,
-        then preview real component behavior and vote from the feed.
-      </PageHeaderDescription>
+      <PageHeaderDescription>{siteConfig.description}</PageHeaderDescription>
       <div className="w-full max-w-2xl">
         <PresetForm className="pt-2" />
       </div>

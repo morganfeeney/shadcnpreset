@@ -2,8 +2,9 @@ export const siteConfig = {
   name: "shadcnpreset",
   url: "https://shadcnpreset.com",
   ogImage: "https://shadcnpreset/og.jpg",
+  title: "Find and compare the best shadcn presets in seconds | shadcnpreset",
   description:
-    "A set of beautifully designed components that you can customize, extend, and build on. Start here then make it your own. Open Source. Open Code.",
+    "Search by preset code or use smart search for diverse results, preview real component behavior and vote from the feed. Open Source. 100% free.",
   links: {
     twitter: "https://twitter.com/morganfeeney",
     github: "https://github.com/morganfeeney/shadcnpreset",
