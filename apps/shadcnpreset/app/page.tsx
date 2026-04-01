@@ -1,4 +1,4 @@
-import { ListView } from "@/components/home-featured-section"
+import { ListView } from "@/components/list-view"
 import { HomeHero } from "@/components/home-hero"
 import { getHomepageFeed } from "@/lib/preset-feed"
 import { HomeLayout } from "@/components/home-layout"
@@ -17,7 +17,6 @@ export default async function HomePage() {
   return (
     <HomeLayout>
       <HomeHero />
-
       <main className="grid gap-4">
         <ListView
           key={feedKey}

@@ -93,7 +93,9 @@ export function ListView({
         }
 
         revealTimeoutRef.current = window.setTimeout(() => {
-          setVisibleCount((current) => Math.min(feedItems.length, current + visibleStep))
+          setVisibleCount((current) =>
+            Math.min(feedItems.length, current + visibleStep)
+          )
           revealTimeoutRef.current = null
         }, revealDelayMs)
       },
@@ -108,7 +110,13 @@ export function ListView({
         revealTimeoutRef.current = null
       }
     }
-  }, [feedItems.length, revealDelayMs, useIncrementalReveal, visibleCount, visibleStep])
+  }, [
+    feedItems.length,
+    revealDelayMs,
+    useIncrementalReveal,
+    visibleCount,
+    visibleStep,
+  ])
 
   const visibleItems = useMemo(
     () => feedItems.slice(0, Math.min(feedItems.length, visibleCount)),
@@ -116,7 +124,7 @@ export function ListView({
   )
   const hasMore = visibleItems.length < feedItems.length
   return (
-    <section className="space-y-4">
+    <section>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
         {visibleItems.map((item) => (
           <li key={item.code}>
@@ -129,7 +137,10 @@ export function ListView({
         ))}
       </ul>
       {hasMore ? (
-        <div ref={sentinelRef} className="flex justify-center py-2 text-xs text-muted-foreground">
+        <div
+          ref={sentinelRef}
+          className="flex justify-center py-4 text-xs text-muted-foreground"
+        >
           Loading more presets...
         </div>
       ) : null}

@@ -1,7 +1,7 @@
 import { Heart } from "lucide-react"
 
 import { HomeLayout } from "@/components/home-layout"
-import { ListView } from "@/components/home-featured-section"
+import { ListView } from "@/components/list-view"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
 import {
   Empty,
@@ -24,14 +24,14 @@ export default async function MyVotesPage() {
       <HomeLayout>
         <main className="grid gap-6">
           <div className="space-y-1">
-            <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               My votes
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Presets you have voted for on the feed.
             </p>
           </div>
-          <Empty className="border-border border">
+          <Empty className="border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
             </EmptyMedia>
@@ -62,15 +62,15 @@ export default async function MyVotesPage() {
     <HomeLayout>
       <main className="grid gap-6">
         <div className="space-y-1">
-          <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             My votes
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Presets you have voted for on the feed.
           </p>
         </div>
         {items.length === 0 ? (
-          <Empty className="border-border border">
+          <Empty className="border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
             </EmptyMedia>

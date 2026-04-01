@@ -1,10 +1,12 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef } from "react"
+import NextLink, { type LinkProps } from "next/link"
 
-export type LinkProps = React.ComponentPropsWithoutRef<"a">;
+type Props = LinkProps & React.ComponentPropsWithoutRef<"a">
 
-export const Link = forwardRef(function Link(
-  props: LinkProps,
-  ref: React.ForwardedRef<HTMLAnchorElement>
-) {
-  return <a {...props} ref={ref} />;
-});
+export const Link = forwardRef<HTMLAnchorElement, Props>(
+  ({ href, ...rest }, ref) => {
+    return <NextLink ref={ref} href={href} {...rest} />
+  }
+)
+
+Link.displayName = "Link"
