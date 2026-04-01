@@ -6,12 +6,12 @@ import {
   PageHeaderHeading,
 } from "@/components/page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { HomeLayout } from "@/components/home-layout"
+import { ListLayout } from "@/components/list-layout"
 import { siteConfig } from "@/lib/config"
 
 export function HomeLoadingState() {
   return (
-    <HomeLayout>
+    <ListLayout>
       <PageHeader>
         <Announcement />
         <PageHeaderHeading className="max-w-4xl">
@@ -28,6 +28,6 @@ export function HomeLoadingState() {
       </PageHeader>
 
       <HomeResultsSkeleton />
-    </HomeLayout>
+    </ListLayout>
   )
 }

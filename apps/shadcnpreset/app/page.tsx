@@ -1,7 +1,7 @@
 import { ListView } from "@/components/list-view"
 import { HomeHero } from "@/components/home-hero"
 import { getHomepageFeed } from "@/lib/preset-feed"
-import { HomeLayout } from "@/components/home-layout"
+import { ListLayout } from "@/components/list-layout"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -15,7 +15,7 @@ export default async function HomePage() {
   const feedKey = feedItems.map((item) => item.code).join(":")
 
   return (
-    <HomeLayout>
+    <ListLayout>
       <HomeHero />
       <main className="grid gap-4">
         <ListView
@@ -36,6 +36,6 @@ export default async function HomePage() {
           visibleStep={HOMEPAGE_VISIBLE_STEP}
         />
       </main>
-    </HomeLayout>
+    </ListLayout>
   )
 }

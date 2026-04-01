@@ -1,6 +1,6 @@
 import { Heart } from "lucide-react"
 
-import { HomeLayout } from "@/components/home-layout"
+import { ListLayout } from "@/components/list-layout"
 import { ListView } from "@/components/list-view"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
 import {
@@ -16,21 +16,27 @@ import { getVotedPresetsForUser } from "@/lib/user-votes"
 
 export const dynamic = "force-dynamic"
 
+function SimpleHeader({ userName }: { userName?: string }) {
+  return (
+    <div className="grid gap-1 pt-16">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        {userName ? `${userName}'s` : "My"} presets
+      </h1>
+      <p className="text-sm text-muted-foreground">
+        Browse your favourite shadcn presets.
+      </p>
+    </div>
+  )
+}
+
 export default async function MyVotesPage() {
   const user = await getSessionUser()
 
   if (!user) {
     return (
-      <HomeLayout>
+      <ListLayout>
         <main className="grid gap-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              My votes
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Presets you have voted for on the feed.
-            </p>
-          </div>
+          <SimpleHeader />
           <Empty className="border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
@@ -46,7 +52,7 @@ export default async function MyVotesPage() {
             </EmptyContent>
           </Empty>
         </main>
-      </HomeLayout>
+      </ListLayout>
     )
   }
 
@@ -59,16 +65,9 @@ export default async function MyVotesPage() {
   }))
 
   return (
-    <HomeLayout>
+    <ListLayout>
       <main className="grid gap-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            My votes
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Presets you have voted for on the feed.
-          </p>
-        </div>
+        <SimpleHeader userName={user.name} />
         {items.length === 0 ? (
           <Empty className="border border-border">
             <EmptyMedia variant="icon">
@@ -91,6 +90,6 @@ export default async function MyVotesPage() {
           />
         )}
       </main>
-    </HomeLayout>
+    </ListLayout>
   )
 }

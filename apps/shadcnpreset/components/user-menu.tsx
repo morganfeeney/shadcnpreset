@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth-store"
 import type { SessionUser } from "@/stores/auth-store"
+import Image from "next/image"
 
 function initialsFor(user: SessionUser) {
   const raw = user.name?.trim() || user.email?.split("@")[0] || ""
@@ -39,7 +40,8 @@ function UserAvatar({
 }) {
   if (user.image) {
     return (
-      <img
+      <Image
+        fill
         src={user.image}
         alt=""
         className={cn("size-full object-cover", className)}
@@ -51,7 +53,7 @@ function UserAvatar({
   return (
     <span
       className={cn(
-        "bg-muted text-muted-foreground flex size-full items-center justify-center text-[10px] font-medium",
+        "flex size-full items-center justify-center bg-muted text-[10px] font-medium text-muted-foreground",
         className
       )}
     >
@@ -76,9 +78,9 @@ export function UserMenu({ variant = "icon" }: UserMenuProps) {
     void bootstrapSession()
   }, [bootstrapSession])
 
-  if (status === "unknown") {
-    return <Skeleton className="size-8 shrink-0 rounded-full" />
-  }
+  // if (status === "unknown") {
+  //   return <Skeleton className="size-8 shrink-0 rounded-full" />
+  // }
 
   if (status === "anonymous" || !user) {
     return (
@@ -103,7 +105,7 @@ export function UserMenu({ variant = "icon" }: UserMenuProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="ring-offset-background focus-visible:ring-ring relative size-8 shrink-0 overflow-hidden rounded-full p-0 focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="relative size-8 shrink-0 overflow-hidden rounded-full p-0 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Account menu"
           >
             <UserAvatar user={user} />
@@ -116,7 +118,7 @@ export function UserMenu({ variant = "icon" }: UserMenuProps) {
             <div className="flex flex-col gap-0.5">
               <span className="truncate text-sm font-medium">{label}</span>
               {user.email ? (
-                <span className="text-muted-foreground truncate text-xs">
+                <span className="truncate text-xs text-muted-foreground">
                   {user.email}
                 </span>
               ) : null}

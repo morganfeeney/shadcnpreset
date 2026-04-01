@@ -25,7 +25,7 @@ import { UserMenu } from "@/components/user-menu"
 
 const HEADER_LINKS = [
   { href: "https://x.com/morganfeeney", label: "Contact" },
-  { href: "/my-votes", label: "My votes" },
+  { href: "/my-presets", label: "My presets" },
 ]
 
 const isPathActive = (pathname: string, href: string) => {
@@ -44,7 +44,7 @@ interface NavItemProps extends PropsWithChildren {
   isActive?: boolean
 }
 
-function LogoLink({ size = "lg" }: { size?: "sm" | "lg" }) {
+function LogoLink() {
   return (
     <Link
       href="/"
@@ -100,7 +100,7 @@ function DesktopNav({ links, pathname, className }: DesktopNavProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-8 md:flex md:flex-1 md:justify-between",
+        "flex items-center gap-6 md:flex md:flex-1 md:justify-end",
         className
       )}
     >
@@ -116,10 +116,11 @@ function DesktopNav({ links, pathname, className }: DesktopNavProps) {
         ))}
       </nav>
       <div className="flex items-center gap-2">
-        <ModeSwitcher />
-        <Separator orientation="vertical" className="h-6" />
+        <Separator orientation="vertical" className="h-6 self-center!" />
         <GitHubLink />
-        <Separator orientation="vertical" className="h-6" />
+        <Separator orientation="vertical" className="h-6 self-center!" />
+        <ModeSwitcher />
+        <Separator orientation="vertical" className="h-6 self-center!" />
         <UserMenu />
       </div>
     </div>
@@ -171,8 +172,6 @@ function MobileNav({ logo, links, pathname, className }: MobileNavProps) {
                 </NavItemMobile>
               ))}
             </nav>
-            <Separator orientation="horizontal" />
-            <NavItemMobile href="#">Log in</NavItemMobile>
           </div>
         </SheetContent>
       </Sheet>

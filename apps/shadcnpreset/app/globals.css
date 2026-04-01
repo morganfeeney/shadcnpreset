@@ -129,16 +129,18 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
 }
 
 @utility container-wrapper {
-  @apply 3xl:fixed:max-w-[calc(var(--breakpoint-2xl)+2rem)] mx-auto w-full px-2;
+  @apply 3xl:fixed:max-w-[calc(var(--breakpoint-2xl)+2rem)] mx-auto w-full;
 }
 
 @utility container {
@@ -159,6 +161,6 @@
 }
 
 @utility px-safe {
-    padding-left: var(--safe-area-left);
-    padding-right: var(--safe-area-right);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
 }

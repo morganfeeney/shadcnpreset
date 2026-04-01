@@ -1,8 +1,8 @@
-import { ReactNode } from "react"
+import { PropsWithChildren } from "react"
 import { Header1 } from "@/components/zippystarter/header1"
 import { Container } from "@/components/zippystarter/container"
 
-export function HomeLayout({ children }: { children: ReactNode }) {
+export function ListLayout({ children }: PropsWithChildren) {
   return (
     <>
       <Header1 />

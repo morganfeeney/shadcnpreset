@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { HomeHero } from "@/components/home-hero"
-import { HomeLayout } from "@/components/home-layout"
+import { ListLayout } from "@/components/list-layout"
 import { isSearchMode } from "@/lib/search-route"
 import { SearchResultsClient } from "./search-results-client"
 
@@ -31,9 +31,9 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
   }
 
   return (
-    <HomeLayout>
+    <ListLayout>
       <HomeHero />
       <SearchResultsClient mode={resolvedParams.mode} query={query} />
-    </HomeLayout>
+    </ListLayout>
   )
 }
