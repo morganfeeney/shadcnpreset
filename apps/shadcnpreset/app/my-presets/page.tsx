@@ -1,5 +1,9 @@
+import { Suspense } from "react"
 import { Heart } from "lucide-react"
 
+import { HomeHero } from "@/components/home-hero"
+import { PresetForm } from "@/components/preset-form"
+import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
 import { ListLayout } from "@/components/list-layout"
 import { ListView } from "@/components/list-view"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
@@ -16,27 +20,18 @@ import { getVotedPresetsForUser } from "@/lib/user-votes"
 
 export const dynamic = "force-dynamic"
 
-function SimpleHeader({ userName }: { userName?: string }) {
-  return (
-    <div className="grid gap-1 pt-16">
-      <h1 className="text-2xl font-display text-foreground">
-        {userName ? `${userName}'s` : "My"} presets
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Browse your favourite shadcn presets.
-      </p>
-    </div>
-  )
-}
-
 export default async function MyVotesPage() {
   const user = await getSessionUser()
 
   if (!user) {
     return (
       <ListLayout>
-        <main className="grid gap-6">
-          <SimpleHeader />
+        <HomeHero>
+          <Suspense fallback={<PresetFormSkeleton />}>
+            <PresetForm className="pt-2" />
+          </Suspense>
+        </HomeHero>
+        <main className="grid gap-4">
           <Empty className="min-h-[50vh] border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
@@ -60,14 +55,21 @@ export default async function MyVotesPage() {
   const items = feedItems.map((item) => ({
     code: item.code,
     baseColor: item.config.baseColor,
+    theme: item.config.theme,
+    chartColor: item.config.chartColor ?? item.config.theme,
     iconLibrary: item.config.iconLibrary,
     font: item.config.font,
+    fontHeading: item.config.fontHeading,
   }))
 
   return (
     <ListLayout>
-      <main className="grid gap-6">
-        <SimpleHeader userName={user.name} />
+      <HomeHero>
+        <Suspense fallback={<PresetFormSkeleton />}>
+          <PresetForm className="pt-2" />
+        </Suspense>
+      </HomeHero>
+      <main className="grid gap-4">
         {items.length === 0 ? (
           <Empty className="border border-border">
             <EmptyMedia variant="icon">

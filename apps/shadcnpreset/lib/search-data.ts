@@ -20,8 +20,13 @@ import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
 export type SearchListItem = {
   code: string
   baseColor: string
+  /** Semantic / accent palette (distinct from neutral `baseColor`). */
+  theme: string
+  /** Chart series accent; may match `theme` or differ. */
+  chartColor: string
   iconLibrary: string
   font: string
+  fontHeading: string
 }
 
 export type SearchPageData = {
@@ -182,12 +187,28 @@ function extractThemeChartFromChartsConnector(rawTokens: string[]): {
   return { tokens: rawTokens }
 }
 
+/** "Sans serif" is a single typographic phrase; treat as sans facet only (not sans + serif). */
+function collapseSansSerifPhrase(tokens: string[]): string[] {
+  const out: string[] = []
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]
+    const next = tokens[i + 1]
+    if (t === "sans" && next === "serif") {
+      out.push("sans")
+      i++
+      continue
+    }
+    out.push(t!)
+  }
+  return out
+}
+
 function getQueryConstraints(query: string): QueryConstraints {
   const raw = tokenizeSearchQueryOrdered(query)
   const { tokens: afterChartsPhrase, paired: chartsConnectorPair } =
     extractThemeChartFromChartsConnector(raw)
-  const tokens = afterChartsPhrase.filter(
-    (t) => !SEARCH_INTENT_STOPWORDS.has(t)
+  const tokens = collapseSansSerifPhrase(
+    afterChartsPhrase.filter((t) => !SEARCH_INTENT_STOPWORDS.has(t))
   )
   const predicates: QueryConstraints["predicates"] = []
   const exactFilters: PresetFilters = {}
@@ -256,12 +277,10 @@ function getQueryConstraints(query: string): QueryConstraints {
 
     if (token === "sans") {
       strictFacetMode = true
-      exactFilters.fontHeading = "inherit"
       fontOptions = PRESET_FILTER_OPTIONS.fonts.filter((font) => SANS_FONTS.has(font))
-      predicates.push(
-        (item) =>
-          SANS_FONTS.has(item.config.font) && headingMatchesBodyFontFacet(item, "sans")
-      )
+      // Body font only: "sans" / "sans serif" means sans-serif typography; a serif
+      // heading with a sans body is common and must not zero out results.
+      predicates.push((item) => SANS_FONTS.has(item.config.font))
       continue
     }
 
@@ -420,8 +439,11 @@ async function getSearchItemsWindow(
           {
             code: resolved.code,
             baseColor: resolved.baseColor,
+            theme: resolved.theme,
+            chartColor: resolved.chartColor ?? resolved.theme,
             iconLibrary: resolved.iconLibrary,
             font: resolved.font,
+            fontHeading: resolved.fontHeading,
           },
         ]
       : []
@@ -431,8 +453,11 @@ async function getSearchItemsWindow(
   return results.map((item) => ({
     code: item.code,
     baseColor: item.config.baseColor,
+    theme: item.config.theme,
+    chartColor: item.config.chartColor ?? item.config.theme,
     iconLibrary: item.config.iconLibrary,
     font: item.config.font,
+    fontHeading: item.config.fontHeading,
   }))
 }
 

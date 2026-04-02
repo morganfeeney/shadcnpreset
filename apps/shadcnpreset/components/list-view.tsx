@@ -8,8 +8,11 @@ import type { PresetPageItem } from "@/lib/preset-catalog"
 export type ListViewItem = {
   code: string
   baseColor: string
+  theme: string
+  chartColor: string
   iconLibrary: string
   font: string
+  fontHeading: string
 }
 
 interface ListViewProps {
@@ -29,9 +32,19 @@ function toListViewItem(item: PresetPageItem): ListViewItem {
   return {
     code: item.code,
     baseColor: item.config.baseColor,
+    theme: item.config.theme,
+    chartColor: item.config.chartColor ?? item.config.theme,
     iconLibrary: item.config.iconLibrary,
     font: item.config.font,
+    fontHeading: item.config.fontHeading,
   }
+}
+
+function formatTypographyLine(fontHeading: string, font: string) {
+  if (fontHeading === "inherit" || fontHeading === font) {
+    return `${font} body`
+  }
+  return `${fontHeading} heading, ${font} body`
 }
 
 export function ListView({
@@ -131,7 +144,7 @@ export function ListView({
             <PresetIframeCard
               code={item.code}
               title={item.code}
-              description={`${item.baseColor} base, ${item.iconLibrary} icons, ${item.font} body`}
+              description={`${item.baseColor} base, ${item.theme} theme, ${item.chartColor} charts, ${item.iconLibrary}, ${formatTypographyLine(item.fontHeading, item.font)}`}
             />
           </li>
         ))}

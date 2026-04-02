@@ -381,9 +381,10 @@ export function wantsPaletteVariety(query: string) {
       PRESET_FILTER_OPTIONS.baseColors.includes(t as never)
   )
 
-  // Explicit semantic theme/chart token (e.g. "pink", "lime"): honour a tight accent
+  // Semantic theme pin (e.g. "pink", "lime") without a neutral base token: still
+  // spread across baseColor (zinc, stone, …). Pink/lime are theme/chart — not bases.
   if (themePins.length >= 1) {
-    return false
+    return baseColors.length === 0
   }
 
   // One style + one base (e.g. "nova stone"): theme & chart still vary — show variety

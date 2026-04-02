@@ -31,8 +31,11 @@ export default async function HomePage() {
           items={feedItems.map((item) => ({
             code: item.code,
             baseColor: item.config.baseColor,
+            theme: item.config.theme,
+            chartColor: item.config.chartColor ?? item.config.theme,
             iconLibrary: item.config.iconLibrary,
             font: item.config.font,
+            fontHeading: item.config.fontHeading,
           }))}
           useLiveFeed
           safePage={1}
