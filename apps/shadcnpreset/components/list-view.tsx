@@ -42,9 +42,9 @@ function toListViewItem(item: PresetPageItem): ListViewItem {
 
 function formatTypographyLine(fontHeading: string, font: string) {
   if (fontHeading === "inherit" || fontHeading === font) {
-    return `${font} body`
+    return `${font} font`
   }
-  return `${fontHeading} heading, ${font} body`
+  return `${fontHeading} & ${font} fonts`
 }
 
 export function ListView({

@@ -96,9 +96,12 @@ export function PresetIframeCard({
   }, [code])
 
   const canRenderIframe = shouldRender && containerWidth > 0
-  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code, {
-    enabled: shouldRender,
-  })
+  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
+    code,
+    {
+      enabled: shouldRender,
+    }
+  )
 
   return (
     <Card className="gap-0 pt-0">
@@ -148,7 +151,7 @@ export function PresetIframeCard({
         )}
       </div>
 
-      <CardFooter className="justify-between">
+      <CardFooter className="justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{title}</p>
           <p className="line-clamp-1 text-xs text-muted-foreground">
