@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { Heart } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -8,9 +7,10 @@ import { Spinner } from "@/components/ui/spinner"
 
 import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { PresetPreviewDialog } from "@/components/preset-preview-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { resolvePresetFromCode } from "@/lib/preset"
+import { Button } from "@/components/ui/button"
+import { getPresetPreviewUrl } from "@/lib/preset"
 
 type PresetIframeCardProps = {
   code: string
@@ -31,6 +31,7 @@ export function PresetIframeCard({
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldRender, setShouldRender] = useState(false)
   const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -84,18 +85,10 @@ export function PresetIframeCard({
     return containerWidth / virtualWidth
   }, [containerWidth, virtualWidth])
 
-  const iframeSrc = useMemo(() => {
-    const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
-    const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
-    previewUrl.searchParams.set("preset", code)
-    const resolved = resolvePresetFromCode(code)
-    if (resolved) {
-      previewUrl.searchParams.set("iconLibrary", resolved.iconLibrary)
-    }
-    return previewUrl.toString()
-  }, [code])
+  const iframeSrc = useMemo(() => getPresetPreviewUrl(code) ?? "", [code])
 
-  const canRenderIframe = shouldRender && containerWidth > 0
+  const canRenderIframe =
+    shouldRender && containerWidth > 0 && Boolean(iframeSrc)
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
     code,
     {
@@ -139,9 +132,9 @@ export function PresetIframeCard({
               </div>
             ) : null}
             <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <Link href={`/preset/${code}`} className={buttonVariants({})}>
-                Open Preset
-              </Link>
+              <Button type="button" onClick={() => setPreviewOpen(true)}>
+                Preview
+              </Button>
             </div>
           </>
         ) : (
@@ -151,9 +144,17 @@ export function PresetIframeCard({
         )}
       </div>
 
+      <PresetPreviewDialog
+        code={code}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={title}
+        description={description}
+      />
+
       <CardFooter className="justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{title}</p>
+          <p className="truncate font-mono text-sm font-medium">{title}</p>
           <p className="line-clamp-1 text-xs text-muted-foreground">
             {description}
           </p>

@@ -74,6 +74,31 @@ export function getCanonicalPresetCode(config: PresetConfig) {
   return encodePreset(config)
 }
 
+/** Matches v4 `PreviewSwitcher`: `/preview/radix/preview` vs `/preview/radix/preview-02`. */
+export type PresetPreviewPageName = "preview" | "preview-02"
+
+export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
+  page: PresetPreviewPageName
+  label: string
+}> = [
+  { page: "preview", label: "View 1" },
+  { page: "preview-02", label: "View 2" },
+] as const
+
+/** Radix preview iframe URL (no customizer) — same origin as list cards. */
+export function getPresetPreviewUrl(
+  code: string,
+  pageName: PresetPreviewPageName = "preview"
+): string | null {
+  const resolved = resolvePresetFromCode(code)
+  if (!resolved) return null
+  const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
+  const previewUrl = new URL(`/preview/radix/${pageName}`, v4BaseUrl)
+  previewUrl.searchParams.set("preset", code)
+  previewUrl.searchParams.set("iconLibrary", resolved.iconLibrary)
+  return previewUrl.toString()
+}
+
 export function getFontFamily(font: string) {
   return FONT_STACKS[font] ?? '"Geist", system-ui, sans-serif'
 }
