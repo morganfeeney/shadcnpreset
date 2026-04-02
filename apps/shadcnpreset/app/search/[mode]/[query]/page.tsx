@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation"
+import { Suspense } from "react"
+import { redirect } from "next/navigation"
 
 import { HomeHero } from "@/components/home-hero"
+import { PresetForm } from "@/components/preset-form"
+import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
 import { ListLayout } from "@/components/list-layout"
 import { isSearchMode } from "@/lib/search-route"
 import { SearchResultsClient } from "./search-results-client"
@@ -16,7 +19,7 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
   const resolvedParams = await params
 
   if (!isSearchMode(resolvedParams.mode)) {
-    notFound()
+    redirect("/")
   }
 
   let query = resolvedParams.query.trim()
@@ -27,12 +30,16 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
   }
   query = query.trim()
   if (!query) {
-    notFound()
+    redirect("/")
   }
 
   return (
     <ListLayout>
-      <HomeHero />
+      <HomeHero>
+        <Suspense fallback={<PresetFormSkeleton />}>
+          <PresetForm className="pt-2" />
+        </Suspense>
+      </HomeHero>
       <SearchResultsClient mode={resolvedParams.mode} query={query} />
     </ListLayout>
   )

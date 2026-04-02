@@ -40,12 +40,11 @@ export default function RootLayout({
         inter.variable
       )}
     >
-      <body>
+      <body className="grid min-h-screen grid-rows-[auto_1fr_auto]">
         <QueryProvider>
           <ThemeProvider>
             <VoteAuthDialogHost />
             <Header1 />
-
             {children}
             <Footer1 />
           </ThemeProvider>

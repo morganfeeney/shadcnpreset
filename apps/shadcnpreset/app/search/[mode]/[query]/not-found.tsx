@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 
 import { SMART_SEARCH_SUGGESTIONS } from "@/lib/search-suggestions"
 import {
-  buildHomePresetSearchHref,
+  buildHomeNewSearchHref,
   buildSearchHref,
   decodeSearchQuerySegment,
 } from "@/lib/search-route"
@@ -51,8 +51,8 @@ export default function QueryNotFound() {
           </EmptyTitle>
           <EmptyDescription>
             Try different words,{" "}
-            <Link href={buildHomePresetSearchHref(keyword, "smart")}>
-              search again
+            <Link href={buildHomeNewSearchHref("smart")}>
+              start a new search
             </Link>
             , or explore
             one of these example searches.

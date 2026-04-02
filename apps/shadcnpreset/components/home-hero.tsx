@@ -1,6 +1,7 @@
 "use client"
 
-import { PresetForm } from "@/components/preset-form"
+import type { ReactNode } from "react"
+
 import {
   PageHeader,
   PageHeaderDescription,
@@ -9,7 +10,12 @@ import {
 import { Announcement } from "@/components/announcement"
 import { siteConfig } from "@/lib/config"
 
-export function HomeHero() {
+type HomeHeroProps = {
+  /** Search field; wrap `PresetForm` in `<Suspense>` in a Server Component parent. */
+  children: ReactNode
+}
+
+export function HomeHero({ children }: HomeHeroProps) {
   return (
     <PageHeader>
       <Announcement />
@@ -17,9 +23,7 @@ export function HomeHero() {
         {siteConfig.title}
       </PageHeaderHeading>
       <PageHeaderDescription>{siteConfig.description}</PageHeaderDescription>
-      <div className="w-full max-w-2xl">
-        <PresetForm className="pt-2" />
-      </div>
+      <div className="w-full max-w-2xl">{children}</div>
     </PageHeader>
   )
 }

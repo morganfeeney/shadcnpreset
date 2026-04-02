@@ -1,5 +1,9 @@
-import { ListView } from "@/components/list-view"
+import { Suspense } from "react"
+
 import { HomeHero } from "@/components/home-hero"
+import { PresetForm } from "@/components/preset-form"
+import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
+import { ListView } from "@/components/list-view"
 import { getHomepageFeed } from "@/lib/preset-feed"
 import { ListLayout } from "@/components/list-layout"
 
@@ -16,7 +20,11 @@ export default async function HomePage() {
 
   return (
     <ListLayout>
-      <HomeHero />
+      <HomeHero>
+        <Suspense fallback={<PresetFormSkeleton />}>
+          <PresetForm className="pt-2" />
+        </Suspense>
+      </HomeHero>
       <main className="grid gap-4">
         <ListView
           key={feedKey}

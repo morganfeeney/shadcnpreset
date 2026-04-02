@@ -13,6 +13,16 @@ export function buildSearchHref(
   return `/search/${mode}/${encodeURIComponent(query)}`
 }
 
+/** Query key for preselecting `PresetForm` mode on `/` (empty field). */
+export const HOME_PRESET_MODE_QUERY = "mode"
+
+/** Home with Smart search (or code) selected, ready for a new query. */
+export function buildHomeNewSearchHref(mode: SearchMode = "smart") {
+  const u = new URLSearchParams()
+  u.set(HOME_PRESET_MODE_QUERY, mode)
+  return `/?${u.toString()}`
+}
+
 /** Decode a path segment that may still contain %20 or + from the URL. */
 export function decodeSearchQuerySegment(raw: string) {
   const trimmed = raw.trim()

@@ -1,7 +1,11 @@
 import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ExternalLink } from "lucide-react"
+
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { getCanonicalPresetCode, resolvePresetFromCode } from "@/lib/preset"
+import { Container } from "@/components/zippystarter/container"
 
 type PresetPageProps = {
   params: Promise<{
@@ -21,18 +25,7 @@ export default async function PresetCodePage({
   const preset = resolvePresetFromCode(code)
 
   if (!preset) {
-    return (
-      <main className="page-wrap">
-        <section className="empty-state">
-          <h1>Invalid preset code</h1>
-          <p>
-            The route segment <code>{code}</code> is not a valid shadcn preset.
-            Try another code from the create page.
-          </p>
-          <Link href="/">Back to code input</Link>
-        </section>
-      </main>
-    )
+    notFound()
   }
 
   const canonicalCode = getCanonicalPresetCode(preset)
@@ -47,9 +40,9 @@ export default async function PresetCodePage({
 
   if (isEmbedMode) {
     return (
-      <main className="v4-embed-page">
+      <main className="h-screen w-full overflow-hidden bg-background">
         <PresetV4Frame
-          className="v4-frame v4-frame-embed"
+          className="h-full min-h-0 w-full border-0"
           src={previewUrl.toString()}
           title={`v4 preview preset ${code} embed`}
         />
@@ -58,32 +51,30 @@ export default async function PresetCodePage({
   }
 
   return (
-    <main className="grid min-h-screen">
-      {/*<section className="empty-state v4-header">*/}
-      {/*  <p className="eyebrow">shadcnpreset</p>*/}
-      {/*  <h1>Preset {code}</h1>*/}
-      {/*  <p>*/}
-      {/*    Rendering the real v4 create page from <code>apps/v4/app/(create)</code>{" "}*/}
-      {/*    with your preset applied.*/}
-      {/*  </p>*/}
-      {/*  <p>*/}
-      {/*    Canonical code: <code>{canonicalCode}</code>*/}
-      {/*    {preset.isLegacyCode ? " (legacy v1 input)" : ""}*/}
-      {/*  </p>*/}
-      {/*  <div className="inline-flex items-center justify-center">*/}
-      {/*    <PresetVoteButton code={canonicalCode} />*/}
-      {/*  </div>*/}
-      {/*  <p>*/}
-      {/*    <Link href={createDirectUrl.toString()} target="_blank">*/}
-      {/*      Open v4 create page directly*/}
-      {/*    </Link>*/}
-      {/*  </p>*/}
-      {/*</section>*/}
-      <PresetV4Frame
-        className="size-full"
-        src={createIframeUrl.toString()}
-        title={`v4 create preset ${code}`}
-      />
+    <main className="min-h-screen">
+      <Container aria-label="Preset details and actions">
+        <div className="inline-flex flex-wrap items-center gap-2">
+          <h1 className="font-mono text-foreground">--preset {code}</h1>
+
+          <PresetVoteButton code={canonicalCode} />
+          <Link
+            href={createDirectUrl.toString()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-transparent bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground transition-colors outline-none hover:bg-secondary/80 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+          >
+            Open in v4
+            <ExternalLink className="size-3.5 opacity-80" aria-hidden />
+          </Link>
+        </div>
+      </Container>
+      <div className="overflow-hidden">
+        <PresetV4Frame
+          className="block h-[calc(100dvh-16rem)] min-h-[560px] w-full border-0"
+          src={createIframeUrl.toString()}
+          title={`v4 create preset ${code}`}
+        />
+      </div>
     </main>
   )
 }
