@@ -9,8 +9,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
 import { cn } from "@/lib/utils"
 import { siteConfig } from "@/lib/config"
-import { Header1 } from "@/components/zippystarter/header1"
-import { Footer1 } from "@/components/zippystarter/footer1"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -44,9 +42,7 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider>
             <VoteAuthDialogHost />
-            <Header1 />
             {children}
-            <Footer1 />
           </ThemeProvider>
         </QueryProvider>
       </body>

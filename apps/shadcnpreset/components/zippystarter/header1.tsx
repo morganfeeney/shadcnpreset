@@ -201,7 +201,7 @@ export function Header1({
     <Container
       component="header"
       className={cn("flex items-center justify-between py-4", className)}
-      wrapperClassName={cn(wrapperClassName, "bg-header inset-header")}
+      wrapperClassName={cn(wrapperClassName, "bg-header")}
     >
       {logo}
       <MobileNav

@@ -45,7 +45,7 @@ export function Container({
       <ContainerInner
         className={cn(
           className,
-          "section-soft relative z-10 mx-auto w-full max-w-[1800px] gap-(--gap) px-safe [--gap:--spacing(4)] md:[--gap:--spacing(6)]"
+          "relative z-10 mx-auto w-full max-w-[1800px] gap-(--gap) px-safe [--gap:--spacing(4)] md:[--gap:--spacing(6)]"
         )}
       >
         {children}

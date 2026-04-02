@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, FullscreenIcon } from "lucide-react"
 
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
@@ -53,19 +53,23 @@ export default async function PresetCodePage({
   return (
     <main className="min-h-screen">
       <Container aria-label="Preset details and actions">
-        <div className="inline-flex flex-wrap items-center gap-2">
-          <h1 className="font-mono text-foreground">--preset {code}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg font-display text-foreground md:text-3xl">
+            {code}
+          </h1>
 
-          <PresetVoteButton code={canonicalCode} />
-          <Link
-            href={createDirectUrl.toString()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-transparent bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground transition-colors outline-none hover:bg-secondary/80 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-          >
-            Open in v4
-            <ExternalLink className="size-3.5 opacity-80" aria-hidden />
-          </Link>
+          <div className="flex items-center gap-2">
+            <PresetVoteButton code={canonicalCode} />
+            <Link
+              href={createDirectUrl.toString()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-transparent bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground transition-colors outline-none hover:bg-secondary/80 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+            >
+              Open full size
+              <FullscreenIcon className="size-3.5" aria-hidden />
+            </Link>
+          </div>
         </div>
       </Container>
       <div className="overflow-hidden">
