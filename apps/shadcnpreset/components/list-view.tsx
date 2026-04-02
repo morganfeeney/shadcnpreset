@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { Button } from "@/components/ui/button"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 
@@ -25,7 +26,6 @@ interface ListViewProps {
   useIncrementalReveal?: boolean
   initialVisibleCount?: number
   visibleStep?: number
-  revealDelayMs?: number
 }
 
 function toListViewItem(item: PresetPageItem): ListViewItem {
@@ -57,7 +57,6 @@ export function ListView({
   useIncrementalReveal = false,
   initialVisibleCount = 12,
   visibleStep = 6,
-  revealDelayMs = 250,
 }: ListViewProps) {
   const feedQuery = usePresetFeed(
     safePage,
@@ -77,65 +76,19 @@ export function ListView({
   const [visibleCount, setVisibleCount] = useState(
     useIncrementalReveal ? initialVisibleCount : feedItems.length
   )
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const revealTimeoutRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!useIncrementalReveal || visibleCount >= feedItems.length) {
-      return
-    }
-
-    const node = sentinelRef.current
-    if (!node) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const isVisible = entries.some((entry) => entry.isIntersecting)
-        if (!isVisible) {
-          if (revealTimeoutRef.current !== null) {
-            window.clearTimeout(revealTimeoutRef.current)
-            revealTimeoutRef.current = null
-          }
-          return
-        }
-
-        if (revealTimeoutRef.current !== null) {
-          return
-        }
-
-        revealTimeoutRef.current = window.setTimeout(() => {
-          setVisibleCount((current) =>
-            Math.min(feedItems.length, current + visibleStep)
-          )
-          revealTimeoutRef.current = null
-        }, revealDelayMs)
-      },
-      { rootMargin: "600px 0px" }
-    )
-
-    observer.observe(node)
-    return () => {
-      observer.disconnect()
-      if (revealTimeoutRef.current !== null) {
-        window.clearTimeout(revealTimeoutRef.current)
-        revealTimeoutRef.current = null
-      }
-    }
-  }, [
-    feedItems.length,
-    revealDelayMs,
-    useIncrementalReveal,
-    visibleCount,
-    visibleStep,
-  ])
 
   const visibleItems = useMemo(
     () => feedItems.slice(0, Math.min(feedItems.length, visibleCount)),
     [feedItems, visibleCount]
   )
   const hasMore = visibleItems.length < feedItems.length
+
+  function loadMore() {
+    setVisibleCount((current) =>
+      Math.min(feedItems.length, current + visibleStep)
+    )
+  }
+
   return (
     <section>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
@@ -149,12 +102,11 @@ export function ListView({
           </li>
         ))}
       </ul>
-      {hasMore ? (
-        <div
-          ref={sentinelRef}
-          className="flex justify-center py-4 text-xs text-muted-foreground"
-        >
-          Loading more presets...
+      {hasMore && useIncrementalReveal ? (
+        <div className="flex justify-center py-6">
+          <Button type="button" variant="outline" onClick={loadMore}>
+            Load more
+          </Button>
         </div>
       ) : null}
     </section>
