@@ -1,7 +1,5 @@
 import { Card, CardFooter } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 
 function CardSkeleton() {
   return (
@@ -29,7 +27,7 @@ export function HomeResultsSkeleton() {
   return (
     <main className="grid gap-4">
       <section className="space-y-4">
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
+        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 12 }, (_, index) => (
             <CardSkeleton key={`preset-skeleton-${index}`} />
           ))}
