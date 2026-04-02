@@ -1,16 +1,18 @@
 import { PropsWithChildren } from "react"
 import { Header1 } from "@/components/zippystarter/header1"
 import { Footer1 } from "@/components/zippystarter/footer1"
-import { Container } from "@/components/zippystarter/container"
+import { ContainerOuter, Container } from "@/components/zippystarter/container"
 
 export function ListLayout({ children }: PropsWithChildren) {
   return (
     <>
-      <Container>
+      <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
         <Header1 />
-        {children}
+        <Container wrapperClassName="grid" className="grid">
+          {children}
+        </Container>
         <Footer1 />
-      </Container>
+      </ContainerOuter>
     </>
   )
 }

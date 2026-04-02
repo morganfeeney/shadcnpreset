@@ -26,18 +26,13 @@ export default async function MyVotesPage() {
   if (!user) {
     return (
       <ListLayout>
-        <HomeHero>
-          <Suspense fallback={<PresetFormSkeleton />}>
-            <PresetForm className="pt-2" />
-          </Suspense>
-        </HomeHero>
         <main className="grid gap-4">
-          <Empty className="min-h-[50vh] border border-border">
+          <Empty className="border border-border">
             <EmptyMedia variant="icon">
               <Heart className="text-muted-foreground" />
             </EmptyMedia>
             <EmptyHeader>
-              <EmptyTitle>No presets yet :(</EmptyTitle>
+              <EmptyTitle className="text-2xl">No presets yet :(</EmptyTitle>
               <EmptyDescription>
                 Sign in to add, view & manage your favourite presets.
               </EmptyDescription>
@@ -76,7 +71,7 @@ export default async function MyVotesPage() {
               <Heart className="text-muted-foreground" />
             </EmptyMedia>
             <EmptyHeader>
-              <EmptyTitle>No votes yet</EmptyTitle>
+              <EmptyTitle className="text-2xl">No presets yet :(</EmptyTitle>
               <EmptyDescription>
                 Explore the home feed and vote for presets you love—they will
                 show up here.
