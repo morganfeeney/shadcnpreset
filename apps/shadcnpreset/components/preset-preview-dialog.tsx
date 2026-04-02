@@ -39,7 +39,7 @@ function DialogPreviewIframe({ src, title }: { src: string; title: string }) {
       <PresetV4Frame
         title={title}
         src={src}
-        className="-mx-4 h-[min(80dvh,1080px)] border-0"
+        className="h-full w-full border-0"
         sandbox="allow-scripts allow-same-origin"
         onLoad={() => setLoaded(true)}
       />
@@ -80,7 +80,7 @@ export function PresetPreviewDialog({
       }}
     >
       <DialogContent
-        className="flex max-h-[90dvh] w-full max-w-[90dvw]! flex-col gap-0 overflow-hidden"
+        className="grid h-[90dvh] w-full max-w-[90dvw]! grid-rows-[auto_1fr_auto] gap-0 overflow-hidden"
         showCloseButton
       >
         <DialogHeader className="gap-0 pb-4">
@@ -93,31 +93,29 @@ export function PresetPreviewDialog({
             </DialogDescription>
           ) : null}
         </DialogHeader>
-
-        <DialogPreviewIframe
-          key={`${code}-${previewPage}-${loadGen}`}
-          src={previewSrc}
-          title={`Preset preview ${code} ${previewPage}`}
-        />
-
+        <div className="relative -mx-4">
+          <DialogPreviewIframe
+            key={`${code}-${previewPage}-${loadGen}`}
+            src={previewSrc}
+            title={`Preset preview ${code} ${previewPage}`}
+          />
+        </div>
         <DialogFooter>
           <div role="tablist" aria-label="Preview layout">
-            <div className="inline-flex rounded-lg bg-muted/90 p-1 ring-1 ring-border/60">
-              {PRESET_PREVIEW_VIEWS.map(({ page, label }) => (
-                <Button
-                  key={page}
-                  type="button"
-                  role="tab"
-                  aria-selected={previewPage === page}
-                  variant={previewPage === page ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8 rounded-md px-3 text-xs"
-                  onClick={() => setPreviewPage(page)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
+            {PRESET_PREVIEW_VIEWS.map(({ page, label }) => (
+              <Button
+                key={page}
+                type="button"
+                role="tab"
+                aria-selected={previewPage === page}
+                variant={previewPage === page ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 rounded-md px-3 text-xs"
+                onClick={() => setPreviewPage(page)}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
           <PresetVoteButton code={code} enabled={open} />
           <Link
