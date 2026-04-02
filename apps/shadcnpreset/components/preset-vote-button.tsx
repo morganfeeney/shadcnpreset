@@ -7,10 +7,18 @@ import useVote from "@/hooks/use-vote"
 
 type PresetVoteButtonProps = {
   code: string
+  /** When false, skips vote query (e.g. closed dialogs). */
+  enabled?: boolean
 }
 
-export function PresetVoteButton({ code }: PresetVoteButtonProps) {
-  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code)
+export function PresetVoteButton({
+  code,
+  enabled = true,
+}: PresetVoteButtonProps) {
+  const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
+    code,
+    { enabled }
+  )
 
   return (
     <Button
