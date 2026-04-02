@@ -4,7 +4,11 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 
 import { SMART_SEARCH_SUGGESTIONS } from "@/lib/search-suggestions"
-import { buildSearchHref, decodeSearchQuerySegment } from "@/lib/search-route"
+import {
+  buildHomePresetSearchHref,
+  buildSearchHref,
+  decodeSearchQuerySegment,
+} from "@/lib/search-route"
 import {
   Empty,
   EmptyContent,
@@ -46,7 +50,11 @@ export default function QueryNotFound() {
             No results were found for &quot;{keyword}&quot;
           </EmptyTitle>
           <EmptyDescription>
-            Try different words, <Link href="/">search again</Link>, or explore
+            Try different words,{" "}
+            <Link href={buildHomePresetSearchHref(keyword, "smart")}>
+              search again
+            </Link>
+            , or explore
             one of these example searches.
           </EmptyDescription>
         </EmptyHeader>
