@@ -3,7 +3,7 @@
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
-import { FullscreenIcon } from "lucide-react"
+import { Share2 } from "lucide-react"
 
 export function PresetButtons({
   preset,
@@ -19,10 +19,10 @@ export function PresetButtons({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className={buttonVariants({})}
+        className={buttonVariants({ variant: "outline" })}
       >
-        Open full size
-        <FullscreenIcon className="size-3.5" aria-hidden />
+        Share
+        <Share2 aria-hidden />
       </Link>
     </>
   )
