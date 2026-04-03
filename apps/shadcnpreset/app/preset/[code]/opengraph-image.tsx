@@ -2,6 +2,7 @@ import { parse, wcagContrast } from "culori"
 import { ImageResponse } from "next/og"
 import { notFound } from "next/navigation"
 
+import { logoMarkDataUrl } from "@/components/zippystarter/logo"
 import { siteConfig } from "@/lib/config"
 import { getPresetOgSwatchHexes } from "@/lib/oklch-swatch"
 import { resolvePresetFromCode } from "@/lib/preset"
@@ -83,11 +84,9 @@ export default async function Image({ params }: ImageProps) {
         height: "100%",
         width: "100%",
         display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: "column",
         justifyContent: "space-between",
-        gap: 40,
-        padding: 64,
+        padding: "32px 72px 64px 72px",
         background:
           "linear-gradient(155deg, #09090b 0%, #18181b 48%, #0c0c0e 100%)",
         color: "#fafafa",
@@ -95,30 +94,80 @@ export default async function Image({ params }: ImageProps) {
           'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
+      {/* Top: logo + swatches on one row (reference: header pinned to top) */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          flex: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 40,
           minWidth: 0,
-          gap: 0,
         }}
       >
         <div
           style={{
-            fontSize: 22,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "#71717a",
-            marginBottom: 16,
-            fontWeight: 600,
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            minWidth: 0,
           }}
         >
-          {siteConfig.name}
+          <img
+            width={40}
+            height={40}
+            src={logoMarkDataUrl({ stroke: "#a1a1aa", size: 40 })}
+            alt=""
+          />
+          <div
+            style={{
+              fontSize: 26,
+              letterSpacing: "-0.02em",
+              color: "#a1a1aa",
+              fontWeight: 500,
+            }}
+          >
+            {siteConfig.name}
+          </div>
         </div>
         <div
           style={{
+            display: "flex",
+            flexDirection: "row",
+            flexShrink: 0,
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          {swatchColors.map((color, i) => (
+            <div
+              key={`${color}-${i}`}
+              style={{
+                width: 68,
+                height: 68,
+                borderRadius: "50%",
+                backgroundColor: color,
+                ...ogSwatchOutlineStyle(color),
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Bottom-left: code + tags (reference: main block anchored low, empty middle/right) */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignSelf: "flex-start",
+          minWidth: 0,
+          maxWidth: "100%",
+          marginBottom: 48,
+        }}
+      >
+        <div
+          style={{
+            paddingTop: 4,
             fontSize: codeFontSize(preset.code.length) * 2,
             fontFamily: GEIST_MONO,
             fontWeight: 400,
@@ -131,7 +180,7 @@ export default async function Image({ params }: ImageProps) {
         </div>
         <div
           style={{
-            marginTop: 28,
+            marginTop: 4,
             fontSize: 26,
             color: "#a1a1aa",
             fontWeight: 500,
@@ -139,28 +188,6 @@ export default async function Image({ params }: ImageProps) {
         >
           {metaLine}
         </div>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          flexShrink: 0,
-          alignItems: "center",
-          gap: 14,
-        }}
-      >
-        {swatchColors.map((color, i) => (
-          <div
-            key={`${color}-${i}`}
-            style={{
-              width: 68,
-              height: 68,
-              borderRadius: "50%",
-              backgroundColor: color,
-              ...ogSwatchOutlineStyle(color),
-            }}
-          />
-        ))}
       </div>
     </div>,
     { ...size, fonts }
