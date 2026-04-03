@@ -133,16 +133,25 @@ export function PresetIframeCard({
                 <Spinner />
               </div>
             ) : null}
-            <div className="absolute inset-0 grid place-content-center gap-2 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <Button type="button" onClick={() => setPreviewOpen(true)}>
-                Preview
-              </Button>
-              <Link
-                href={`/preset/${code}`}
-                className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
-              >
-                Edit
-              </Link>
+            <div className="absolute inset-0">
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              />
+              <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover:visible">
+                <Button type="button" onClick={() => setPreviewOpen(true)}>
+                  Preview
+                </Button>
+                <Link
+                  href={`/preset/${code}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "gap-2"
+                  )}
+                >
+                  Edit
+                </Link>
+              </div>
             </div>
           </>
         ) : (
