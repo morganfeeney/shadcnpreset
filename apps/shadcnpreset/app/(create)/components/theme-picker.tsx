@@ -13,7 +13,7 @@ import {
   PickerRadioItem,
   PickerSeparator,
   PickerTrigger,
-} from "@/app/(create)/components/picker"
+} from "@/components/picker"
 import { useDesignSystemSearchParams } from "@/app/(create)/lib/search-params"
 
 export function ThemePicker({

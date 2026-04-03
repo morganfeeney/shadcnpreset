@@ -1,11 +1,12 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ExternalLink, FullscreenIcon } from "lucide-react"
+import { FullscreenIcon } from "lucide-react"
+import { encodePreset } from "shadcn/preset"
 
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
-import { getCanonicalPresetCode, resolvePresetFromCode } from "@/lib/preset"
 import { Container } from "@/components/zippystarter/container"
+import { resolvePresetFromCode } from "@/lib/preset"
 
 type PresetPageProps = {
   params: Promise<{
@@ -28,7 +29,7 @@ export default async function PresetCodePage({
     notFound()
   }
 
-  const canonicalCode = getCanonicalPresetCode(preset)
+  const canonicalCode = encodePreset(preset)
   const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
   const createDirectUrl = new URL("/create", v4BaseUrl)
   createDirectUrl.searchParams.set("preset", code)

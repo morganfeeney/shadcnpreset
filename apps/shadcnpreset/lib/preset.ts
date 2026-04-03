@@ -72,10 +72,6 @@ export function resolvePresetFromCode(code: string): ResolvedPreset | null {
   }
 }
 
-export function getCanonicalPresetCode(config: PresetConfig) {
-  return encodePreset(config)
-}
-
 /** Matches v4 `PreviewSwitcher`: `/preview/radix/preview` vs `/preview/radix/preview-02`. */
 export type PresetPreviewPageName = "preview" | "preview-02"
 

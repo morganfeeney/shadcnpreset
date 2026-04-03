@@ -14,7 +14,7 @@ import {
   PickerSeparator,
   PickerShortcut,
   PickerTrigger,
-} from "@/app/(create)/components/picker"
+} from "@/components/picker"
 import { useActionMenuTrigger } from "@/app/(create)/hooks/use-action-menu"
 import { useHistory } from "@/app/(create)/hooks/use-history"
 import { useRandom } from "@/app/(create)/hooks/use-random"

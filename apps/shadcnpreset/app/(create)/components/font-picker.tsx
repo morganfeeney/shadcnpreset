@@ -12,7 +12,7 @@ import {
   PickerRadioItem,
   PickerSeparator,
   PickerTrigger,
-} from "@/app/(create)/components/picker"
+} from "@/components/picker"
 import { FONTS } from "@/app/(create)/lib/fonts"
 import {
   useDesignSystemSearchParams,

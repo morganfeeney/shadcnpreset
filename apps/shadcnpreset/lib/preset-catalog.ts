@@ -1,4 +1,5 @@
 import {
+  PRESET_BASE_COLORS,
   PRESET_FONT_HEADINGS,
   PRESET_FONTS,
   PRESET_ICON_LIBRARIES,
@@ -12,15 +13,11 @@ import {
 } from "shadcn/preset"
 import { THEMES } from "@/registry/themes"
 
-const V4_BASE_COLORS = [
-  "neutral",
-  "stone",
-  "zinc",
-  "mauve",
-  "olive",
-  "mist",
-  "taupe",
-] as const
+type V4BaseColor = Exclude<(typeof PRESET_BASE_COLORS)[number], "gray">
+
+const V4_BASE_COLORS: readonly V4BaseColor[] = PRESET_BASE_COLORS.filter(
+  (c): c is V4BaseColor => c !== "gray"
+)
 
 const APP_THEME_NAMES = THEMES.map((theme) => theme.name)
 const V4_THEME_NAMES = APP_THEME_NAMES.filter(
