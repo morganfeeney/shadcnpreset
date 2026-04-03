@@ -8,7 +8,7 @@ export function WideLayout({ children }: PropsWithChildren) {
     <>
       <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
         <Header1 className="max-w-full!" />
-        <div className="mx-auto w-full max-w-[2000px]">{children}</div>
+        {children}
         <Footer1 />
       </ContainerOuter>
     </>

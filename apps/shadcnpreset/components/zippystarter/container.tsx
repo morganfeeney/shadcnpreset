@@ -41,8 +41,13 @@ export function Container({
   wrapperClassName,
 }: ContainerProps) {
   return (
-    <ContainerOuter component={component} className={wrapperClassName}>
+    <ContainerOuter
+      data-slot="container-outer"
+      component={component}
+      className={wrapperClassName}
+    >
       <ContainerInner
+        data-slot="container-inner"
         className={cn(
           className,
           "relative z-10 mx-auto w-full max-w-[2000px] gap-(--gap) px-safe [--gap:--spacing(4)] md:[--gap:--spacing(6)]"

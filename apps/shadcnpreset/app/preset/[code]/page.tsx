@@ -33,20 +33,22 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
   previewUrl.searchParams.set("preset", code)
 
   return (
-    <main className="grid gap-2">
-      <Container aria-label="Preset details and actions">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <PresetCodeTitle presetCode={code} />
-          <div className="flex items-center gap-2">
-            <PresetButtons preset={canonicalCode} />
+    <div className="mx-auto w-full max-w-[2000px]">
+      <main className="grid gap-2">
+        <Container aria-label="Preset details and actions">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <PresetCodeTitle presetCode={code} />
+            <div className="flex items-center gap-2">
+              <PresetButtons preset={canonicalCode} />
+            </div>
           </div>
-        </div>
-      </Container>
-      <PresetV4Frame
-        className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
-        src={createIframeUrl.toString()}
-        title={`v4 create preset ${code}`}
-      />
-    </main>
+        </Container>
+        <PresetV4Frame
+          className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
+          src={createIframeUrl.toString()}
+          title={`v4 create preset ${code}`}
+        />
+      </main>
+    </div>
   )
 }
