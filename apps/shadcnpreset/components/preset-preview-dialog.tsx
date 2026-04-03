@@ -23,7 +23,6 @@ import {
   PRESET_PREVIEW_VIEWS,
   type PresetPreviewPageName,
 } from "@/lib/preset"
-import { ButtonGroup } from "@/components/ui/button-group"
 
 export type PresetPreviewDialogProps = {
   code: string
@@ -98,29 +97,26 @@ export function PresetPreviewDialog({
               ) : null}
             </div>
             <div className="flex gap-2">
-              <ButtonGroup>
-                <PresetVoteButton code={code} enabled={open} />
-                <Link
-                  href={`/preset/${code}`}
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                      className: "rounded-none border-l-0",
-                    }),
-                    "gap-2"
-                  )}
-                >
-                  Edit
-                  <Settings2 aria-hidden />
-                </Link>
-                <DialogTrigger
-                  render={
-                    <Button variant="outline">
-                      <X />
-                    </Button>
-                  }
-                />
-              </ButtonGroup>
+              <PresetVoteButton code={code} enabled={open} />
+              <Link
+                href={`/preset/${code}`}
+                className={cn(
+                  buttonVariants({
+                    variant: "outline",
+                  }),
+                  "gap-2"
+                )}
+              >
+                Edit
+                <Settings2 aria-hidden />
+              </Link>
+              <DialogTrigger
+                render={
+                  <Button variant="outline">
+                    <X />
+                  </Button>
+                }
+              />
             </div>
           </div>
         </DialogHeader>

@@ -44,10 +44,7 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
           </h1>
 
           <div className="flex items-center gap-2">
-            <PresetButtons
-              preset={canonicalCode}
-              href={createDirectUrl.toString()}
-            />
+            <PresetButtons preset={canonicalCode} />
           </div>
         </div>
       </Container>
