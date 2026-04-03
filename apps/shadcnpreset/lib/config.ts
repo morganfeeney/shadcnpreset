@@ -16,6 +16,20 @@ export const siteConfig = {
     twitter: "https://twitter.com/morganfeeney",
     github: "https://github.com/morganfeeney/shadcnpreset",
   },
+  analytics: {
+    // Google Analytics - if not provided, will not be included
+    googleAnalyticsId: process.env.NEXT_PUBLIC_GA_ID,
+
+    // HotJar - if not provided, will not be included
+    hotjarId: process.env.NEXT_PUBLIC_HOTJAR_ID,
+    hotjarVersion: process.env.NEXT_PUBLIC_HOTJAR_VERSION,
+
+    // Vercel Analytics - if false, will not be included
+    vercelAnalytics: process.env.NEXT_PUBLIC_VERCEL_ANALYTICS,
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
   navItems: [
     {
       href: "/docs/installation",

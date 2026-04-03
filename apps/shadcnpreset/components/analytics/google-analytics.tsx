@@ -2,6 +2,7 @@
 
 import { GoogleAnalytics as Ga4 } from "@next/third-parties/google"
 import { useSyncExternalStore } from "react"
+import { siteConfig } from "@/lib/config"
 
 function subscribeToNothing() {
   return () => {}
@@ -17,7 +18,9 @@ function getIsTopWindowSnapshot() {
 }
 
 export function GoogleAnalytics() {
-  const gaId = process.env.GA_ID
+  const { analytics } = siteConfig
+
+  const gaId = analytics.googleAnalyticsId
   const isTopWindow = useSyncExternalStore(
     subscribeToNothing,
     getIsTopWindowSnapshot,

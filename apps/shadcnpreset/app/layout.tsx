@@ -10,6 +10,8 @@ import { PendingVoteApplier } from "@/components/pending-vote-applier"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
 import { cn } from "@/lib/utils"
 import { siteConfig } from "@/lib/config"
+import { GoogleAnalytics } from "@/components/analytics/google-analytics"
+import { HotJar } from "@/components/analytics/hot-jar"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -61,6 +63,7 @@ export default function RootLayout({
         inter.variable
       )}
     >
+      <HotJar />
       <body>
         <QueryProvider>
           <ThemeProvider>
@@ -70,6 +73,7 @@ export default function RootLayout({
           </ThemeProvider>
         </QueryProvider>
       </body>
+      <GoogleAnalytics />
     </html>
   )
 }

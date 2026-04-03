@@ -1,16 +1,16 @@
-"use client";
-import Script from "next/script";
-import { siteMetadata } from "@/data/site-meta-data";
+"use client"
+import Script from "next/script"
+import { siteConfig } from "@/lib/config"
 
 export function HotJar() {
-  const { analytics } = siteMetadata;
+  const { analytics } = siteConfig
 
   if (
     process.env.NODE_ENV !== "production" ||
     !analytics.hotjarId ||
     !analytics.hotjarVersion
   ) {
-    return null;
+    return null
   }
 
   return (
@@ -26,5 +26,5 @@ export function HotJar() {
         })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
       `}
     </Script>
-  );
+  )
 }
