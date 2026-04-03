@@ -117,17 +117,6 @@ export default async function Image({ params }: ImageProps) {
         >
           {siteConfig.name}
         </div>
-        {/*<div*/}
-        {/*  style={{*/}
-        {/*    fontSize: 36,*/}
-        {/*    color: "#fafafa",*/}
-        {/*    marginBottom: 20,*/}
-        {/*    fontWeight: 600,*/}
-        {/*    letterSpacing: "-0.02em",*/}
-        {/*  }}*/}
-        {/*>*/}
-        {/*  shadcn preset*/}
-        {/*</div>*/}
         <div
           style={{
             fontSize: codeFontSize(preset.code.length) * 2,
