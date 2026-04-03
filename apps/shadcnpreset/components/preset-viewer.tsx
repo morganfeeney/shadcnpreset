@@ -1,4 +1,4 @@
-import type { PresetConfig } from "@/lib/preset-codec"
+import type { PresetConfig } from "shadcn/preset"
 import type { ResolvedPreset } from "@/lib/preset"
 
 const FIELD_ORDER: Array<keyof PresetConfig> = [
@@ -79,7 +79,9 @@ export function PresetViewer({ preset, canonicalCode }: PresetViewerProps) {
           </div>
           <div className="sample-card cn-menu-target" data-menu-translucent="">
             <h3>Menu Surface</h3>
-            <p>Menu accent and inversion options are visible in this section.</p>
+            <p>
+              Menu accent and inversion options are visible in this section.
+            </p>
             <ul className="menu-list">
               <li>Dashboard</li>
               <li>Analytics</li>

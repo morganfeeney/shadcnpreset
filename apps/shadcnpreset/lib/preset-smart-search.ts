@@ -416,22 +416,22 @@ function diversityBucketKey(item: PresetPageItem) {
 type RankedEntry = { item: PresetPageItem; relevance: number }
 
 /**
- * When vibe queries should show many colourways and icon sets, the top-N by relevance
- * alone can be almost one palette + one icon library. Round-robin across buckets so
- * MMR sees a mixed pool.
+ * Browsing “family”: layout + neutrals/accents + heading face. Body font and icon swaps
+ * are minor; cap how many entries per family so one match does not fill the MMR pool.
  */
-function buildPaletteAwareShortlist(
+function browseBucketKey(item: PresetPageItem) {
+  const c = item.config
+  return [c.style, c.baseColor, c.theme, c.chartColor, c.fontHeading].join("\0")
+}
+
+function interleaveRankedByBucket(
   ranked: RankedEntry[],
   limit: number,
-  paletteMode: boolean
+  bucketKey: (item: PresetPageItem) => string
 ): RankedEntry[] {
-  if (!paletteMode || ranked.length <= limit) {
-    return ranked.slice(0, limit)
-  }
-
   const buckets = new Map<string, RankedEntry[]>()
   for (const entry of ranked) {
-    const key = diversityBucketKey(entry.item)
+    const key = bucketKey(entry.item)
     const list = buckets.get(key)
     if (list) list.push(entry)
     else buckets.set(key, [entry])
@@ -458,6 +458,78 @@ function buildPaletteAwareShortlist(
   }
 
   return out
+}
+
+/**
+ * When users browse by natural-language query, at most one preset per browse family
+ * (layout + palette + heading). Relaxing that cap refills the pool from the same top
+ * matches and undoes diversity — MMR only needs a wide pool, not 500 near-duplicates.
+ */
+function buildBrowseCappedShortlist(ranked: RankedEntry[], limit: number): RankedEntry[] {
+  const out: RankedEntry[] = []
+  const seenFamily = new Set<string>()
+  for (const entry of ranked) {
+    if (out.length >= limit) break
+    const key = browseBucketKey(entry.item)
+    if (seenFamily.has(key)) continue
+    seenFamily.add(key)
+    out.push(entry)
+  }
+  return out
+}
+
+/**
+ * Dedupe key for search cards: palette + typography + icon set + style — the dimensions
+ * users see in the grid. Omit radius / menuColor / menuAccent: many codes share the same
+ * visible preset but differ only there, which looked like duplicate rows.
+ */
+function configSignatureKey(item: PresetPageItem) {
+  const c = item.config
+  return [
+    c.style,
+    c.baseColor,
+    c.theme,
+    c.chartColor,
+    c.fontHeading,
+    c.font,
+    c.iconLibrary,
+  ].join("\0")
+}
+
+function dedupeRankedByConfigSignature(ranked: RankedEntry[]): RankedEntry[] {
+  const seen = new Set<string>()
+  const out: RankedEntry[] = []
+  for (const entry of ranked) {
+    const key = configSignatureKey(entry.item)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(entry)
+  }
+  return out
+}
+
+/**
+ * When vibe queries should show many colourways and icon sets, the top-N by relevance
+ * alone can be almost one palette + one icon library. Round-robin across buckets so
+ * MMR sees a mixed pool.
+ *
+ * When `paletteMode` is false, cap entries per browse family (layout + palette + heading)
+ * so the grid explores more distinct looks for the same query.
+ */
+function buildPaletteAwareShortlist(
+  ranked: RankedEntry[],
+  limit: number,
+  paletteMode: boolean
+): RankedEntry[] {
+  if (!paletteMode) {
+    return buildBrowseCappedShortlist(ranked, limit)
+  }
+
+  if (ranked.length <= limit) {
+    return ranked.slice(0, limit)
+  }
+
+  return interleaveRankedByBucket(ranked, limit, diversityBucketKey)
 }
 
 export function getSampledCandidates(
@@ -541,8 +613,10 @@ export function rankPresetCandidates(
     .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 
+  const dedupedByLook = dedupeRankedByConfigSignature(ranked)
+
   const paletteMode = wantsPaletteVariety(query)
-  const shortlist = buildPaletteAwareShortlist(ranked, 500, paletteMode)
+  const shortlist = buildPaletteAwareShortlist(dedupedByLook, 500, paletteMode)
   if (!shortlist.length) return []
 
   const lambda = paletteMode ? 0.42 : 0.6

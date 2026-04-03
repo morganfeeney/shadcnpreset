@@ -242,6 +242,12 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vite-tsconfig-paths:
+        specifier: ^4.3.2
+        version: 4.3.2(typescript@5.9.3)(vite@5.4.19(@types/node@25.5.0)(lightningcss@1.32.0))
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@25.5.0)(lightningcss@1.32.0)(msw@2.10.4(@types/node@25.5.0)(typescript@5.9.3))
 
   apps/v4:
     dependencies:
@@ -12137,7 +12143,7 @@ snapshots:
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
-      magic-string: 0.30.17
+      magic-string: 0.30.21
     optionalDependencies:
       msw: 2.10.4(@types/node@20.19.10)(typescript@5.9.2)
       vite: 5.4.19(@types/node@20.19.10)(lightningcss@1.32.0)
@@ -12146,11 +12152,10 @@ snapshots:
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
-      magic-string: 0.30.17
+      magic-string: 0.30.21
     optionalDependencies:
       msw: 2.10.4(@types/node@25.5.0)(typescript@5.9.3)
       vite: 5.4.19(@types/node@25.5.0)(lightningcss@1.32.0)
-    optional: true
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
@@ -17524,6 +17529,10 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
 
+  tsconfck@3.1.6(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
+
   tsconfig-paths@3.15.0:
     dependencies:
       '@types/json5': 0.0.29
@@ -17959,7 +17968,6 @@ snapshots:
       - sugarss
       - supports-color
       - terser
-    optional: true
 
   vite-tsconfig-paths@4.3.2(typescript@5.9.2)(vite@5.4.19(@types/node@20.19.10)(lightningcss@1.32.0)):
     dependencies:
@@ -17983,6 +17991,17 @@ snapshots:
       - supports-color
       - typescript
 
+  vite-tsconfig-paths@4.3.2(typescript@5.9.3)(vite@5.4.19(@types/node@25.5.0)(lightningcss@1.32.0)):
+    dependencies:
+      debug: 4.4.3
+      globrex: 0.1.2
+      tsconfck: 3.1.6(typescript@5.9.3)
+    optionalDependencies:
+      vite: 5.4.19(@types/node@25.5.0)(lightningcss@1.32.0)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
   vite@5.4.19(@types/node@20.19.10)(lightningcss@1.32.0):
     dependencies:
       esbuild: 0.21.5
@@ -18002,7 +18021,6 @@ snapshots:
       '@types/node': 25.5.0
       fsevents: 2.3.3
       lightningcss: 1.32.0
-    optional: true
 
   vite@7.1.12(@types/node@20.19.10)(jiti@1.21.7)(lightningcss@1.32.0)(tsx@4.20.3)(yaml@2.8.1):
     dependencies:
@@ -18047,9 +18065,9 @@ snapshots:
       '@vitest/spy': 2.1.9
       '@vitest/utils': 2.1.9
       chai: 5.2.1
-      debug: 4.4.1
+      debug: 4.4.3
       expect-type: 1.2.2
-      magic-string: 0.30.17
+      magic-string: 0.30.21
       pathe: 1.1.2
       std-env: 3.9.0
       tinybench: 2.9.0
@@ -18082,9 +18100,9 @@ snapshots:
       '@vitest/spy': 2.1.9
       '@vitest/utils': 2.1.9
       chai: 5.2.1
-      debug: 4.4.1
+      debug: 4.4.3
       expect-type: 1.2.2
-      magic-string: 0.30.17
+      magic-string: 0.30.21
       pathe: 1.1.2
       std-env: 3.9.0
       tinybench: 2.9.0
@@ -18106,7 +18124,6 @@ snapshots:
       - sugarss
       - supports-color
       - terser
-    optional: true
 
   wait-on@8.0.4(debug@4.4.1):
     dependencies:

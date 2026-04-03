@@ -8,7 +8,8 @@
     "build": "pnpm --filter=shadcn build && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test \"./**/*.test.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "verify:search": "node --import tsx/esm ./scripts/verify-search.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"
@@ -55,6 +56,8 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "workspace:*",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^2.1.9"
   }
 }
