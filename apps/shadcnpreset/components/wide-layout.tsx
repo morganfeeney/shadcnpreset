@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react"
-import { ContainerOuter, Container } from "@/components/zippystarter/container"
+import { ContainerOuter } from "@/components/zippystarter/container"
 import { Header1 } from "@/components/zippystarter/header1"
 import { Footer1 } from "@/components/zippystarter/footer1"
 
@@ -8,7 +8,7 @@ export function WideLayout({ children }: PropsWithChildren) {
     <>
       <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
         <Header1 className="max-w-full!" />
-        <Container>{children}</Container>
+        <div className="mx-auto w-full max-w-[2000px]">{children}</div>
         <Footer1 />
       </ContainerOuter>
     </>

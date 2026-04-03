@@ -1,13 +1,10 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
-import { FullscreenIcon } from "lucide-react"
 import { encodePreset } from "shadcn/preset"
 
 import { PresetV4Frame } from "@/components/preset-v4-frame"
-import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Container } from "@/components/zippystarter/container"
 import { resolvePresetFromCode } from "@/lib/preset"
-import { PresetButtons } from "@/app/preset/[code]/components"
+import { PresetButtons, PresetCodeTitle } from "@/app/preset/[code]/components"
 
 type PresetPageProps = {
   params: Promise<{
@@ -39,10 +36,7 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
     <main className="grid gap-2">
       <Container aria-label="Preset details and actions">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="font-mono text-lg text-foreground md:text-2xl">
-            {code}
-          </h1>
-
+          <PresetCodeTitle presetCode={code} />
           <div className="flex items-center gap-2">
             <PresetButtons preset={canonicalCode} />
           </div>
