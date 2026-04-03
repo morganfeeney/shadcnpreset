@@ -15,6 +15,7 @@ import {
 } from "@/app/(app)/create/lib/search-params"
 
 const THEME_STYLE_ELEMENT_ID = "design-system-theme-vars"
+
 const MANAGED_BODY_CLASS_PREFIXES = ["style-", "base-color-"] as const
 
 type RegistryThemeCssVars = NonNullable<

@@ -5,8 +5,10 @@ import { encodePreset } from "shadcn/preset"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Container } from "@/components/zippystarter/container"
 import { siteConfig } from "@/lib/config"
-import { resolvePresetFromCode, type ResolvedPreset } from "@/lib/preset"
+import { presetMetaDescription } from "@/lib/preset-meta"
+import { resolvePresetFromCode } from "@/lib/preset"
 import { PresetButtons, PresetCodeTitle } from "@/app/preset/[code]/components"
+import { PresetPageLiveProvider } from "@/components/preset-page-live-context"
 
 type PresetPageProps = {
   params: Promise<{
@@ -15,10 +17,6 @@ type PresetPageProps = {
   searchParams: Promise<{
     embed?: string
   }>
-}
-
-function presetMetaDescription(preset: ResolvedPreset): string {
-  return `Preview this shadcn/ui preset (${preset.code}): ${preset.style} style, ${preset.baseColor} base, ${preset.theme} theme, ${preset.font} body, ${preset.radius} radius. Copy the code, open in create, or share.`
 }
 
 export async function generateMetadata({
@@ -73,22 +71,24 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
   previewUrl.searchParams.set("preset", code)
 
   return (
-    <div className="mx-auto w-full max-w-[2000px]">
-      <main className="grid gap-2">
-        <Container aria-label="Preset details and actions">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <PresetCodeTitle presetCode={code} />
-            <div className="flex items-center gap-2">
-              <PresetButtons preset={canonicalCode} />
+    <PresetPageLiveProvider initialPresetCode={code}>
+      <div className="mx-auto w-full max-w-[2000px]">
+        <main className="grid gap-2">
+          <Container aria-label="Preset details and actions">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <PresetCodeTitle presetCode={code} />
+              <div className="flex items-center gap-2">
+                <PresetButtons preset={canonicalCode} />
+              </div>
             </div>
-          </div>
-        </Container>
-        <PresetV4Frame
-          className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
-          src={createIframeUrl.toString()}
-          title={`v4 create preset ${code}`}
-        />
-      </main>
-    </div>
+          </Container>
+          <PresetV4Frame
+            className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
+            src={createIframeUrl.toString()}
+            title={`v4 create preset ${code}`}
+          />
+        </main>
+      </div>
+    </PresetPageLiveProvider>
   )
 }

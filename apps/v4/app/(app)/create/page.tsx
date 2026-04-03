@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import { siteConfig } from "@/lib/config"
 import { absoluteUrl } from "@/lib/utils"
 import { Customizer } from "@/app/(app)/create/components/customizer"
+import { ShadcnpresetCreatePageIntegration } from "@/app/(app)/create/components/shadcnpreset-fork"
 import { PresetHandler } from "@/app/(app)/create/components/preset-handler"
 import { Preview } from "@/app/(app)/create/components/preview"
 import { WelcomeDialog } from "@/app/(app)/create/components/welcome-dialog"
@@ -52,6 +53,7 @@ export default async function CreatePage() {
         <Preview />
         <Customizer itemsByBase={itemsByBase} />
       </div>
+      <ShadcnpresetCreatePageIntegration />
       <PresetHandler />
       <Suspense fallback={null}>
         <WelcomeDialog />

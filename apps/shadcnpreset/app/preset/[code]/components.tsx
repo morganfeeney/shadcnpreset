@@ -7,7 +7,11 @@ import { PresetVoteButton } from "@/components/preset-vote-button"
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 
+import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
+
 export function PresetCodeTitle({ presetCode }: { presetCode: string }) {
+  const live = usePresetPageLiveOptional()
+  const displayCode = live?.livePresetCode ?? presetCode
   const [hasCopied, setHasCopied] = React.useState(false)
 
   React.useEffect(() => {
@@ -18,16 +22,16 @@ export function PresetCodeTitle({ presetCode }: { presetCode: string }) {
   }, [hasCopied])
 
   const handleCopy = React.useCallback(() => {
-    copyToClipboardWithMeta(presetCode, {
+    copyToClipboardWithMeta(displayCode, {
       name: "copy_preset_code",
-      properties: { preset: presetCode },
+      properties: { preset: displayCode },
     })
     setHasCopied(true)
-  }, [presetCode])
+  }, [displayCode])
 
   return (
     <h1 className="flex items-center gap-1.5 font-mono text-lg text-foreground md:text-2xl">
-      <span className="min-w-0 truncate">{presetCode}</span>
+      <span className="min-w-0 truncate">{displayCode}</span>
       <Button
         type="button"
         variant="ghost"
@@ -47,6 +51,8 @@ export function PresetCodeTitle({ presetCode }: { presetCode: string }) {
 }
 
 export function PresetButtons({ preset }: { preset: string }) {
+  const live = usePresetPageLiveOptional()
+  const effectivePreset = live?.canonicalPresetCode ?? preset
   const [hasCopied, setHasCopied] = React.useState(false)
 
   React.useEffect(() => {
@@ -60,14 +66,14 @@ export function PresetButtons({ preset }: { preset: string }) {
     const url = window.location.href
     copyToClipboardWithMeta(url, {
       name: "copy_preset_share_url",
-      properties: { url, preset },
+      properties: { url, preset: effectivePreset },
     })
     setHasCopied(true)
-  }, [preset])
+  }, [effectivePreset])
 
   return (
     <>
-      <PresetVoteButton code={preset} />
+      <PresetVoteButton code={effectivePreset} />
       <Button variant="outline" onClick={handleShare}>
         {hasCopied ? "Copied" : "Share"}
         {hasCopied ? (

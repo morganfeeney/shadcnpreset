@@ -3,6 +3,9 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
+import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
+import { usePresetParentUrlSync } from "@/hooks/use-preset-parent-url-sync"
+
 const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 
 type ThemeMode = "light" | "dark"
@@ -27,8 +30,11 @@ export function PresetV4Frame({
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
   const hasLoadedRef = React.useRef(false)
+  const live = usePresetPageLiveOptional()
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
+
+  usePresetParentUrlSync(iframeRef, live?.onPresetFromIframe)
 
   const targetOrigin = React.useMemo(() => {
     try {
