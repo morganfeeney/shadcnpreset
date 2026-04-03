@@ -9,7 +9,7 @@ import {
   PRESET_THEMES,
   encodePreset,
   type PresetConfig,
-} from "@/lib/preset-codec"
+} from "shadcn/preset"
 import { THEMES } from "@/registry/themes"
 
 const V4_BASE_COLORS = [
@@ -30,9 +30,7 @@ const V4_THEME_NAME_SET = new Set<string>(V4_THEME_NAMES)
 const V4_BASE_COLOR_SET = new Set<string>(V4_BASE_COLORS)
 
 const NON_BASE_THEMES = PRESET_THEMES.filter(
-  (theme) =>
-    V4_THEME_NAME_SET.has(theme) &&
-    !V4_BASE_COLOR_SET.has(theme)
+  (theme) => V4_THEME_NAME_SET.has(theme) && !V4_BASE_COLOR_SET.has(theme)
 )
 
 function getV4ThemesForBaseColor(baseColor: (typeof V4_BASE_COLORS)[number]) {
@@ -91,7 +89,9 @@ function pickValues<T extends string>(all: readonly T[], selected?: string) {
  * overlap base greys (e.g. mauve) are still valid chartColor keys — include them when
  * explicitly filtered so pickValues narrows instead of expanding to all accents.
  */
-function getChartColorUniverse(filters: PresetFilters): readonly ChartColorKey[] {
+function getChartColorUniverse(
+  filters: PresetFilters
+): readonly ChartColorKey[] {
   const selected = filters.chartColor
   if (
     selected &&
@@ -109,7 +109,10 @@ function getThemeChoicesForBase(
 ) {
   const availableThemes = getV4ThemesForBaseColor(baseColor)
   const themes = pickValues(availableThemes, filters.theme)
-  const chartColors = pickValues(getChartColorUniverse(filters), filters.chartColor)
+  const chartColors = pickValues(
+    getChartColorUniverse(filters),
+    filters.chartColor
+  )
   return { themes, chartColors }
 }
 
@@ -132,7 +135,11 @@ export function getPresetTotalCombinations(filters: PresetFilters = {}) {
   let total = 0
   for (const baseColor of baseColors) {
     const { themes, chartColors } = getThemeChoicesForBase(baseColor, filters)
-    total += styles.length * themes.length * chartColors.length * commonCombinationFactor
+    total +=
+      styles.length *
+      themes.length *
+      chartColors.length *
+      commonCombinationFactor
   }
   return total
 }

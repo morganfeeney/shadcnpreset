@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { query } from "@/lib/db"
-import { isCanonicalPresetCode } from "@/lib/preset-codec"
+import { isCanonicalPresetCode } from "shadcn/preset"
 
 type VoteRow = {
   preset_code: string

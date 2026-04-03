@@ -4,7 +4,7 @@ import {
   encodePreset,
   isPresetCode,
   type PresetConfig,
-} from "@/lib/preset-codec"
+} from "shadcn/preset"
 
 export type ResolvedPreset = PresetConfig & {
   code: string
@@ -59,7 +59,9 @@ export function resolvePresetFromCode(code: string): ResolvedPreset | null {
     (V1_CHART_COLOR_MAP[decoded.theme] as PresetConfig["theme"] | undefined) ??
     decoded.theme
   const effectiveRadius =
-    decoded.style === "lyra" ? "none" : (decoded.radius as PresetConfig["radius"])
+    decoded.style === "lyra"
+      ? "none"
+      : (decoded.radius as PresetConfig["radius"])
 
   return {
     ...decoded,

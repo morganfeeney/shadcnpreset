@@ -1,6 +1,6 @@
 import { THEMES } from "@/registry/themes"
 import { BASE_COLORS } from "@/registry/base-colors"
-import type { PresetConfig } from "@/lib/preset-codec"
+import type { PresetConfig } from "shadcn/preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 
 type ThemeMode = "light" | "dark"
@@ -95,10 +95,7 @@ function resolveThemeToken(role: SwatchRole): ThemeToken {
   return ROLE_TOKEN_MAP[role]
 }
 
-export function getThemeSwatchPair(
-  themeName: string,
-  role: SwatchRole
-) {
+export function getThemeSwatchPair(themeName: string, role: SwatchRole) {
   const token = resolveThemeToken(role)
 
   const light =
@@ -114,7 +111,10 @@ export function getThemeSwatchPair(
 }
 
 export function getPresetSwatchPair(
-  config: Pick<PresetConfig, "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius">,
+  config: Pick<
+    PresetConfig,
+    "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius"
+  >,
   role: SwatchRole
 ) {
   const token = resolveThemeToken(role)
@@ -122,7 +122,9 @@ export function getPresetSwatchPair(
   const safeBaseColor = isBaseColorName(config.baseColor)
     ? config.baseColor
     : DEFAULT_CONFIG.baseColor
-  const safeTheme = isThemeName(config.theme) ? config.theme : DEFAULT_CONFIG.theme
+  const safeTheme = isThemeName(config.theme)
+    ? config.theme
+    : DEFAULT_CONFIG.theme
   const safeChartColor = isThemeName(config.chartColor)
     ? config.chartColor
     : DEFAULT_CONFIG.chartColor

@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache"
 
 import { getSessionUser } from "@/lib/auth"
 import { query } from "@/lib/db"
-import { isCanonicalPresetCode } from "@/lib/preset-codec"
+import { isCanonicalPresetCode } from "shadcn/preset"
 
 type CountRow = {
   votes: number
