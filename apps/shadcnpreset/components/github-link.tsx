@@ -38,11 +38,11 @@ function StarsCount() {
   }, [])
 
   if (formatted == null) {
-    return <Skeleton className="h-4 w-[42px]" />
+    return <Skeleton className="h-4 w-3" />
   }
 
   return (
-    <span className="text-muted-foreground w-fit text-xs tabular-nums">
+    <span className="w-fit text-xs text-muted-foreground tabular-nums">
       {formatted}
     </span>
   )

@@ -52,10 +52,10 @@ export default async function PresetCodePage({
   }
 
   return (
-    <main className="min-h-screen">
+    <main>
       <Container aria-label="Preset details and actions">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-display text-foreground md:text-3xl">
+          <h1 className="font-mono text-lg text-foreground md:text-2xl">
             {code}
           </h1>
 
@@ -73,13 +73,11 @@ export default async function PresetCodePage({
           </div>
         </div>
       </Container>
-      <div className="overflow-hidden">
-        <PresetV4Frame
-          className="block h-[calc(100dvh-16rem)] min-h-[560px] w-full border-0"
-          src={createIframeUrl.toString()}
-          title={`v4 create preset ${code}`}
-        />
-      </div>
+      <PresetV4Frame
+        className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
+        src={createIframeUrl.toString()}
+        title={`v4 create preset ${code}`}
+      />
     </main>
   )
 }
