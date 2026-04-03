@@ -1,6 +1,7 @@
 "use client"
 
-import { Heart } from "lucide-react"
+import Link from "next/link"
+import { Heart, Settings2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
@@ -9,7 +10,8 @@ import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { PresetPreviewDialog } from "@/components/preset-preview-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { getPresetPreviewUrl } from "@/lib/preset"
 
 type PresetIframeCardProps = {
@@ -131,10 +133,16 @@ export function PresetIframeCard({
                 <Spinner />
               </div>
             ) : null}
-            <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="absolute inset-0 grid place-content-center gap-2 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <Button type="button" onClick={() => setPreviewOpen(true)}>
                 Preview
               </Button>
+              <Link
+                href={`/preset/${code}`}
+                className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+              >
+                Edit
+              </Link>
             </div>
           </>
         ) : (
