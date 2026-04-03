@@ -17,12 +17,8 @@ type PresetPageProps = {
   }>
 }
 
-export default async function PresetCodePage({
-  params,
-  searchParams,
-}: PresetPageProps) {
+export default async function PresetCodePage({ params }: PresetPageProps) {
   const { code } = await params
-  const { embed } = await searchParams
   const preset = resolvePresetFromCode(code)
 
   if (!preset) {
@@ -37,19 +33,6 @@ export default async function PresetCodePage({
   createIframeUrl.searchParams.set("embed", "1")
   const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
   previewUrl.searchParams.set("preset", code)
-  const isEmbedMode = embed === "1"
-
-  if (isEmbedMode) {
-    return (
-      <main className="h-screen w-full overflow-hidden bg-background">
-        <PresetV4Frame
-          className="h-full min-h-0 w-full border-0"
-          src={previewUrl.toString()}
-          title={`v4 preview preset ${code} embed`}
-        />
-      </main>
-    )
-  }
 
   return (
     <main className="grid gap-2">
