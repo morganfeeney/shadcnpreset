@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowUpRight, X } from "lucide-react"
+import { Settings2, X } from "lucide-react"
 import { useState } from "react"
 
 import {
@@ -110,8 +110,8 @@ export function PresetPreviewDialog({
                     "gap-2"
                   )}
                 >
-                  Open
-                  <ArrowUpRight className="size-4" aria-hidden />
+                  Edit
+                  <Settings2 aria-hidden />
                 </Link>
                 <DialogTrigger
                   render={
