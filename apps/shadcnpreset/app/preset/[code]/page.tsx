@@ -7,6 +7,7 @@ import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Container } from "@/components/zippystarter/container"
 import { resolvePresetFromCode } from "@/lib/preset"
+import { PresetButtons } from "@/app/preset/[code]/components"
 
 type PresetPageProps = {
   params: Promise<{
@@ -43,16 +44,10 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
           </h1>
 
           <div className="flex items-center gap-2">
-            <PresetVoteButton code={canonicalCode} />
-            <Link
+            <PresetButtons
+              preset={canonicalCode}
               href={createDirectUrl.toString()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-transparent bg-secondary px-2.5 text-[0.8rem] font-medium text-secondary-foreground transition-colors outline-none hover:bg-secondary/80 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-            >
-              Open full size
-              <FullscreenIcon className="size-3.5" aria-hidden />
-            </Link>
+            />
           </div>
         </div>
       </Container>
