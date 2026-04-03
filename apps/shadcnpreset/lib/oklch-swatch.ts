@@ -1,3 +1,5 @@
+import { formatHex, parse } from "culori"
+
 import { THEMES } from "@/registry/themes"
 import { BASE_COLORS } from "@/registry/base-colors"
 import type { PresetConfig } from "shadcn/preset"
@@ -155,4 +157,78 @@ export function getPresetSwatchPair(
   const dark = darkVars[token] ?? darkVars.primary ?? FALLBACK_DARK
 
   return { light, dark }
+}
+
+function oklchCssToHex(oklchCss: string): string {
+  const color = parse(oklchCss.trim())
+  if (!color) return "#737373"
+  try {
+    return formatHex(color)
+  } catch {
+    return "#737373"
+  }
+}
+
+/** Dark-mode token from a theme JSON entry (same source as create pickers). */
+function getThemeDarkCssValue(
+  themeName: string,
+  key: "primary" | "muted-foreground"
+): string | null {
+  const theme = getThemeFromList(themeName)
+  const raw = theme?.cssVars?.dark?.[key]
+  return typeof raw === "string" ? raw : null
+}
+
+type OgSwatchConfig = Pick<
+  PresetConfig,
+  "baseColor" | "theme" | "chartColor" | "menuAccent" | "radius"
+>
+
+/**
+ * Hex colors for Open Graph preset previews — **three** swatches aligned with
+ * {@link BaseColorPicker}, {@link ThemePicker}, and {@link ChartColorPicker}
+ * (dark `muted-foreground` for base palettes; `primary` vs `muted-foreground`
+ * for theme/chart when the name is a base palette vs accent theme). Not merged
+ * `background` / chart tokens from {@link buildRegistryTheme}.
+ */
+export function getPresetOgSwatchHexes(
+  config: OgSwatchConfig
+): readonly string[] {
+  const safeBaseColor = isBaseColorName(config.baseColor)
+    ? config.baseColor
+    : DEFAULT_CONFIG.baseColor
+  const safeTheme = isThemeName(config.theme)
+    ? config.theme
+    : DEFAULT_CONFIG.theme
+  const safeChartColor = isThemeName(config.chartColor)
+    ? config.chartColor
+    : DEFAULT_CONFIG.chartColor
+
+  // Base Color picker: dark muted-foreground of the base palette theme.
+  const baseOklch =
+    getThemeDarkCssValue(safeBaseColor, "muted-foreground") ?? FALLBACK_DARK
+
+  // Theme picker: base-palette names → muted-foreground; accent themes → primary.
+  const themeOklch = isBaseColorName(safeTheme)
+    ? getThemeDarkCssValue(safeTheme, "muted-foreground") ??
+      getThemeDarkCssValue(safeTheme, "primary") ??
+      FALLBACK_DARK
+    : getThemeDarkCssValue(safeTheme, "primary") ??
+      getThemeDarkCssValue(safeTheme, "muted-foreground") ??
+      FALLBACK_DARK
+
+  // Chart Color picker: same rule as theme.
+  const chartOklch = isBaseColorName(safeChartColor)
+    ? getThemeDarkCssValue(safeChartColor, "muted-foreground") ??
+      getThemeDarkCssValue(safeChartColor, "primary") ??
+      FALLBACK_DARK
+    : getThemeDarkCssValue(safeChartColor, "primary") ??
+      getThemeDarkCssValue(safeChartColor, "muted-foreground") ??
+      FALLBACK_DARK
+
+  return [
+    oklchCssToHex(baseOklch),
+    oklchCssToHex(themeOklch),
+    oklchCssToHex(chartOklch),
+  ] as const
 }

@@ -27,6 +27,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "culori": "^4.0.2",
     "eslint-plugin-prettier": "^5.5.5",
     "jotai": "^2.15.0",
     "lucide-react": "1.7.0",
@@ -45,6 +46,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.2.1",
+    "@types/culori": "^4.0.1",
     "@types/node": "^25.5.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
