@@ -52,7 +52,7 @@ export default async function PresetCodePage({
   }
 
   return (
-    <main>
+    <main className="grid gap-2">
       <Container aria-label="Preset details and actions">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="font-mono text-lg text-foreground md:text-2xl">
