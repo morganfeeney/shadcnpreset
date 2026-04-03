@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { SlidersHorizontal } from "lucide-react"
+import { ArrowUpRight, X } from "lucide-react"
 import { useState } from "react"
 
 import {
@@ -11,6 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,7 @@ import {
   PRESET_PREVIEW_VIEWS,
   type PresetPreviewPageName,
 } from "@/lib/preset"
+import { ButtonGroup } from "@/components/ui/button-group"
 
 export type PresetPreviewDialogProps = {
   code: string
@@ -81,17 +83,46 @@ export function PresetPreviewDialog({
     >
       <DialogContent
         className="grid h-[90dvh] w-full max-w-[90dvw]! grid-rows-[auto_1fr_auto] gap-0 overflow-hidden"
-        showCloseButton
+        showCloseButton={false}
       >
         <DialogHeader className="gap-0 pb-4">
-          <DialogTitle className="font-mono text-sm tracking-tight md:text-base">
-            {title}
-          </DialogTitle>
-          {description ? (
-            <DialogDescription className="line-clamp-2 text-xs">
-              {description}
-            </DialogDescription>
-          ) : null}
+          <div className="flex justify-between">
+            <div>
+              <DialogTitle className="font-mono text-sm tracking-tight md:text-xl">
+                {title}
+              </DialogTitle>
+              {description ? (
+                <DialogDescription className="line-clamp-2 text-xs">
+                  {description}
+                </DialogDescription>
+              ) : null}
+            </div>
+            <div className="flex gap-2">
+              <ButtonGroup>
+                <PresetVoteButton code={code} enabled={open} />
+                <Link
+                  href={`/preset/${code}`}
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                      className: "rounded-none border-l-0",
+                    }),
+                    "gap-2"
+                  )}
+                >
+                  Open
+                  <ArrowUpRight className="size-4" aria-hidden />
+                </Link>
+                <DialogTrigger
+                  render={
+                    <Button variant="outline">
+                      <X />
+                    </Button>
+                  }
+                />
+              </ButtonGroup>
+            </div>
+          </div>
         </DialogHeader>
         <div className="relative -mx-4">
           <DialogPreviewIframe
@@ -108,7 +139,7 @@ export function PresetPreviewDialog({
                 type="button"
                 role="tab"
                 aria-selected={previewPage === page}
-                variant={previewPage === page ? "secondary" : "ghost"}
+                variant={previewPage === page ? "default" : "ghost"}
                 size="sm"
                 className="h-8 rounded-md px-3 text-xs"
                 onClick={() => setPreviewPage(page)}
@@ -117,14 +148,6 @@ export function PresetPreviewDialog({
               </Button>
             ))}
           </div>
-          <PresetVoteButton code={code} enabled={open} />
-          <Link
-            href={`/preset/${code}`}
-            className={cn(buttonVariants({ variant: "default" }), "gap-2")}
-          >
-            <SlidersHorizontal className="size-4" aria-hidden />
-            Open customizer
-          </Link>
         </DialogFooter>
       </DialogContent>
     </Dialog>
