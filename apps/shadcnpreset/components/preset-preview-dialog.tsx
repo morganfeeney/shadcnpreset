@@ -132,14 +132,18 @@ export function PresetPreviewDialog({
           />
         </div>
         <DialogFooter>
-          <div role="tablist" aria-label="Preview layout">
+          <div
+            role="tablist"
+            aria-label="Preview layout"
+            className="flex gap-2"
+          >
             {PRESET_PREVIEW_VIEWS.map(({ page, label }) => (
               <Button
                 key={page}
                 type="button"
                 role="tab"
                 aria-selected={previewPage === page}
-                variant={previewPage === page ? "default" : "ghost"}
+                variant={previewPage === page ? "outline" : "ghost"}
                 size="sm"
                 className="h-8 rounded-md px-3 text-xs"
                 onClick={() => setPreviewPage(page)}
