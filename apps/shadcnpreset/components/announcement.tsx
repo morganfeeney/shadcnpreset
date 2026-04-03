@@ -8,7 +8,7 @@ export function Announcement() {
     <Badge
       render={
         <Link href="">
-          Something cool goes here <ArrowRightIcon />
+          Read the announcement <ArrowRightIcon />
         </Link>
       }
       variant="secondary"
