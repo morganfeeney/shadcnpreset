@@ -15,7 +15,9 @@ type UseVoteOptions = {
 
 export default function useVote(code: string, options: UseVoteOptions = {}) {
   const enabled = options.enabled ?? true
-  const ensureAuth = useAuthStore((state) => state.ensureAuthenticated)
+  const ensureAuthForVote = useAuthStore(
+    (state) => state.ensureAuthenticatedForVote
+  )
   const authStatus = useAuthStore((state) => state.status)
   const queryClient = useQueryClient()
 
@@ -50,16 +52,12 @@ export default function useVote(code: string, options: UseVoteOptions = {}) {
     },
   })
 
-  async function ensureAuthenticated() {
-    return ensureAuth()
-  }
-
   async function toggleVote() {
     if (voteMutation.isPending) {
       return
     }
 
-    const canVote = await ensureAuthenticated()
+    const canVote = await ensureAuthForVote(code)
     if (!canVote) {
       return
     }

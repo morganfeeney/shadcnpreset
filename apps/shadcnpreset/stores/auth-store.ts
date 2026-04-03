@@ -3,6 +3,10 @@
 import { create } from "zustand"
 
 import { authClient } from "@/lib/auth-client"
+import {
+  clearPendingVote,
+  writePendingVote,
+} from "@/lib/pending-vote"
 
 export type SessionUser = {
   id: string
@@ -25,6 +29,8 @@ type AuthStore = {
   beginOAuth: (provider: OAuthProvider) => Promise<void>
   endOAuth: () => void
   ensureAuthenticated: () => Promise<boolean>
+  /** For voting: persists intent across OAuth redirect so the vote runs after sign-in. */
+  ensureAuthenticatedForVote: (presetCode: string) => Promise<boolean>
   closeDialog: () => void
   signOut: () => Promise<void>
 }
@@ -88,7 +94,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     return false
   },
 
+  ensureAuthenticatedForVote: async (presetCode: string) => {
+    if (get().status === "unknown") {
+      await get().bootstrapSession()
+    }
+    if (get().status === "authenticated") {
+      return true
+    }
+    writePendingVote(presetCode)
+    set({ dialogOpen: true, authError: "" })
+    return false
+  },
+
   closeDialog: () => {
+    clearPendingVote()
     set({
       dialogOpen: false,
       authError: "",
@@ -98,6 +117,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   signOut: async () => {
+    clearPendingVote()
     await authClient.signOut()
     set({
       user: null,

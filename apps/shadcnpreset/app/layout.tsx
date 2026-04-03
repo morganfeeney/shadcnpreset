@@ -6,6 +6,7 @@ import "../css/controls.css"
 
 import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { PendingVoteApplier } from "@/components/pending-vote-applier"
 import { VoteAuthDialogHost } from "@/components/vote-auth-dialog-host"
 import { cn } from "@/lib/utils"
 import { siteConfig } from "@/lib/config"
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body>
         <QueryProvider>
           <ThemeProvider>
+            <PendingVoteApplier />
             <VoteAuthDialogHost />
             {children}
           </ThemeProvider>
