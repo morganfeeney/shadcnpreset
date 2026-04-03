@@ -1,9 +1,11 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { encodePreset } from "shadcn/preset"
 
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Container } from "@/components/zippystarter/container"
-import { resolvePresetFromCode } from "@/lib/preset"
+import { siteConfig } from "@/lib/config"
+import { resolvePresetFromCode, type ResolvedPreset } from "@/lib/preset"
 import { PresetButtons, PresetCodeTitle } from "@/app/preset/[code]/components"
 
 type PresetPageProps = {
@@ -13,6 +15,44 @@ type PresetPageProps = {
   searchParams: Promise<{
     embed?: string
   }>
+}
+
+function presetMetaDescription(preset: ResolvedPreset): string {
+  return `Preview this shadcn/ui preset (${preset.code}): ${preset.style} style, ${preset.baseColor} base, ${preset.theme} theme, ${preset.font} body, ${preset.radius} radius. Copy the code, open in create, or share.`
+}
+
+export async function generateMetadata({
+  params,
+}: PresetPageProps): Promise<Metadata> {
+  const { code } = await params
+  const preset = resolvePresetFromCode(code)
+  if (!preset) {
+    notFound()
+  }
+
+  const title = `shadcn preset: ${preset.code}`
+  const description = presetMetaDescription(preset)
+  const pagePath = `/preset/${preset.code}`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: pagePath,
+    },
+    openGraph: {
+      title: `${title} | ${siteConfig.name}`,
+      description,
+      url: pagePath,
+      siteName: siteConfig.name,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${siteConfig.name}`,
+      description,
+    },
+  }
 }
 
 export default async function PresetCodePage({ params }: PresetPageProps) {

@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "shadcnpreset",
   url: "https://shadcnpreset.com",
-  ogImage: "https://shadcnpreset/og.jpg",
+  ogImage: "https://shadcnpreset.com/og.jpg",
   title: "Discover and compare shadcn presets instantly",
   description:
     "Search by preset code or explore with smart search. Preview real components, discover new presets, and vote for your favourites. Open source and free.",
