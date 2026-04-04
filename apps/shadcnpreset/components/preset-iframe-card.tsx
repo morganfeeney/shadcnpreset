@@ -133,12 +133,12 @@ export function PresetIframeCard({
                 <Spinner />
               </div>
             ) : null}
-            <div className="absolute inset-0 [@media(hover:none)]:hidden">
+            <div className="absolute inset-0">
               <div
                 aria-hidden
-                className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 [@media(hover:none)]:hidden"
               />
-              <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover:visible">
+              <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover:visible [@media(hover:none)]:hidden">
                 <Button type="button" onClick={() => setPreviewOpen(true)}>
                   Preview
                 </Button>
