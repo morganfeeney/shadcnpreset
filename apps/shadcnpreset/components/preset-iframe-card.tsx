@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, Settings2 } from "lucide-react"
+import { Heart } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
@@ -133,7 +133,7 @@ export function PresetIframeCard({
                 <Spinner />
               </div>
             ) : null}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 [@media(hover:none)]:hidden">
               <div
                 aria-hidden
                 className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
@@ -144,10 +144,7 @@ export function PresetIframeCard({
                 </Button>
                 <Link
                   href={`/preset/${code}`}
-                  className={cn(
-                    buttonVariants({ variant: "outline" }),
-                    "gap-2"
-                  )}
+                  className={cn(buttonVariants({ variant: "outline" }))}
                 >
                   Edit
                 </Link>
@@ -169,31 +166,46 @@ export function PresetIframeCard({
         description={description}
       />
 
-      <CardFooter className="justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate font-mono text-sm font-medium">{title}</p>
-          <p className="line-clamp-1 text-xs text-muted-foreground">
-            {description}
-          </p>
+      <CardFooter className="flex flex-col gap-3">
+        <div className="flex w-full justify-between gap-2">
+          <div>
+            <p className="truncate font-mono text-sm font-medium">{title}</p>
+            <p className="line-clamp-1 text-xs text-muted-foreground">
+              {description}
+            </p>
+          </div>
+          <Button
+            onClick={toggleVote}
+            disabled={isVoting}
+            aria-pressed={hasVoted}
+            variant="outline"
+            title={
+              authStatus === "authenticated"
+                ? "Vote for this preset"
+                : "Sign in to vote"
+            }
+          >
+            <Heart
+              className={`size-3.5 ${
+                hasVoted
+                  ? "fill-rose-500 text-rose-500"
+                  : "text-muted-foreground"
+              }`}
+            />
+            {voteCount}
+          </Button>
         </div>
-        <Button
-          onClick={toggleVote}
-          disabled={isVoting}
-          aria-pressed={hasVoted}
-          variant="outline"
-          title={
-            authStatus === "authenticated"
-              ? "Vote for this preset"
-              : "Sign in to vote"
-          }
-        >
-          <Heart
-            className={`size-3.5 ${
-              hasVoted ? "fill-rose-500 text-rose-500" : "text-muted-foreground"
-            }`}
-          />
-          {voteCount}
-        </Button>
+        <div className="flex w-full flex-wrap gap-2 [@media(hover:hover)]:hidden">
+          <Button type="button" onClick={() => setPreviewOpen(true)}>
+            Preview
+          </Button>
+          <Link
+            href={`/preset/${code}`}
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            Edit
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   )
