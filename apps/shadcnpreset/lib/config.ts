@@ -9,7 +9,7 @@ export const siteConfig = {
   name: "shadcnpreset",
   url: siteUrl,
   ogImage: `${siteUrl}/og-card.png`,
-  title: "Discover and compare shadcn presets instantly",
+  title: "Browse top shadcn presets in seconds",
   description:
     "Search by preset code or explore with smart search. Preview real components, discover new presets, and vote for your favourites. Open source and free.",
   links: {
