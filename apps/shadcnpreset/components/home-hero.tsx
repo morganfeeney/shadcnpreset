@@ -22,7 +22,9 @@ export function HomeHero({ children }: HomeHeroProps) {
       <PageHeaderHeading className="max-w-4xl">
         {siteConfig.title}
       </PageHeaderHeading>
-      <PageHeaderDescription>{siteConfig.description}</PageHeaderDescription>
+      <PageHeaderDescription className="text-muted-foreground">
+        {siteConfig.description}
+      </PageHeaderDescription>
       <div className="w-full max-w-2xl">{children}</div>
     </PageHeader>
   )
