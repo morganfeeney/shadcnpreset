@@ -20,6 +20,19 @@ import { getVotedPresetsForUser } from "@/lib/user-votes"
 
 export const dynamic = "force-dynamic"
 
+function SimpleHeader({ userName }: { userName?: string }) {
+  return (
+    <div className="grid gap-1 pt-16">
+      <h1 className="text-2xl font-display text-foreground">
+        {userName ? `${userName}'s` : "My"} presets
+      </h1>
+      <p className="text-sm text-muted-foreground">
+        Browse your favourite shadcn presets.
+      </p>
+    </div>
+  )
+}
+
 export default async function MyVotesPage() {
   const user = await getSessionUser()
 
@@ -59,11 +72,7 @@ export default async function MyVotesPage() {
 
   return (
     <ListLayout>
-      <HomeHero>
-        <Suspense fallback={<PresetFormSkeleton />}>
-          <PresetForm className="pt-2" />
-        </Suspense>
-      </HomeHero>
+      <SimpleHeader />
       <main className="grid gap-4">
         {items.length === 0 ? (
           <Empty className="border border-border">
