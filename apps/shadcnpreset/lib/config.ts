@@ -9,9 +9,9 @@ export const siteConfig = {
   name: "shadcnpreset",
   url: siteUrl,
   ogImage: `${siteUrl}/og-card.png`,
-  title: "Browse top shadcn presets in seconds",
+  title: "Find the perfect shadcn preset in seconds",
   description:
-    "Search by preset code or explore with smart search. Preview real components, discover new presets, and vote for your favourites. Open source and free.",
+    "Don’t click random. Search the first community-voted library of shadcn presets by keyword, style, or vibe. Preview real components and build faster. Open source and free.",
   links: {
     twitter: "https://twitter.com/morganfeeney",
     github: "https://github.com/morganfeeney/shadcnpreset",
