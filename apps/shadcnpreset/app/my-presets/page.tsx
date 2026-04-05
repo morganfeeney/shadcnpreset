@@ -1,9 +1,4 @@
-import { Suspense } from "react"
 import { Heart } from "lucide-react"
-
-import { HomeHero } from "@/components/home-hero"
-import { PresetForm } from "@/components/preset-form"
-import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
 import { ListLayout } from "@/components/list-layout"
 import { ListView } from "@/components/list-view"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
@@ -17,28 +12,16 @@ import {
 } from "@/components/ui/empty"
 import { getSessionUser } from "@/lib/auth"
 import { getVotedPresetsForUser } from "@/lib/user-votes"
+import { SimpleHeader } from "@/app/my-presets/components"
 
 export const dynamic = "force-dynamic"
-
-function SimpleHeader({ userName }: { userName?: string }) {
-  return (
-    <div className="grid gap-1 pt-16">
-      <h1 className="text-2xl font-display text-foreground">
-        {userName ? `${userName}'s` : "My"} presets
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Browse your favourite shadcn presets.
-      </p>
-    </div>
-  )
-}
 
 export default async function MyVotesPage() {
   const user = await getSessionUser()
 
   if (!user) {
     return (
-      <ListLayout>
+      <>
         <main className="grid gap-4">
           <Empty className="border border-border">
             <EmptyMedia variant="icon">
@@ -55,7 +38,7 @@ export default async function MyVotesPage() {
             </EmptyContent>
           </Empty>
         </main>
-      </ListLayout>
+      </>
     )
   }
 
@@ -71,7 +54,7 @@ export default async function MyVotesPage() {
   }))
 
   return (
-    <ListLayout>
+    <div className="grid grid-rows-[auto_1fr] gap-6">
       <SimpleHeader />
       <main className="grid gap-4">
         {items.length === 0 ? (
@@ -96,6 +79,6 @@ export default async function MyVotesPage() {
           />
         )}
       </main>
-    </ListLayout>
+    </div>
   )
 }

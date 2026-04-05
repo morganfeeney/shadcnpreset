@@ -1,10 +1,9 @@
-import { ListLayout } from "@/components/list-layout"
 import { Skeleton } from "@/components/ui/skeleton"
 
 /** Neutral shell for `app/loading.tsx` — must not mirror the homepage hero. */
 export function AppRouteLoading() {
   return (
-    <ListLayout>
+    <>
       <div className="grid gap-6 pt-16">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-8 w-48 max-w-md" />
@@ -21,6 +20,6 @@ export function AppRouteLoading() {
           ))}
         </ul>
       </div>
-    </ListLayout>
+    </>
   )
 }
