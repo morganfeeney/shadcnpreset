@@ -23,10 +23,7 @@ export function HomeHero({ children }: HomeHeroProps) {
         {siteConfig.title}
       </PageHeaderHeading>
       <PageHeaderDescription className="text-muted-foreground">
-        <strong className="font-semibold">Don’t click random</strong>. Search
-        the first community-voted library of shadcn presets by keyword, style,
-        or vibe. Preview real components and build faster.{" "}
-        <strong className="font-semibold">Open source and free</strong>.
+        {siteConfig.description}
       </PageHeaderDescription>
       <div className="w-full max-w-2xl">{children}</div>
     </PageHeader>

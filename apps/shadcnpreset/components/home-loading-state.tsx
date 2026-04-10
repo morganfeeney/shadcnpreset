@@ -17,7 +17,9 @@ export function HomeLoadingState() {
         <PageHeaderHeading className="max-w-4xl">
           {siteConfig.title}
         </PageHeaderHeading>
-        <PageHeaderDescription>{siteConfig.description}</PageHeaderDescription>
+        <PageHeaderDescription className="text-muted-foreground">
+          {siteConfig.description}
+        </PageHeaderDescription>
         <div className="w-full max-w-2xl space-y-2.5 pt-2">
           <div className="flex flex-col gap-2 sm:flex-row">
             <Skeleton className="h-9 w-full sm:w-36" />
