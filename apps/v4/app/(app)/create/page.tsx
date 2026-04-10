@@ -1,15 +1,23 @@
-import { type Metadata } from "next"
 import { Suspense } from "react"
+import { type Metadata } from "next"
+import dynamic from "next/dynamic"
 
 import { siteConfig } from "@/lib/config"
 import { absoluteUrl } from "@/lib/utils"
+import { Skeleton } from "@/styles/base-nova/ui/skeleton"
 import { Customizer } from "@/app/(app)/create/components/customizer"
 import { ShadcnpresetCreatePageIntegration } from "@/app/(app)/create/components/shadcnpreset-fork"
 import { PresetHandler } from "@/app/(app)/create/components/preset-handler"
 import { Preview } from "@/app/(app)/create/components/preview"
-import { WelcomeDialog } from "@/app/(app)/create/components/welcome-dialog"
 import { getAllItems } from "@/app/(app)/create/lib/api"
 import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
+
+// Only shown on first visit (checks localStorage).
+const WelcomeDialog = dynamic(() =>
+  import("@/app/(app)/create/components/welcome-dialog").then(
+    (m) => m.WelcomeDialog
+  )
+)
 
 export const metadata: Metadata = {
   title: "New Project",
@@ -40,9 +48,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function CreatePage() {
-  const itemsByBase = await getAllItems()
-
+export default function CreatePage() {
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden section-soft [--customizer-width:--spacing(48)] [--gap:--spacing(4)] md:[--gap:--spacing(6)] 2xl:[--customizer-width:--spacing(56)]">
       <div
@@ -51,7 +57,13 @@ export default async function CreatePage() {
       >
         <ThemeModeListener relayToChildFrames />
         <Preview />
-        <Customizer itemsByBase={itemsByBase} />
+        <Suspense
+          fallback={
+            <Skeleton className="isolate min-h-[151px] w-full self-start rounded-2xl md:h-full md:max-h-full md:min-h-0 md:w-(--customizer-width)" />
+          }
+        >
+          <CustomizerLoader />
+        </Suspense>
       </div>
       <ShadcnpresetCreatePageIntegration />
       <PresetHandler />
@@ -60,4 +72,9 @@ export default async function CreatePage() {
       </Suspense>
     </div>
   )
+}
+
+async function CustomizerLoader() {
+  const itemsByBase = await getAllItems()
+  return <Customizer itemsByBase={itemsByBase} />
 }
