@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Heart } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -12,6 +13,11 @@ import { PresetPreviewDialog } from "@/components/preset-preview-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {
+  trackPresetEditClick,
+  trackPresetPreview,
+  trackPresetVoteClick,
+} from "@/lib/analytics-events"
 import { getPresetPreviewUrl } from "@/lib/preset"
 
 type PresetIframeCardProps = {
@@ -35,6 +41,7 @@ export function PresetIframeCard({
   const [iframeLoaded, setIframeLoaded] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const isMobile = useIsMobile()
+  const pathname = usePathname()
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -98,6 +105,20 @@ export function PresetIframeCard({
     }
   )
 
+  function handlePreview() {
+    trackPresetPreview({ pagePath: pathname, presetCode: code })
+    setPreviewOpen(true)
+  }
+
+  function handleEditNavigate() {
+    trackPresetEditClick({ pagePath: pathname, presetCode: code })
+  }
+
+  function handleVoteClick() {
+    trackPresetVoteClick({ pagePath: pathname, presetCode: code })
+    void toggleVote()
+  }
+
   return (
     <Card className="gap-0 pt-0">
       <div
@@ -139,12 +160,13 @@ export function PresetIframeCard({
                 className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 [@media(hover:none)]:hidden"
               />
               <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover:visible [@media(hover:none)]:hidden">
-                <Button type="button" onClick={() => setPreviewOpen(true)}>
+                <Button type="button" onClick={handlePreview}>
                   Preview
                 </Button>
                 <Link
                   href={`/preset/${code}`}
                   className={cn(buttonVariants({ variant: "outline" }))}
+                  onClick={handleEditNavigate}
                 >
                   Edit
                 </Link>
@@ -175,7 +197,7 @@ export function PresetIframeCard({
             </p>
           </div>
           <Button
-            onClick={toggleVote}
+            onClick={handleVoteClick}
             disabled={isVoting}
             aria-pressed={hasVoted}
             variant="outline"
@@ -196,12 +218,13 @@ export function PresetIframeCard({
           </Button>
         </div>
         <div className="flex w-full flex-wrap gap-2 [@media(hover:hover)]:hidden">
-          <Button type="button" onClick={() => setPreviewOpen(true)}>
+          <Button type="button" onClick={handlePreview}>
             Preview
           </Button>
           <Link
             href={`/preset/${code}`}
             className={cn(buttonVariants({ variant: "outline" }))}
+            onClick={handleEditNavigate}
           >
             Edit
           </Link>

@@ -1,9 +1,11 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { useMemo, useState } from "react"
 import { PresetIframeCard } from "@/components/preset-iframe-card"
 import { Button } from "@/components/ui/button"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
+import { trackFeedLoadMore } from "@/lib/analytics-events"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 
 export type ListViewItem = {
@@ -58,6 +60,7 @@ export function ListView({
   initialVisibleCount = 12,
   visibleStep = 6,
 }: ListViewProps) {
+  const pathname = usePathname()
   const feedQuery = usePresetFeed(
     safePage,
     pageSize,
@@ -84,6 +87,7 @@ export function ListView({
   const hasMore = visibleItems.length < feedItems.length
 
   function loadMore() {
+    trackFeedLoadMore({ pagePath: pathname, batchSize: visibleStep })
     setVisibleCount((current) =>
       Math.min(feedItems.length, current + visibleStep)
     )

@@ -22,6 +22,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { trackSearchSubmit } from "@/lib/analytics-events"
 import {
   buildSearchHref,
   isSearchMode,
@@ -70,6 +71,12 @@ export function PresetForm({ className }: { className?: string }) {
       router.push("/")
       return
     }
+
+    trackSearchSubmit({
+      pagePath: pathname,
+      mode,
+      searchTerm: normalized,
+    })
 
     if (mode === "code") {
       router.push(`/preset/${encodeURIComponent(normalized)}`)
