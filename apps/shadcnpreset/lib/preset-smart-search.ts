@@ -5,7 +5,7 @@ import {
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
-import { getLexicalScoresForQuery } from "@/lib/search-minisearch"
+import { getSemanticRelevanceScores } from "@/lib/search-semantic"
 import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
 import { tokenizeSearchQuery } from "@/lib/search-tokenize"
 
@@ -628,30 +628,30 @@ export function getSampledCandidates(
   return [...byCode.values()]
 }
 
-export function getSmartPresetResults(
+export async function getSmartPresetResults(
   query: string,
   filters: PresetFilters,
   maxResults: number
 ) {
   const candidates = getSampledCandidates(query, filters, 1600)
-  const lexicalScores = getLexicalScoresForQuery(candidates, query)
-  return rankPresetCandidates(query, candidates, maxResults, lexicalScores)
+  const semanticScores = await getSemanticRelevanceScores(candidates, query)
+  return rankPresetCandidates(query, candidates, maxResults, semanticScores)
 }
 
 export function rankPresetCandidates(
   query: string,
   candidates: PresetPageItem[],
   maxResults: number,
-  /** BM25-style scores from Minisearch (`getLexicalScoresForQuery` in search-minisearch). */
-  lexicalScores?: Map<string, number>
+  /** OpenAI embedding cosine scores (`getSemanticRelevanceScores` in search-semantic). */
+  semanticScores?: Map<string, number>
 ) {
   if (!candidates.length) return []
 
   const scored = candidates.map((item) => {
     let relevance = scorePreset(item, query)
-    const lex = lexicalScores?.get(item.code) ?? 0
-    if (lex > 0) {
-      relevance += 12 + lex * 0.45
+    const sem = semanticScores?.get(item.code) ?? 0
+    if (sem > 0) {
+      relevance += 15 + sem * 48
     }
     return { item, relevance }
   })

@@ -14,7 +14,7 @@ import {
 } from "@/lib/preset-smart-search"
 import { tokenizeSearchQueryOrdered } from "@/lib/search-tokenize"
 import { buildSearchCorpus } from "@/lib/search-corpus"
-import { getLexicalScoresForQuery } from "@/lib/search-minisearch"
+import { getSemanticRelevanceScores } from "@/lib/search-semantic"
 import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
 
 export type SearchListItem = {
@@ -366,14 +366,16 @@ async function getRankedSmartResults(query: string, neededCount: number) {
       ? mergeCorpusWithStratifiedSample(corpus, query)
       : corpus
 
-  const lexicalScores = getLexicalScoresForQuery(candidatePool, query)
-
   if (!constraints.predicates.length) {
+    const semanticScores = await getSemanticRelevanceScores(
+      candidatePool,
+      query
+    )
     return rankPresetCandidates(
       query,
       candidatePool,
       neededCount,
-      lexicalScores
+      semanticScores
     )
   }
 
@@ -403,20 +405,28 @@ async function getRankedSmartResults(query: string, neededCount: number) {
   )
 
   if (constrainedCandidates.length) {
+    const semanticScores = await getSemanticRelevanceScores(
+      constrainedCandidates,
+      query
+    )
     return rankPresetCandidates(
       query,
       constrainedCandidates,
       neededCount,
-      lexicalScores
+      semanticScores
     )
   }
 
   if (constrainedCorpus.length) {
+    const semanticScores = await getSemanticRelevanceScores(
+      constrainedCorpus,
+      query
+    )
     return rankPresetCandidates(
       query,
       constrainedCorpus,
       neededCount,
-      lexicalScores
+      semanticScores
     )
   }
 
@@ -424,7 +434,8 @@ async function getRankedSmartResults(query: string, neededCount: number) {
     return []
   }
 
-  return rankPresetCandidates(query, corpus, neededCount, lexicalScores)
+  const semanticScores = await getSemanticRelevanceScores(corpus, query)
+  return rankPresetCandidates(query, corpus, neededCount, semanticScores)
 }
 
 async function getSearchItemsWindow(

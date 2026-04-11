@@ -12,8 +12,7 @@ function radiusVocabulary(radius: string | undefined): string {
 }
 
 /**
- * Text indexed by Minisearch so open-vocabulary queries (e.g. “dashboard”, “saas”)
- * can match without hand-maintaining every token in TOKEN_HINTS.
+ * Text used for semantic embedding and heuristic hints (dashboard, saas, …).
  */
 export function buildPresetSearchDocument(item: PresetPageItem): string {
   const c = item.config
