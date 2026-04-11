@@ -7,7 +7,9 @@ import {
   useSearchParams,
 } from "next/navigation"
 import * as React from "react"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, SparklesIcon } from "lucide-react"
+
+import { AiSearchDialog } from "@/components/ai-search-dialog"
 
 import {
   DropdownMenu,
@@ -38,6 +40,7 @@ export function PresetForm({ className }: { className?: string }) {
 
   const [mode, setMode] = React.useState<"code" | "smart">("code")
   const [query, setQuery] = React.useState("")
+  const [aiDialogOpen, setAiDialogOpen] = React.useState(false)
 
   const routeMode = routeParams.mode
   const routeQuery = routeParams.query
@@ -87,6 +90,7 @@ export function PresetForm({ className }: { className?: string }) {
   }
 
   return (
+    <>
     <form className={cn("grid gap-2.5", className)} onSubmit={onSubmit}>
       <label className="sr-only" htmlFor="preset-query">
         Search presets
@@ -106,13 +110,21 @@ export function PresetForm({ className }: { className?: string }) {
                 </InputGroupButton>
               }
             />
-            <DropdownMenuContent align="start" sideOffset={8} className="w-40">
+            <DropdownMenuContent align="start" sideOffset={8} className="w-48">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => setMode("code")}>
                   Preset code
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setMode("smart")}>
                   Smart search
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setAiDialogOpen(true)
+                  }}
+                >
+                  <SparklesIcon className="size-3.5 opacity-70" />
+                  AI assistant
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -136,5 +148,11 @@ export function PresetForm({ className }: { className?: string }) {
         </InputGroupAddon>
       </InputGroup>
     </form>
+    <AiSearchDialog
+      open={aiDialogOpen}
+      onOpenChange={setAiDialogOpen}
+      pagePath={pathname}
+    />
+    </>
   )
 }

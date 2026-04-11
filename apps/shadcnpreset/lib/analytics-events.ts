@@ -23,11 +23,20 @@ export function trackSearchSubmit(args: {
   mode: "code" | "smart"
   /** Trimmed query as submitted (GA4 `search_term`). */
   searchTerm: string
+  /** When set, indicates the query came from the AI assistant flow. */
+  source?: "ai_assistant"
 }) {
   gaEvent("search_submit", {
     page_path: args.pagePath,
     search_mode: args.mode,
     search_term: args.searchTerm,
+    ...(args.source ? { search_source: args.source } : {}),
+  })
+}
+
+export function trackAiSearchAssistant(args: { pagePath: string }) {
+  gaEvent("ai_search_assistant", {
+    page_path: args.pagePath,
   })
 }
 
