@@ -3,7 +3,10 @@ import MiniSearch from "minisearch"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { tokenizeSearchQuery } from "@/lib/search-tokenize"
 import { buildPresetSearchDocument } from "@/lib/preset-search-document"
-import { expandQueryForLexicalSearch } from "@/lib/search-query-expansion"
+import {
+  expandQueryForLexicalSearch,
+  shouldPreferExpandedLexicalSearch,
+} from "@/lib/search-query-expansion"
 
 const MAX_RESULTS = 8000
 
@@ -41,6 +44,25 @@ function getOrBuildIndex(corpus: PresetPageItem[]): MiniSearch {
   return ms
 }
 
+function mergeSearchScoresByMax<T extends { id: string; score: number }>(
+  a: T[],
+  b: T[]
+): T[] {
+  const byId = new Map<string, T>()
+  for (const r of a) {
+    byId.set(r.id, r)
+  }
+  for (const r of b) {
+    const prev = byId.get(r.id)
+    if (!prev || r.score > prev.score) {
+      byId.set(r.id, r)
+    }
+  }
+  return [...byId.values()].sort(
+    (x, y) => y.score - x.score || x.id.localeCompare(y.id)
+  )
+}
+
 /**
  * Free BM25-style scores (Minisearch, MIT) over preset search documents.
  * Merged in `rankPresetCandidates` with the hand-tuned lexical scorer.
@@ -62,6 +84,17 @@ export function getLexicalScoresForQuery(
     combineWith: multi ? "AND" : "OR",
     fuzzy: multi ? 0.12 : 0.22,
   }).slice(0, MAX_RESULTS)
+
+  if (shouldPreferExpandedLexicalSearch(query)) {
+    const expanded = expandQueryForLexicalSearch(query)
+    if (expanded !== trimmed) {
+      const expandedHits = ms.search(expanded, {
+        combineWith: "OR",
+        fuzzy: 0.22,
+      }).slice(0, MAX_RESULTS)
+      results = mergeSearchScoresByMax(results, expandedHits).slice(0, MAX_RESULTS)
+    }
+  }
 
   if (results.length === 0 && multi) {
     results = ms.search(trimmed, {

@@ -51,6 +51,9 @@ const TOKEN_HINTS: Record<string, WeightedTokenMatch> = {
   light: { menuColor: 3, theme: 1, baseColor: 1 },
   futuristic: { font: 3, fontHeading: 2, chartColor: 1, theme: 1 },
   saas: { font: 3, fontHeading: 2, radius: 2 },
+  professional: { font: 3, fontHeading: 2, radius: 2, menuAccent: 2 },
+  formal: { menuAccent: 2, font: 2, style: 1 },
+  business: { font: 3, fontHeading: 2, radius: 2 },
 }
 
 export const SANS_FONTS = new Set([
@@ -188,6 +191,46 @@ function scoreTokenHint(token: string, item: PresetPageItem) {
     }
 
     if (token === "saas" && key === "menuAccent" && value === "subtle") {
+      score += 2 * weight
+      continue
+    }
+
+    if (
+      (token === "professional" || token === "business") &&
+      (key === "font" || key === "fontHeading")
+    ) {
+      if (SAAS_FONTS.has(value)) score += 2 * weight
+      continue
+    }
+
+    if (
+      (token === "professional" || token === "business") &&
+      key === "radius" &&
+      (value === "large" || value === "medium")
+    ) {
+      score += 2 * weight
+      continue
+    }
+
+    if (
+      (token === "professional" || token === "business") &&
+      key === "menuAccent" &&
+      value === "subtle"
+    ) {
+      score += 2 * weight
+      continue
+    }
+
+    if (token === "formal" && key === "menuAccent" && value === "subtle") {
+      score += 3 * weight
+      continue
+    }
+
+    if (
+      token === "formal" &&
+      (key === "font" || key === "fontHeading") &&
+      (SAAS_FONTS.has(value) || SERIF_FONTS.has(value))
+    ) {
       score += 2 * weight
       continue
     }
@@ -351,6 +394,9 @@ const LEXICAL_VARIETY_TOKENS = new Set([
   "interface",
   "design",
   "application",
+  "professional",
+  "formal",
+  "business",
 ])
 
 const RESULT_VARIETY_TOKENS = new Set([
@@ -601,17 +647,25 @@ export function rankPresetCandidates(
 ) {
   if (!candidates.length) return []
 
-  const ranked = candidates
-    .map((item) => {
-      let relevance = scorePreset(item, query)
-      const lex = lexicalScores?.get(item.code) ?? 0
-      if (lex > 0) {
-        relevance += 12 + lex * 0.45
-      }
-      return { item, relevance }
-    })
+  const scored = candidates.map((item) => {
+    let relevance = scorePreset(item, query)
+    const lex = lexicalScores?.get(item.code) ?? 0
+    if (lex > 0) {
+      relevance += 12 + lex * 0.45
+    }
+    return { item, relevance }
+  })
+
+  let ranked = scored
     .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
+
+  if (!ranked.length && candidates.length) {
+    ranked = scored
+      .slice()
+      .sort((a, b) => a.item.code.localeCompare(b.item.code))
+      .map((entry) => ({ item: entry.item, relevance: 1 }))
+  }
 
   const dedupedByLook = dedupeRankedByConfigSignature(ranked)
 

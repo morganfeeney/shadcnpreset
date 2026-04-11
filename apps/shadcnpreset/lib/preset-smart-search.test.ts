@@ -35,12 +35,41 @@ describe("rankPresetCandidates", () => {
     expect(rankPresetCandidates("stone", [], 10)).toEqual([])
   })
 
-  it("returns [] when nothing matches the query", () => {
+  it("falls back to diverse results when no token matches (cold query)", () => {
     const item = makeSearchPresetItem(
       { baseColor: "stone", theme: "purple", chartColor: "purple" },
       0
     )
-    expect(rankPresetCandidates("zzznonexistenttokenqqq", [item], 5)).toEqual([])
+    const out = rankPresetCandidates("zzznonexistenttokenqqq", [item], 5)
+    expect(out).toHaveLength(1)
+    expect(out[0]!.code).toBe(item.code)
+  })
+
+  it("ranks professional intent against SaaS-style presets", () => {
+    const pro = makeSearchPresetItem(
+      {
+        baseColor: "zinc",
+        theme: "blue",
+        chartColor: "blue",
+        font: "inter",
+        fontHeading: "inter",
+        menuAccent: "subtle",
+      },
+      0
+    )
+    const other = makeSearchPresetItem(
+      {
+        baseColor: "zinc",
+        theme: "rose",
+        chartColor: "rose",
+        font: "jetbrains-mono",
+        fontHeading: "jetbrains-mono",
+      },
+      1
+    )
+    const out = rankPresetCandidates("professional", [other, pro], 5)
+    expect(out.length).toBeGreaterThanOrEqual(1)
+    expect(out[0]!.code).toBe(pro.code)
   })
 
   it("dedupes the same visible card (fine signature) even when radius/menu differ", () => {

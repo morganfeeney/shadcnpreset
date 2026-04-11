@@ -55,8 +55,16 @@ export function buildPresetSearchDocument(item: PresetPageItem): string {
       "app",
       "b2b",
       "startup",
-      "founder"
+      "founder",
+      "professional",
+      "formal",
+      "business",
+      "corporate"
     )
+  }
+
+  if (c.menuAccent === "subtle") {
+    parts.push("professional", "formal", "corporate")
   }
 
   return parts.join(" ").toLowerCase()

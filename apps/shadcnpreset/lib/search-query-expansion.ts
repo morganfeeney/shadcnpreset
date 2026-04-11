@@ -5,7 +5,7 @@ import { tokenizeSearchQuery } from "@/lib/search-tokenize"
  * Maps natural language to words we inject into preset documents or related facets.
  */
 const LEXICAL_EXPANSIONS: Record<string, string[]> = {
-  dashboard: ["sidebar", "menu", "panel", "application", "ui", "admin"],
+  dashboard: ["sidebar", "menu", "panel", "application", "ui", "admin", "saas"],
   admin: ["dashboard", "panel", "application"],
   founder: ["startup", "product", "saas"],
   startup: ["product", "saas", "bold", "application"],
@@ -17,8 +17,20 @@ const LEXICAL_EXPANSIONS: Record<string, string[]> = {
   design: ["theme", "style", "ui"],
   elegant: ["serif", "minimal", "clean"],
   playful: ["rounded", "colorful", "vibrant"],
-  corporate: ["inter", "neutral", "subtle"],
+  corporate: ["inter", "neutral", "subtle", "saas", "application"],
   glass: ["sky", "cyan", "blue"],
+  professional: [
+    "inter",
+    "saas",
+    "subtle",
+    "neutral",
+    "dashboard",
+    "application",
+    "corporate",
+    "product",
+  ],
+  formal: ["minimal", "clean", "subtle", "inter", "serif", "saas"],
+  business: ["saas", "dashboard", "application", "inter", "corporate", "product"],
 }
 
 /** Deduplicated expanded query string for a broader OR search. */
@@ -31,4 +43,13 @@ export function expandQueryForLexicalSearch(query: string): string {
     }
   }
   return [...out].join(" ")
+}
+
+/** Single-token queries that benefit from OR expansion before the first Minisearch pass. */
+export function shouldPreferExpandedLexicalSearch(query: string): boolean {
+  const tokens = tokenizeSearchQuery(query)
+  return (
+    tokens.length === 1 &&
+    Boolean(tokens[0] && LEXICAL_EXPANSIONS[tokens[0]]?.length)
+  )
 }
