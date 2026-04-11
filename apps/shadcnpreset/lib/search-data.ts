@@ -10,8 +10,10 @@ import {
   SERIF_FONTS,
   getSampledCandidates,
   rankPresetCandidates,
+  scorePreset,
   wantsPaletteVariety,
 } from "@/lib/preset-smart-search"
+import { limitCandidatesForEmbedding } from "@/lib/search-semantic-budget"
 import { tokenizeSearchQueryOrdered } from "@/lib/search-tokenize"
 import { buildSearchCorpus } from "@/lib/search-corpus"
 import { getSemanticRelevanceScores } from "@/lib/search-semantic"
@@ -367,8 +369,13 @@ async function getRankedSmartResults(query: string, neededCount: number) {
       : corpus
 
   if (!constraints.predicates.length) {
-    const semanticScores = await getSemanticRelevanceScores(
+    const forEmbedding = limitCandidatesForEmbedding(
       candidatePool,
+      query,
+      scorePreset
+    )
+    const semanticScores = await getSemanticRelevanceScores(
+      forEmbedding,
       query
     )
     return rankPresetCandidates(
@@ -405,8 +412,13 @@ async function getRankedSmartResults(query: string, neededCount: number) {
   )
 
   if (constrainedCandidates.length) {
-    const semanticScores = await getSemanticRelevanceScores(
+    const forEmbedding = limitCandidatesForEmbedding(
       constrainedCandidates,
+      query,
+      scorePreset
+    )
+    const semanticScores = await getSemanticRelevanceScores(
+      forEmbedding,
       query
     )
     return rankPresetCandidates(
@@ -418,8 +430,13 @@ async function getRankedSmartResults(query: string, neededCount: number) {
   }
 
   if (constrainedCorpus.length) {
-    const semanticScores = await getSemanticRelevanceScores(
+    const forEmbedding = limitCandidatesForEmbedding(
       constrainedCorpus,
+      query,
+      scorePreset
+    )
+    const semanticScores = await getSemanticRelevanceScores(
+      forEmbedding,
       query
     )
     return rankPresetCandidates(
@@ -434,7 +451,8 @@ async function getRankedSmartResults(query: string, neededCount: number) {
     return []
   }
 
-  const semanticScores = await getSemanticRelevanceScores(corpus, query)
+  const forEmbedding = limitCandidatesForEmbedding(corpus, query, scorePreset)
+  const semanticScores = await getSemanticRelevanceScores(forEmbedding, query)
   return rankPresetCandidates(query, corpus, neededCount, semanticScores)
 }
 

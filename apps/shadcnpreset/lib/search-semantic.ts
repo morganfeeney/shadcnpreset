@@ -44,54 +44,59 @@ export async function getSemanticRelevanceScores(
   const q = query.trim()
   if (!q) return out
 
-  const model = openai.embedding(EMBEDDING_MODEL)
+  try {
+    const model = openai.embedding(EMBEDDING_MODEL)
 
-  const expanded = expandQueryForLexicalSearch(q)
-  const queryForEmbedding =
-    expanded !== q ? `${q}\n${expanded}` : q
+    const expanded = expandQueryForLexicalSearch(q)
+    const queryForEmbedding =
+      expanded !== q ? `${q}\n${expanded}` : q
 
-  const { embedding: queryVector } = await embed({
-    model,
-    value: queryForEmbedding.slice(0, 8000),
-    maxRetries: 0,
-  })
-
-  const qv = [...queryVector]
-
-  const needDocs: { code: string; text: string }[] = []
-  for (const item of candidates) {
-    if (!presetVectorCache.has(item.code)) {
-      needDocs.push({
-        code: item.code,
-        text: buildPresetSearchDocument(item),
-      })
-    }
-  }
-
-  for (let i = 0; i < needDocs.length; i += DOC_BATCH) {
-    const batch = needDocs.slice(i, i + DOC_BATCH)
-    const { embeddings } = await embedMany({
+    const { embedding: queryVector } = await embed({
       model,
-      values: batch.map((b) => b.text),
+      value: queryForEmbedding.slice(0, 8000),
       maxRetries: 0,
     })
-    for (let j = 0; j < batch.length; j++) {
-      const emb = embeddings[j]
-      const row = batch[j]!
-      if (emb) {
-        presetVectorCache.set(row.code, [...emb])
+
+    const qv = [...queryVector]
+
+    const needDocs: { code: string; text: string }[] = []
+    for (const item of candidates) {
+      if (!presetVectorCache.has(item.code)) {
+        needDocs.push({
+          code: item.code,
+          text: buildPresetSearchDocument(item),
+        })
       }
     }
-  }
 
-  for (const item of candidates) {
-    const v = presetVectorCache.get(item.code)
-    if (!v) continue
-    const sim = Math.max(0, cosine(qv, v))
-    out.set(item.code, sim)
-  }
+    for (let i = 0; i < needDocs.length; i += DOC_BATCH) {
+      const batch = needDocs.slice(i, i + DOC_BATCH)
+      const { embeddings } = await embedMany({
+        model,
+        values: batch.map((b) => b.text),
+        maxRetries: 0,
+      })
+      for (let j = 0; j < batch.length; j++) {
+        const emb = embeddings[j]
+        const row = batch[j]!
+        if (emb) {
+          presetVectorCache.set(row.code, [...emb])
+        }
+      }
+    }
 
-  return out
+    for (const item of candidates) {
+      const v = presetVectorCache.get(item.code)
+      if (!v) continue
+      const sim = Math.max(0, cosine(qv, v))
+      out.set(item.code, sim)
+    }
+
+    return out
+  } catch (err) {
+    console.error("[search-semantic] embedding failed; using heuristics only", err)
+    return out
+  }
 }
 
 /** For tests or if preset corpus definition changes materially. */

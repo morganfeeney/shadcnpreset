@@ -5,6 +5,7 @@ import {
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
+import { limitCandidatesForEmbedding } from "@/lib/search-semantic-budget"
 import { getSemanticRelevanceScores } from "@/lib/search-semantic"
 import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
 import { tokenizeSearchQuery } from "@/lib/search-tokenize"
@@ -258,7 +259,8 @@ function isMisleadingHeadingPrefixMatch(
   return v.startsWith(`${t}-`)
 }
 
-function scorePreset(item: PresetPageItem, query: string) {
+/** Heuristic score; exported for embedding budget / pre-sort only. */
+export function scorePreset(item: PresetPageItem, query: string) {
   const queryText = query.toLowerCase()
   const tokens = tokenizeSearchQuery(query)
   if (!tokens.length) return 0
@@ -634,7 +636,12 @@ export async function getSmartPresetResults(
   maxResults: number
 ) {
   const candidates = getSampledCandidates(query, filters, 1600)
-  const semanticScores = await getSemanticRelevanceScores(candidates, query)
+  const forEmbedding = limitCandidatesForEmbedding(
+    candidates,
+    query,
+    scorePreset
+  )
+  const semanticScores = await getSemanticRelevanceScores(forEmbedding, query)
   return rankPresetCandidates(query, candidates, maxResults, semanticScores)
 }
 
