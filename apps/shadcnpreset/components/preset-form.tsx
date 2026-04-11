@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/input-group"
 import { trackSearchSubmit } from "@/lib/analytics-events"
 import {
+  clearAiSearchContext,
+  readAiSearchContextForRoute,
+} from "@/lib/ai-search-session"
+import {
   buildSearchHref,
   isSearchMode,
   parseSearchRouteFromLocation,
@@ -41,6 +45,9 @@ export function PresetForm({ className }: { className?: string }) {
   const [mode, setMode] = React.useState<"code" | "smart">("code")
   const [query, setQuery] = React.useState("")
   const [aiDialogOpen, setAiDialogOpen] = React.useState(false)
+  const [aiUserDescription, setAiUserDescription] = React.useState<
+    string | null
+  >(null)
 
   const routeMode = routeParams.mode
   const routeQuery = routeParams.query
@@ -53,10 +60,17 @@ export function PresetForm({ className }: { className?: string }) {
     if (parsed) {
       setMode(parsed.mode)
       setQuery(parsed.query)
+      if (parsed.mode === "smart" && parsed.query) {
+        const ctx = readAiSearchContextForRoute(parsed.query)
+        setAiUserDescription(ctx?.userSummary ?? null)
+      } else {
+        setAiUserDescription(null)
+      }
       return
     }
     if (pathname === "/") {
       setQuery("")
+      setAiUserDescription(null)
       const modeParam = searchParams.get("mode")
       if (modeParam && isSearchMode(modeParam)) {
         setMode(modeParam)
@@ -86,6 +100,8 @@ export function PresetForm({ className }: { className?: string }) {
       return
     }
 
+    clearAiSearchContext()
+    setAiUserDescription(null)
     router.push(buildSearchHref(mode, normalized))
   }
 
@@ -95,6 +111,18 @@ export function PresetForm({ className }: { className?: string }) {
       <label className="sr-only" htmlFor="preset-query">
         Search presets
       </label>
+      {mode === "smart" && aiUserDescription ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground/90">
+            From your AI description:
+          </span>{" "}
+          {aiUserDescription}
+          <span className="mt-1 block text-[0.7rem] text-muted-foreground/90">
+            The field below is the keyword phrase used for matching—you can edit
+            it and search again.
+          </span>
+        </p>
+      ) : null}
       <InputGroup className="h-9">
         <InputGroupAddon align="inline-start">
           <DropdownMenu>

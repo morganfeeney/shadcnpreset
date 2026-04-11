@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { trackAiSearchAssistant, trackSearchSubmit } from "@/lib/analytics-events"
+import { persistAiSearchContext } from "@/lib/ai-search-session"
 import { buildSearchHref } from "@/lib/search-route"
 import { cn } from "@/lib/utils"
 
@@ -100,6 +101,14 @@ export function AiSearchDialog({
         mode: "smart",
         searchTerm: q,
         source: "ai_assistant",
+      })
+
+      const userOnly = nextTurns
+        .filter((t): t is ChatTurn & { role: "user" } => t.role === "user")
+        .map((t) => t.content)
+      persistAiSearchContext({
+        optimizedQuery: q,
+        userMessages: userOnly,
       })
 
       handleOpenChange(false)
