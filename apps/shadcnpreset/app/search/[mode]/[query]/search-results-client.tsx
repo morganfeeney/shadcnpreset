@@ -4,8 +4,12 @@ import { notFound, useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 
 import { ListView } from "@/components/list-view"
-import { HomeResultsSkeleton } from "@/components/home-results-skeleton"
-import { SEARCH_PAGE_SIZE, isSearchMode, type SearchMode } from "@/lib/search-route"
+import { CardListSkeleton } from "@/components/card-list-skeleton"
+import {
+  SEARCH_PAGE_SIZE,
+  isSearchMode,
+  type SearchMode,
+} from "@/lib/search-route"
 import type { SearchPageData } from "@/lib/search-data"
 
 type SearchResultsClientProps = {
@@ -61,7 +65,7 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
   })
 
   if (!searchQuery.data) {
-    return <HomeResultsSkeleton />
+    return <CardListSkeleton />
   }
 
   const payload = searchQuery.data

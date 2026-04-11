@@ -1,36 +1,39 @@
-/** Query param carrying vote intent across OAuth (full page reload). */
-export const PENDING_VOTE_SEARCH_PARAM = "pendingVote"
+/** sessionStorage key: vote intent across OAuth (full page reload), not tied to the URL. */
+const PENDING_VOTE_STORAGE_KEY = "shadcnpreset:pendingVote"
 
 export function writePendingVote(presetCode: string) {
   if (typeof window === "undefined") {
     return
   }
-  const url = new URL(window.location.href)
-  url.searchParams.set(PENDING_VOTE_SEARCH_PARAM, presetCode)
-  window.history.replaceState(window.history.state, "", url.toString())
+  try {
+    sessionStorage.setItem(PENDING_VOTE_STORAGE_KEY, presetCode)
+  } catch {
+    // ignore quota / private mode
+  }
 }
 
 export function readPendingVoteCode(): string | null {
   if (typeof window === "undefined") {
     return null
   }
-  const raw = new URL(window.location.href).searchParams.get(
-    PENDING_VOTE_SEARCH_PARAM
-  )
-  if (!raw || raw.length > 256) {
+  try {
+    const raw = sessionStorage.getItem(PENDING_VOTE_STORAGE_KEY)
+    if (!raw || raw.length > 256) {
+      return null
+    }
+    return raw
+  } catch {
     return null
   }
-  return raw
 }
 
 export function clearPendingVote() {
   if (typeof window === "undefined") {
     return
   }
-  const url = new URL(window.location.href)
-  if (!url.searchParams.has(PENDING_VOTE_SEARCH_PARAM)) {
-    return
+  try {
+    sessionStorage.removeItem(PENDING_VOTE_STORAGE_KEY)
+  } catch {
+    // ignore
   }
-  url.searchParams.delete(PENDING_VOTE_SEARCH_PARAM)
-  window.history.replaceState(window.history.state, "", url.toString())
 }

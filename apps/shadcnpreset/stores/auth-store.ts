@@ -29,7 +29,7 @@ type AuthStore = {
   beginOAuth: (provider: OAuthProvider) => Promise<void>
   endOAuth: () => void
   ensureAuthenticated: () => Promise<boolean>
-  /** For voting: persists intent across OAuth redirect so the vote runs after sign-in. */
+  /** For voting: persists intent in sessionStorage across OAuth so the vote runs after sign-in. */
   ensureAuthenticatedForVote: (presetCode: string) => Promise<boolean>
   closeDialog: () => void
   signOut: () => Promise<void>

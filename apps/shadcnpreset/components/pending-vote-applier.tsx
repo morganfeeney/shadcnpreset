@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
@@ -10,14 +11,28 @@ import {
 import { useAuthStore } from "@/stores/auth-store"
 
 /**
- * After OAuth, the page reloads and Zustand state is reset. The preset code
- * is kept in the URL as `?pendingVote=` (see `callbackURL` in auth) so it
- * round-trips; this effect POSTs /vote once the session is authenticated.
+ * After OAuth, the page reloads and client state resets. The preset code is
+ * stored in sessionStorage until the session is authenticated; this effect POSTs
+ * /vote once. Anonymous in-app navigations clear the stored intent so it only
+ * applies around completing sign-in.
  */
 export function PendingVoteApplier() {
+  const pathname = usePathname()
   const status = useAuthStore((s) => s.status)
   const queryClient = useQueryClient()
   const ranForSessionRef = useRef(false)
+  const prevPathnameRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (
+      prevPathnameRef.current !== null &&
+      prevPathnameRef.current !== pathname &&
+      status === "anonymous"
+    ) {
+      clearPendingVote()
+    }
+    prevPathnameRef.current = pathname
+  }, [pathname, status])
 
   useEffect(() => {
     if (status !== "authenticated") {

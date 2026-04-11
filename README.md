@@ -41,8 +41,8 @@ Details: [`apps/shadcnpreset/SEARCH_PERFORMANCE_NOTES.md`](./apps/shadcnpreset/S
 ### Voting & My presets
 
 - **Votes** — Authenticated users can upvote presets; counts are stored server-side and **toggle** (heart on, heart
-  off). Trying to vote while signed out can trigger sign-in; **`?pendingVote=`** carries intent through OAuth so the
-  vote applies after you land back.
+  off). Trying to vote while signed out can trigger sign-in; **session storage** keeps that vote intent across the OAuth
+  round-trip so the vote applies after you land back (it is cleared if you browse away before signing in).
 - **Homepage ordering** — Presets with at least one vote float to the **“loved”** block, sorted by vote count (then
   code). Zero-vote presets follow in catalog order—so the feed rewards taste, not just recency.
 - **My presets** — **`/my-presets`** lists every preset you’ve voted for—your personal library of themes to reuse and
