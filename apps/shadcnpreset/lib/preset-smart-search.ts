@@ -656,16 +656,11 @@ export function rankPresetCandidates(
     return { item, relevance }
   })
 
-  let ranked = scored
+  const ranked = scored
     .filter((entry) => entry.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance || a.item.code.localeCompare(b.item.code))
 
-  if (!ranked.length && candidates.length) {
-    ranked = scored
-      .slice()
-      .sort((a, b) => a.item.code.localeCompare(b.item.code))
-      .map((entry) => ({ item: entry.item, relevance: 1 }))
-  }
+  if (!ranked.length) return []
 
   const dedupedByLook = dedupeRankedByConfigSignature(ranked)
 

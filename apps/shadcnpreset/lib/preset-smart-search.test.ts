@@ -35,14 +35,12 @@ describe("rankPresetCandidates", () => {
     expect(rankPresetCandidates("stone", [], 10)).toEqual([])
   })
 
-  it("falls back to diverse results when no token matches (cold query)", () => {
+  it("returns [] when nothing matches — no filler presets for nonsense queries", () => {
     const item = makeSearchPresetItem(
       { baseColor: "stone", theme: "purple", chartColor: "purple" },
       0
     )
-    const out = rankPresetCandidates("zzznonexistenttokenqqq", [item], 5)
-    expect(out).toHaveLength(1)
-    expect(out[0]!.code).toBe(item.code)
+    expect(rankPresetCandidates("zzznonexistenttokenqqq", [item], 5)).toEqual([])
   })
 
   it("ranks professional intent against SaaS-style presets", () => {
