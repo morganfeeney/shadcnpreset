@@ -46,9 +46,11 @@ export function SearchResultsClient({ mode, query }: SearchResultsClientProps) {
 
   const searchQuery = useQuery({
     queryKey: ["searchPage", effectiveMode, effectiveQuery],
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
+    // Same query is fresh briefly so dev Strict Mode / remounts do not fire a
+    // second fetch that aborts the first. Changing the URL still uses a new key.
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnMount: true,
     queryFn: async ({ signal }): Promise<SearchPageData> => {
       const response = await fetch(
         `/api/search/${effectiveMode}/${encodeURIComponent(effectiveQuery)}`,
