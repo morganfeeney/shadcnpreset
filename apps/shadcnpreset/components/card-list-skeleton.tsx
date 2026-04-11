@@ -23,7 +23,7 @@ function CardSkeleton() {
   )
 }
 
-export function HomeResultsSkeleton() {
+export function CardListSkeleton() {
   return (
     <main className="grid gap-4">
       <section className="space-y-4">

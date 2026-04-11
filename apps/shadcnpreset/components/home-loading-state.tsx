@@ -1,5 +1,5 @@
 import { Announcement } from "@/components/announcement"
-import { HomeResultsSkeleton } from "@/components/home-results-skeleton"
+import { CardListSkeleton } from "@/components/card-list-skeleton"
 import {
   PageHeader,
   PageHeaderDescription,
@@ -29,7 +29,7 @@ export function HomeLoadingState() {
         </div>
       </PageHeader>
 
-      <HomeResultsSkeleton />
+      <CardListSkeleton />
     </ListLayout>
   )
 }
