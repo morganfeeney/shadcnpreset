@@ -1,17 +1,10 @@
-/** OpenAI embedding similarity vs preset documents; no MiniSearch. Needs `OPENAI_API_KEY`. */
-import { embed, embedMany } from "ai"
+/** Query embedding + precomputed preset vectors (see `pnpm generate:preset-embeddings`). */
+import { embed } from "ai"
 import { openai } from "@ai-sdk/openai"
 
 import type { PresetPageItem } from "@/lib/preset-catalog"
-import { buildPresetSearchDocument } from "@/lib/preset-search-document"
+import { loadPresetEmbeddingStore } from "@/lib/preset-embedding-store"
 import { expandQueryForLexicalSearch } from "@/lib/search-query-expansion"
-
-const EMBEDDING_MODEL =
-  process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small"
-const DOC_BATCH = 96
-
-/** In-memory vectors for preset codes (bounded by search corpus size). */
-const presetVectorCache = new Map<string, number[]>()
 
 function dotProduct(a: number[], b: number[]): number {
   let s = 0
@@ -21,16 +14,14 @@ function dotProduct(a: number[], b: number[]): number {
   return s
 }
 
-/** Cosine = dot product when embeddings are L2-normalized (OpenAI). */
 function cosine(a: number[], b: number[]): number {
   if (a.length !== b.length || !a.length) return 0
   return dotProduct(a, b)
 }
 
 /**
- * Semantic relevance scores in [0, 1] (typical cosine range for normalized vectors).
- * Requires `OPENAI_API_KEY`. Returns an empty map when unset so ranking falls back to
- * heuristics only.
+ * Cosine similarity vs **precomputed** preset embeddings. One `embed()` call per
+ * search (query only). Fast: no per-request embedding of the corpus.
  */
 export async function getSemanticRelevanceScores(
   candidates: PresetPageItem[],
@@ -41,12 +32,25 @@ export async function getSemanticRelevanceScores(
     return out
   }
 
+  const store = loadPresetEmbeddingStore()
+  if (!store) {
+    return out
+  }
+
+  const envModel =
+    process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small"
+  if (store.model !== envModel) {
+    console.warn(
+      `[search-semantic] preset-embeddings.json model "${store.model}" != OPENAI_EMBEDDING_MODEL "${envModel}" — skipping semantic scores`
+    )
+    return out
+  }
+
   const q = query.trim()
   if (!q) return out
 
   try {
-    const model = openai.embedding(EMBEDDING_MODEL)
-
+    const model = openai.embedding(store.model)
     const expanded = expandQueryForLexicalSearch(q)
     const queryForEmbedding =
       expanded !== q ? `${q}\n${expanded}` : q
@@ -58,35 +62,15 @@ export async function getSemanticRelevanceScores(
     })
 
     const qv = [...queryVector]
-
-    const needDocs: { code: string; text: string }[] = []
-    for (const item of candidates) {
-      if (!presetVectorCache.has(item.code)) {
-        needDocs.push({
-          code: item.code,
-          text: buildPresetSearchDocument(item),
-        })
-      }
-    }
-
-    for (let i = 0; i < needDocs.length; i += DOC_BATCH) {
-      const batch = needDocs.slice(i, i + DOC_BATCH)
-      const { embeddings } = await embedMany({
-        model,
-        values: batch.map((b) => b.text),
-        maxRetries: 0,
-      })
-      for (let j = 0; j < batch.length; j++) {
-        const emb = embeddings[j]
-        const row = batch[j]!
-        if (emb) {
-          presetVectorCache.set(row.code, [...emb])
-        }
-      }
+    if (qv.length !== store.dim) {
+      console.error(
+        `[search-semantic] query embedding dim ${qv.length} != store dim ${store.dim}`
+      )
+      return out
     }
 
     for (const item of candidates) {
-      const v = presetVectorCache.get(item.code)
+      const v = store.vectors.get(item.code)
       if (!v) continue
       const sim = Math.max(0, cosine(qv, v))
       out.set(item.code, sim)
@@ -94,12 +78,12 @@ export async function getSemanticRelevanceScores(
 
     return out
   } catch (err) {
-    console.error("[search-semantic] embedding failed; using heuristics only", err)
+    console.error(
+      "[search-semantic] query embedding failed; using heuristics only",
+      err
+    )
     return out
   }
 }
 
-/** For tests or if preset corpus definition changes materially. */
-export function clearPresetEmbeddingCache(): void {
-  presetVectorCache.clear()
-}
+export { clearPresetEmbeddingStoreCache as clearPresetEmbeddingCache } from "@/lib/preset-embedding-store"

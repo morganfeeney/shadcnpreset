@@ -32,9 +32,10 @@ customizer stay in lockstep.
 ### Search
 
 - **Preset code** — Jump straight in with a code (e.g. `b4aRK5K0fb`).
-- **Smart search** — Natural language with structured facets (colours, typography, icons, radius, themes, …), **OpenAI
-  embedding similarity** against each preset’s text profile (when `OPENAI_API_KEY` is set), hand-tuned facet scoring, and
-  MMR-style diversity. Suggested queries on empty states nudge discovery.
+- **Smart search** — Structured facets + hand-tuned scoring + MMR diversity; **semantic
+  relevance** uses a **precomputed embedding file** (`pnpm generate:preset-embeddings` in
+  `apps/shadcnpreset`) plus **one query embedding per search** (needs `OPENAI_API_KEY`), so
+  browse stays fast without embedding the whole corpus on every request.
 
 Details: [`apps/shadcnpreset/SEARCH_PERFORMANCE_NOTES.md`](./apps/shadcnpreset/SEARCH_PERFORMANCE_NOTES.md).
 

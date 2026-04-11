@@ -5,7 +5,6 @@ import {
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
-import { limitCandidatesForEmbedding } from "@/lib/search-semantic-budget"
 import { getSemanticRelevanceScores } from "@/lib/search-semantic"
 import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
 import { tokenizeSearchQuery } from "@/lib/search-tokenize"
@@ -636,12 +635,7 @@ export async function getSmartPresetResults(
   maxResults: number
 ) {
   const candidates = getSampledCandidates(query, filters, 1600)
-  const forEmbedding = limitCandidatesForEmbedding(
-    candidates,
-    query,
-    scorePreset
-  )
-  const semanticScores = await getSemanticRelevanceScores(forEmbedding, query)
+  const semanticScores = await getSemanticRelevanceScores(candidates, query)
   return rankPresetCandidates(query, candidates, maxResults, semanticScores)
 }
 

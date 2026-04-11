@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:search": "node --import tsx/esm ./scripts/verify-search.ts",
+    "generate:preset-embeddings": "node --import tsx/esm ./scripts/generate-preset-embeddings.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"
   },
