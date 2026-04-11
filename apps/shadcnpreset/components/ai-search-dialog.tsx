@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -115,11 +114,13 @@ export function AiSearchDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className={cn("gap-0 p-0 sm:max-w-lg")}
+        className={cn(
+          "flex max-h-[min(90vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        )}
         showCloseButton={!pending}
       >
-        <div className="space-y-1 border-b border-border px-4 pt-4 pb-3">
-          <DialogHeader>
+        <div className="shrink-0 space-y-1 border-b border-border px-4 pt-4 pb-3">
+          <DialogHeader className="gap-2 text-left">
             <DialogTitle>AI search assistant</DialogTitle>
             <DialogDescription>
               Describe the product, audience, or vibe. We&apos;ll turn it into a
@@ -128,7 +129,7 @@ export function AiSearchDialog({
           </DialogHeader>
         </div>
 
-        <div className="max-h-[min(40vh,320px)] space-y-3 overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
           {turns.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Example: &quot;Dark fintech dashboard, lots of charts, not too
@@ -158,10 +159,14 @@ export function AiSearchDialog({
           ) : null}
         </div>
 
-        <div className="space-y-2 px-4 pb-3">
+        <div className="shrink-0 space-y-2 border-t border-border px-4 py-3">
           <Textarea
             aria-label="Describe what you are looking for"
-            className="min-h-[88px] resize-none"
+            className={cn(
+              "min-h-[88px] resize-none",
+              // One focus ring: avoid border + thick ring reading as a double stroke
+              "border border-border bg-background focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/60 focus-visible:ring-offset-0"
+            )}
             placeholder="Type your message…"
             value={input}
             disabled={pending}
@@ -175,7 +180,11 @@ export function AiSearchDialog({
           />
         </div>
 
-        <DialogFooter className="border-t border-border bg-muted/30 sm:justify-end">
+        <div
+          className={cn(
+            "flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:justify-end"
+          )}
+        >
           <Button
             type="button"
             variant="secondary"
@@ -198,7 +207,7 @@ export function AiSearchDialog({
               "Search presets"
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
