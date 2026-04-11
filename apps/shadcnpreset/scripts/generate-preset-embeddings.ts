@@ -37,10 +37,8 @@ async function main() {
     process.exit(1)
   }
 
-  const { buildSearchCorpus } = await import("../lib/search-corpus")
-  const { buildPresetSearchDocument } = await import(
-    "../lib/preset-search-document"
-  )
+  const { buildSearchCorpus } = await import("../lib/search/corpus")
+  const { buildPresetSearchDocument } = await import("../lib/search/document")
 
   const corpus = await buildSearchCorpus()
   const model = openai.embedding(EMBEDDING_MODEL)

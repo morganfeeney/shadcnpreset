@@ -1,4 +1,4 @@
-import { tokenizeSearchQuery } from "@/lib/search-tokenize"
+import { tokenizeSearchQuery } from "@/lib/search/tokenize"
 
 /**
  * Extra terms for when the primary query returns no Minisearch hits (OR search).

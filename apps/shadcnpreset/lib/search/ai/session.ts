@@ -1,4 +1,4 @@
-import { decodeSearchQuerySegment } from "@/lib/search-route"
+import { decodeSearchQuerySegment } from "@/lib/search/route"
 
 const STORAGE_KEY = "shadcnpreset_ai_search_context"
 

@@ -5,7 +5,7 @@ import { HomeHero } from "@/components/home-hero"
 import { PresetForm } from "@/components/preset-form"
 import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
 import { ListLayout } from "@/components/list-layout"
-import { isSearchMode } from "@/lib/search-route"
+import { isSearchMode } from "@/lib/search/route"
 import { SearchResultsClient } from "./search-results-client"
 
 type SearchBasePageProps = {

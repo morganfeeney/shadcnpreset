@@ -12,8 +12,8 @@ import {
   buildSearchHref,
   isSearchMode,
   type SearchMode,
-} from "@/lib/search-route"
-import type { SearchPageData } from "@/lib/search-data"
+} from "@/lib/search/route"
+import type { SearchPageData } from "@/lib/search/data"
 
 type SearchResultsClientProps = {
   mode: SearchMode

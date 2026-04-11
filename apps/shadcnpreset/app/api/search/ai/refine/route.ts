@@ -3,7 +3,7 @@ import { generateObject } from "ai"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { buildAiSearchSystemPrompt } from "@/lib/ai-search-system-prompt"
+import { buildAiSearchSystemPrompt } from "@/lib/search/ai/system-prompt"
 
 export const maxDuration = 60
 

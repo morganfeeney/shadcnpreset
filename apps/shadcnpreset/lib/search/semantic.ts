@@ -3,8 +3,8 @@ import { embed } from "ai"
 import { openai } from "@ai-sdk/openai"
 
 import type { PresetPageItem } from "@/lib/preset-catalog"
-import { loadPresetEmbeddingStore } from "@/lib/preset-embedding-store"
-import { expandQueryForLexicalSearch } from "@/lib/search-query-expansion"
+import { loadPresetEmbeddingStore } from "@/lib/search/embedding-store"
+import { expandQueryForLexicalSearch } from "@/lib/search/query-expansion"
 
 function dotProduct(a: number[], b: number[]): number {
   let s = 0
@@ -86,4 +86,4 @@ export async function getSemanticRelevanceScores(
   }
 }
 
-export { clearPresetEmbeddingStoreCache as clearPresetEmbeddingCache } from "@/lib/preset-embedding-store"
+export { clearPresetEmbeddingStoreCache as clearPresetEmbeddingCache } from "@/lib/search/embedding-store"

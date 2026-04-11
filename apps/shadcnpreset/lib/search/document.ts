@@ -1,5 +1,5 @@
 import type { PresetPageItem } from "@/lib/preset-catalog"
-import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
+import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search/font-tags"
 
 function radiusVocabulary(radius: string | undefined): string {
   if (radius === "large" || radius === "medium") {

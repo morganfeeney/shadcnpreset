@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest"
 import {
   rankPresetCandidates,
   wantsPaletteVariety,
-} from "@/lib/preset-smart-search"
+} from "@/lib/search/ranking/smart"
 import {
   makeDistinctFamilies,
   makeSameBrowseFamilyVariants,
   makeSameLookDifferentMenus,
   makeSearchPresetItem,
-} from "@/lib/search-ranking-fixtures"
+} from "@/lib/search/ranking/fixtures"
 
 describe("wantsPaletteVariety", () => {
   it("is false when a semantic theme pin and a base colour both appear (e.g. stone + purple)", () => {

@@ -28,12 +28,12 @@ import { trackSearchSubmit } from "@/lib/analytics-events"
 import {
   clearAiSearchContext,
   readAiSearchContextForRoute,
-} from "@/lib/ai-search-session"
+} from "@/lib/search/ai/session"
 import {
   buildSearchHref,
   isSearchMode,
   parseSearchRouteFromLocation,
-} from "@/lib/search-route"
+} from "@/lib/search/route"
 import { cn } from "@/lib/utils"
 
 export function PresetForm({ className }: { className?: string }) {

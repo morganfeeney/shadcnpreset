@@ -14,8 +14,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { trackAiSearchAssistant, trackSearchSubmit } from "@/lib/analytics-events"
-import { persistAiSearchContext } from "@/lib/ai-search-session"
-import { buildSearchHref } from "@/lib/search-route"
+import { persistAiSearchContext } from "@/lib/search/ai/session"
+import { buildSearchHref } from "@/lib/search/route"
 import { cn } from "@/lib/utils"
 
 type ChatTurn = { role: "user" | "assistant"; content: string }

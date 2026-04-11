@@ -11,11 +11,11 @@ import {
   getSampledCandidates,
   rankPresetCandidates,
   wantsPaletteVariety,
-} from "@/lib/preset-smart-search"
-import { tokenizeSearchQueryOrdered } from "@/lib/search-tokenize"
-import { buildSearchCorpus } from "@/lib/search-corpus"
-import { getSemanticRelevanceScores } from "@/lib/search-semantic"
-import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search-route"
+} from "@/lib/search/ranking/smart"
+import { tokenizeSearchQueryOrdered } from "@/lib/search/tokenize"
+import { buildSearchCorpus } from "@/lib/search/corpus"
+import { getSemanticRelevanceScores } from "@/lib/search/semantic"
+import { SEARCH_PAGE_SIZE, type SearchMode } from "@/lib/search/route"
 
 export type SearchListItem = {
   code: string

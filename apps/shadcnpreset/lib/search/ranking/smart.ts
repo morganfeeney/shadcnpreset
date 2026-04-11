@@ -5,9 +5,9 @@ import {
   type PresetFilters,
   type PresetPageItem,
 } from "@/lib/preset-catalog"
-import { getSemanticRelevanceScores } from "@/lib/search-semantic"
-import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
-import { tokenizeSearchQuery } from "@/lib/search-tokenize"
+import { getSemanticRelevanceScores } from "@/lib/search/semantic"
+import { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search/font-tags"
+import { tokenizeSearchQuery } from "@/lib/search/tokenize"
 
 type WeightedTokenMatch = Partial<Record<keyof PresetPageItem["config"], number>>
 
@@ -86,8 +86,8 @@ export const SERIF_FONTS = new Set([
 
 export const MONO_FONTS = new Set(["jetbrains-mono", "geist-mono"])
 
-export { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search-font-tags"
-export { TOKEN_ALIASES, tokenizeSearchQuery } from "@/lib/search-tokenize"
+export { FUTURISTIC_FONTS, SAAS_FONTS } from "@/lib/search/font-tags"
+export { TOKEN_ALIASES, tokenizeSearchQuery } from "@/lib/search/tokenize"
 
 function stableHash(input: string) {
   let hash = 2166136261
@@ -643,7 +643,7 @@ export function rankPresetCandidates(
   query: string,
   candidates: PresetPageItem[],
   maxResults: number,
-  /** OpenAI embedding cosine scores (`getSemanticRelevanceScores` in search-semantic). */
+  /** OpenAI embedding cosine scores (`getSemanticRelevanceScores` in `semantic.ts`). */
   semanticScores?: Map<string, number>
 ) {
   if (!candidates.length) return []
