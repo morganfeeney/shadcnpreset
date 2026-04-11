@@ -29,6 +29,70 @@ const outputSchema = z.object({
     ),
 })
 
+function mapProviderError(err: unknown): {
+  status: number
+  body: { error: string; code?: string }
+} {
+  const raw = err instanceof Error ? err.message : String(err)
+  const lower = raw.toLowerCase()
+
+  if (
+    lower.includes("exceeded your current quota") ||
+    lower.includes("insufficient_quota") ||
+    (lower.includes("billing") && lower.includes("openai")) ||
+    (lower.includes("quota") && lower.includes("check your plan"))
+  ) {
+    return {
+      status: 402,
+      body: {
+        code: "openai_quota",
+        error:
+          "Your OpenAI account has no credits or billing is not set up. Add a payment method or credits at platform.openai.com, or use Smart search without the AI assistant.",
+      },
+    }
+  }
+
+  if (
+    lower.includes("rate limit") ||
+    lower.includes("too many requests") ||
+    raw.includes("429")
+  ) {
+    return {
+      status: 429,
+      body: {
+        code: "openai_rate_limit",
+        error:
+          "OpenAI rate limit reached. Wait a minute and try again, or switch to Smart search.",
+      },
+    }
+  }
+
+  if (
+    lower.includes("invalid api key") ||
+    lower.includes("incorrect api key") ||
+    lower.includes("invalid_api_key")
+  ) {
+    return {
+      status: 401,
+      body: {
+        code: "openai_auth",
+        error:
+          "OpenAI rejected the API key. Check OPENAI_API_KEY in your environment.",
+      },
+    }
+  }
+
+  return {
+    status: 502,
+    body: {
+      error:
+        raw.length > 280
+          ? `${raw.slice(0, 277)}…`
+          : raw || "Failed to generate search query",
+    },
+  }
+}
+
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -67,6 +131,7 @@ export async function POST(request: Request) {
       })),
       schema: outputSchema,
       temperature: 0.3,
+      maxRetries: 0,
     })
 
     return NextResponse.json({
@@ -74,12 +139,7 @@ export async function POST(request: Request) {
     })
   } catch (err) {
     console.error("[ai/refine]", err)
-    return NextResponse.json(
-      {
-        error:
-          err instanceof Error ? err.message : "Failed to generate search query",
-      },
-      { status: 502 }
-    )
+    const { status, body } = mapProviderError(err)
+    return NextResponse.json(body, { status })
   }
 }
