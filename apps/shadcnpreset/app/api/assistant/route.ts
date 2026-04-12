@@ -101,6 +101,7 @@ function mapProviderError(err: unknown): {
   }
 }
 
+/** Drops duplicate encodings — identical facet tuples → one card (see assistant prompt: vary fonts/icons/radius when colours match). */
 function encodeReadyPayload(
   normalized: Extract<
     ReturnType<typeof normalizeAssistantTurn>,

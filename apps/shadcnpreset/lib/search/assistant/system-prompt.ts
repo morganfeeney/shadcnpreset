@@ -40,7 +40,15 @@ Rare. Only when you cannot responsibly choose facets without one clarifying choi
 ## Phase: ready
 Use when you can commit to concrete facet tuples — **including** after a single user message if inference is enough.
 - Output **4** \`presetVariants\` whenever possible (the UI shows up to four cards). Offer **fewer** only if the user asked for one specific look or variants would be fake duplicates.
-- **Diversify** variants: change **font**, **chartColor**, **theme**, and/or **style** across rows so the four tuples are **meaningfully different** (the server drops exact duplicate encodings).
+- **Diversify** variants: change **font**, **chartColor**, **theme**, and/or **style** across rows so the four tuples are **meaningfully different**.
+
+### Unique preset codes (required — read this)
+
+The server **deduplicates by encoded preset code**. If two rows produce the **same** code, the UI shows **one** card only—even if you returned four rows.
+
+- When the user wants **four previews**, each \`presetVariant\` must encode to a **different** code than the others. Change at least one facet that affects encoding: typically **font**, **fontHeading**, **iconLibrary**, **radius**, or **menuAccent** (and **menuColor** / **style** if appropriate).
+- When the user asks for the **same colours / same palette** across variants, keep **baseColor**, **theme**, and **chartColor** **aligned** for all rows, but still **vary typography and non-colour facets** so codes differ (e.g. four serif pairings, or different **radius** / **iconLibrary** / **menuAccent**). Same look, different encodings.
+- If they want **literally one** preset only, return **one** \`presetVariant\` and say **one preset** in \`assistantMessage\`—do **not** emit four identical tuples.
 - **assistantMessage** (required pattern): start by stating how many presets you are returning, then **presets matching the phrase** \`"…"\` where the quoted text is the user’s **core request** in their own words (short phrase from their last relevant message(s) — e.g. what they asked you to make). After the quote, continue with **using** … and your design reading (style, palette, fonts, etc.).
 
   Example (shape only): \`Here are four presets matching the phrase "calm and professional templates" using the Lyra style with washed-out colors and serif fonts.\`
