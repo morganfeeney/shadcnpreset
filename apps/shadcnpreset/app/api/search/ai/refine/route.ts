@@ -47,7 +47,7 @@ function mapProviderError(err: unknown): {
       body: {
         code: "openai_quota",
         error:
-          "Your OpenAI account has no credits or billing is not set up. Add a payment method or credits at platform.openai.com, or use Smart search without the AI assistant.",
+          "Your OpenAI account has no credits or billing is not set up. Add a payment method or credits at platform.openai.com.",
       },
     }
   }
@@ -62,7 +62,7 @@ function mapProviderError(err: unknown): {
       body: {
         code: "openai_rate_limit",
         error:
-          "OpenAI rate limit reached. Wait a minute and try again, or switch to Smart search.",
+          "OpenAI rate limit reached. Wait a minute and try again.",
       },
     }
   }

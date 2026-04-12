@@ -9,8 +9,6 @@ import {
 import * as React from "react"
 import { ChevronDownIcon, SparklesIcon } from "lucide-react"
 
-import { AiSearchDialog } from "@/components/ai-search-dialog"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +42,6 @@ export function PresetForm({ className }: { className?: string }) {
 
   const [mode, setMode] = React.useState<"code" | "smart">("code")
   const [query, setQuery] = React.useState("")
-  const [aiDialogOpen, setAiDialogOpen] = React.useState(false)
   const [aiUserDescription, setAiUserDescription] = React.useState<
     string | null
   >(null)
@@ -148,11 +145,11 @@ export function PresetForm({ className }: { className?: string }) {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
-                    setAiDialogOpen(true)
+                    router.push("/assistant")
                   }}
                 >
                   <SparklesIcon className="size-3.5 opacity-70" />
-                  AI assistant
+                  AI preset finder
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -176,11 +173,6 @@ export function PresetForm({ className }: { className?: string }) {
         </InputGroupAddon>
       </InputGroup>
     </form>
-    <AiSearchDialog
-      open={aiDialogOpen}
-      onOpenChange={setAiDialogOpen}
-      pagePath={pathname}
-    />
     </>
   )
 }

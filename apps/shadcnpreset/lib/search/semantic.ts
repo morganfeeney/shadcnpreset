@@ -4,7 +4,38 @@ import { openai } from "@ai-sdk/openai"
 
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { loadPresetEmbeddingStore } from "@/lib/search/embedding-store"
-import { expandQueryForLexicalSearch } from "@/lib/search/query-expansion"
+import {
+  wantsDarkShellQuery,
+  wantsDataUiQuery,
+  wantsLightShellQuery,
+} from "@/lib/search/query-intent"
+
+/** Avoid repeat OpenAI round-trips for the same query (React remounts, back/forward). */
+const QUERY_EMBED_CACHE_TTL_MS = 120_000
+const QUERY_EMBED_CACHE_MAX = 64
+const queryEmbedCache = new Map<string, { vec: number[]; at: number }>()
+
+function cacheKeyForQueryEmbedding(model: string, text: string) {
+  return `${model}\0${text}`
+}
+
+function takeCachedQueryVec(key: string): number[] | null {
+  const hit = queryEmbedCache.get(key)
+  if (!hit) return null
+  if (Date.now() - hit.at > QUERY_EMBED_CACHE_TTL_MS) {
+    queryEmbedCache.delete(key)
+    return null
+  }
+  return hit.vec
+}
+
+function putCachedQueryVec(key: string, vec: number[]) {
+  if (queryEmbedCache.size >= QUERY_EMBED_CACHE_MAX) {
+    const first = queryEmbedCache.keys().next().value
+    if (first) queryEmbedCache.delete(first)
+  }
+  queryEmbedCache.set(key, { vec, at: Date.now() })
+}
 
 function dotProduct(a: number[], b: number[]): number {
   let s = 0
@@ -17,6 +48,35 @@ function dotProduct(a: number[], b: number[]): number {
 function cosine(a: number[], b: number[]): number {
   if (a.length !== b.length || !a.length) return 0
   return dotProduct(a, b)
+}
+
+/**
+ * Short “Intent:” line for product axes (dark/light shell, data UI) so the query vector
+ * matches how presets are described — not a general synonym list.
+ */
+export function queryTextForEmbedding(raw: string): string {
+  const q = raw.trim().slice(0, 4000)
+  if (!q) return q
+  const hints: string[] = []
+
+  if (wantsDarkShellQuery(q)) {
+    hints.push(
+      "dark mode UI, dark application shell, inverted sidebar and chrome, low-light interface"
+    )
+  } else if (wantsLightShellQuery(q)) {
+    hints.push(
+      "light mode UI, bright application shell, default sidebar, airy interface"
+    )
+  }
+
+  if (wantsDataUiQuery(q)) {
+    hints.push(
+      "data visualization, metrics, charts and analytics, dashboard-style accents"
+    )
+  }
+
+  if (!hints.length) return q.slice(0, 8000)
+  return `${q}\nIntent: ${hints.join(" — ")}`.slice(0, 8000)
 }
 
 /**
@@ -51,17 +111,18 @@ export async function getSemanticRelevanceScores(
 
   try {
     const model = openai.embedding(store.model)
-    const expanded = expandQueryForLexicalSearch(q)
-    const queryForEmbedding =
-      expanded !== q ? `${q}\n${expanded}` : q
-
-    const { embedding: queryVector } = await embed({
-      model,
-      value: queryForEmbedding.slice(0, 8000),
-      maxRetries: 0,
-    })
-
-    const qv = [...queryVector]
+    const embedText = queryTextForEmbedding(q)
+    const cacheKey = cacheKeyForQueryEmbedding(store.model, embedText)
+    let qv = takeCachedQueryVec(cacheKey)
+    if (!qv) {
+      const { embedding: queryVector } = await embed({
+        model,
+        value: embedText,
+        maxRetries: 0,
+      })
+      qv = [...queryVector]
+      putCachedQueryVec(cacheKey, qv)
+    }
     if (qv.length !== store.dim) {
       console.error(
         `[search-semantic] query embedding dim ${qv.length} != store dim ${store.dim}`
@@ -79,7 +140,7 @@ export async function getSemanticRelevanceScores(
     return out
   } catch (err) {
     console.error(
-      "[search-semantic] query embedding failed; using heuristics only",
+      "[search-semantic] query embedding failed; no vector results",
       err
     )
     return out

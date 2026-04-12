@@ -113,6 +113,43 @@ function getThemeChoicesForBase(
   return { themes, chartColors }
 }
 
+/**
+ * Snap a config to base/theme/chart combinations the v4 preview and gallery corpus
+ * actually use — avoids runtime errors (e.g. invalid base `gray`, or theme not allowed for base).
+ */
+export function clampPresetConfigForV4Preview(config: PresetConfig): PresetConfig {
+  let baseColor = config.baseColor
+  if (baseColor === "gray") {
+    baseColor = "zinc"
+  }
+  if (!V4_BASE_COLORS.includes(baseColor as V4BaseColor)) {
+    baseColor = V4_BASE_COLORS[0]!
+  }
+  const base = baseColor as V4BaseColor
+
+  const { themes: allowedThemes, chartColors: allowedCharts } =
+    getThemeChoicesForBase(base, {})
+
+  const themeList = allowedThemes as readonly string[]
+  let theme = config.theme
+  if (!themeList.includes(theme)) {
+    theme = allowedThemes[0] as PresetConfig["theme"]
+  }
+
+  const chartList = allowedCharts as readonly string[]
+  let chartColor: PresetConfig["chartColor"] = config.chartColor ?? theme
+  if (!chartColor || !chartList.includes(chartColor)) {
+    chartColor = allowedCharts[0] as PresetConfig["chartColor"]
+  }
+
+  return {
+    ...config,
+    baseColor,
+    theme,
+    chartColor,
+  }
+}
+
 export function getPresetTotalCombinations(filters: PresetFilters = {}) {
   const styles = pickValues(PRESET_STYLES, filters.style)
   const baseColors = pickValues(V4_BASE_COLORS, filters.baseColor)

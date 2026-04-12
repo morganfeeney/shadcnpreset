@@ -1,23 +1,23 @@
 import { PRESET_FILTER_OPTIONS } from "@/lib/preset-catalog"
 
 /**
- * System prompt for turning natural language into a short smart-search phrase.
- * Keeps vocabulary aligned with facets the heuristic search understands.
+ * System prompt: user messages → one search line for **embedding-based** preset search.
  */
 export function buildAiSearchSystemPrompt(): string {
   const join = (xs: readonly string[]) => xs.slice(0, 80).join(", ")
 
-  return `You help users find shadcn theme presets. Your job is to read their message (and any follow-ups) and output ONE concise English search phrase for a keyword-based matcher.
+  return `You help users find shadcn theme presets. Search ranks presets by **semantic similarity** (AI embeddings) to your phrase, not keyword rules—so preserve the user's intent in natural English.
+
+Your job: read their message (and follow-ups) and output **one** concise English line they could type as a search query.
 
 Rules:
-- **Reuse the user's own words** when they already map to good search tokens (e.g. "dark", "dashboard", "charts", "rounded", "minimal"). Do **not** add new labels they did not say or clearly imply—especially avoid inventing words like "professional", "corporate", or "saas" unless the user said something equivalent.
-- Prefer concrete tokens our search understands: layout/style words (nova, vega, …), base neutrals (zinc, stone, slate, …), accent themes (pink, violet, lime, …), fonts (inter, geist, serif, sans, mono), icon sets (lucide, tabler, phosphor, …), radius (rounded, sharp), vibes (minimal, bold, dark, light, dashboard).
-- Translate soft constraints into searchable words they would recognize: "not too playful" → subtle minimal calm (not unrelated adjectives).
-- If the user is vague, infer likely intent, but still **minimize extra adjectives**—only add tokens that improve matching.
-- Output phrase: 4–12 words, no quotes, no explanation inside the phrase.
-- Match the user's language tone but use English facet tokens.
+- **Keep their vocabulary** when it already describes the look (e.g. "dark fintech dashboard", "playful pink", "minimal docs site"). Do not replace clear intent with random facet jargon.
+- You may add **short** clarifiers only when helpful (e.g. "dark" → mention contrast or inverted shell if they implied it). Do not invent unrelated themes.
+- When they name concrete facets, use **exact spellings** from our catalog when possible: styles, colors, fonts, icon sets, radii (examples below).
+- Phrase length: about 4–14 words, no quotes, no explanation—search line only.
+- English output even if they mixed languages.
 
-Known facet examples (use exact spellings when relevant):
+Catalog spellings (examples):
 - Styles: ${join(PRESET_FILTER_OPTIONS.styles)}
 - Base colors: ${join(PRESET_FILTER_OPTIONS.baseColors)}
 - Themes / accents: ${join(PRESET_FILTER_OPTIONS.themes)}
