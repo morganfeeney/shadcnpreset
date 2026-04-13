@@ -27,7 +27,8 @@ export type RequestedFacetChanges = {
   radius: boolean
   menuColor: boolean
   menuAccent: boolean
-  typography: boolean
+  typographyHeading: boolean
+  typographyBody: boolean
 }
 
 export type ExplicitFacetConstraints = {
@@ -60,6 +61,7 @@ export function extractTypographyConstraints(
       constraints.headingFamily = "serif"
     }
     if (
+      /\bsans\s+headings?\b/.test(t) ||
       /(sans[-\s]?serif)\s+headings?/.test(t) ||
       /headings?\s+(should|must|to)?\s*be\s+(sans[-\s]?serif)/.test(t)
     ) {
@@ -127,8 +129,15 @@ export function detectRequestedFacetChanges(
   )
   const mentionsStyle =
     STYLE_WORDS_REGEX.test(t) || /\bstyle\b/.test(t) || /\blayout\b/.test(t)
-  const mentionsTypography =
-    /\b(font|fonts|heading|headings|body|serif|sans)\b/.test(t)
+  const mentionsHeadingTypography =
+    /\b(heading|headings)\b/.test(t) &&
+    /\b(font|fonts|serif|sans)\b/.test(t)
+  const mentionsBodyTypography =
+    /\bbody\b/.test(t) && /\b(font|fonts|serif|sans)\b/.test(t)
+  const mentionsGenericTypography =
+    /\b(font|fonts)\b/.test(t) &&
+    !mentionsHeadingTypography &&
+    !mentionsBodyTypography
   const mentionsIcons = ICON_WORDS_REGEX.test(t)
   const mentionsRadius = /\b(radius|rounded|sharp|corners?)\b/.test(t)
   const mentionsMenu = /\b(menu|sidebar|chrome)\b/.test(t)
@@ -143,7 +152,8 @@ export function detectRequestedFacetChanges(
     radius: mentionsRadius,
     menuColor: mentionsMenu,
     menuAccent: mentionsMenuAccent,
-    typography: mentionsTypography,
+    typographyHeading: mentionsHeadingTypography || mentionsGenericTypography,
+    typographyBody: mentionsBodyTypography || mentionsGenericTypography,
   }
 }
 
@@ -253,8 +263,10 @@ export function applyStagePreservation(
     theme: changes.theme ? config.theme : previous.theme,
     chartColor: changes.chartColor ? config.chartColor : previous.chartColor,
     iconLibrary: changes.iconLibrary ? config.iconLibrary : previous.iconLibrary,
-    font: changes.typography ? config.font : previous.font,
-    fontHeading: changes.typography ? config.fontHeading : previous.fontHeading,
+    font: changes.typographyBody ? config.font : previous.font,
+    fontHeading: changes.typographyHeading
+      ? config.fontHeading
+      : previous.fontHeading,
     radius: changes.radius ? config.radius : previous.radius,
     menuColor: changes.menuColor ? config.menuColor : previous.menuColor,
     menuAccent: changes.menuAccent ? config.menuAccent : previous.menuAccent,

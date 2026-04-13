@@ -131,12 +131,12 @@ function encodeReadyPayload(
   }
 
   for (const [index, v] of normalized.presetVariants.entries()) {
-    const config = applyExplicitFacetConstraints(
-      applyPaletteConstraints(
+    const config = applyPaletteConstraints(
+      applyExplicitFacetConstraints(
         applyTypographyConstraints(variantToConfig(v), typographyConstraints),
-        paletteConstraints
+        explicitFacetConstraints
       ),
-      explicitFacetConstraints
+      paletteConstraints
     )
     const preserved = applyStagePreservation(
       config,
