@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 
-import { ListLayout } from "@/components/list-layout"
 import { AssistantChat } from "@/components/assistant/assistant-chat"
 
 export const metadata: Metadata = {
@@ -10,9 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default function AssistantPage() {
-  return (
-    <ListLayout>
-      <AssistantChat />
-    </ListLayout>
-  )
+  return <AssistantChat />
 }
