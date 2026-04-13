@@ -6,6 +6,7 @@ import {
   applyPaletteConstraints,
   applyStagePreservation,
   detectRequestedFacetChanges,
+  extractExplicitFacetConstraints,
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
@@ -71,6 +72,13 @@ describe("palette/explicit precedence", () => {
 
     expect(final.chartColor).toBe(final.theme)
     expect(typography.headingFamily).toBe("sans")
+  })
+
+  it("parses chart-scoped color in mixed requests", () => {
+    const explicit = extractExplicitFacetConstraints([
+      { role: "user", content: "indigo theme amber charts" },
+    ])
+    expect(explicit.chartColor).toBe("amber")
   })
 })
 

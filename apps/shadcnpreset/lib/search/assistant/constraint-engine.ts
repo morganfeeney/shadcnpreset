@@ -169,6 +169,22 @@ export function extractExplicitFacetConstraints(
     >
   chartColorByWord.grey = "gray"
 
+  const chartColors = Object.keys(chartColorByWord)
+
+  function extractChartColorFromText(t: string): PresetConfig["chartColor"] | undefined {
+    // Prefer color directly attached to "chart(s)", e.g. "amber charts".
+    for (const c of chartColors) {
+      const before = new RegExp(`\\b${c}\\s+(chart|charts)\\b`)
+      if (before.test(t)) return chartColorByWord[c]
+    }
+    // Also support "charts in amber" / "charts with amber".
+    for (const c of chartColors) {
+      const after = new RegExp(`\\b(chart|charts)\\b[^.\\n]{0,24}\\b${c}\\b`)
+      if (after.test(t)) return chartColorByWord[c]
+    }
+    return undefined
+  }
+
   for (const msg of messages) {
     if (msg.role !== "user") continue
     const t = msg.content.toLowerCase()
@@ -190,8 +206,14 @@ export function extractExplicitFacetConstraints(
     }
 
     if (/\b(chart|charts)\b/.test(t)) {
-      for (const [word, color] of Object.entries(chartColorByWord)) {
-        if (new RegExp(`\\b${word}\\b`).test(t)) out.chartColor = color
+      const scoped = extractChartColorFromText(t)
+      if (scoped) {
+        out.chartColor = scoped
+      } else {
+        // Fallback: if no scoped phrase, use last color mention.
+        for (const [word, color] of Object.entries(chartColorByWord)) {
+          if (new RegExp(`\\b${word}\\b`).test(t)) out.chartColor = color
+        }
       }
     }
   }
