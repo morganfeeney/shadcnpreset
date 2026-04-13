@@ -10,7 +10,11 @@ import { Textarea } from "@/components/ui/textarea"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { cn } from "@/lib/utils"
 
-type ChatMessage = { role: "user" | "assistant"; content: string }
+type ChatMessage = {
+  role: "user" | "assistant"
+  content: string
+  presets?: Extract<AssistantTurn, { phase: "ready" }>["presets"]
+}
 
 export function AssistantChat() {
   const [messages, setMessages] = React.useState<ChatMessage[]>([
@@ -44,11 +48,17 @@ export function AssistantChat() {
     setPending(true)
     setLastTurn(null)
 
+    const previousPresetCodes =
+      [...messages]
+        .reverse()
+        .find((m) => m.role === "assistant" && m.presets?.length)
+        ?.presets?.map((p) => p.code) ?? []
+
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, previousPresetCodes }),
       })
       const data = (await res.json()) as AssistantTurn & { error?: string }
 
@@ -74,9 +84,13 @@ export function AssistantChat() {
       if (data.phase === "ready") {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.assistantMessage },
+          {
+            role: "assistant",
+            content: data.assistantMessage,
+            presets: data.presets,
+          },
         ])
-        setLastTurn(data)
+        setLastTurn(null)
         return
       }
 
@@ -116,17 +130,33 @@ export function AssistantChat() {
       >
         <ul className="flex flex-col gap-3">
           {messages.map((m, i) => (
-            <li
-              key={`${i}-${m.role}`}
-              className={cn(
-                "max-w-[92%] rounded-lg px-3 py-2 text-sm leading-relaxed",
-                m.role === "user"
-                  ? "ml-auto bg-primary text-primary-foreground"
-                  : "mr-auto bg-muted/80 text-foreground"
-              )}
-            >
-              {m.content}
-            </li>
+            <React.Fragment key={`${i}-${m.role}`}>
+              <li
+                className={cn(
+                  "max-w-[92%] rounded-lg px-3 py-2 text-sm leading-relaxed",
+                  m.role === "user"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "mr-auto bg-muted/80 text-foreground"
+                )}
+              >
+                {m.content}
+              </li>
+              {m.role === "assistant" && m.presets?.length ? (
+                <li className="mr-auto w-full max-w-full">
+                  <ul className="mt-1 grid gap-6 sm:grid-cols-2">
+                    {m.presets.map((p, presetIndex) => (
+                      <li key={`${i}-${presetIndex}-${p.code}`}>
+                        <PresetIframeCard
+                          code={p.code}
+                          title={p.code}
+                          description={p.description}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ) : null}
+            </React.Fragment>
           ))}
           {pending ? (
             <li className="mr-auto flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
@@ -140,7 +170,7 @@ export function AssistantChat() {
 
       {lastTurn?.phase === "gathering" && lastTurn.followUpQuestions.length ? (
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Quick replies
           </p>
           <div className="flex flex-wrap gap-2">
@@ -150,7 +180,7 @@ export function AssistantChat() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-auto max-w-full whitespace-normal py-2 text-left text-xs"
+                className="h-auto max-w-full py-2 text-left text-xs whitespace-normal"
                 onClick={() => void sendContent(q)}
                 disabled={pending}
               >
@@ -158,25 +188,6 @@ export function AssistantChat() {
               </Button>
             ))}
           </div>
-        </div>
-      ) : null}
-
-      {lastTurn?.phase === "ready" && lastTurn.presets.length ? (
-        <div className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Preset previews
-          </p>
-          <ul className="grid gap-6 sm:grid-cols-2">
-            {lastTurn.presets.map((p) => (
-              <li key={p.code}>
-                <PresetIframeCard
-                  code={p.code}
-                  title={p.code}
-                  description={p.description}
-                />
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
 
@@ -188,7 +199,7 @@ export function AssistantChat() {
 
       <form
         onSubmit={onSubmit}
-        className="sticky bottom-0 grid gap-2 border-t border-border bg-background/95 pt-4 backdrop-blur"
+        className="sticky bottom-0 z-20 grid gap-2 border-t border-border bg-background/95 pt-4 backdrop-blur"
       >
         <label className="sr-only" htmlFor="assistant-input">
           Message

@@ -109,6 +109,13 @@ export const PRESET_FONTS = [
   "source-sans-3",
   "instrument-sans",
 ] as const
+export const PRESET_SERIF_FONTS = [
+  "lora",
+  "merriweather",
+  "playfair-display",
+  "noto-serif",
+  "roboto-slab",
+] as const satisfies readonly (typeof PRESET_FONTS)[number][]
 export const PRESET_FONT_HEADINGS = ["inherit", ...PRESET_FONTS] as const
 
 export const PRESET_RADII = [

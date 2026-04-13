@@ -5,6 +5,18 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
+import { resolvePresetFromCode } from "@/lib/preset"
+import {
+  applyExplicitFacetConstraints,
+  applyPaletteConstraints,
+  applyStagePreservation,
+  applyTypographyConstraints,
+  buildPresetCardDescription,
+  detectRequestedFacetChanges,
+  extractExplicitFacetConstraints,
+  extractPaletteConstraints,
+  extractTypographyConstraints,
+} from "@/lib/search/assistant/constraint-engine"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
 import {
   assistantTurnOutputSchema,
@@ -25,20 +37,12 @@ const bodySchema = z.object({
     )
     .min(1)
     .max(32),
+  previousPresetCodes: z.array(z.string().min(2).max(32)).max(4).optional(),
 })
 
 function variantToConfig(v: AssistantPresetVariantPayload): PresetConfig {
   const { caption: _c, ...rest } = v
   return clampPresetConfigForV4Preview(rest as PresetConfig)
-}
-
-function buildPresetCardDescription(c: PresetConfig): string {
-  const chart = c.chartColor ?? c.theme
-  const typo =
-    c.fontHeading === "inherit" || c.fontHeading === c.font
-      ? `${c.font} font`
-      : `${c.fontHeading} & ${c.font} fonts`
-  return `${c.baseColor} base, ${c.theme} theme, ${chart} charts, ${c.iconLibrary}, ${typo}`
 }
 
 function mapProviderError(err: unknown): {
@@ -106,20 +110,47 @@ function encodeReadyPayload(
   normalized: Extract<
     ReturnType<typeof normalizeAssistantTurn>,
     { phase: "ready" }
-  >
+  >,
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  previousPresets: PresetConfig[]
 ): AssistantReady {
   const seen = new Set<string>()
   const presets: AssistantReady["presets"] = []
+  const typographyConstraints = extractTypographyConstraints(messages)
+  const paletteConstraints = extractPaletteConstraints(messages)
+  const explicitFacetConstraints = extractExplicitFacetConstraints(messages)
+  const lastUserText =
+    [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
+  const requestedChanges = detectRequestedFacetChanges(lastUserText)
+  if (paletteConstraints.wantsMonochrome) {
+    // Monochrome is a palette-level override: allow color facets to update
+    // instead of preserving prior vivid values from the previous stage.
+    requestedChanges.baseColor = true
+    requestedChanges.theme = true
+    requestedChanges.chartColor = true
+  }
 
-  for (const v of normalized.presetVariants) {
-    const config = variantToConfig(v)
-    const code = encodePreset(config)
+  for (const [index, v] of normalized.presetVariants.entries()) {
+    const config = applyExplicitFacetConstraints(
+      applyPaletteConstraints(
+        applyTypographyConstraints(variantToConfig(v), typographyConstraints),
+        paletteConstraints
+      ),
+      explicitFacetConstraints
+    )
+    const preserved = applyStagePreservation(
+      config,
+      previousPresets[index],
+      requestedChanges
+    )
+    const clamped = clampPresetConfigForV4Preview(preserved)
+    const code = encodePreset(clamped)
     if (seen.has(code)) continue
     seen.add(code)
     presets.push({
       code,
       caption: v.caption.trim() || code,
-      description: buildPresetCardDescription(config),
+      description: buildPresetCardDescription(clamped),
     })
     if (presets.length >= 4) break
   }
@@ -155,6 +186,9 @@ export async function POST(request: Request) {
   }
 
   const modelId = process.env.OPENAI_ASSISTANT_MODEL ?? "gpt-4o-mini"
+  const previousPresets = (parsed.data.previousPresetCodes ?? [])
+    .map((code) => resolvePresetFromCode(code))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
@@ -210,7 +244,7 @@ export async function POST(request: Request) {
     }
 
     if (normalized.phase === "ready") {
-      const ready = encodeReadyPayload(normalized)
+      const ready = encodeReadyPayload(normalized, chatMessages, previousPresets)
       if (ready.presets.length < 1) {
         return NextResponse.json(
           {

@@ -16,7 +16,7 @@ Reference for **how preset discovery should work**: interpret user language, map
 
 ## Vision
 
-1. **Ordinary language → concrete preset fields.** The user says what they want in normal words (e.g. “dark minimal dashboard”). The system **fills in the real preset knobs** — style, shell, colours, fonts, icons, etc. — using **only values the catalog allows**, not a vague paraphrase meant for search.
+1. **Ordinary language → concrete preset fields.** The user says what they want in normal words (e.g. “dark minimal dashboard”). The system **fills in the real preset knobs** — style, menu style/colour, colours, fonts, icons, etc. — using **only values the catalog allows**, not a vague paraphrase meant for search.
 2. **Catalog is ground truth.** Facets map to `**PresetConfig`** (and then `**encodePreset**`). The LLM **selects among supplied enums** (with glosses); **validation + defaults** fill the tuple; **the code is generated from that tuple** — not retrieved by vibes from a vector index.
 3. **Primary outcome: a preset code (and config).** The simple loop: **conversation → facets → `encodePreset` → return result** (one or a few codes if we allow alternates). That is **simpler and truer** to the encoding model than ranking thousands of presets by embedding similarity.
 4. **Facet vocabulary must be taught.** Allowed ids plus short natural‑language glosses per important enum. The model does not invent new facet ids.
@@ -28,7 +28,7 @@ Reference for **how preset discovery should work**: interpret user language, map
 
 | Dimension         | Intent                                                                                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Light / dark**  | Dominantly dark or light surfaces, palette character — reflected in real fields (e.g. neutrals, shell / menu choices), not a vague “dark” string alone. |
+| **Light / dark**  | Dominantly dark or light surfaces, palette character — reflected in real fields (e.g. neutrals, menu style/colour choices), not a vague “dark” string alone. |
 | **Domain / vibe** | “Fintech dashboard,” “minimal,” etc. → **concrete** style, density, font, icon choices from **your** enums.                                             |
 | **Pipeline**      | **natural language → structured intent → full facet tuple → preset code** — not “one paraphrase string for an embedding ranker.”                        |
 

@@ -127,8 +127,10 @@ export function clampPresetConfigForV4Preview(config: PresetConfig): PresetConfi
   }
   const base = baseColor as V4BaseColor
 
-  const { themes: allowedThemes, chartColors: allowedCharts } =
-    getThemeChoicesForBase(base, {})
+  const { themes: allowedThemes } = getThemeChoicesForBase(base, {})
+  const { chartColors: allowedCharts } = getThemeChoicesForBase(base, {
+    chartColor: config.chartColor,
+  })
 
   const themeList = allowedThemes as readonly string[]
   let theme = config.theme
