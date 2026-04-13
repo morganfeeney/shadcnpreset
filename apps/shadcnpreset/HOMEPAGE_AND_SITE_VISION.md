@@ -18,12 +18,14 @@ This document captures **direction** for replacing the current home experience w
 
 ## Information architecture (sketch)
 
-| Route / area        | Purpose |
-| ------------------- | ------- |
-| **`/`**             | Marketing: features, story, carousels, CTAs → assistant + leaderboard. |
-| **`/assistant`**    | Primary **AI** experience (conversational preset generation). |
-| **`/leaderboard`** (name TBD) | **Gallery of preset cards** (current homepage feed behaviour). |
-| **Preset by code**  | Secondary: jump to `/preset/[code]` or lightweight code search—details in implementation. |
+
+| Route / area                  | Purpose                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| `**/`**                       | Marketing: features, story, carousels, CTAs → assistant + leaderboard.                    |
+| `**/assistant**`              | Primary **AI** experience (conversational preset generation).                             |
+| `**/leaderboard`** (name TBD) | **Gallery of preset cards** (current homepage feed behaviour).                            |
+| **Preset by code**            | Secondary: jump to `/preset/[code]` or lightweight code search—details in implementation. |
+
 
 Exact paths (`/leaderboard` vs `/gallery` vs `/presets`) can be decided during build; the doc assumes **one** clear gallery page fed by today’s home feed logic.
 
