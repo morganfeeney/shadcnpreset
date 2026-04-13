@@ -188,7 +188,12 @@ export function AssistantChat() {
       </Sidebar>
 
       <div className="flex-1 pr-2 pb-2">
-        <div className="mx-auto grid h-full w-full content-center gap-6 rounded-lg border px-4 py-6 md:px-6">
+        <div
+          className={cn(
+            "mx-auto grid h-full w-full content-center gap-6 rounded-lg border px-4 py-6 md:px-6",
+            hasInteracted ? "content-between" : "content-center"
+          )}
+        >
           <div
             className={cn(!hasInteracted && "grid items-center justify-center")}
           >
@@ -202,9 +207,9 @@ export function AssistantChat() {
             </div>
 
             {hasInteracted ? (
-              <div className="mx-auto flex min-h-[min(52vh,540px)] w-full max-w-4xl flex-col rounded-2xl transition-all duration-300">
+              <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
                 <Conversation>
-                  <ConversationContent className="gap-4 p-2 md:p-4">
+                  <ConversationContent className="gap-4">
                     {messages.map((m, i) => (
                       <Message from={m.role} key={`${i}-${m.role}`}>
                         <MessageContent>
@@ -228,11 +233,12 @@ export function AssistantChat() {
 
                     {pending ? (
                       <Message from="assistant">
-                        <MessageContent className="w-full max-w-md rounded-lg border border-border/60 bg-muted/20 p-3">
+                        <MessageContent className="w-full rounded-lg">
                           <Shimmer className="text-sm">
                             Generating preset candidates...
                           </Shimmer>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
                             <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
                             <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
                           </div>
@@ -248,7 +254,7 @@ export function AssistantChat() {
 
             {lastTurn?.phase === "gathering" &&
             lastTurn.followUpQuestions.length ? (
-              <div className="mx-auto w-full max-w-4xl space-y-2">
+              <div className="mx-auto w-full max-w-4xl space-y-2 p-4">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Quick replies
                 </p>
