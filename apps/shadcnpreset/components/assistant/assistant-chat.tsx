@@ -14,7 +14,11 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation"
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message"
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message"
 import {
   PromptInput,
   PromptInputBody,
@@ -183,26 +187,22 @@ export function AssistantChat() {
         </SidebarContent>
       </Sidebar>
 
-      <div className="min-h-0 flex-1 bg-background">
-        <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-4 py-6 md:px-6">
+      <div className="flex-1 pr-2 pb-2">
+        <div className="mx-auto grid h-full w-full content-center gap-6 rounded-lg border px-4 py-6 md:px-6">
           <div
-            className={cn(
-              "flex-1 space-y-6",
-              !hasInteracted && "flex flex-col items-center justify-center pb-24"
-            )}
+            className={cn(!hasInteracted && "grid items-center justify-center")}
           >
             <div className={cn("text-center", hasInteracted ? "pt-8" : "pt-0")}>
-              <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-                What do you want to create?
+              <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
+                Describe your ideal shadcn preset
               </h1>
               <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-                Describe your ideal UI preset and I will narrow it down into
-                themed options with live previews.
+                Use natural language, I will help you get what you want.
               </p>
             </div>
 
             {hasInteracted ? (
-              <div className="mx-auto flex w-full max-w-4xl min-h-[min(52vh,540px)] flex-col rounded-2xl border border-border/70 bg-card/30 p-2 transition-all duration-300 md:p-4">
+              <div className="mx-auto flex min-h-[min(52vh,540px)] w-full max-w-4xl flex-col rounded-2xl transition-all duration-300">
                 <Conversation>
                   <ConversationContent className="gap-4 p-2 md:p-4">
                     {messages.map((m, i) => (
@@ -283,20 +283,20 @@ export function AssistantChat() {
           <PromptInput
             onSubmit={onPromptSubmit}
             className={cn(
-              "z-20 mx-auto w-full border border-border/70 bg-background/95 backdrop-blur transition-all duration-300",
-              hasInteracted
-                ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl"
-                : "max-w-2xl rounded-2xl shadow-lg shadow-black/20"
+              "z-20 mx-auto w-full max-w-[690px] transition-all duration-300",
+              hasInteracted ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl" : ""
             )}
           >
             <PromptInputBody>
               <PromptInputTextarea
-              rows={hasInteracted ? 3 : 2}
-              placeholder={hasInteracted ? "Reply to refine..." : "Ask AI to build..."}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={pending}
-              className="min-h-[88px] resize-y"
+                rows={hasInteracted ? 3 : 2}
+                placeholder={
+                  hasInteracted ? "Reply to refine..." : "Ask AI to build..."
+                }
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={pending}
+                className="min-h-[88px] resize-y"
               />
             </PromptInputBody>
             <PromptInputFooter>
