@@ -48,13 +48,7 @@ type ChatMessage = {
 }
 
 export function AssistantChat() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Describe the preset you want—product, mood, dark vs light UI, industry (e.g. fintech dashboard). I may ask a short follow-up; when we’re aligned, you’ll get up to four preset previews here (live theme cards).",
-    },
-  ])
+  const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [input, setInput] = React.useState("")
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -208,7 +202,7 @@ export function AssistantChat() {
             </div>
 
             {hasInteracted ? (
-              <div className="mx-auto flex w-full max-w-4xl min-h-[min(52vh,540px)] flex-col rounded-2xl border border-border/70 bg-card/30 p-2 md:p-4">
+              <div className="mx-auto flex w-full max-w-4xl min-h-[min(52vh,540px)] flex-col rounded-2xl border border-border/70 bg-card/30 p-2 transition-all duration-300 md:p-4">
                 <Conversation>
                   <ConversationContent className="gap-4 p-2 md:p-4">
                     {messages.map((m, i) => (
@@ -234,11 +228,13 @@ export function AssistantChat() {
 
                     {pending ? (
                       <Message from="assistant">
-                        <MessageContent className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                          <Shimmer className="text-sm">Generating preset candidates...</Shimmer>
+                        <MessageContent className="w-full max-w-md rounded-lg border border-border/60 bg-muted/20 p-3">
+                          <Shimmer className="text-sm">
+                            Generating preset candidates...
+                          </Shimmer>
                           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <div className="h-32 rounded-lg border border-border/60 bg-muted/30" />
-                            <div className="h-32 rounded-lg border border-border/60 bg-muted/30" />
+                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
+                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
                           </div>
                         </MessageContent>
                       </Message>
@@ -287,10 +283,10 @@ export function AssistantChat() {
           <PromptInput
             onSubmit={onPromptSubmit}
             className={cn(
-              "z-20 mx-auto w-full border border-border/70 bg-background/95 backdrop-blur",
+              "z-20 mx-auto w-full border border-border/70 bg-background/95 backdrop-blur transition-all duration-300",
               hasInteracted
                 ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl"
-                : "max-w-2xl rounded-2xl"
+                : "max-w-2xl rounded-2xl shadow-lg shadow-black/20"
             )}
           >
             <PromptInputBody>
@@ -300,7 +296,7 @@ export function AssistantChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={pending}
-              className="min-h-[88px] resize-y border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+              className="min-h-[88px] resize-y"
               />
             </PromptInputBody>
             <PromptInputFooter>
