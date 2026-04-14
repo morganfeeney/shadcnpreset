@@ -45,11 +45,22 @@ import {
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { cn } from "@/lib/utils"
 
-type ChatMessage = {
-  role: "user" | "assistant"
-  content: string
-  presets?: Extract<AssistantTurn, { phase: "ready" }>["presets"]
-}
+type ChatMessage =
+  | {
+      role: "user"
+      content: string
+    }
+  | {
+      role: "assistant"
+      content: string
+      kind: "text"
+    }
+  | {
+      role: "assistant"
+      kind: "presets"
+      content: string
+      presets: Extract<AssistantTurn, { phase: "ready" }>["presets"]
+    }
 
 export function AssistantChat() {
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
@@ -78,11 +89,18 @@ export function AssistantChat() {
     setPending(true)
     setLastTurn(null)
 
+    const previousPresetMessage = [...messages]
+      .reverse()
+      .find(
+        (
+          m
+        ): m is Extract<ChatMessage, { role: "assistant"; kind: "presets" }> =>
+          m.role === "assistant" &&
+          m.kind === "presets" &&
+          Boolean(m.presets?.length)
+      )
     const previousPresetCodes =
-      [...messages]
-        .reverse()
-        .find((m) => m.role === "assistant" && m.presets?.length)
-        ?.presets?.map((p) => p.code) ?? []
+      previousPresetMessage?.presets?.map((p) => p.code) ?? []
 
     try {
       const res = await fetch("/api/assistant", {
@@ -116,6 +134,7 @@ export function AssistantChat() {
           ...prev,
           {
             role: "assistant",
+            kind: "presets",
             content: data.assistantMessage,
             presets: data.presets,
           },
@@ -127,7 +146,11 @@ export function AssistantChat() {
       setLastTurn(data)
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.assistantMessage },
+        {
+          role: "assistant",
+          kind: "text",
+          content: data.assistantMessage,
+        },
       ])
     } catch {
       setError("Network error — try again.")
@@ -201,35 +224,60 @@ export function AssistantChat() {
               <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
                 Describe your ideal shadcn preset
               </h1>
-              <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-                Use natural language, I will help you get what you want.
-              </p>
             </div>
 
             {hasInteracted ? (
               <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
                 <Conversation>
                   <ConversationContent className="gap-4">
-                    {messages.map((m, i) => (
-                      <Message from={m.role} key={`${i}-${m.role}`}>
-                        <MessageContent>
-                          <MessageResponse>{m.content}</MessageResponse>
-                          {m.role === "assistant" && m.presets?.length ? (
-                            <ul className="mt-3 grid gap-6 sm:grid-cols-2">
-                              {m.presets.map((p, presetIndex) => (
-                                <li key={`${i}-${presetIndex}-${p.code}`}>
-                                  <PresetIframeCard
-                                    code={p.code}
-                                    title={p.code}
-                                    description={p.description}
-                                  />
-                                </li>
-                              ))}
-                            </ul>
-                          ) : null}
-                        </MessageContent>
-                      </Message>
-                    ))}
+                    {messages.map((m, i) => {
+                      if (m.role === "user") {
+                        return (
+                          <Message from="user" key={`${i}-${m.role}`}>
+                            <MessageContent>
+                              <MessageResponse>{m.content}</MessageResponse>
+                            </MessageContent>
+                          </Message>
+                        )
+                      }
+
+                      switch (m.kind) {
+                        case "presets":
+                          return (
+                            <Message
+                              from="assistant"
+                              key={`${i}-${m.role}`}
+                              className="@container"
+                            >
+                              <MessageContent>
+                                <MessageResponse>{m.content}</MessageResponse>
+                                {m.presets.length ? (
+                                  <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
+                                    {m.presets.map((p, presetIndex) => (
+                                      <li key={`${i}-${presetIndex}-${p.code}`}>
+                                        <PresetIframeCard
+                                          code={p.code}
+                                          title={p.code}
+                                          description={p.description}
+                                        />
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : null}
+                              </MessageContent>
+                            </Message>
+                          )
+                        case "text":
+                        default:
+                          return (
+                            <Message from="assistant" key={`${i}-${m.role}`}>
+                              <MessageContent>
+                                <MessageResponse>{m.content}</MessageResponse>
+                              </MessageContent>
+                            </Message>
+                          )
+                      }
+                    })}
 
                     {pending ? (
                       <Message from="assistant">
