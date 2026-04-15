@@ -213,8 +213,8 @@ export function AssistantChat() {
       <div className="flex-1 md:pr-2">
         <div
           className={cn(
-            "mx-auto grid h-full w-full content-center gap-6 rounded-lg border",
-            hasInteracted ? "content-between" : "content-center"
+            "mx-auto grid h-full w-full content-center rounded-lg border",
+            hasInteracted ? "content-between pt-10" : "content-center"
           )}
         >
           <div>
