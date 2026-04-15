@@ -172,7 +172,7 @@ export function AssistantChat() {
     <SidebarProvider className="min-h-0 flex-1">
       <Sidebar
         collapsible="none"
-        className="hidden border-r border-border/70 md:flex"
+        className="hidden border-r border-border/70 md:sticky md:top-0 md:h-svh md:flex"
       >
         <SidebarContent>
           <SidebarGroup>
