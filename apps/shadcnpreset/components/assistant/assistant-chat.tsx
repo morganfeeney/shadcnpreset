@@ -217,10 +217,10 @@ export function AssistantChat() {
             hasInteracted ? "content-between" : "content-center"
           )}
         >
-          <div
-            className={cn(!hasInteracted && "grid items-center justify-center")}
-          >
-            <div className={cn("text-center", hasInteracted ? "pt-8" : "pt-0")}>
+          <div>
+            <div
+              className={cn("text-center", hasInteracted ? "hidden" : "pt-0")}
+            >
               <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
                 Describe your ideal shadcn preset
               </h1>
@@ -229,7 +229,7 @@ export function AssistantChat() {
             {hasInteracted ? (
               <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
                 <Conversation>
-                  <ConversationContent className="gap-4">
+                  <ConversationContent>
                     {messages.map((m, i) => {
                       if (m.role === "user") {
                         return (
@@ -249,7 +249,7 @@ export function AssistantChat() {
                               key={`${i}-${m.role}`}
                               className="@container"
                             >
-                              <MessageContent>
+                              <MessageContent className="overflow-visible">
                                 <MessageResponse>{m.content}</MessageResponse>
                                 {m.presets.length ? (
                                   <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
