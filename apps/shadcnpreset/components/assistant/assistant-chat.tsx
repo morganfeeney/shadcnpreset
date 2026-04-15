@@ -210,10 +210,10 @@ export function AssistantChat() {
         </SidebarContent>
       </Sidebar>
 
-      <div className="flex-1 pr-2 pb-2">
+      <div className="flex-1 md:pr-2">
         <div
           className={cn(
-            "mx-auto grid h-full w-full content-center gap-6 rounded-lg border px-4 py-6 md:px-6",
+            "mx-auto grid h-full w-full content-center gap-6 rounded-lg border",
             hasInteracted ? "content-between" : "content-center"
           )}
         >
@@ -337,7 +337,7 @@ export function AssistantChat() {
           <PromptInput
             onSubmit={onPromptSubmit}
             className={cn(
-              "z-20 mx-auto w-full max-w-[690px] transition-all duration-300",
+              "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
               hasInteracted ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl" : ""
             )}
           >
