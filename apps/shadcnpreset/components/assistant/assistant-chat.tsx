@@ -338,7 +338,9 @@ export function AssistantChat() {
             onSubmit={onPromptSubmit}
             className={cn(
               "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
-              hasInteracted ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl" : ""
+              hasInteracted
+                ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
+                : ""
             )}
           >
             <PromptInputBody>
