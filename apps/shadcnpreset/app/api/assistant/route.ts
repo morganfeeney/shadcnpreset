@@ -4,6 +4,7 @@ import { encodePreset, type PresetConfig } from "shadcn/preset"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { saveAssistantChatForUser } from "@/lib/assistant-chat-store"
 import { getSessionUser } from "@/lib/auth"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
@@ -25,6 +26,7 @@ import {
 export const maxDuration = 60
 
 const bodySchema = z.object({
+  chatId: z.string().uuid().optional(),
   messages: z
     .array(
       z.object({
@@ -74,6 +76,13 @@ function mapProviderError(err: unknown): {
 } {
   const raw = err instanceof Error ? err.message : String(err)
   const lower = raw.toLowerCase()
+
+  if (lower.includes("unauthorized chat access")) {
+    return {
+      status: 403,
+      body: { code: "assistant_chat_forbidden", error: "Chat access denied." },
+    }
+  }
 
   if (
     lower.includes("exceeded your current quota") ||
@@ -282,10 +291,46 @@ export async function POST(request: Request) {
           { status: 422 }
         )
       }
-      return NextResponse.json(ready)
+      const persistedMessages = [
+        ...chatMessages.map((message) => ({
+          role: message.role,
+          kind: "text" as const,
+          content: message.content,
+        })),
+        {
+          role: "assistant" as const,
+          kind: "presets" as const,
+          content: ready.assistantMessage,
+          presets: ready.presets,
+        },
+      ]
+      const persisted = await saveAssistantChatForUser({
+        user,
+        chatId: parsed.data.chatId,
+        messages: persistedMessages,
+      })
+      return NextResponse.json({ ...ready, chatId: persisted.chatId })
     }
 
-    return NextResponse.json(normalized)
+    const persistedMessages = [
+      ...chatMessages.map((message) => ({
+        role: message.role,
+        kind: "text" as const,
+        content: message.content,
+      })),
+      {
+        role: "assistant" as const,
+        kind: "text" as const,
+        content: normalized.assistantMessage,
+      },
+    ]
+    const persisted = await saveAssistantChatForUser({
+      user,
+      chatId: parsed.data.chatId,
+      messages: persistedMessages,
+    })
+
+    return NextResponse.json({ ...normalized, chatId: persisted.chatId })
   } catch (err) {
     console.error("[api/assistant]", err)
     const { status, body } = mapProviderError(err)

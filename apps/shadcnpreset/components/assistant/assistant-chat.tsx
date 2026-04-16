@@ -2,12 +2,7 @@
 
 import Link from "next/link"
 import * as React from "react"
-import {
-  CompassIcon,
-  HomeIcon,
-  SparklesIcon,
-  WandSparklesIcon,
-} from "lucide-react"
+import { HomeIcon } from "lucide-react"
 
 import {
   Conversation,
@@ -31,6 +26,7 @@ import {
 import { Shimmer } from "@/components/ai-elements/shimmer"
 import { PresetIframeCard } from "@/components/preset-iframe-card"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Sidebar,
   SidebarContent,
@@ -42,166 +38,31 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import {
-  clearPendingAssistantPrompt,
-  readPendingAssistantPrompt,
-  writePendingAssistantPrompt,
-} from "@/lib/pending-assistant-prompt"
-import type { AssistantTurn } from "@/lib/search/assistant/schema"
+import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { cn } from "@/lib/utils"
-import { useAuthStore } from "@/stores/auth-store"
-
-type ChatMessage =
-  | {
-      role: "user"
-      content: string
-    }
-  | {
-      role: "assistant"
-      content: string
-      kind: "text"
-    }
-  | {
-      role: "assistant"
-      kind: "presets"
-      content: string
-      presets: Extract<AssistantTurn, { phase: "ready" }>["presets"]
-    }
 
 export function AssistantChat() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>([])
-  const [input, setInput] = React.useState("")
-  const [pending, setPending] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
-  const authStatus = useAuthStore((state) => state.status)
-  const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
+  const {
+    activeChatId,
+    activeChatQuery,
+    error,
+    hasInteracted,
+    input,
+    lastTurn,
+    messages,
+    onPromptSubmit,
+    pending,
+    recentChatsQuery,
+    sendContent,
+    setActiveChatId,
+    setInput,
+    startNewChat,
+  } = useAssistantChat()
   const bottomRef = React.useRef<HTMLDivElement>(null)
-  const hasInteracted = messages.some((message) => message.role === "user")
-  const requiresAuth = authStatus !== "authenticated"
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, lastTurn, pending])
-
-  React.useEffect(() => {
-    const pendingPrompt = readPendingAssistantPrompt()
-    if (!pendingPrompt) {
-      return
-    }
-    setInput((current) => (current.trim().length ? current : pendingPrompt))
-    clearPendingAssistantPrompt()
-  }, [])
-
-  async function sendContent(text: string) {
-    const trimmed = text.trim()
-    if (!trimmed || pending) return
-
-    const nextMessages: ChatMessage[] = [
-      ...messages,
-      { role: "user", content: trimmed },
-    ]
-    setMessages(nextMessages)
-    setInput("")
-    setError(null)
-    setPending(true)
-    setLastTurn(null)
-
-    const previousPresetMessage = [...messages]
-      .reverse()
-      .find(
-        (
-          m
-        ): m is Extract<ChatMessage, { role: "assistant"; kind: "presets" }> =>
-          m.role === "assistant" &&
-          m.kind === "presets" &&
-          Boolean(m.presets?.length)
-      )
-    const previousPresetCodes =
-      previousPresetMessage?.presets?.map((p) => p.code) ?? []
-
-    try {
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages, previousPresetCodes }),
-      })
-      const raw = await res.text()
-      let parsedData: unknown = {}
-      try {
-        parsedData = raw ? JSON.parse(raw) : {}
-      } catch {
-        parsedData = {}
-      }
-      const data = parsedData as AssistantTurn & {
-        error?: string
-        code?: string
-      }
-
-      if (res.status === 401 && data.code === "auth_required") {
-        setMessages(messages)
-        setInput(trimmed)
-        await ensureAuthenticated()
-        return
-      }
-
-      if (!res.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : `Request failed (${res.status}) — try again.`
-        )
-        return
-      }
-
-      if ("error" in data && typeof data.error === "string") {
-        setError(data.error)
-        return
-      }
-
-      if (!("phase" in data)) {
-        setError("Unexpected response — try again.")
-        return
-      }
-
-      if (data.phase === "ready") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "presets",
-            content: data.assistantMessage,
-            presets: data.presets,
-          },
-        ])
-        setLastTurn(null)
-        return
-      }
-
-      setLastTurn(data)
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          kind: "text",
-          content: data.assistantMessage,
-        },
-      ])
-    } catch {
-      setError("Network error — try again.")
-    } finally {
-      setPending(false)
-    }
-  }
-
-  async function onPromptSubmit(message: PromptInputMessage) {
-    if (requiresAuth) {
-      writePendingAssistantPrompt(message.text)
-      await ensureAuthenticated()
-      return
-    }
-    await sendContent(message.text)
-  }
 
   return (
     <SidebarProvider className="min-h-0 flex-1">
@@ -211,34 +72,45 @@ export function AssistantChat() {
       >
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>New chat</SidebarGroupLabel>
+            <SidebarGroupLabel>Your chats</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton isActive>
-                    <WandSparklesIcon />
-                    AI preset finder
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <SparklesIcon />
-                    Minimal SaaS Landing
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <CompassIcon />
-                    Dashboard explorer
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {!recentChatsQuery.isLoading ? (
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <SidebarMenuItem key={`chat-skeleton-${index}`}>
+                      <SidebarMenuButton disabled>
+                        <Skeleton className="h-4 w-full max-w-[150px]" />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                ) : (recentChatsQuery.data?.length ?? 0) > 0 ? (
+                  (recentChatsQuery.data ?? []).map((chat) => (
+                    <SidebarMenuItem key={chat.id}>
+                      <SidebarMenuButton
+                        isActive={activeChatId === chat.id}
+                        onClick={() => setActiveChatId(chat.id)}
+                        disabled={
+                          pending ||
+                          (activeChatId === chat.id &&
+                            activeChatQuery.isFetching)
+                        }
+                      >
+                        {activeChatId === chat.id &&
+                        activeChatQuery.isFetching ? (
+                          <Skeleton className="h-4 w-full max-w-[140px]" />
+                        ) : (
+                          chat.title
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                ) : (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton disabled>
+                      No saved chats yet
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -370,7 +242,9 @@ export function AssistantChat() {
           </div>
 
           <PromptInput
-            onSubmit={onPromptSubmit}
+            onSubmit={(message: PromptInputMessage) =>
+              onPromptSubmit(message.text)
+            }
             className={cn(
               "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
               hasInteracted
