@@ -42,8 +42,14 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import {
+  clearPendingAssistantPrompt,
+  readPendingAssistantPrompt,
+  writePendingAssistantPrompt,
+} from "@/lib/pending-assistant-prompt"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/auth-store"
 
 type ChatMessage =
   | {
@@ -68,12 +74,24 @@ export function AssistantChat() {
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
+  const authStatus = useAuthStore((state) => state.status)
+  const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const bottomRef = React.useRef<HTMLDivElement>(null)
   const hasInteracted = messages.some((message) => message.role === "user")
+  const requiresAuth = authStatus !== "authenticated"
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, lastTurn, pending])
+
+  React.useEffect(() => {
+    const pendingPrompt = readPendingAssistantPrompt()
+    if (!pendingPrompt) {
+      return
+    }
+    setInput((current) => (current.trim().length ? current : pendingPrompt))
+    clearPendingAssistantPrompt()
+  }, [])
 
   async function sendContent(text: string) {
     const trimmed = text.trim()
@@ -108,7 +126,24 @@ export function AssistantChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages, previousPresetCodes }),
       })
-      const data = (await res.json()) as AssistantTurn & { error?: string }
+      const raw = await res.text()
+      let parsedData: unknown = {}
+      try {
+        parsedData = raw ? JSON.parse(raw) : {}
+      } catch {
+        parsedData = {}
+      }
+      const data = parsedData as AssistantTurn & {
+        error?: string
+        code?: string
+      }
+
+      if (res.status === 401 && data.code === "auth_required") {
+        setMessages(messages)
+        setInput(trimmed)
+        await ensureAuthenticated()
+        return
+      }
 
       if (!res.ok) {
         setError(
@@ -159,12 +194,12 @@ export function AssistantChat() {
     }
   }
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    void sendContent(input)
-  }
-
   async function onPromptSubmit(message: PromptInputMessage) {
+    if (requiresAuth) {
+      writePendingAssistantPrompt(message.text)
+      await ensureAuthenticated()
+      return
+    }
     await sendContent(message.text)
   }
 

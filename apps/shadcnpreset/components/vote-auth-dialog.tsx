@@ -38,7 +38,7 @@ export function VoteAuthDialog({
         <DialogHeader className="text-center">
           <DialogTitle className="text-xl">Sign in to continue</DialogTitle>
           <DialogDescription>
-            Sign in with Google or GitHub to vote and shape the leaderboard.
+            You need to sign in to perform this action.
           </DialogDescription>
         </DialogHeader>
 

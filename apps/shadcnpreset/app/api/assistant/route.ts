@@ -4,6 +4,7 @@ import { encodePreset, type PresetConfig } from "shadcn/preset"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { getSessionUser } from "@/lib/auth"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
@@ -176,6 +177,17 @@ function encodeReadyPayload(
 }
 
 export async function POST(request: Request) {
+  const user = await getSessionUser()
+  if (!user) {
+    return NextResponse.json(
+      {
+        error: "Sign in required to use the assistant.",
+        code: "auth_required",
+      },
+      { status: 401 }
+    )
+  }
+
   if (!process.env.OPENAI_API_KEY?.trim()) {
     return NextResponse.json(
       { error: "OPENAI_API_KEY is not configured." },
