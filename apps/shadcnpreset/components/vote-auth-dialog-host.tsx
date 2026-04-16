@@ -13,18 +13,13 @@ export function VoteAuthDialogHost() {
   const bootstrapSession = useAuthStore((state) => state.bootstrapSession)
   const closeDialog = useAuthStore((state) => state.closeDialog)
   const beginOAuth = useAuthStore((state) => state.beginOAuth)
-  const endOAuth = useAuthStore((state) => state.endOAuth)
 
   useEffect(() => {
     void bootstrapSession()
   }, [bootstrapSession])
 
   async function handleProviderSignIn(provider: "google" | "github") {
-    try {
-      await beginOAuth(provider)
-    } finally {
-      endOAuth()
-    }
+    await beginOAuth(provider)
   }
 
   return (
