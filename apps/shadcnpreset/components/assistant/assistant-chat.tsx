@@ -172,7 +172,7 @@ export function AssistantChat() {
     <SidebarProvider className="min-h-0 flex-1">
       <Sidebar
         collapsible="none"
-        className="hidden border-r border-border/70 md:sticky md:top-0 md:h-svh md:flex"
+        className="hidden border-r border-border/70 md:sticky md:top-0 md:flex md:h-[calc(100svh-64px)]"
       >
         <SidebarContent>
           <SidebarGroup>
@@ -221,7 +221,7 @@ export function AssistantChat() {
             <div
               className={cn("text-center", hasInteracted ? "hidden" : "pt-0")}
             >
-              <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
+              <h1 className="text-[32px] font-semibold tracking-tight text-balance">
                 Describe your ideal shadcn preset
               </h1>
             </div>
@@ -283,7 +283,7 @@ export function AssistantChat() {
                       <Message from="assistant">
                         <MessageContent className="w-full rounded-lg">
                           <Shimmer className="text-sm">
-                            Generating preset candidates...
+                            Generating presets...
                           </Shimmer>
                           <div className="mt-3 grid gap-3 sm:grid-cols-3">
                             <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />

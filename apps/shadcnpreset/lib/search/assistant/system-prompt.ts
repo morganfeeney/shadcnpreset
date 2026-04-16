@@ -83,6 +83,14 @@ The server **deduplicates by encoded preset code**. If two rows produce the **sa
   - **menuColor**: ${join(PRESET_MENU_COLORS)} — use **inverted** or **inverted-translucent** for dark application chrome; **default** / **default-translucent** for light chrome
   - **caption**: one line for the card (max ~12 words)
 
+### Editing semantics for multi-turn tweaks
+- When the conversation is in tweak mode ("make one of them...", "keep X but change Y"), treat the previous result set as the baseline and apply **targeted edits**.
+- Cardinality semantics:
+  - "one of them" / "only one" => exactly one variant should satisfy that new facet.
+  - "at least one" => one or more variants satisfy it.
+  - "all"/"each"/"every" => all variants satisfy it.
+- Preserve unchanged facets from prior stage unless the user explicitly asks to change them.
+
 ### Style hints (rough)
 - **Nova**: balanced product UI; **Maia**: softer / editorial; **Luma**: bold marketing; **Lyra**: minimal / airy; **Mira**: dense information; **Vega**: alternate product shell.
 

@@ -36,6 +36,10 @@ export type ExplicitFacetConstraints = {
   menuTone?: "light" | "dark"
   chartColor?: PresetConfig["chartColor"]
 }
+export type StyleDirective = {
+  mode: "all" | "atLeastOne" | "onlyOne"
+  style: PresetConfig["style"]
+}
 
 const COLOR_WORDS = [...new Set(PRESET_THEMES)] as PresetConfig["theme"][]
 const COLOR_WORDS_REGEX = new RegExp(`\\b(${COLOR_WORDS.join("|")})\\b`)
@@ -219,6 +223,87 @@ export function extractExplicitFacetConstraints(
   }
 
   return out
+}
+
+export function extractStyleDirective(
+  messages: Array<{ role: "user" | "assistant"; content: string }>
+): StyleDirective | null {
+  let latest: StyleDirective | null = null
+  for (const msg of messages) {
+    if (msg.role !== "user") continue
+    const t = msg.content.toLowerCase()
+    const matchedStyle = PRESET_STYLES.find((s) =>
+      new RegExp(`\\b${s}\\b`).test(t)
+    )
+    if (!matchedStyle) continue
+
+    const onlyOneStyle = new RegExp(`\\bonly\\s+one\\s+${matchedStyle}\\b`).test(
+      t
+    )
+    const oneStyle = new RegExp(`\\bone\\s+${matchedStyle}\\b`).test(t)
+    const oneInStyle = new RegExp(`\\bone\\s+in\\s+${matchedStyle}\\b`).test(t)
+    const makeOneStyle = new RegExp(`\\bmake\\s+one\\s+${matchedStyle}\\b`).test(
+      t
+    )
+
+    if (/\bonly one\b/.test(t) || /\bjust one\b/.test(t)) {
+      latest = { mode: "onlyOne", style: matchedStyle }
+      continue
+    }
+    if (onlyOneStyle) {
+      latest = { mode: "onlyOne", style: matchedStyle }
+      continue
+    }
+    if (
+      /\bat least one\b/.test(t) ||
+      /\bone in\b/.test(t) ||
+      /\bincluding one\b/.test(t) ||
+      oneStyle ||
+      oneInStyle ||
+      makeOneStyle
+    ) {
+      latest = { mode: "atLeastOne", style: matchedStyle }
+      continue
+    }
+    if (
+      /\ball\b/.test(t) ||
+      /\beach\b/.test(t) ||
+      /\bevery\b/.test(t) ||
+      /\bmake (them|all)\b/.test(t)
+    ) {
+      latest = { mode: "all", style: matchedStyle }
+      continue
+    }
+  }
+  return latest
+}
+
+export function applyStyleDirective(
+  config: PresetConfig,
+  index: number,
+  previous: PresetConfig | undefined,
+  directive: StyleDirective | null
+): PresetConfig {
+  if (!directive) return config
+
+  if (directive.mode === "all") {
+    return { ...config, style: directive.style }
+  }
+
+  if (directive.mode === "atLeastOne") {
+    if (index === 0) return { ...config, style: directive.style }
+    return config
+  }
+
+  // onlyOne
+  if (index === 0) return { ...config, style: directive.style }
+
+  if (config.style !== directive.style) return config
+  if (previous && previous.style !== directive.style) {
+    return { ...config, style: previous.style }
+  }
+  const fallback = PRESET_STYLES.find((s) => s !== directive.style) ?? config.style
+  return { ...config, style: fallback }
 }
 
 export function applyTypographyConstraints(

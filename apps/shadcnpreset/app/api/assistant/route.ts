@@ -7,13 +7,9 @@ import { z } from "zod"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
-  applyExplicitFacetConstraints,
   applyPaletteConstraints,
-  applyStagePreservation,
   applyTypographyConstraints,
   buildPresetCardDescription,
-  detectRequestedFacetChanges,
-  extractExplicitFacetConstraints,
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
@@ -43,6 +39,32 @@ const bodySchema = z.object({
 function variantToConfig(v: AssistantPresetVariantPayload): PresetConfig {
   const { caption: _c, ...rest } = v
   return clampPresetConfigForV4Preview(rest as PresetConfig)
+}
+
+function buildPreviousPresetContext(previousPresets: PresetConfig[]): string {
+  if (!previousPresets.length) return ""
+  const lines = previousPresets.map((p, i) => {
+    const code = encodePreset(p)
+    return `Variant ${i + 1} (${code}): style=${p.style}, baseColor=${p.baseColor}, theme=${p.theme}, chartColor=${p.chartColor ?? p.theme}, fontHeading=${p.fontHeading}, font=${p.font}, iconLibrary=${p.iconLibrary}, radius=${p.radius}, menuColor=${p.menuColor}, menuAccent=${p.menuAccent}`
+  })
+  return [
+    "Current preset set (latest stage):",
+    ...lines,
+    "When the user asks for edits, treat this as the baseline set.",
+    "Semantics: \"one of them\" => exactly one variant should satisfy the new facet; \"at least one\" => one or more; \"all/each/every\" => all variants.",
+    "Preserve unchanged facets unless explicitly asked to modify them.",
+  ].join("\n")
+}
+
+function presetToVariantPayload(
+  config: PresetConfig,
+  caption: string
+): AssistantPresetVariantPayload {
+  return {
+    ...config,
+    chartColor: config.chartColor ?? config.theme,
+    caption,
+  }
 }
 
 function mapProviderError(err: unknown): {
@@ -118,32 +140,23 @@ function encodeReadyPayload(
   const presets: AssistantReady["presets"] = []
   const typographyConstraints = extractTypographyConstraints(messages)
   const paletteConstraints = extractPaletteConstraints(messages)
-  const explicitFacetConstraints = extractExplicitFacetConstraints(messages)
-  const lastUserText =
-    [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
-  const requestedChanges = detectRequestedFacetChanges(lastUserText)
-  if (paletteConstraints.wantsMonochrome) {
-    // Monochrome is a palette-level override: allow color facets to update
-    // instead of preserving prior vivid values from the previous stage.
-    requestedChanges.baseColor = true
-    requestedChanges.theme = true
-    requestedChanges.chartColor = true
+
+  const variants: AssistantPresetVariantPayload[] = [...normalized.presetVariants]
+  while (variants.length < 4 && previousPresets[variants.length]) {
+    variants.push(
+      presetToVariantPayload(
+        previousPresets[variants.length]!,
+        `Variant ${variants.length + 1}`
+      )
+    )
   }
 
-  for (const [index, v] of normalized.presetVariants.entries()) {
+  for (const v of variants) {
     const config = applyPaletteConstraints(
-      applyExplicitFacetConstraints(
-        applyTypographyConstraints(variantToConfig(v), typographyConstraints),
-        explicitFacetConstraints
-      ),
+      applyTypographyConstraints(variantToConfig(v), typographyConstraints),
       paletteConstraints
     )
-    const preserved = applyStagePreservation(
-      config,
-      previousPresets[index],
-      requestedChanges
-    )
-    const clamped = clampPresetConfigForV4Preview(preserved)
+    const clamped = clampPresetConfigForV4Preview(config)
     const code = encodePreset(clamped)
     if (seen.has(code)) continue
     seen.add(code)
@@ -189,6 +202,7 @@ export async function POST(request: Request) {
   const previousPresets = (parsed.data.previousPresetCodes ?? [])
     .map((code) => resolvePresetFromCode(code))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
+  const previousPresetContext = buildPreviousPresetContext(previousPresets)
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
@@ -204,7 +218,9 @@ export async function POST(request: Request) {
   try {
     const result = await generateText({
       model: openai(modelId),
-      system: buildAssistantSystemPrompt(),
+      system: [buildAssistantSystemPrompt(), previousPresetContext]
+        .filter((s) => s.trim().length > 0)
+        .join("\n\n"),
       messages: chatMessages.map((m) => ({
         role: m.role,
         content: m.content,

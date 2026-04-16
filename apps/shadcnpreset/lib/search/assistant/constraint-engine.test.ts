@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest"
 import type { PresetConfig } from "shadcn/preset"
 
 import {
+  applyStyleDirective,
   applyExplicitFacetConstraints,
   applyPaletteConstraints,
   applyStagePreservation,
   detectRequestedFacetChanges,
+  extractStyleDirective,
   extractExplicitFacetConstraints,
   extractPaletteConstraints,
   extractTypographyConstraints,
@@ -79,6 +81,30 @@ describe("palette/explicit precedence", () => {
       { role: "user", content: "indigo theme amber charts" },
     ])
     expect(explicit.chartColor).toBe("amber")
+  })
+})
+
+describe("style directives", () => {
+  it("parses only-one style directive", () => {
+    const d = extractStyleDirective([
+      { role: "user", content: "only one in Luma" },
+    ])
+    expect(d).toEqual({ mode: "onlyOne", style: "luma" })
+  })
+
+  it("parses 'make one <style>' as atLeastOne", () => {
+    const d = extractStyleDirective([
+      { role: "user", content: "now make one lyra" },
+    ])
+    expect(d).toEqual({ mode: "atLeastOne", style: "lyra" })
+  })
+
+  it("keeps non-target variants non-Luma for only-one directive", () => {
+    const d = { mode: "onlyOne", style: "luma" } as const
+    const first = applyStyleDirective(PREV, 0, PREV, d)
+    const second = applyStyleDirective({ ...PREV, style: "luma" }, 1, PREV, d)
+    expect(first.style).toBe("luma")
+    expect(second.style).toBe("nova")
   })
 })
 
