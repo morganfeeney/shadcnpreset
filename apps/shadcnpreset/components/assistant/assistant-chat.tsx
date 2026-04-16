@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import * as React from "react"
-import { HomeIcon } from "lucide-react"
+import { HomeIcon, SquarePen } from "lucide-react"
 
 import {
   Conversation,
@@ -52,7 +52,8 @@ export function AssistantChat() {
     messages,
     onPromptSubmit,
     pending,
-    recentChatsQuery,
+    recentChats,
+    isLoadingRecentChats,
     sendContent,
     setActiveChatId,
     setInput,
@@ -72,10 +73,26 @@ export function AssistantChat() {
       >
         <SidebarContent>
           <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={!activeChatId}
+                    onClick={startNewChat}
+                    disabled={pending}
+                  >
+                    <SquarePen />
+                    New chat
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
             <SidebarGroupLabel>Your chats</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {!recentChatsQuery.isLoading ? (
+                {isLoadingRecentChats ? (
                   Array.from({ length: 4 }).map((_, index) => (
                     <SidebarMenuItem key={`chat-skeleton-${index}`}>
                       <SidebarMenuButton disabled>
@@ -83,8 +100,8 @@ export function AssistantChat() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))
-                ) : (recentChatsQuery.data?.length ?? 0) > 0 ? (
-                  (recentChatsQuery.data ?? []).map((chat) => (
+                ) : recentChats.length > 0 ? (
+                  recentChats.map((chat) => (
                     <SidebarMenuItem key={chat.id}>
                       <SidebarMenuButton
                         isActive={activeChatId === chat.id}

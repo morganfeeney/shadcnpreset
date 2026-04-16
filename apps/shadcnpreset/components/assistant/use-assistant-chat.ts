@@ -54,22 +54,32 @@ type AssistantSendResponse =
 function hydrateMessages(
   messages: NonNullable<AssistantChatDetailResponse["chat"]>["messages"]
 ): ChatMessage[] {
-  return messages.flatMap((message) => {
+  const hydrated: ChatMessage[] = []
+
+  for (const message of messages) {
     if (message.role === "user") {
-      return [{ role: "user", content: message.content }]
+      hydrated.push({ role: "user", content: message.content })
+      continue
     }
+
     if (message.kind === "presets" && Array.isArray(message.presets)) {
-      return [
-        {
-          role: "assistant",
-          kind: "presets",
-          content: message.content,
-          presets: message.presets,
-        },
-      ]
+      hydrated.push({
+        role: "assistant",
+        kind: "presets",
+        content: message.content,
+        presets: message.presets,
+      })
+      continue
     }
-    return [{ role: "assistant", kind: "text", content: message.content }]
-  })
+
+    hydrated.push({
+      role: "assistant",
+      kind: "text",
+      content: message.content,
+    })
+  }
+
+  return hydrated
 }
 
 export function useAssistantChat() {
@@ -86,7 +96,7 @@ export function useAssistantChat() {
   const hasInteracted = messages.some((message) => message.role === "user")
   const requiresAuth = authStatus !== "authenticated"
 
-  const recentChatsQuery = useQuery({
+  const recentChatsQuery = useQuery<AssistantChatListItem[], Error>({
     queryKey: ["assistantChats", authStatus],
     enabled: authStatus === "authenticated",
     queryFn: async (): Promise<AssistantChatListItem[]> => {
@@ -101,7 +111,10 @@ export function useAssistantChat() {
     },
   })
 
-  const activeChatQuery = useQuery({
+  const activeChatQuery = useQuery<
+    AssistantChatDetailResponse["chat"],
+    Error
+  >({
     queryKey: ["assistantChat", activeChatId],
     enabled: authStatus === "authenticated" && Boolean(activeChatId),
     queryFn: async (): Promise<AssistantChatDetailResponse["chat"]> => {
@@ -113,6 +126,9 @@ export function useAssistantChat() {
       return payload.chat
     },
   })
+
+  const recentChats = recentChatsQuery.data ?? []
+  const isLoadingRecentChats = recentChatsQuery.isLoading
 
   React.useEffect(() => {
     const pendingPrompt = readPendingAssistantPrompt()
@@ -147,7 +163,25 @@ export function useAssistantChat() {
     setError(null)
   }, [activeChatQuery.data])
 
-  const sendMutation = useMutation({
+  type SendVars = {
+    trimmed: string
+    nextMessages: ChatMessage[]
+    previousPresetCodes: string[]
+    chatId: string | null
+  }
+
+  type SendData = {
+    response: Response
+    data: AssistantSendResponse
+    args: SendVars
+  }
+
+  type SendContext = {
+    previousMessages: ChatMessage[]
+    previousInput: string
+  }
+
+  const sendMutation = useMutation<SendData, Error, SendVars, SendContext>({
     mutationFn: async (args: {
       trimmed: string
       nextMessages: ChatMessage[]
@@ -181,7 +215,7 @@ export function useAssistantChat() {
       setMessages(args.nextMessages)
       return { previousMessages, previousInput: input }
     },
-    onSuccess: async ({ response, data, args }, context) => {
+    onSuccess: async ({ response, data, args }, _variables, context) => {
       if (
         response.status === 401 &&
         "code" in data &&
@@ -307,7 +341,8 @@ export function useAssistantChat() {
     lastTurn,
     messages,
     pending,
-    recentChatsQuery,
+    recentChats,
+    isLoadingRecentChats,
     setActiveChatId,
     setInput,
     sendContent,
