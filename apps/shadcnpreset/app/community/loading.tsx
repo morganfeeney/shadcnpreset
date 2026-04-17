@@ -1,5 +1,5 @@
-import { HomeLoadingState } from "@/components/home-loading-state"
+import { CardListSkeleton } from "@/components/card-list-skeleton"
 
 export default function HomeLoading() {
-  return <HomeLoadingState />
+  return <CardListSkeleton />
 }
