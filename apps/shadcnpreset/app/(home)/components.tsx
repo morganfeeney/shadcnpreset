@@ -155,7 +155,7 @@ export function HomePresetCarousel({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="carousel-scroll scrollbar-none absolute inset-0 z-[35] flex touch-pan-x snap-x snap-mandatory overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="carousel-scroll scrollbar-none absolute inset-0 z-[35] flex snap-x snap-mandatory overflow-x-hidden overscroll-x-contain lg:overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="shrink-0" style={spacerStyle} />
         {snapSlots.map((slotIndex) => (
@@ -189,9 +189,7 @@ export function HomePresetCarousel({
             <div
               className={cn(
                 "h-full",
-                isActive
-                  ? "pointer-events-auto touch-pan-x"
-                  : "pointer-events-none"
+                isActive ? "pointer-events-auto" : "pointer-events-none"
               )}
             >
               <PresetIframeCard
