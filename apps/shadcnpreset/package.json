@@ -20,7 +20,7 @@
     "@ai-sdk/react": "^3.0.160",
     "@base-ui/react": "1.1.0",
     "@hugeicons/core-free-icons": "^1.2.1",
-    "@hugeicons/react": "^1.1.1",
+    "@hugeicons/react": "^1.1.6",
     "@next/third-parties": "^16.2.2",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
