@@ -1,8 +1,10 @@
 import { HomeHero } from "@/components/home-hero"
-import { DefaultLayout } from "@/components/default-layout"
 import { HomeHeroButtons, HomePresetCarousel } from "@/app/(home)/components"
 import { Features1 } from "@/components/zippystarter/features1"
 import { getHomepageFeed } from "@/lib/preset-feed"
+import { Header1 } from "@/components/zippystarter/header1"
+import { Footer1 } from "@/components/zippystarter/footer1"
+import { ContainerOuter } from "@/components/zippystarter/container"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -18,12 +20,14 @@ export default async function HomePage() {
   const featuredPresets = await getHomepageFeed(8)
 
   return (
-    <DefaultLayout>
+    <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
+      <Header1 />
       <HomeHero>
         <HomeHeroButtons />
       </HomeHero>
       <section className="py-8">
         <HomePresetCarousel
+          className="mx-safe max-w-400"
           items={featuredPresets.map((item) => ({
             code: item.code,
             title: item.code,
@@ -32,6 +36,7 @@ export default async function HomePage() {
         />
       </section>
       <Features1 />
-    </DefaultLayout>
+      <Footer1 />
+    </ContainerOuter>
   )
 }

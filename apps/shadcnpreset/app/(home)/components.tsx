@@ -50,7 +50,8 @@ function getWrappedDistance(index: number, activeIndex: number, total: number) {
 
 function getCardStyle(distanceFromActive: number): CSSProperties {
   const absDistance = Math.abs(distanceFromActive)
-  const direction = distanceFromActive === 0 ? 0 : distanceFromActive > 0 ? 1 : -1
+  const direction =
+    distanceFromActive === 0 ? 0 : distanceFromActive > 0 ? 1 : -1
   const limitedDistance = Math.min(absDistance, 4)
   const translateX = direction * limitedDistance * SIDE_OFFSET
   const rotateY = direction * Math.min(absDistance * 10, 28)
@@ -67,7 +68,13 @@ function getCardStyle(distanceFromActive: number): CSSProperties {
   }
 }
 
-export function HomePresetCarousel({ items }: { items: HomePresetCarouselItem[] }) {
+export function HomePresetCarousel({
+  items,
+  className,
+}: {
+  items: HomePresetCarouselItem[]
+  className?: string
+}) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
   const [activeVirtualIndex, setActiveVirtualIndex] = useState(() =>
@@ -139,13 +146,16 @@ export function HomePresetCarousel({ items }: { items: HomePresetCarouselItem[] 
 
   return (
     <div
-      className="relative mx-auto flex h-[380px] items-center justify-center lg:h-[430px]"
+      className={cn(
+        "relative mx-auto flex h-[380px] max-w-full items-center justify-center overflow-hidden lg:h-[430px]",
+        className
+      )}
       style={{ perspective: "1050px" }}
     >
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="carousel-scroll scrollbar-none absolute inset-0 z-[35] flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain"
+        className="carousel-scroll scrollbar-none absolute inset-0 z-[35] flex touch-pan-x snap-x snap-mandatory overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="shrink-0" style={spacerStyle} />
         {snapSlots.map((slotIndex) => (
@@ -179,7 +189,9 @@ export function HomePresetCarousel({ items }: { items: HomePresetCarouselItem[] 
             <div
               className={cn(
                 "h-full",
-                isActive ? "pointer-events-auto" : "pointer-events-none"
+                isActive
+                  ? "pointer-events-auto touch-pan-x"
+                  : "pointer-events-none"
               )}
             >
               <PresetIframeCard
