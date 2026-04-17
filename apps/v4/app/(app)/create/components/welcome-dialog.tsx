@@ -20,8 +20,7 @@ const STORAGE_KEY = "shadcn-create-welcome-dialog"
 export function WelcomeDialog() {
   const searchParams = useSearchParams()
   const embed =
-    searchParams.get("embed") === "1" ||
-    searchParams.get("embed") === "true"
+    searchParams.get("embed") === "1" || searchParams.get("embed") === "true"
   const [isOpen, setIsOpen] = React.useState(false)
 
   React.useEffect(() => {
