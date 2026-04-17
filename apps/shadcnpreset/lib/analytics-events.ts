@@ -18,6 +18,12 @@ function gaEvent(eventName: string, params?: Record<string, string | number>) {
   sendGAEvent("event", eventName, params ?? {})
 }
 
+type AiAssistantIntent =
+  | "preset_discovery"
+  | "preset_refinement"
+  | "troubleshooting"
+  | "other"
+
 export function trackSearchSubmit(args: {
   pagePath: string
   mode: "code" | "smart"
@@ -37,6 +43,58 @@ export function trackSearchSubmit(args: {
 export function trackAiSearchAssistant(args: { pagePath: string }) {
   gaEvent("ai_search_assistant", {
     page_path: args.pagePath,
+  })
+}
+
+export function trackAiAssistantOpen(args: { pagePath: string }) {
+  gaEvent("ai_assistant_open", {
+    page_path: args.pagePath,
+  })
+}
+
+export function trackAiAssistantPromptSubmit(args: {
+  pagePath: string
+  promptLength: number
+  intent?: AiAssistantIntent
+}) {
+  gaEvent("ai_assistant_prompt_submit", {
+    page_path: args.pagePath,
+    prompt_length: args.promptLength,
+    ...(args.intent ? { intent: args.intent } : {}),
+  })
+}
+
+export function trackAiAssistantResponseSuccess(args: {
+  pagePath: string
+  latencyMs: number
+}) {
+  gaEvent("ai_assistant_response_success", {
+    page_path: args.pagePath,
+    latency_ms: args.latencyMs,
+  })
+}
+
+export function trackAiAssistantResponseError(args: {
+  pagePath: string
+  latencyMs?: number
+  errorType: string
+}) {
+  gaEvent("ai_assistant_response_error", {
+    page_path: args.pagePath,
+    ...(typeof args.latencyMs === "number" ? { latency_ms: args.latencyMs } : {}),
+    error_type: args.errorType,
+  })
+}
+
+export function trackAiAssistantResultClick(args: {
+  pagePath: string
+  resultType: "preset" | "link" | "action"
+  targetId?: string
+}) {
+  gaEvent("ai_assistant_result_click", {
+    page_path: args.pagePath,
+    result_type: args.resultType,
+    ...(args.targetId ? { target_id: args.targetId } : {}),
   })
 }
 

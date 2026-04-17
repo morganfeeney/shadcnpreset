@@ -2,12 +2,18 @@
 
 import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { usePathname } from "next/navigation"
 
 import {
   clearPendingAssistantPrompt,
   readPendingAssistantPrompt,
   writePendingAssistantPrompt,
 } from "@/lib/pending-assistant-prompt"
+import {
+  trackAiAssistantPromptSubmit,
+  trackAiAssistantResponseError,
+  trackAiAssistantResponseSuccess,
+} from "@/lib/analytics-events"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -83,6 +89,7 @@ function hydrateMessages(
 }
 
 export function useAssistantChat() {
+  const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [input, setInput] = React.useState("")
   const [pending, setPending] = React.useState(false)
@@ -179,6 +186,7 @@ export function useAssistantChat() {
   type SendContext = {
     previousMessages: ChatMessage[]
     previousInput: string
+    requestStartedAt: number
   }
 
   const sendMutation = useMutation<SendData, Error, SendVars, SendContext>({
@@ -213,9 +221,12 @@ export function useAssistantChat() {
       setInput("")
       const previousMessages = messages
       setMessages(args.nextMessages)
-      return { previousMessages, previousInput: input }
+      return { previousMessages, previousInput: input, requestStartedAt: Date.now() }
     },
     onSuccess: async ({ response, data, args }, _variables, context) => {
+      const latencyMs = context
+        ? Math.max(0, Date.now() - context.requestStartedAt)
+        : 0
       if (
         response.status === 401 &&
         "code" in data &&
@@ -228,6 +239,11 @@ export function useAssistantChat() {
       }
 
       if (!response.ok) {
+        trackAiAssistantResponseError({
+          pagePath: pathname,
+          latencyMs,
+          errorType: `http_${response.status}`,
+        })
         setMessages(context?.previousMessages ?? [])
         setInput(args.trimmed)
         setError(
@@ -239,11 +255,17 @@ export function useAssistantChat() {
       }
 
       if (!("phase" in data)) {
+        trackAiAssistantResponseError({
+          pagePath: pathname,
+          latencyMs,
+          errorType: "unexpected_payload",
+        })
         setMessages(context?.previousMessages ?? [])
         setInput(args.trimmed)
         setError("Unexpected response — try again.")
         return
       }
+      trackAiAssistantResponseSuccess({ pagePath: pathname, latencyMs })
 
       if (typeof data.chatId === "string") {
         setActiveChatId(data.chatId)
@@ -278,6 +300,14 @@ export function useAssistantChat() {
       ])
     },
     onError: (_error, _vars, context) => {
+      const latencyMs = context
+        ? Math.max(0, Date.now() - context.requestStartedAt)
+        : undefined
+      trackAiAssistantResponseError({
+        pagePath: pathname,
+        latencyMs,
+        errorType: "network_error",
+      })
       setMessages(context?.previousMessages ?? [])
       setInput(context?.previousInput ?? "")
       setError("Network error — try again.")
@@ -290,6 +320,12 @@ export function useAssistantChat() {
   async function sendContent(text: string) {
     const trimmed = text.trim()
     if (!trimmed || pending) return
+    const hasPreviousUserMessage = messages.some((message) => message.role === "user")
+    trackAiAssistantPromptSubmit({
+      pagePath: pathname,
+      promptLength: trimmed.length,
+      intent: hasPreviousUserMessage ? "preset_refinement" : "preset_discovery",
+    })
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }]
     const previousPresetMessage = [...messages]

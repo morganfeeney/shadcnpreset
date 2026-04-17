@@ -14,6 +14,7 @@ import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
+  trackAiAssistantResultClick,
   trackPresetEditClick,
   trackPresetPreview,
   trackPresetVoteClick,
@@ -105,17 +106,40 @@ export function PresetIframeCard({
     }
   )
 
+  const isAssistantSurface = pathname.startsWith("/assistant")
+
   function handlePreview() {
     trackPresetPreview({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "action",
+        targetId: `preview:${code}`,
+      })
+    }
     setPreviewOpen(true)
   }
 
   function handleEditNavigate() {
     trackPresetEditClick({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "preset",
+        targetId: code,
+      })
+    }
   }
 
   function handleVoteClick() {
     trackPresetVoteClick({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "action",
+        targetId: `vote:${code}`,
+      })
+    }
     void toggleVote()
   }
 

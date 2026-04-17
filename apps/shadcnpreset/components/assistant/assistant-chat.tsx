@@ -39,6 +39,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
+import { trackAiAssistantOpen } from "@/lib/analytics-events"
 import { cn } from "@/lib/utils"
 
 export function AssistantChat() {
@@ -64,6 +65,10 @@ export function AssistantChat() {
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, lastTurn, pending])
+
+  React.useEffect(() => {
+    trackAiAssistantOpen({ pagePath: "/assistant" })
+  }, [])
 
   return (
     <SidebarProvider className="min-h-0 flex-1">
