@@ -1,5 +1,15 @@
 import { ReactNode } from "react"
-import { CodeXml, FrameIcon, HistoryIcon, LucideIcon } from "lucide-react"
+import {
+  CodeXml,
+  FrameIcon,
+  HistoryIcon,
+  LucideIcon,
+  LucideBrainCog,
+  Paintbrush2,
+  Edit3Icon,
+  Bookmark,
+  Heart,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Container } from "@/components/zippystarter/container"
@@ -11,38 +21,54 @@ interface Features1Props {
   description: string
   icon: LucideIcon
 }
-
 const FEATURES: Features1Props[] = [
   {
-    title: "Bespoke UI Templates",
+    title: "AI-driven results",
     description:
-      "Pre-built, production-ready templates that adapt to your style and stack — no pixel-pushing required.",
-    icon: CodeXml,
+      "Describe what you want in plain English. Get relevant shadcn presets you can compare instantly.",
+    icon: LucideBrainCog,
   },
   {
-    title: "Content-Filled Mockups",
+    title: "Search by vibe or intent",
     description:
-      "Auto-generate rich, real-feeling content and data for your UI so your designs never feel half-finished.",
+      "Go beyond keywords. Find presets by feel—clean, bold, minimal, or anything in between.",
     icon: FrameIcon,
   },
   {
-    title: "Fast Frontend Scaffolding",
+    title: "Your results, saved",
     description:
-      "Generate clean, structured code with built-in responsiveness and accessibility — no boilerplate bloat.",
+      "Every conversation is saved automatically, so you can revisit, compare, and refine without starting over.",
+    icon: Bookmark,
+  },
+  {
+    title: "Refine with AI",
+    description:
+      "Tweak your results by adjusting the prompt. Narrow down styles, layouts, or components in seconds.",
+    icon: Paintbrush2,
+  },
+  {
+    title: "Built on real presets",
+    description:
+      "No fake outputs. Every result is based on actual shadcn presets you can preview and use.",
     icon: HistoryIcon,
   },
+  {
+    title: "Community presets",
+    description:
+      "Explore presets voted for by the community. Find inspiration, remix presets, and share your own.",
+    icon: Heart,
+  },
 ]
-
 function Feature({ title, description, icon }: Features1Props) {
   const Icon = icon
   return (
-    <Card className="gap-4 rounded-3xl shadow-none">
+    <Card>
       <CardHeader className="gap-4">
-        <Icon className="size-8 text-primary" />
-        <p className="text-xl font-display tracking-tight">{title}</p>
+        {Icon ? <Icon className="size-6 text-primary" /> : null}
+        <p className="text-xl font-display tracking-tighter">{title}</p>
       </CardHeader>
       <CardContent>
-        <p className="text-base text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   )
@@ -59,25 +85,25 @@ interface Features11Props {
 export function Features1({
   title = (
     <p className="text-3xl font-display tracking-tight">
-      Features that{" "}
+      Powerful tools for{" "}
       <span className="inline-flex -skew-x-[12deg] transform text-primary">
-        really
+        total
       </span>{" "}
-      work
+      control
     </p>
   ),
   badge = "features",
-  description = "Deepsmart gives you the kind of templates and tools that just work — no bloat, no filler, no waiting for design inspiration to strike. Try it today!",
+  description = "Something about the features here",
   features = FEATURES,
   className,
 }: Features11Props) {
   return (
     <Container
-      className="mx-auto grid max-w-7xl grid-cols-2 items-start gap-8 py-16 md:py-24"
+      className="mx-auto grid max-w-7xl items-start gap-8 py-16 md:py-24 xl:grid-cols-2"
       wrapperClassName={className}
     >
-      <div className="grid gap-4">
-        <Badge variant="outline" className="rounded-full">
+      <div className="sticky top-8 grid gap-4">
+        <Badge variant="secondary" className="rounded-full">
           {badge}
         </Badge>
         {title}
@@ -90,9 +116,7 @@ export function Features1({
           <div className="grid gap-4 @2xl:grid-cols-2">
             {features.map((feature) => (
               <FadeIn key={feature.title} className="grid">
-                <Link href="#" className="grid">
-                  <Feature {...feature} />
-                </Link>
+                <Feature {...feature} />
               </FadeIn>
             ))}
           </div>
