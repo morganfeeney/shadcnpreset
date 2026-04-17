@@ -20,7 +20,6 @@ import {
 } from "@/app/(app)/create/lib/api"
 import { ThemeModeListener } from "@/app/(create)/components/theme-mode-listener"
 
-
 export const revalidate = false
 export const dynamic = "force-static"
 export const dynamicParams = false

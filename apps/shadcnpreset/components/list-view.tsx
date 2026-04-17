@@ -95,7 +95,7 @@ export function ListView({
 
   return (
     <section>
-      <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {visibleItems.map((item) => (
           <li key={item.code}>
             <PresetIframeCard

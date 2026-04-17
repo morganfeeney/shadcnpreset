@@ -22,7 +22,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const { getSearchPageData } = await import("../lib/search-data")
+const { getSearchPageData } = await import("../lib/search/data")
 
 const argv = process.argv.slice(2).filter((arg) => arg !== "--")
 const query = argv.join(" ").trim() || "hugeicons pink"

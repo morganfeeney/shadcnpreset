@@ -38,3 +38,6 @@ next-env.d.ts
 
 # local app data
 .data/
+
+# generated semantic index (run `pnpm generate:preset-embeddings`)
+data/preset-embeddings.json

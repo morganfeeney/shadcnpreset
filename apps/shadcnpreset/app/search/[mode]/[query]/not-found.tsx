@@ -3,12 +3,12 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
-import { SMART_SEARCH_SUGGESTIONS } from "@/lib/search-suggestions"
+import { SMART_SEARCH_SUGGESTIONS } from "@/lib/search/suggestions"
 import {
   buildHomeNewSearchHref,
   buildSearchHref,
   decodeSearchQuerySegment,
-} from "@/lib/search-route"
+} from "@/lib/search/route"
 import {
   Empty,
   EmptyContent,
@@ -54,8 +54,7 @@ export default function QueryNotFound() {
             <Link href={buildHomeNewSearchHref("smart")}>
               start a new search
             </Link>
-            , or explore
-            one of these example searches.
+            , or explore one of these example searches.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>

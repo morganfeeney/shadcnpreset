@@ -110,6 +110,10 @@ async function buildSearchCorpusFresh(): Promise<PresetPageItem[]> {
     addVariantPage(byCode, { font }, 12, SEARCH_CORPUS_LIMIT)
   }
 
+  for (const menuColor of PRESET_FILTER_OPTIONS.menuColors) {
+    addVariantPage(byCode, { menuColor }, 14, SEARCH_CORPUS_LIMIT)
+  }
+
   return [...byCode.values()].map((item, index) => ({
     ...item,
     index,

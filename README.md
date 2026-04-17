@@ -21,7 +21,7 @@ customizer stay in lockstep.
 | You get                         | What that means                                                                                                                                                                                                                                                            |
 |---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Real previews**               | Not screenshots—an embedded v4 **create** experience so you see *your* components under *that* theme.                                                                                                                                                                      |
-| **Smart search**                | Type “minimal dark”, “dashboard saas”, “serif green”—facet-aware parsing + full-text ranking + diversity so results feel like a curated gallery.                                                                                                                           |
+| **Smart search**                | Type “minimal dark”, “dashboard saas”, “serif green”—facet-aware parsing + **embedding similarity** (when configured) + heuristics + diversity so results feel like a curated gallery.                                                                                      |
 | **Shareable presets**           | Every preset has a link, rich **Open Graph** cards (dynamic 1200×630 art with swatches + code), and metadata that stays correct when the live preset changes.                                                                                                              |
 | **Community signal**            | Vote for presets you’d actually ship; the homepage feed surfaces **what people love** first—see [`VOTE_FEED_ORDERING.md`](./apps/shadcnpreset/VOTE_FEED_ORDERING.md).                                                                                                      |
 | **Your shortlist**              | Signed-in users get **My presets**—one place for every preset you’ve hearted, ready to reopen or share.                                                                                                                                                                    |
@@ -32,9 +32,10 @@ customizer stay in lockstep.
 ### Search
 
 - **Preset code** — Jump straight in with a code (e.g. `b4aRK5K0fb`).
-- **Smart search** — Natural language + [MiniSearch](https://github.com/lucaong/minisearch) lexical scores + structured
-  facets (colours, typography, icons, radius, themes, …) + MMR-style diversity. Suggested queries on empty states nudge
-  discovery.
+- **Smart search** — Structured facets + hand-tuned scoring + MMR diversity; **semantic
+  relevance** uses a **precomputed embedding file** (`pnpm generate:preset-embeddings` in
+  `apps/shadcnpreset`) plus **one query embedding per search** (needs `OPENAI_API_KEY`), so
+  browse stays fast without embedding the whole corpus on every request.
 
 Details: [`apps/shadcnpreset/SEARCH_PERFORMANCE_NOTES.md`](./apps/shadcnpreset/SEARCH_PERFORMANCE_NOTES.md).
 

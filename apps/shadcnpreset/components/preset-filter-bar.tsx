@@ -21,7 +21,6 @@ import type { PresetFilters } from "@/lib/preset-catalog"
 import { BASE_COLORS } from "@/registry/base-colors"
 import { THEMES } from "@/registry/themes"
 
-
 type PresetFilterBarProps = {
   filters: PresetFilters
   pageSize: number
@@ -63,7 +62,9 @@ const BASE_COLOR_SWATCHES = Object.fromEntries(
   ])
 ) as Record<string, string | undefined>
 
-const BASE_COLOR_NAME_SET = new Set<string>(BASE_COLORS.map((color) => color.name))
+const BASE_COLOR_NAME_SET = new Set<string>(
+  BASE_COLORS.map((color) => color.name)
+)
 
 function toLocalFilters(filters: PresetFilters): LocalFilters {
   return {
@@ -111,7 +112,9 @@ function FilterPicker({
       <PickerTrigger className="w-full text-left">
         <span className="create-picker-label">{label}</span>
         <span className="create-picker-value-row">
-          <span className="create-picker-value">{formatPickerValue(value)}</span>
+          <span className="create-picker-value">
+            {formatPickerValue(value)}
+          </span>
           {indicator ? (
             <span aria-hidden="true" className="create-picker-indicator">
               {indicator}
@@ -145,7 +148,11 @@ function FilterPicker({
         <PickerRadioGroup value={value} onValueChange={onValueChange}>
           <PickerGroup>
             {options.map((option) => (
-              <PickerRadioItem key={option} value={option} closeOnClick={isMobile}>
+              <PickerRadioItem
+                key={option}
+                value={option}
+                closeOnClick={isMobile}
+              >
                 {formatPickerValue(option)}
               </PickerRadioItem>
             ))}
@@ -177,7 +184,10 @@ export function PresetFilterBar({
   const themeOptions = React.useMemo(
     () =>
       options.themes.filter(
-        (theme) => !options.baseColors.includes(theme as (typeof options.baseColors)[number])
+        (theme) =>
+          !options.baseColors.includes(
+            theme as (typeof options.baseColors)[number]
+          )
       ),
     [options]
   )
@@ -207,14 +217,17 @@ export function PresetFilterBar({
     if (localFilters.chartColor === "all") {
       return undefined
     }
-    const chartTheme = THEMES.find((item) => item.name === localFilters.chartColor)
+    const chartTheme = THEMES.find(
+      (item) => item.name === localFilters.chartColor
+    )
     if (!chartTheme) {
       return undefined
     }
     return BASE_COLOR_NAME_SET.has(localFilters.chartColor)
       ? (chartTheme.cssVars?.dark?.["muted-foreground"] ??
           chartTheme.cssVars?.light?.["muted-foreground"])
-      : (chartTheme.cssVars?.dark?.primary ?? chartTheme.cssVars?.light?.primary)
+      : (chartTheme.cssVars?.dark?.primary ??
+          chartTheme.cssVars?.light?.primary)
   }, [localFilters.chartColor])
 
   function updateFilter<K extends keyof LocalFilters>(
@@ -384,7 +397,9 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Heading"
             indicator={<span className="indicator-aa">Aa</span>}
-            onValueChange={(value) => updateFilterAndApply("fontHeading", value)}
+            onValueChange={(value) =>
+              updateFilterAndApply("fontHeading", value)
+            }
             options={["all", ...options.fontHeadings]}
             value={localFilters.fontHeading}
           />
@@ -403,7 +418,9 @@ export function PresetFilterBar({
             isMobile={isMobile}
             label="Icon Library"
             indicator={<span className="indicator-swirl">◌</span>}
-            onValueChange={(value) => updateFilterAndApply("iconLibrary", value)}
+            onValueChange={(value) =>
+              updateFilterAndApply("iconLibrary", value)
+            }
             options={["all", ...options.iconLibraries]}
             value={localFilters.iconLibrary}
           />

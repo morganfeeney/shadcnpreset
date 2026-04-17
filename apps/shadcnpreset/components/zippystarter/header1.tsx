@@ -24,8 +24,10 @@ import { GitHubLink } from "@/components/github-link"
 import { UserMenu } from "@/components/user-menu"
 
 const HEADER_LINKS = [
+  { href: "/assistant", label: "AI Assistant" },
+  { href: "/community", label: "Community" },
+  { href: "/my-presets", label: "My Presets" },
   { href: "https://x.com/morganfeeney", label: "Contact" },
-  { href: "/my-presets", label: "My presets" },
 ]
 
 const isPathActive = (pathname: string, href: string) => {
@@ -60,7 +62,7 @@ function NavItemDesktop({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 hover:text-header-foreground relative inline-grid h-8 items-center text-sm font-medium transition",
+        "relative inline-grid h-8 items-center text-sm font-medium text-header-foreground/60 transition hover:text-header-foreground",
         {
           "text-header-foreground": isActive,
         }
@@ -77,7 +79,7 @@ function NavItemMobile({ isActive, href, children }: NavItemProps) {
   return (
     <Link
       className={cn(
-        "text-header-foreground/60 hover:text-header-foreground inline-grid h-10 items-center px-4 py-2 text-sm font-medium transition",
+        "inline-grid h-10 items-center px-4 py-2 text-sm font-medium text-header-foreground/60 transition hover:text-header-foreground",
         {
           "text-foreground": isActive,
         }

@@ -14,6 +14,7 @@ import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
+  trackAiAssistantResultClick,
   trackPresetEditClick,
   trackPresetPreview,
   trackPresetVoteClick,
@@ -105,17 +106,40 @@ export function PresetIframeCard({
     }
   )
 
+  const isAssistantSurface = pathname.startsWith("/assistant")
+
   function handlePreview() {
     trackPresetPreview({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "action",
+        targetId: `preview:${code}`,
+      })
+    }
     setPreviewOpen(true)
   }
 
   function handleEditNavigate() {
     trackPresetEditClick({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "preset",
+        targetId: code,
+      })
+    }
   }
 
   function handleVoteClick() {
     trackPresetVoteClick({ pagePath: pathname, presetCode: code })
+    if (isAssistantSurface) {
+      trackAiAssistantResultClick({
+        pagePath: pathname,
+        resultType: "action",
+        targetId: `vote:${code}`,
+      })
+    }
     void toggleVote()
   }
 
@@ -123,7 +147,7 @@ export function PresetIframeCard({
     <Card className="gap-0 pt-0">
       <div
         ref={wrapperRef}
-        className="group relative w-full overflow-hidden"
+        className="relative w-full overflow-hidden"
         style={{ aspectRatio: `${virtualWidth} / ${virtualHeight}` }}
       >
         {canRenderIframe ? (
@@ -157,9 +181,9 @@ export function PresetIframeCard({
             <div className="absolute inset-0">
               <div
                 aria-hidden
-                className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 [@media(hover:none)]:hidden"
+                className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100 [@media(hover:none)]:hidden"
               />
-              <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover:visible [@media(hover:none)]:hidden">
+              <div className="invisible absolute inset-0 z-10 grid place-content-center gap-2 group-hover/card:visible [@media(hover:none)]:hidden">
                 <Button type="button" onClick={handlePreview}>
                   Preview
                 </Button>

@@ -51,8 +51,31 @@ async function ensureDbInitialized() {
         PRIMARY KEY (user_id, preset_code)
       );
 
+      CREATE TABLE IF NOT EXISTS assistant_chats (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        created_at BIGINT NOT NULL,
+        updated_at BIGINT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS assistant_chat_messages (
+        id BIGSERIAL PRIMARY KEY,
+        chat_id TEXT NOT NULL REFERENCES assistant_chats(id) ON DELETE CASCADE,
+        position INT NOT NULL,
+        role TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        content TEXT NOT NULL,
+        presets_json TEXT,
+        created_at BIGINT NOT NULL
+      );
+
       CREATE INDEX IF NOT EXISTS idx_preset_votes_code ON preset_votes(preset_code);
       CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_assistant_chats_user_updated
+        ON assistant_chats(user_id, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_assistant_chat_messages_chat_position
+        ON assistant_chat_messages(chat_id, position);
     `)
   })()
 

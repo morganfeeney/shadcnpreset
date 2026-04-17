@@ -12,7 +12,7 @@ import { siteConfig } from "@/lib/config"
 
 type HomeHeroProps = {
   /** Search field; wrap `PresetForm` in `<Suspense>` in a Server Component parent. */
-  children: ReactNode
+  children?: ReactNode
 }
 
 export function HomeHero({ children }: HomeHeroProps) {
@@ -25,7 +25,9 @@ export function HomeHero({ children }: HomeHeroProps) {
       <PageHeaderDescription className="text-muted-foreground">
         {siteConfig.description}
       </PageHeaderDescription>
-      <div className="w-full max-w-2xl">{children}</div>
+      {children ? (
+        <div className="flex w-full max-w-2xl justify-center"> {children}</div>
+      ) : null}
     </PageHeader>
   )
 }

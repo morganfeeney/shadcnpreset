@@ -27,7 +27,7 @@ export function CardListSkeleton() {
   return (
     <main className="grid gap-4">
       <section className="space-y-4">
-        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 12 }, (_, index) => (
             <CardSkeleton key={`preset-skeleton-${index}`} />
           ))}

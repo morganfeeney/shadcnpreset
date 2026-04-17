@@ -1,52 +1,42 @@
-import { Suspense } from "react"
-
 import { HomeHero } from "@/components/home-hero"
-import { PresetForm } from "@/components/preset-form"
-import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
-import { ListView } from "@/components/list-view"
+import { HomeHeroButtons, HomePresetCarousel } from "@/app/(home)/components"
+import { Features1 } from "@/components/zippystarter/features1"
 import { getHomepageFeed } from "@/lib/preset-feed"
-import { ListLayout } from "@/components/list-layout"
+import { Header1 } from "@/components/zippystarter/header1"
+import { Footer1 } from "@/components/zippystarter/footer1"
+import { ContainerOuter } from "@/components/zippystarter/container"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-const HOMEPAGE_FEED_LIMIT = 100
-const HOMEPAGE_INITIAL_VISIBLE = 12
-const HOMEPAGE_VISIBLE_STEP = 6
+function formatTypographyLine(fontHeading: string, font: string) {
+  if (fontHeading === "inherit" || fontHeading === font) {
+    return `${font} font`
+  }
+  return `${fontHeading} & ${font} fonts`
+}
 
 export default async function HomePage() {
-  const feedItems = await getHomepageFeed(HOMEPAGE_FEED_LIMIT)
-  const feedKey = feedItems.map((item) => item.code).join(":")
+  const featuredPresets = await getHomepageFeed(8)
 
   return (
-    <ListLayout>
+    <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
+      <Header1 />
       <HomeHero>
-        <Suspense fallback={<PresetFormSkeleton />}>
-          <PresetForm className="pt-2" />
-        </Suspense>
+        <HomeHeroButtons />
       </HomeHero>
-      <main className="grid gap-4">
-        <ListView
-          key={feedKey}
-          items={feedItems.map((item) => ({
+      <section className="py-8">
+        <HomePresetCarousel
+          className="mx-safe max-w-400"
+          items={featuredPresets.map((item) => ({
             code: item.code,
-            baseColor: item.config.baseColor,
-            theme: item.config.theme,
-            chartColor: item.config.chartColor ?? item.config.theme,
-            iconLibrary: item.config.iconLibrary,
-            font: item.config.font,
-            fontHeading: item.config.fontHeading,
+            title: item.code,
+            description: `${item.config.baseColor} base, ${item.config.theme} theme, ${item.config.chartColor ?? item.config.theme} charts, ${item.config.iconLibrary}, ${formatTypographyLine(item.config.fontHeading, item.config.font)}`,
           }))}
-          useLiveFeed
-          safePage={1}
-          totalPages={1}
-          pageSize={HOMEPAGE_FEED_LIMIT}
-          initialFeedItems={feedItems}
-          useIncrementalReveal
-          initialVisibleCount={HOMEPAGE_INITIAL_VISIBLE}
-          visibleStep={HOMEPAGE_VISIBLE_STEP}
         />
-      </main>
-    </ListLayout>
+      </section>
+      <Features1 />
+      <Footer1 />
+    </ContainerOuter>
   )
 }

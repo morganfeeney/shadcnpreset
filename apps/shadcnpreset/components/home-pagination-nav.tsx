@@ -24,7 +24,10 @@ export function HomePaginationNav({
         <Link
           href={previousHref}
           prefetch={false}
-          className={cn("col-start-1", buttonVariants({ variant: "secondary" }))}
+          className={cn(
+            "col-start-1",
+            buttonVariants({ variant: "secondary" })
+          )}
         >
           <ChevronLeft /> Previous
         </Link>
@@ -55,7 +58,10 @@ export function HomePaginationNav({
         <Link
           href={nextHref}
           prefetch={false}
-          className={cn("col-start-3", buttonVariants({ variant: "secondary" }))}
+          className={cn(
+            "col-start-3",
+            buttonVariants({ variant: "secondary" })
+          )}
         >
           Next <ChevronRight />
         </Link>

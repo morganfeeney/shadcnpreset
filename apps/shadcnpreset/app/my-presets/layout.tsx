@@ -1,6 +1,6 @@
 import { PropsWithChildren } from "react"
-import { ListLayout } from "@/components/list-layout"
+import { DefaultLayout } from "@/components/default-layout"
 
 export default function MyPresetsLayout({ children }: PropsWithChildren) {
-  return <ListLayout>{children}</ListLayout>
+  return <DefaultLayout>{children}</DefaultLayout>
 }

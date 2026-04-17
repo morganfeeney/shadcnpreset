@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { siteConfig } from "@/lib/config"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 import { HotJar } from "@/components/analytics/hot-jar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -69,7 +70,7 @@ export default function RootLayout({
           <ThemeProvider>
             <PendingVoteApplier />
             <VoteAuthDialogHost />
-            {children}
+            <TooltipProvider>{children}</TooltipProvider>
           </ThemeProvider>
         </QueryProvider>
       </body>
