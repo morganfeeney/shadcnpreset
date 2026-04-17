@@ -85,15 +85,15 @@ interface Features11Props {
 export function Features1({
   title = (
     <p className="text-3xl font-display tracking-tight">
-      Powerful tools for{" "}
+      Powerful search for{" "}
       <span className="inline-flex -skew-x-[12deg] transform text-primary">
-        total
+        every
       </span>{" "}
-      control
+      kind of builder
     </p>
   ),
   badge = "features",
-  description = "Something about the features here",
+  description = "Stop scrolling and start building. Describe what you want, search by feel, and let AI surface the right shadcn presets — then save, compare, and refine until perfect.",
   features = FEATURES,
   className,
 }: Features11Props) {
