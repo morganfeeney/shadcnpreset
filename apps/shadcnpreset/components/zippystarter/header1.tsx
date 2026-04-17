@@ -24,8 +24,10 @@ import { GitHubLink } from "@/components/github-link"
 import { UserMenu } from "@/components/user-menu"
 
 const HEADER_LINKS = [
+  { href: "/assistant", label: "AI Assistant" },
+  { href: "/community", label: "Community" },
+  { href: "/my-presets", label: "My Presets" },
   { href: "https://x.com/morganfeeney", label: "Contact" },
-  { href: "/my-presets", label: "My presets" },
 ]
 
 const isPathActive = (pathname: string, href: string) => {

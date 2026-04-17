@@ -54,6 +54,8 @@
   --g: --spacing(4);
   --safe-area-left: max(var(--m), env(safe-area-inset-left));
   --safe-area-right: max(var(--m), env(safe-area-inset-right));
+  --color-header: var(--background);
+  --color-header-foreground: var(--foreground);
 }
 
 :root {

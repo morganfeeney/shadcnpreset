@@ -92,42 +92,36 @@ export function AssistantChat() {
             <SidebarGroupLabel>Your chats</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {isLoadingRecentChats ? (
-                  Array.from({ length: 4 }).map((_, index) => (
-                    <SidebarMenuItem key={`chat-skeleton-${index}`}>
-                      <SidebarMenuButton disabled>
-                        <Skeleton className="h-4 w-full max-w-[150px]" />
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))
-                ) : recentChats.length > 0 ? (
-                  recentChats.map((chat) => (
-                    <SidebarMenuItem key={chat.id}>
-                      <SidebarMenuButton
-                        isActive={activeChatId === chat.id}
-                        onClick={() => setActiveChatId(chat.id)}
-                        disabled={
-                          pending ||
-                          (activeChatId === chat.id &&
-                            activeChatQuery.isFetching)
-                        }
-                      >
-                        {activeChatId === chat.id &&
-                        activeChatQuery.isFetching ? (
-                          <Skeleton className="h-4 w-full max-w-[140px]" />
-                        ) : (
-                          chat.title
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))
-                ) : (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton disabled>
-                      No saved chats yet
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+                {isLoadingRecentChats
+                  ? Array.from({ length: 4 }).map((_, index) => (
+                      <SidebarMenuItem key={`chat-skeleton-${index}`}>
+                        <SidebarMenuButton disabled>
+                          <Skeleton className="h-4 w-full max-w-[150px]" />
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))
+                  : recentChats.length > 0
+                    ? recentChats.map((chat) => (
+                        <SidebarMenuItem key={chat.id}>
+                          <SidebarMenuButton
+                            isActive={activeChatId === chat.id}
+                            onClick={() => setActiveChatId(chat.id)}
+                            disabled={
+                              pending ||
+                              (activeChatId === chat.id &&
+                                activeChatQuery.isFetching)
+                            }
+                          >
+                            {activeChatId === chat.id &&
+                            activeChatQuery.isFetching ? (
+                              <Skeleton className="h-4 w-full max-w-[140px]" />
+                            ) : (
+                              chat.title
+                            )}
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))
+                    : null}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

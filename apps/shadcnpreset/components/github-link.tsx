@@ -61,7 +61,7 @@ export function GitHubLink() {
       rel="noreferrer"
     >
       <Icons.gitHub />
-      <StarsCount />
+      {/*<StarsCount />*/}
     </Link>
   )
 }
