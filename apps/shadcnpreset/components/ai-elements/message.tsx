@@ -321,7 +321,12 @@ export const MessageBranchPage = ({
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-const streamdownPlugins = { cjk, code, math, mermaid };
+// In this monorepo we can end up with multiple shiki majors in the graph.
+// Streamdown's PluginConfig and @streamdown/code are runtime-compatible, but
+// TypeScript treats their BundledLanguage types as incompatible across majors.
+const streamdownPlugins = { cjk, code, math, mermaid } as unknown as NonNullable<
+  MessageResponseProps["plugins"]
+>;
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
