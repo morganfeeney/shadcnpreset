@@ -102,7 +102,7 @@ export function Features1({
       className="mx-auto grid max-w-7xl items-start gap-8 py-16 md:py-24 xl:grid-cols-2"
       wrapperClassName={className}
     >
-      <div className="sticky top-8 grid gap-4">
+      <div className="grid gap-4 md:sticky md:top-8">
         <Badge variant="secondary" className="rounded-full">
           {badge}
         </Badge>
