@@ -54,8 +54,7 @@ export default function QueryNotFound() {
             <Link href={buildHomeNewSearchHref("smart")}>
               start a new search
             </Link>
-            , or explore
-            one of these example searches.
+            , or explore one of these example searches.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
