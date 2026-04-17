@@ -31,8 +31,9 @@ type CopyEvent = {
 
 export async function copyToClipboardWithMeta(
   value: string,
-  _event?: CopyEvent
+  event?: CopyEvent
 ) {
+  void event
   if (typeof window === "undefined") {
     return false
   }

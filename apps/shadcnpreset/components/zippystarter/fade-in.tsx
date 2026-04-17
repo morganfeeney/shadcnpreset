@@ -2,12 +2,15 @@
 
 import { createContext, useContext } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import type { ComponentPropsWithoutRef } from "react";
 
 const FadeInStaggerContext = createContext(false);
 
 const viewport = { once: true, margin: "0px 0px -200px" };
 
-export function FadeIn(props: any) {
+type FadeInProps = ComponentPropsWithoutRef<typeof motion.div>;
+
+export function FadeIn(props: FadeInProps) {
   const shouldReduceMotion = useReducedMotion();
   const isInStaggerGroup = useContext(FadeInStaggerContext);
 

@@ -40,7 +40,8 @@ const bodySchema = z.object({
 })
 
 function variantToConfig(v: AssistantPresetVariantPayload): PresetConfig {
-  const { caption: _c, ...rest } = v
+  const { caption, ...rest } = v
+  void caption
   return clampPresetConfigForV4Preview(rest as PresetConfig)
 }
 

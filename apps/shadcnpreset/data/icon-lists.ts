@@ -1,8 +1,5 @@
 import {
-  FacebookIcon,
   GithubIcon,
-  InstagramIcon,
-  LinkedInIcon,
   XIcon,
 } from "@/components/zippystarter/icons/social"
 import { Mail, Phone } from "lucide-react"

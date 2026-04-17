@@ -22,7 +22,6 @@ import { RandomButton } from "@/app/(create)/components/random-button"
 import { ResetDialog } from "@/app/(create)/components/reset-button"
 import { StylePicker } from "@/app/(create)/components/style-picker"
 import { ThemePicker } from "@/app/(create)/components/theme-picker"
-import { V0Button } from "@/app/(create)/components/v0-button"
 import { FONT_HEADING_OPTIONS, FONTS } from "@/app/(create)/lib/fonts"
 import { useDesignSystemSearchParams } from "@/app/(create)/lib/search-params"
 

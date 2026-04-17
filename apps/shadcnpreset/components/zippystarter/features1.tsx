@@ -1,12 +1,10 @@
 import { ReactNode } from "react"
 import {
-  CodeXml,
   FrameIcon,
   HistoryIcon,
   LucideIcon,
   LucideBrainCog,
   Paintbrush2,
-  Edit3Icon,
   Bookmark,
   Heart,
 } from "lucide-react"
@@ -14,7 +12,6 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Container } from "@/components/zippystarter/container"
 import { FadeIn, FadeInStagger } from "@/components/zippystarter/fade-in"
-import { Link } from "@/components/zippystarter/link"
 
 interface Features1Props {
   title: string

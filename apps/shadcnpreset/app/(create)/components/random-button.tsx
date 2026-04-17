@@ -2,8 +2,6 @@
 
 import Script from "next/script"
 import { Button } from "@/components/ui/button"
-import { DiceFaces05Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
 
 import { cn } from "@/lib/utils"
 import { useRandom } from "@/app/(create)/hooks/use-random"

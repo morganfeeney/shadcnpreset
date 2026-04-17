@@ -1,10 +1,5 @@
 import { resolvePresetFromCode } from "@/lib/preset"
-import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildSearchCorpus } from "@/lib/search/corpus"
-import {
-  wantsDarkShellQuery,
-  wantsLightShellQuery,
-} from "@/lib/search/query-intent"
 import { getSemanticRelevanceScores } from "@/lib/search/semantic"
 import {
   applyShellBrightnessIntent,
