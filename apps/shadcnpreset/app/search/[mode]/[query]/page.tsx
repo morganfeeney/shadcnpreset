@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { HomeHero } from "@/components/home-hero"
 import { PresetForm } from "@/components/preset-form"
 import { PresetFormSkeleton } from "@/components/preset-form-skeleton"
-import { ListLayout } from "@/components/list-layout"
+import { DefaultLayout } from "@/components/default-layout"
 import { isSearchMode } from "@/lib/search/route"
 import { SearchResultsClient } from "./search-results-client"
 
@@ -34,13 +34,13 @@ export default async function SearchBasePage({ params }: SearchBasePageProps) {
   }
 
   return (
-    <ListLayout>
+    <DefaultLayout>
       <HomeHero>
         <Suspense fallback={<PresetFormSkeleton />}>
           <PresetForm className="pt-2" />
         </Suspense>
       </HomeHero>
       <SearchResultsClient mode={resolvedParams.mode} query={query} />
-    </ListLayout>
+    </DefaultLayout>
   )
 }

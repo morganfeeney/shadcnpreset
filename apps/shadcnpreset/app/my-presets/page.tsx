@@ -1,5 +1,5 @@
 import { Heart } from "lucide-react"
-import { ListLayout } from "@/components/list-layout"
+import { DefaultLayout } from "@/components/default-layout"
 import { ListView } from "@/components/list-view"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
 import {
