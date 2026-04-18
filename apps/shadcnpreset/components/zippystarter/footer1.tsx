@@ -6,6 +6,7 @@ import { Logo } from "@/components/zippystarter/logo"
 import { ICON_LINKS } from "@/data/icon-lists"
 import React from "react"
 import { siteConfig } from "@/lib/config"
+import { OpenPresetDialog } from "@/components/open-preset-dialog"
 
 const COLUMNS = [
   {
@@ -17,6 +18,26 @@ const COLUMNS = [
       },
       { label: "shadcn themes", href: "https://zippystarter.com/themes" },
       { label: "OG image debugger", href: "https://ogimage.info" },
+    ],
+  },
+  {
+    header: "Navigation",
+    links: [
+      { label: "Ask AI", href: "/assistant" },
+      { label: "Community", href: "/community" },
+      { label: "Open Preset", action: "open-preset" as const },
+      { label: "My presets", href: "/my-presets" },
+      { type: "link", href: "https://x.com/morganfeeney", label: "Contact" },
+    ],
+  },
+  {
+    header: "Support",
+    links: [
+      {
+        type: "link",
+        href: "https://x.com/morganfeeney",
+        label: "Get in touch",
+      },
     ],
   },
 ]
@@ -35,7 +56,16 @@ function LogoLink() {
 
 export interface FooterColumn {
   header: string
-  links: { label: string; href: string }[]
+  links: Array<
+    | {
+        label: string
+        href: string
+      }
+    | {
+        label: string
+        action: "open-preset"
+      }
+  >
 }
 
 function FooterColumn({ header, links }: FooterColumn) {
@@ -43,14 +73,20 @@ function FooterColumn({ header, links }: FooterColumn) {
     <div className="grid gap-5 text-sm">
       <p className="inline-grid font-display text-foreground">{header}</p>
       <ul className="grid gap-4">
-        {links.map(({ href, label }) => (
-          <li key={label}>
-            <Link
-              href={href}
-              className="text-footer-foreground/60 hover:text-footer-foreground transition hover:underline"
-            >
-              {label}
-            </Link>
+        {links.map((link) => (
+          <li key={link.label}>
+            {"href" in link ? (
+              <Link
+                href={link.href}
+                className="text-footer-foreground/60 hover:text-footer-foreground transition hover:underline"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <OpenPresetDialog className="text-footer-foreground/60 hover:text-footer-foreground transition hover:underline">
+                {link.label}
+              </OpenPresetDialog>
+            )}
           </li>
         ))}
       </ul>

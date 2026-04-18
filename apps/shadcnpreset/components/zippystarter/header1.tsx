@@ -22,12 +22,13 @@ import { Logo } from "@/components/zippystarter/logo"
 import { ModeSwitcher } from "@/components/mode-switcher"
 import { GitHubLink } from "@/components/github-link"
 import { UserMenu } from "@/components/user-menu"
+import { OpenPresetDialog } from "@/components/open-preset-dialog"
 
-const HEADER_LINKS = [
-  { href: "/assistant", label: "AI Assistant" },
-  { href: "/community", label: "Community" },
-  { href: "/my-presets", label: "My Presets" },
-  { href: "https://x.com/morganfeeney", label: "Contact" },
+const HEADER_LINKS: ComponentLink[] = [
+  { type: "link", href: "/assistant", label: "Ask AI" },
+  { type: "link", href: "/community", label: "Community" },
+  { type: "link", href: "/my-presets", label: "My Presets" },
+  { type: "action", action: "open-preset", label: "Open Preset" },
 ]
 
 const isPathActive = (pathname: string, href: string) => {
@@ -35,11 +36,19 @@ const isPathActive = (pathname: string, href: string) => {
   return regex.test(pathname)
 }
 
-type ComponentLink = {
-  href: string
-  label: string
-  button?: VariantProps<typeof buttonVariants>["variant"]
-}
+type ComponentLink =
+  | {
+      type: "link"
+      href: string
+      label: string
+      button?: VariantProps<typeof buttonVariants>["variant"]
+    }
+  | {
+      type: "action"
+      action: "open-preset"
+      label: string
+      button?: VariantProps<typeof buttonVariants>["variant"]
+    }
 
 interface NavItemProps extends PropsWithChildren {
   href: string
@@ -107,15 +116,28 @@ function DesktopNav({ links, pathname, className }: DesktopNavProps) {
       )}
     >
       <nav className="flex items-center gap-6">
-        {links.map(({ href, label }) => (
-          <NavItemDesktop
-            key={href}
-            href={href}
-            isActive={isPathActive(pathname, href)}
-          >
-            {label}
-          </NavItemDesktop>
-        ))}
+        {links.map((link) => {
+          if (link.type === "link") {
+            return (
+              <NavItemDesktop
+                key={link.href}
+                href={link.href}
+                isActive={isPathActive(pathname, link.href)}
+              >
+                {link.label}
+              </NavItemDesktop>
+            )
+          }
+
+          return (
+            <OpenPresetDialog
+              key={link.action}
+              className="relative inline-grid h-8 items-center text-sm font-medium text-header-foreground/60 transition hover:text-header-foreground"
+            >
+              {link.label}
+            </OpenPresetDialog>
+          )
+        })}
       </nav>
       <div className="flex items-center gap-2">
         <Separator orientation="vertical" className="h-6 self-center!" />
@@ -164,15 +186,28 @@ function MobileNav({ logo, links, pathname, className }: MobileNavProps) {
           </SheetHeader>
           <div className="grid gap-2">
             <nav className="grid">
-              {links.map(({ href, label }) => (
-                <NavItemMobile
-                  key={href}
-                  href={href}
-                  isActive={isPathActive(pathname, href)}
-                >
-                  {label}
-                </NavItemMobile>
-              ))}
+              {links.map((link) => {
+                if (link.type === "link") {
+                  return (
+                    <NavItemMobile
+                      key={link.href}
+                      href={link.href}
+                      isActive={isPathActive(pathname, link.href)}
+                    >
+                      {link.label}
+                    </NavItemMobile>
+                  )
+                }
+
+                return (
+                  <OpenPresetDialog
+                    key={link.action}
+                    className="inline-grid h-10 w-full items-center px-4 py-2 text-left text-sm font-medium text-header-foreground/60 transition hover:text-header-foreground"
+                  >
+                    {link.label}
+                  </OpenPresetDialog>
+                )
+              })}
             </nav>
           </div>
         </SheetContent>
