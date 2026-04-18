@@ -131,7 +131,7 @@ export function DesignSystemProvider({
   useIframeMessageListener("design-system-params", handleDesignSystemMessage)
 
   React.useEffect(() => {
-    if (style === "lyra" && radius !== "none") {
+    if (style === "lyra" || (style === "sera" && radius !== "none")) {
       setSearchParams({ radius: "none" })
     }
   }, [style, radius, setSearchParams])
