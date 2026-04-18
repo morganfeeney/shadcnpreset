@@ -1,12 +1,12 @@
 import { ReactNode } from "react"
 import {
-  FrameIcon,
   HistoryIcon,
   LucideIcon,
   LucideBrainCog,
-  Paintbrush2,
   Bookmark,
   Heart,
+  SlidersHorizontal,
+  Search,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -29,7 +29,7 @@ const FEATURES: Features1Props[] = [
     title: "Search by vibe or intent",
     description:
       "Go beyond keywords. Find presets by feel—clean, bold, minimal, or anything in between.",
-    icon: FrameIcon,
+    icon: Search,
   },
   {
     title: "Your results, saved",
@@ -41,7 +41,7 @@ const FEATURES: Features1Props[] = [
     title: "Refine with AI",
     description:
       "Tweak your results by adjusting the prompt. Narrow down styles, layouts, or components in seconds.",
-    icon: Paintbrush2,
+    icon: SlidersHorizontal,
   },
   {
     title: "Built on real presets",
