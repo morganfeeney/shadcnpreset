@@ -21,10 +21,9 @@ export function HomeLoadingState() {
           {siteConfig.description}
         </PageHeaderDescription>
         <div className="w-full max-w-2xl space-y-2.5 pt-2">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Skeleton className="h-9 w-full sm:w-36" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full sm:w-24" />
+          <div className="flex flex-col justify-center gap-2 sm:flex-row">
+            <Skeleton className="h-9 w-21.5" />
+            <Skeleton className="h-9 w-37.5" />
           </div>
         </div>
       </PageHeader>
