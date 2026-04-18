@@ -54,11 +54,14 @@ export function trackAiAssistantOpen(args: { pagePath: string }) {
 
 export function trackAiAssistantPromptSubmit(args: {
   pagePath: string
+  /** Trimmed user message; GA may truncate per its limits. */
+  promptText: string
   promptLength: number
   intent?: AiAssistantIntent
 }) {
   gaEvent("ai_assistant_prompt_submit", {
     page_path: args.pagePath,
+    assistant_prompt: args.promptText,
     prompt_length: args.promptLength,
     ...(args.intent ? { intent: args.intent } : {}),
   })

@@ -323,6 +323,7 @@ export function useAssistantChat() {
     const hasPreviousUserMessage = messages.some((message) => message.role === "user")
     trackAiAssistantPromptSubmit({
       pagePath: pathname,
+      promptText: trimmed,
       promptLength: trimmed.length,
       intent: hasPreviousUserMessage ? "preset_refinement" : "preset_discovery",
     })
