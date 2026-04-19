@@ -15,6 +15,7 @@ import {
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
+import { toPersistedAssistantMessage } from "@/lib/search/assistant/message-persistence"
 import { normalizeQuickReplies } from "@/lib/search/assistant/quick-replies"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
 import {
@@ -33,6 +34,18 @@ const bodySchema = z.object({
       z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().min(1).max(12000),
+        kind: z.enum(["text", "presets"]).optional(),
+        presets: z
+          .array(
+            z.object({
+              code: z.string().min(2).max(64),
+              caption: z.string().min(1).max(160),
+              description: z.string().min(1).max(400),
+            })
+          )
+          .max(4)
+          .optional(),
+        followUpQuestions: z.array(z.string().min(1).max(160)).max(4).optional(),
       })
     )
     .min(1)
@@ -294,11 +307,7 @@ export async function POST(request: Request) {
         )
       }
       const persistedMessages = [
-        ...chatMessages.map((message) => ({
-          role: message.role,
-          kind: "text" as const,
-          content: message.content,
-        })),
+        ...chatMessages.map((message) => toPersistedAssistantMessage(message)),
         {
           role: "assistant" as const,
           kind: "presets" as const,
@@ -319,11 +328,7 @@ export async function POST(request: Request) {
       followUpQuestions: normalizeQuickReplies(normalized.followUpQuestions),
     }
     const persistedMessages = [
-      ...chatMessages.map((message) => ({
-        role: message.role,
-        kind: "text" as const,
-        content: message.content,
-      })),
+      ...chatMessages.map((message) => toPersistedAssistantMessage(message)),
       {
         role: "assistant" as const,
         kind: "text" as const,
