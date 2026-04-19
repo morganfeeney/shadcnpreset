@@ -15,6 +15,7 @@ import {
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
+import { normalizeQuickReplies } from "@/lib/search/assistant/quick-replies"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
 import {
   assistantTurnOutputSchema,
@@ -313,6 +314,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...ready, chatId: persisted.chatId })
     }
 
+    const gatheringTurn = {
+      ...normalized,
+      followUpQuestions: normalizeQuickReplies(normalized.followUpQuestions),
+    }
     const persistedMessages = [
       ...chatMessages.map((message) => ({
         role: message.role,
@@ -322,7 +327,8 @@ export async function POST(request: Request) {
       {
         role: "assistant" as const,
         kind: "text" as const,
-        content: normalized.assistantMessage,
+        content: gatheringTurn.assistantMessage,
+        followUpQuestions: gatheringTurn.followUpQuestions,
       },
     ]
     const persisted = await saveAssistantChatForUser({
@@ -331,7 +337,7 @@ export async function POST(request: Request) {
       messages: persistedMessages,
     })
 
-    return NextResponse.json({ ...normalized, chatId: persisted.chatId })
+    return NextResponse.json({ ...gatheringTurn, chatId: persisted.chatId })
   } catch (err) {
     console.error("[api/assistant]", err)
     const { status, body } = mapProviderError(err)
