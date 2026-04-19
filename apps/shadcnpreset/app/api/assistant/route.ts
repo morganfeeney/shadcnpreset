@@ -9,9 +9,11 @@ import { getSessionUser } from "@/lib/auth"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
+  applyExplicitFacetConstraints,
   applyPaletteConstraints,
   applyTypographyConstraints,
   buildPresetCardDescription,
+  extractExplicitFacetConstraints,
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
@@ -165,6 +167,7 @@ function encodeReadyPayload(
   const presets: AssistantReady["presets"] = []
   const typographyConstraints = extractTypographyConstraints(messages)
   const paletteConstraints = extractPaletteConstraints(messages)
+  const explicitConstraints = extractExplicitFacetConstraints(messages)
 
   const variants: AssistantPresetVariantPayload[] = [...normalized.presetVariants]
   while (variants.length < 4 && previousPresets[variants.length]) {
@@ -177,9 +180,12 @@ function encodeReadyPayload(
   }
 
   for (const v of variants) {
-    const config = applyPaletteConstraints(
-      applyTypographyConstraints(variantToConfig(v), typographyConstraints),
-      paletteConstraints
+    const config = applyExplicitFacetConstraints(
+      applyPaletteConstraints(
+        applyTypographyConstraints(variantToConfig(v), typographyConstraints),
+        paletteConstraints
+      ),
+      explicitConstraints
     )
     const clamped = clampPresetConfigForV4Preview(config)
     const code = encodePreset(clamped)

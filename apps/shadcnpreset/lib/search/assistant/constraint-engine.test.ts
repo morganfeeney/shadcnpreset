@@ -82,6 +82,31 @@ describe("palette/explicit precedence", () => {
     ])
     expect(explicit.chartColor).toBe("amber")
   })
+
+  it("parses explicit taupe lock for charts, base and theme", () => {
+    const explicit = extractExplicitFacetConstraints([
+      { role: "user", content: "i want taupe charts, base and theme" },
+    ])
+    expect(explicit.baseColor).toBe("taupe")
+    expect(explicit.theme).toBe("taupe")
+    expect(explicit.chartColor).toBe("taupe")
+  })
+
+  it("locks base/theme/chart to one value for monochrome", () => {
+    const mono = applyPaletteConstraints(
+      {
+        ...PREV,
+        baseColor: "stone",
+        theme: "taupe",
+        chartColor: "emerald",
+      },
+      { wantsMonochrome: true }
+    )
+
+    expect(mono.baseColor).toBe("taupe")
+    expect(mono.theme).toBe("taupe")
+    expect(mono.chartColor).toBe("taupe")
+  })
 })
 
 describe("style directives", () => {

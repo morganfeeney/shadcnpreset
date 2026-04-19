@@ -1,4 +1,5 @@
 import {
+  PRESET_BASE_COLORS,
   PRESET_ICON_LIBRARIES,
   PRESET_SERIF_FONTS,
   PRESET_STYLES,
@@ -7,6 +8,8 @@ import {
 } from "shadcn/preset"
 
 const SERIF_FONTS = new Set<PresetConfig["font"]>(PRESET_SERIF_FONTS)
+const BASE_COLOR_SET = new Set<PresetConfig["baseColor"]>(PRESET_BASE_COLORS)
+const THEME_SET = new Set<PresetConfig["theme"]>(PRESET_THEMES)
 
 type FontFamilyConstraint = "serif" | "sans"
 export type TypographyConstraints = {
@@ -33,6 +36,8 @@ export type RequestedFacetChanges = {
 
 export type ExplicitFacetConstraints = {
   style?: PresetConfig["style"]
+  baseColor?: PresetConfig["baseColor"]
+  theme?: PresetConfig["theme"]
   menuTone?: "light" | "dark"
   chartColor?: PresetConfig["chartColor"]
 }
@@ -166,6 +171,18 @@ export function extractExplicitFacetConstraints(
 ): ExplicitFacetConstraints {
   const out: ExplicitFacetConstraints = {}
   const styleNames: PresetConfig["style"][] = [...PRESET_STYLES]
+  const themeByWord: Record<string, PresetConfig["theme"]> = Object.fromEntries(
+    PRESET_THEMES.map((t) => [t, t])
+  ) as Record<string, PresetConfig["theme"]>
+  themeByWord.grey = "gray"
+
+  const baseColorByWord: Record<string, PresetConfig["baseColor"]> =
+    Object.fromEntries(PRESET_BASE_COLORS.map((t) => [t, t])) as Record<
+      string,
+      PresetConfig["baseColor"]
+    >
+  baseColorByWord.grey = "gray"
+
   const chartColorByWord: Record<string, PresetConfig["chartColor"]> =
     Object.fromEntries(PRESET_THEMES.map((t) => [t, t])) as Record<
       string,
@@ -174,6 +191,20 @@ export function extractExplicitFacetConstraints(
   chartColorByWord.grey = "gray"
 
   const chartColors = Object.keys(chartColorByWord)
+  const colorWordRegex = /\b([a-z-]+)\b/g
+
+  function extractLastColorWord(
+    t: string
+  ): { theme?: PresetConfig["theme"]; baseColor?: PresetConfig["baseColor"] } {
+    let lastTheme: PresetConfig["theme"] | undefined
+    let lastBaseColor: PresetConfig["baseColor"] | undefined
+    for (const match of t.matchAll(colorWordRegex)) {
+      const word = match[1]!
+      if (themeByWord[word]) lastTheme = themeByWord[word]
+      if (baseColorByWord[word]) lastBaseColor = baseColorByWord[word]
+    }
+    return { theme: lastTheme, baseColor: lastBaseColor }
+  }
 
   function extractChartColorFromText(t: string): PresetConfig["chartColor"] | undefined {
     // Prefer color directly attached to "chart(s)", e.g. "amber charts".
@@ -219,6 +250,24 @@ export function extractExplicitFacetConstraints(
           if (new RegExp(`\\b${word}\\b`).test(t)) out.chartColor = color
         }
       }
+    }
+
+    const hasThemeToken = /\btheme\b/.test(t)
+    const hasBaseToken = /\bbase\b/.test(t)
+    const hasChartsToken = /\b(chart|charts)\b/.test(t)
+    const lastColor = extractLastColorWord(t)
+
+    if (hasThemeToken && lastColor.theme) {
+      out.theme = lastColor.theme
+    }
+    if (hasBaseToken && lastColor.baseColor) {
+      out.baseColor = lastColor.baseColor
+    }
+
+    if (hasThemeToken && hasBaseToken && hasChartsToken) {
+      if (lastColor.theme) out.theme = lastColor.theme
+      if (lastColor.baseColor) out.baseColor = lastColor.baseColor
+      if (lastColor.theme) out.chartColor = lastColor.theme
     }
   }
 
@@ -336,7 +385,21 @@ export function applyPaletteConstraints(
   constraints: PaletteConstraints
 ): PresetConfig {
   if (!constraints.wantsMonochrome) return config
-  return { ...config, chartColor: config.theme }
+
+  const monochromeColor: PresetConfig["theme"] = BASE_COLOR_SET.has(
+    config.theme as PresetConfig["baseColor"]
+  )
+    ? config.theme
+    : THEME_SET.has(config.baseColor as PresetConfig["theme"])
+      ? (config.baseColor as PresetConfig["theme"])
+      : "neutral"
+
+  return {
+    ...config,
+    baseColor: monochromeColor as PresetConfig["baseColor"],
+    theme: monochromeColor,
+    chartColor: monochromeColor,
+  }
 }
 
 export function applyExplicitFacetConstraints(
@@ -345,6 +408,8 @@ export function applyExplicitFacetConstraints(
 ): PresetConfig {
   const next = { ...config }
   if (constraints.style) next.style = constraints.style
+  if (constraints.baseColor) next.baseColor = constraints.baseColor
+  if (constraints.theme) next.theme = constraints.theme
   if (constraints.chartColor) next.chartColor = constraints.chartColor
   if (constraints.menuTone === "dark") {
     next.menuColor = next.menuColor.includes("translucent")
