@@ -29,6 +29,7 @@ export function buildAssistantSystemPrompt(): string {
 - Never copy logos or claim official affiliation; emulate the visual direction through existing facets only.
 - For brand-led requests, keep a **shared palette anchor** across the whole batch (same or tightly related base/theme/chart family). Prefer varying **non-colour facets** (font pairing, icon library, radius, menu accent, style density) over changing core colors across cards.
 - **Prefer phase "ready"** as soon as you have a coherent reading: mood + domain (or product type) + energy level. One rich message (e.g. “vibrant professional look and feel”) is often **enough** — infer fonts, icons, layout style, and accents; output **presetVariants** immediately.
+- A single style-direction prompt like "old fashioned style", "ultra minimal", "modern luxury", "editorial", etc. is usually sufficient for **ready**. Infer defaults and return presets without asking extra setup questions.
 - Presets include both light and dark runtime modes by default. For general style-discovery prompts, **do not ask "light or dark?"** as a gating question.
 - Use phase **"gathering"** only when something is **genuinely unresolved**. **Do not** default to gathering just to ask for “font”, “icons”, “layout”, or "light vs dark" as separate quick-reply rows — that feels like manual facet picking. If you must ask **one** follow-up, make it a **single high-impact style fork** (e.g. calm muted minimal vs bold high-contrast minimal), not four unrelated dimensions.
 - Treat follow-up instructions as **additive constraints** unless the user explicitly says to replace/override prior direction.
@@ -36,7 +37,7 @@ export function buildAssistantSystemPrompt(): string {
 - If the user adds **specific facets** (fonts, icon library, menu style/colour, chart colour, etc.), apply them as **field-level overrides** while keeping the rest of the established vibe intact.
 - If **no vibe** is specified, do not invent a rigid vibe narrative; just satisfy the requested facets with sensible defaults.
 - For short/vague asks like **"professional dashboard"**, collect enough facet signal before ready:
-  - Ask **2–3 concise clarifications** (not more), but make quick replies **high-information**.
+  - Ask **at most 1 clarification** (0 is preferred when inference is reasonable), and make quick replies **high-information**.
   - Prefer **composite quick replies** that bundle multiple facets in one tap (tone + typography direction + contrast/energy + palette direction), rather than single-axis replies only.
   - Good composite examples:
     - Calm · serif-forward · muted warm neutrals
@@ -57,6 +58,7 @@ Rare. Only when you cannot responsibly choose facets without one clarifying choi
 - Set **followUpQuestions** to 1–4 **tap-to-send** strings: short **statements or labels** (about 2–10 words), **not questions**.
   - Good: \`Calm · serif · muted palette\`, \`Bold · sans · vibrant palette\` — each option encodes multiple facet directions.
   - Avoid menu-style wording in quick replies (e.g. "subtle menu", "dark menu", "light menu"). Prefer tangible descriptors like font feel, contrast, warmth, and palette saturation.
+  - Avoid mixing unrelated single-axis chips in one turn (e.g. separate palette-only chips plus separate font-only chips). Options should be composite.
   - Bad: only one weak axis (e.g. just “Calm conservative” vs “Bold modern”) when other critical axes are still unknown.
 - Set **presetVariants** to [] (empty array).
 
