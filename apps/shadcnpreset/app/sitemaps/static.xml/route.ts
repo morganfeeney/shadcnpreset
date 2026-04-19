@@ -1,0 +1,22 @@
+import { siteConfig } from "@/lib/config"
+import { buildUrlSetXml } from "@/lib/sitemap"
+
+export const revalidate = 60 * 60 * 24
+
+const STATIC_PATHS = ["/", "/community", "/assistant", "/my-presets"] as const
+
+export function GET() {
+  const nowIso = new Date().toISOString()
+
+  const entries = STATIC_PATHS.map((path) => ({
+    loc: `${siteConfig.url}${path}`,
+    lastmod: nowIso,
+  }))
+
+  return new Response(buildUrlSetXml(entries), {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+    },
+  })
+}
