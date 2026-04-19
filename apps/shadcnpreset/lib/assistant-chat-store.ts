@@ -8,6 +8,7 @@ type PersistedAssistantMessage = {
   kind: "text" | "presets"
   content: string
   presets?: Array<{ code: string; caption: string; description: string }>
+  followUpQuestions?: string[]
 }
 
 type ChatRow = {
@@ -69,6 +70,28 @@ function parsePresets(raw: string | null): PersistedAssistantMessage["presets"] 
       .slice(0, 4)
 
     return presets.length ? presets : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function parseFollowUpQuestions(
+  raw: string | null
+): PersistedAssistantMessage["followUpQuestions"] {
+  if (!raw || raw.length > MAX_PRESETS_LENGTH) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) {
+      return undefined
+    }
+    const questions = parsed
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .slice(0, 4)
+    return questions.length ? questions : undefined
   } catch {
     return undefined
   }
@@ -145,9 +168,27 @@ export async function getAssistantChatForUser(
       role: row.role,
       kind: row.kind,
       content: row.content,
-      presets: parsePresets(row.presets_json),
+      presets: row.kind === "presets" ? parsePresets(row.presets_json) : undefined,
+      followUpQuestions:
+        row.kind === "text" ? parseFollowUpQuestions(row.presets_json) : undefined,
     })),
   }
+}
+
+export async function deleteAssistantChatForUser(
+  userId: string,
+  chatId: string
+): Promise<boolean> {
+  const result = await query<{ id: string }>(
+    `
+    DELETE FROM assistant_chats
+    WHERE id = $1 AND user_id = $2
+    RETURNING id
+    `,
+    [chatId, userId]
+  )
+
+  return Boolean(result.rows[0])
 }
 
 export async function saveAssistantChatForUser(args: {
@@ -194,6 +235,8 @@ export async function saveAssistantChatForUser(args: {
     const presetsJson =
       message.kind === "presets" && message.presets?.length
         ? JSON.stringify(message.presets.slice(0, 4))
+        : message.kind === "text" && message.followUpQuestions?.length
+          ? JSON.stringify(message.followUpQuestions.slice(0, 4))
         : null
 
     await query(

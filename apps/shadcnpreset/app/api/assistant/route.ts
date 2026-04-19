@@ -323,6 +323,7 @@ export async function POST(request: Request) {
         role: "assistant" as const,
         kind: "text" as const,
         content: normalized.assistantMessage,
+        followUpQuestions: normalized.followUpQuestions,
       },
     ]
     const persisted = await saveAssistantChatForUser({

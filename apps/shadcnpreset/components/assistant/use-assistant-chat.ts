@@ -26,6 +26,7 @@ export type ChatMessage =
       role: "assistant"
       content: string
       kind: "text"
+      followUpQuestions?: string[]
     }
   | {
       role: "assistant"
@@ -49,6 +50,7 @@ type AssistantChatDetailResponse = {
       kind: "text" | "presets"
       content: string
       presets?: Extract<ChatMessage, { role: "assistant"; kind: "presets" }>["presets"]
+      followUpQuestions?: string[]
     }>
   }
 }
@@ -82,6 +84,10 @@ function hydrateMessages(
       role: "assistant",
       kind: "text",
       content: message.content,
+      followUpQuestions:
+        message.kind === "text" && Array.isArray(message.followUpQuestions)
+          ? message.followUpQuestions.filter((q) => q.trim().length > 0).slice(0, 4)
+          : undefined,
     })
   }
 
@@ -96,6 +102,7 @@ export function useAssistantChat() {
   const [error, setError] = React.useState<string | null>(null)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null)
+  const [deletingChatId, setDeletingChatId] = React.useState<string | null>(null)
   const authStatus = useAuthStore((state) => state.status)
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const queryClient = useQueryClient()
@@ -164,8 +171,25 @@ export function useAssistantChat() {
     if (!chat) {
       return
     }
-    setMessages(hydrateMessages(chat.messages))
-    setLastTurn(null)
+    const hydrated = hydrateMessages(chat.messages)
+    setMessages(hydrated)
+    const latestAssistant = [...hydrated]
+      .reverse()
+      .find(
+        (
+          message
+        ): message is Extract<ChatMessage, { role: "assistant"; kind: "text" }> =>
+          message.role === "assistant" && message.kind === "text"
+      )
+    if (latestAssistant?.followUpQuestions?.length) {
+      setLastTurn({
+        phase: "gathering",
+        assistantMessage: latestAssistant.content,
+        followUpQuestions: latestAssistant.followUpQuestions,
+      })
+    } else {
+      setLastTurn(null)
+    }
     setInput("")
     setError(null)
   }, [activeChatQuery.data])
@@ -296,6 +320,7 @@ export function useAssistantChat() {
           role: "assistant",
           kind: "text",
           content: data.assistantMessage,
+          followUpQuestions: data.followUpQuestions,
         },
       ])
     },
@@ -316,6 +341,44 @@ export function useAssistantChat() {
       setPending(false)
     },
   })
+
+  async function deleteChat(chatId: string) {
+    const trimmedId = chatId.trim()
+    if (!trimmedId || pending || deletingChatId) return
+
+    setDeletingChatId(trimmedId)
+    setError(null)
+    try {
+      const response = await fetch(`/api/assistant/chats/${trimmedId}`, {
+        method: "DELETE",
+      })
+      const payload = (await response.json()) as {
+        error?: string
+        code?: string
+      }
+
+      if (!response.ok) {
+        setError(payload.error ?? "Could not delete chat. Try again.")
+        return
+      }
+
+      if (activeChatId === trimmedId) {
+        setActiveChatId(null)
+        setMessages([])
+        setLastTurn(null)
+        setInput("")
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
+      await queryClient.invalidateQueries({
+        queryKey: ["assistantChat", trimmedId],
+      })
+    } catch {
+      setError("Network error — try again.")
+    } finally {
+      setDeletingChatId(null)
+    }
+  }
 
   async function sendContent(text: string) {
     const trimmed = text.trim()
@@ -372,6 +435,8 @@ export function useAssistantChat() {
   return {
     activeChatId,
     activeChatQuery,
+    deletingChatId,
+    deleteChat,
     error,
     hasInteracted,
     input,
