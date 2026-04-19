@@ -4,7 +4,7 @@ import {
   getPresetSitemapChunkCount,
 } from "@/lib/sitemap"
 
-export const revalidate = 60 * 60 * 24
+export const revalidate = 86_400
 
 export function GET() {
   const nowIso = new Date().toISOString()
