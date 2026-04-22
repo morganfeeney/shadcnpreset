@@ -17,6 +17,8 @@ import { useTheme } from "next-themes"
 import { getFontFamily } from "@/lib/preset"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
+import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+import { ColorSpecimen } from "@/app/poc/preset-swatch/components/color-specimen"
 
 const COLOR_SWATCHES = [
   "background",
@@ -91,69 +93,65 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
         .join(" ")}
       style={style}
     >
-      <Card>
-        <CardHeader>
-          <p className="text-xs tracking-wider text-muted-foreground uppercase">
-            code: {item.code}
-          </p>
-          <CardTitle>{item.config.style} preview</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
-            {item.config.baseColor}/{item.config.theme} • chart{" "}
-            {item.config.chartColor ?? item.config.theme} •{" "}
-            {item.config.iconLibrary}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="grid gap-1 rounded-sm bg-muted p-3 text-muted-foreground">
-              <div className="flex justify-between">
-                <div className="text-xs">Heading</div>
-                <div className="text-xs">{item.config.fontHeading}</div>
+      <div className="bg-background">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2">
+            <Card>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <TypographySpecimen
+                    type="heading"
+                    font={item.config.fontHeading}
+                  />
+                  <TypographySpecimen type="body" font={item.config.font} />
+                </div>
+                <div className="grid grid-cols-6 gap-2">
+                  {COLOR_SWATCHES.map((token) => (
+                    <div key={token} className="grid">
+                      <span
+                        className="size-6 rounded-md border border-border style-sera:rounded-none"
+                        style={{ backgroundColor: `var(--${token})` }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-2 lg:grid-cols-2">
+                  {COLOR_SWATCHES.map((token) => (
+                    <ColorSpecimen
+                      key={token}
+                      name={token}
+                      value={`var(--${token})`}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent></CardContent>
+            </Card>
+          </div>
+          <Card>
+            <div className="grid justify-items-start gap-4">
+              <div className="flex gap-2">
+                <Button>Primary</Button>
+                <Button variant="outline">Outline</Button>
               </div>
-              <div className="cn-font-heading [text-box-height] justify-self-end text-6xl text-foreground">
-                Aa
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  font: {item.config.font} • heading: {item.config.fontHeading}{" "}
+                  • radius: {item.config.radius}
+                </p>
+                <Link
+                  href={`/preset/${item.code}`}
+                  className="inline-block text-xs underline"
+                >
+                  Open preset page
+                </Link>
               </div>
             </div>
-            <div className="grid gap-1 rounded-sm bg-muted p-3 text-muted-foreground">
-              <div className="flex justify-between">
-                <div className="text-xs">Body</div>
-                <div className="text-xs">{item.config.font}</div>
-              </div>
-              <div className="justify-self-end text-6xl text-foreground">
-                Aa
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-6 gap-2">
-            {COLOR_SWATCHES.map((token) => (
-              <div key={token} className="grid gap-1">
-                <span
-                  className="h-10 rounded-md border border-border style-sera:rounded-none"
-                  style={{ backgroundColor: `var(--${token})` }}
-                />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-        <CardFooter className="grid justify-items-start gap-4">
-          <div className="flex gap-2">
-            <Button>Primary</Button>
-            <Button variant="outline">Outline</Button>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">
-              font: {item.config.font} • heading: {item.config.fontHeading} •
-              radius: {item.config.radius}
-            </p>
-            <Link
-              href={`/preset/${item.code}`}
-              className="inline-block text-xs underline"
-            >
-              Open preset page
-            </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
