@@ -91,11 +91,11 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5">
             {CHART_SWATCH_STEPS.map((step) => (
-              <div key={step} className="grid justify-items-center gap-1">
+              <div key={step} className="grid">
                 <span
-                  className="aspect-square w-full max-w-8 rounded-sm border border-border style-sera:rounded-none"
+                  className="aspect-square w-full border border-border"
                   style={{ backgroundColor: `var(--chart-${step})` }}
                 />
               </div>
