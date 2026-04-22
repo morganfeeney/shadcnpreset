@@ -18,7 +18,20 @@ import { getFontFamily } from "@/lib/preset"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 
-const CHART_SWATCH_STEPS = [1, 2, 3, 4, 5] as const
+const COLOR_SWATCHES = [
+  "background",
+  "foreground",
+  "card",
+  "primary",
+  "secondary",
+  "accent",
+  "sidebar",
+  "chart-1",
+  "chart-2",
+  "chart-3",
+  "chart-4",
+  "chart-5",
+] as const
 
 function cssVarsToStyle(vars?: Record<string, string>): CSSProperties {
   const style: CSSProperties = {}
@@ -90,13 +103,33 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
             {item.config.iconLibrary}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-5">
-            {CHART_SWATCH_STEPS.map((step) => (
-              <div key={step} className="grid">
+        <CardContent className="grid gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-1 rounded-sm bg-muted p-3 text-muted-foreground">
+              <div className="flex justify-between">
+                <div className="text-xs">Heading</div>
+                <div className="text-xs">{item.config.fontHeading}</div>
+              </div>
+              <div className="cn-font-heading [text-box-height] justify-self-end text-6xl text-foreground">
+                Aa
+              </div>
+            </div>
+            <div className="grid gap-1 rounded-sm bg-muted p-3 text-muted-foreground">
+              <div className="flex justify-between">
+                <div className="text-xs">Body</div>
+                <div className="text-xs">{item.config.font}</div>
+              </div>
+              <div className="justify-self-end text-6xl text-foreground">
+                Aa
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-6 gap-2">
+            {COLOR_SWATCHES.map((token) => (
+              <div key={token} className="grid gap-1">
                 <span
-                  className="aspect-square w-full border border-border"
-                  style={{ backgroundColor: `var(--chart-${step})` }}
+                  className="h-10 rounded-md border border-border style-sera:rounded-none"
+                  style={{ backgroundColor: `var(--${token})` }}
                 />
               </div>
             ))}

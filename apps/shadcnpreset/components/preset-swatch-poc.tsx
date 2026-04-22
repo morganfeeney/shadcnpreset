@@ -21,7 +21,20 @@ type PresetSwatchPocProps = {
   defaultCode: string
 }
 
-const CHART_SWATCH_STEPS = [1, 2, 3, 4, 5] as const
+const COLOR_SWATCHES = [
+  "background",
+  "foreground",
+  "card",
+  "primary",
+  "secondary",
+  "accent",
+  "sidebar",
+  "chart-1",
+  "chart-2",
+  "chart-3",
+  "chart-4",
+  "chart-5",
+] as const
 function cssVarsToStyle(vars?: Record<string, string>): React.CSSProperties {
   const style: React.CSSProperties = {}
 
@@ -158,17 +171,17 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
                 <CardContent className="space-y-3 px-0">
                   <Input placeholder="Enter email" />
                 </CardContent>
-                <div className="mt-3 grid grid-cols-5 gap-2">
-                  {CHART_SWATCH_STEPS.map((step) => (
-                    <div key={step} className="grid justify-items-center gap-1">
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {COLOR_SWATCHES.map((token) => (
+                    <div key={token} className="grid gap-1">
                       <span
-                        className="aspect-square w-full max-w-8 rounded-full border border-border style-sera:rounded-none"
+                        className="h-8 w-full rounded-md border border-border style-sera:rounded-none"
                         style={{
-                          backgroundColor: `var(--chart-${step})`,
+                          backgroundColor: `var(--${token})`,
                         }}
                       />
                       <span className="text-[11px] text-muted-foreground">
-                        chart-{step}
+                        {token}
                       </span>
                     </div>
                   ))}
@@ -199,17 +212,17 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
                 <CardContent className="space-y-3 px-0">
                   <Input placeholder="Enter email" />
                 </CardContent>
-                <div className="mt-3 grid grid-cols-5 gap-2">
-                  {CHART_SWATCH_STEPS.map((step) => (
-                    <div key={step} className="grid justify-items-center gap-1">
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {COLOR_SWATCHES.map((token) => (
+                    <div key={token} className="grid gap-1">
                       <span
-                        className="aspect-square w-full max-w-8 rounded-full border border-border style-sera:rounded-none"
+                        className="h-8 w-full rounded-md border border-border style-sera:rounded-none"
                         style={{
-                          backgroundColor: `var(--chart-${step})`,
+                          backgroundColor: `var(--${token})`,
                         }}
                       />
                       <span className="text-[11px] text-muted-foreground">
-                        chart-{step}
+                        {token}
                       </span>
                     </div>
                   ))}
