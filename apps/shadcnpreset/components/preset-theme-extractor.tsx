@@ -14,12 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 
 type PresetThemeExtractorProps = {
-  defaultCode: string
+  code: string
 }
 
 const DETAIL_FIELDS: ReadonlyArray<{
@@ -116,13 +115,15 @@ function CssOutputBlock({
 }
 
 export function PresetThemeExtractor({
-  defaultCode,
+  code,
 }: PresetThemeExtractorProps) {
-  const [codeInput, setCodeInput] = React.useState(defaultCode)
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
-  const code = codeInput.trim()
+  const normalizedCode = code.trim()
 
-  const bundle = React.useMemo(() => getPresetThemeCssBundle(code), [code])
+  const bundle = React.useMemo(
+    () => getPresetThemeCssBundle(normalizedCode),
+    [normalizedCode]
+  )
 
   React.useEffect(() => {
     if (!copiedKey) return
@@ -133,7 +134,7 @@ export function PresetThemeExtractor({
   async function handleCopy(value: string, key: string) {
     const hasCopied = await copyToClipboardWithMeta(value, {
       name: "preset_theme_copy",
-      properties: { key, code },
+      properties: { key, code: normalizedCode },
     })
 
     if (hasCopied) {
@@ -144,38 +145,6 @@ export function PresetThemeExtractor({
   return (
     <div className="grid gap-6 md:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Decode a preset</CardTitle>
-            <CardDescription>
-              Paste any preset code and get ready-to-copy CSS custom properties.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Input
-              value={codeInput}
-              onChange={(event) => setCodeInput(event.target.value)}
-              placeholder="Enter preset code"
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            <p className="text-xs text-muted-foreground">
-              Works with the carousel codes you pasted, plus any other canonical
-              preset code.
-            </p>
-            {bundle ? (
-              <Link
-                href={`/preset/${bundle.resolved.code}`}
-                className="inline-block text-xs text-primary underline-offset-4 hover:underline"
-              >
-                Open preset page
-              </Link>
-            ) : null}
-          </CardContent>
-        </Card>
-
         {bundle ? (
           <PresetIframeCard
             code={bundle.resolved.code}
@@ -193,25 +162,38 @@ export function PresetThemeExtractor({
           </CardHeader>
           <CardContent>
             {!bundle ? (
-              <p className="text-sm text-destructive">
-                Enter a valid preset code to decode it.
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-destructive">
+                  This preset code could not be decoded.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Try another code in the header field above.
+                </p>
+              </div>
             ) : (
-              <dl className="grid gap-3">
-                {DETAIL_FIELDS.map((field) => (
-                  <div
-                    key={field.key}
-                    className="grid gap-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
-                  >
-                    <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                      {field.label}
-                    </dt>
-                    <dd className="text-sm break-all">
-                      {field.getValue(bundle)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <div className="space-y-3">
+                <Link
+                  href={`/preset/${bundle.resolved.code}`}
+                  className="inline-block text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  Open preset page
+                </Link>
+                <dl className="grid gap-3">
+                  {DETAIL_FIELDS.map((field) => (
+                    <div
+                      key={field.key}
+                      className="grid gap-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+                    >
+                      <dt className="text-xs tracking-wide text-muted-foreground uppercase">
+                        {field.label}
+                      </dt>
+                      <dd className="text-sm break-all">
+                        {field.getValue(bundle)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             )}
           </CardContent>
         </Card>

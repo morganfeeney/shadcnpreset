@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { encodePreset } from "shadcn/preset"
 
+import { PageHeader } from "@/components/page-header"
+import { PresetThemeGeneratorHeader } from "@/components/preset-theme-generator-header"
 import { PresetThemeExtractor } from "@/components/preset-theme-extractor"
 import { siteConfig } from "@/lib/config"
 import { PRESET_THEME_GENERATOR_TOOL } from "@/app/tools/tools"
@@ -40,8 +42,13 @@ export default async function PresetThemeGeneratorPage({
   const defaultCode = code?.trim() || encodePreset({})
 
   return (
-    <main className="grid gap-4">
-      <PresetThemeExtractor defaultCode={defaultCode} />
-    </main>
+    <>
+      <PageHeader>
+        <PresetThemeGeneratorHeader defaultCode={defaultCode} />
+      </PageHeader>
+      <main className="grid gap-4">
+        <PresetThemeExtractor code={defaultCode} />
+      </main>
+    </>
   )
 }
