@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { Check, Copy } from "lucide-react"
 
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { PresetIframeCard } from "@/components/preset-iframe-card"
@@ -14,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 
@@ -77,6 +77,44 @@ const DETAIL_FIELDS: ReadonlyArray<{
   },
 ]
 
+function CssOutputBlock({
+  value,
+  copyLabel,
+  copyKey,
+  copiedKey,
+  onCopy,
+}: {
+  value: string
+  copyLabel: string
+  copyKey: string
+  copiedKey: string | null
+  onCopy: (value: string, key: string) => void
+}) {
+  return (
+    <div className="relative">
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        className="absolute top-3 right-3 z-10"
+        onClick={() => onCopy(value, copyKey)}
+        aria-label={copiedKey === copyKey ? "Copied" : copyLabel}
+        title={copiedKey === copyKey ? "Copied" : copyLabel}
+      >
+        {copiedKey === copyKey ? (
+          <Check aria-hidden className="size-4" />
+        ) : (
+          <Copy aria-hidden className="size-4" />
+        )}
+      </Button>
+      <Textarea
+        readOnly
+        value={value}
+        className="min-h-140 font-mono text-xs"
+      />
+    </div>
+  )
+}
+
 export function PresetThemeExtractor({
   defaultCode,
 }: PresetThemeExtractorProps) {
@@ -104,7 +142,7 @@ export function PresetThemeExtractor({
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid gap-6 md:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -183,7 +221,8 @@ export function PresetThemeExtractor({
         <CardHeader>
           <CardTitle>Theme custom properties</CardTitle>
           <CardDescription>
-            Copy the combined CSS block, or just the light or dark variables.
+            Combined light and dark CSS, with a copy action inside the code
+            block.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -192,64 +231,13 @@ export function PresetThemeExtractor({
               This preset code could not be decoded.
             </div>
           ) : (
-            <Tabs defaultValue="combined" className="gap-4">
-              <TabsList>
-                <TabsTrigger value="combined">Combined</TabsTrigger>
-                <TabsTrigger value="light">Light</TabsTrigger>
-                <TabsTrigger value="dark">Dark</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="combined" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.combinedCss, "combined")}
-                  >
-                    {copiedKey === "combined" ? "Copied" : "Copy combined CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.combinedCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-
-              <TabsContent value="light" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.lightCss, "light")}
-                  >
-                    {copiedKey === "light" ? "Copied" : "Copy light CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.lightCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-
-              <TabsContent value="dark" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.darkCss, "dark")}
-                  >
-                    {copiedKey === "dark" ? "Copied" : "Copy dark CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.darkCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-            </Tabs>
+            <CssOutputBlock
+              value={bundle.combinedCss}
+              copyLabel="Copy code"
+              copyKey="combined"
+              copiedKey={copiedKey}
+              onCopy={handleCopy}
+            />
           )}
         </CardContent>
       </Card>
