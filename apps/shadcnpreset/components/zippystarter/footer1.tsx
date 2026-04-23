@@ -25,9 +25,9 @@ const COLUMNS = [
     links: [
       { label: "Ask AI", href: "/assistant" },
       { label: "Community", href: "/community" },
+      { type: "link", href: "/tools", label: "Tools" },
       { label: "Open Preset", action: "open-preset" as const },
       { label: "My presets", href: "/my-presets" },
-      { type: "link", href: "https://x.com/morganfeeney", label: "Contact" },
     ],
   },
   {
