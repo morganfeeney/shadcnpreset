@@ -104,7 +104,7 @@ export function PresetThemeExtractor({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid gap-6 md:grid-cols-[360px_minmax(0,1fr)]">
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -177,17 +177,6 @@ export function PresetThemeExtractor({
             )}
           </CardContent>
         </Card>
-
-        {bundle ? (
-          <div className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold">Preset preview</h2>
-              <p className="text-sm text-muted-foreground">
-                Uses the same iframe preview card as the homepage carousel.
-              </p>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <Card>
