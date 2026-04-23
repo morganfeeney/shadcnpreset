@@ -1,4 +1,5 @@
 import {
+  PRESET_FONTS,
   V1_CHART_COLOR_MAP,
   decodePreset,
   encodePreset,
@@ -13,7 +14,7 @@ export type ResolvedPreset = PresetConfig & {
   effectiveRadius: PresetConfig["radius"]
 }
 
-const FONT_STACKS: Record<string, string> = {
+const FONT_STACKS = {
   inter: '"Inter", system-ui, sans-serif',
   "noto-sans": '"Noto Sans", system-ui, sans-serif',
   "nunito-sans": '"Nunito Sans", system-ui, sans-serif',
@@ -38,7 +39,9 @@ const FONT_STACKS: Record<string, string> = {
   "ibm-plex-sans": '"IBM Plex Sans", system-ui, sans-serif',
   "source-sans-3": '"Source Sans 3", system-ui, sans-serif',
   "instrument-sans": '"Instrument Sans", system-ui, sans-serif',
-}
+  "eb-garamond": '"EB Garamond", serif',
+  "instrument-serif": '"Instrument Serif", serif',
+} as const satisfies Record<(typeof PRESET_FONTS)[number], string>
 
 export function resolvePresetFromCode(code: string): ResolvedPreset | null {
   if (!isPresetCode(code)) {
@@ -98,5 +101,5 @@ export function getPresetPreviewUrl(
 }
 
 export function getFontFamily(font: string) {
-  return FONT_STACKS[font] ?? '"Geist", system-ui, sans-serif'
+  return FONT_STACKS[font as keyof typeof FONT_STACKS] ?? '"Geist", system-ui, sans-serif'
 }
