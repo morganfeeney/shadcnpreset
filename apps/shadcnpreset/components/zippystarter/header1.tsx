@@ -27,7 +27,7 @@ import { OpenPresetDialog } from "@/components/open-preset-dialog"
 const HEADER_LINKS: ComponentLink[] = [
   { type: "link", href: "/assistant", label: "Ask AI" },
   { type: "link", href: "/community", label: "Community" },
-  { type: "link", href: "/my-presets", label: "My Presets" },
+  { type: "link", href: "/tools", label: "Tools" },
   { type: "action", action: "open-preset", label: "Open Preset" },
 ]
 

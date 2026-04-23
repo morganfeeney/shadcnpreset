@@ -8,7 +8,10 @@ export function DefaultLayout({ children }: PropsWithChildren) {
     <>
       <ContainerOuter className="grid min-h-screen grid-rows-[auto_1fr_auto]">
         <Header1 />
-        <Container wrapperClassName="grid" className="grid">
+        <Container
+          wrapperClassName="grid"
+          className="grid content-start items-start"
+        >
           {children}
         </Container>
         <Footer1 />
