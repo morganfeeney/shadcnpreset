@@ -1,30 +1,55 @@
+import type { Metadata } from "next"
+
 import { ToolsList } from "@/components/tools-list"
 import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderHeading,
 } from "@/components/page-header"
+import { siteConfig } from "@/lib/config"
+import { TOOLS, TOOLS_PAGE } from "@/app/tools/tools"
 
-const TOOLS = [
-  {
-    href: "/tools/preset-theme",
-    title: "Preset Theme CSS Extractor",
-    description:
-      "Paste a preset code to decode its config, preview it, and copy ready-to-use CSS custom properties.",
+export const metadata: Metadata = {
+  title: TOOLS_PAGE.title,
+  description: TOOLS_PAGE.description,
+  alternates: {
+    canonical: TOOLS_PAGE.href,
   },
-] as const
+  openGraph: {
+    title: `${TOOLS_PAGE.title} | ${siteConfig.name}`,
+    description: TOOLS_PAGE.description,
+    url: TOOLS_PAGE.href,
+    siteName: siteConfig.name,
+    type: "website",
+    images: [],
+  },
+  twitter: {
+    card: "summary",
+    title: `${TOOLS_PAGE.title} | ${siteConfig.name}`,
+    description: TOOLS_PAGE.description,
+    images: [],
+  },
+}
 
 export default function ToolsPage() {
   return (
     <>
       <PageHeader>
-        <PageHeaderHeading className="max-w-4xl">Tools</PageHeaderHeading>
+        <PageHeaderHeading className="max-w-4xl">
+          {TOOLS_PAGE.title}
+        </PageHeaderHeading>
         <PageHeaderDescription className="text-muted-foreground">
-          Utility pages for decoding, inspecting, and working with presets.
+          {TOOLS_PAGE.description}
         </PageHeaderDescription>
-      </PageHeader>{" "}
+      </PageHeader>
       <main className="grid gap-4">
-        <ToolsList tools={TOOLS} />
+        <ToolsList
+          tools={TOOLS.map((tool) => ({
+            href: tool.href,
+            title: tool.title,
+            description: tool.cardDescription,
+          }))}
+        />
       </main>
     </>
   )
