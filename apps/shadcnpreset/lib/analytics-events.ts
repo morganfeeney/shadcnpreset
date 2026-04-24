@@ -140,3 +140,13 @@ export function trackPresetVoteClick(args: {
     preset_code: args.presetCode,
   })
 }
+
+export function trackPresetThemeDecodeSubmit(args: {
+  pagePath: string
+  presetCode: string
+}) {
+  gaEvent("preset_theme_decode_submit", {
+    page_path: args.pagePath,
+    preset_code: args.presetCode,
+  })
+}
