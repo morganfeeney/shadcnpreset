@@ -41,15 +41,20 @@ export function getPresetThemeCssBundle(
     return null
   }
 
-  const registryTheme = buildRegistryTheme({
-    ...DEFAULT_CONFIG,
-    baseColor: resolved.baseColor,
-    theme: resolved.theme,
-    chartColor: resolved.effectiveChartColor,
-    menuAccent: resolved.menuAccent,
-    menuColor: resolved.menuColor,
-    radius: resolved.effectiveRadius,
-  })
+  let registryTheme: ReturnType<typeof buildRegistryTheme>
+  try {
+    registryTheme = buildRegistryTheme({
+      ...DEFAULT_CONFIG,
+      baseColor: resolved.baseColor,
+      theme: resolved.theme,
+      chartColor: resolved.effectiveChartColor,
+      menuAccent: resolved.menuAccent,
+      menuColor: resolved.menuColor,
+      radius: resolved.effectiveRadius,
+    })
+  } catch {
+    return null
+  }
 
   const fontVars = getFontVars(resolved)
   const lightVars = {

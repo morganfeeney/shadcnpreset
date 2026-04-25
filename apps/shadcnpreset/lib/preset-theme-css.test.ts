@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { encodePreset } from "shadcn/preset"
 
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 
@@ -16,5 +17,14 @@ describe("getPresetThemeCssBundle", () => {
 
   it("returns null for invalid codes", () => {
     expect(getPresetThemeCssBundle("not-a-preset")).toBeNull()
+  })
+
+  it("returns null for incompatible decoded theme combinations", () => {
+    const code = encodePreset({
+      baseColor: "gray",
+      theme: "violet",
+    })
+
+    expect(getPresetThemeCssBundle(code)).toBeNull()
   })
 })
