@@ -1,0 +1,7 @@
+{
+  "name": "Shadcn Preset Variables",
+  "id": "shadcn-preset-variables",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "main": "dist/code.js"
+}
