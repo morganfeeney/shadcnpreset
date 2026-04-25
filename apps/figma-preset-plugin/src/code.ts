@@ -70,7 +70,7 @@ function createOrUpdateVariables(
 
 figma.showUI(uiHtml, {
   width: 420,
-  height: 360,
+  height: 430,
   themeColors: true,
 })
 

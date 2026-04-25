@@ -7,41 +7,57 @@ export const uiHtml = String.raw`<!doctype html>
     <style>
       :root {
         color-scheme: light dark;
-        font-family: Inter, system-ui, sans-serif;
-        --bg: #ffffff;
-        --fg: #111827;
-        --muted: #6b7280;
-        --border: #d1d5db;
-        --button: #111827;
-        --button-fg: #ffffff;
-        --surface: #f3f4f6;
-        --surface-success: #ecfdf5;
-        --surface-success-fg: #166534;
-        --surface-error: #fef2f2;
-        --surface-error-fg: #991b1b;
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --accent: oklch(0.97 0 0);
+        --accent-foreground: oklch(0.205 0 0);
+        --destructive: oklch(0.577 0.245 27.325);
+        --border: oklch(0.922 0 0);
+        --input: oklch(0.922 0 0);
+        --ring: oklch(0.708 0 0);
+        --radius: 0.625rem;
+        --font-sans: "Inter", system-ui, sans-serif;
+        font-family: var(--font-sans);
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #1f1f1f;
-          --fg: #f9fafb;
-          --muted: #a1a1aa;
-          --border: #848484;
-          --button: #52525b;
-          --button-fg: #ffffff;
-          --surface: #27272a;
-          --surface-success: #052e16;
-          --surface-success-fg: #86efac;
-          --surface-error: #450a0a;
-          --surface-error-fg: #fca5a5;
+          --background: oklch(0 0 0);
+          --foreground: oklch(0.985 0 0);
+          --card: oklch(0.205 0 0);
+          --card-foreground: oklch(0.985 0 0);
+          --popover: oklch(0.205 0 0);
+          --popover-foreground: oklch(0.985 0 0);
+          --primary: oklch(0.922 0 0);
+          --primary-foreground: oklch(0.205 0 0);
+          --secondary: oklch(0.269 0 0);
+          --secondary-foreground: oklch(0.985 0 0);
+          --muted: oklch(0.269 0 0);
+          --muted-foreground: oklch(0.708 0 0);
+          --accent: oklch(0.269 0 0);
+          --accent-foreground: oklch(0.985 0 0);
+          --destructive: oklch(0.704 0.191 22.216);
+          --border: oklch(1 0 0 / 10%);
+          --input: oklch(1 0 0 / 15%);
+          --ring: oklch(0.556 0 0);
         }
       }
 
       body {
         margin: 0;
         padding: 16px;
-        background: var(--bg);
-        color: var(--fg);
+        background: var(--background);
+        color: var(--foreground);
       }
 
       .stack {
@@ -51,7 +67,7 @@ export const uiHtml = String.raw`<!doctype html>
 
       .copy {
         margin: 0;
-        color: var(--muted);
+        color: var(--muted-foreground);
         font-size: 12px;
         line-height: 1.5;
       }
@@ -61,35 +77,44 @@ export const uiHtml = String.raw`<!doctype html>
         gap: 6px;
         font-size: 12px;
         font-weight: 600;
-        color: var(--fg);
+        color: var(--foreground);
       }
 
       input {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid var(--border);
-        border-radius: 10px;
+        border: 1px solid var(--input);
+        border-radius: var(--radius);
         padding: 10px 12px;
         font: inherit;
-        font-size: 14px;
-        background: var(--bg);
-        color: var(--fg);
+        font-size: 12px;
+        background: var(--background);
+        color: var(--foreground);
+        outline: none;
+        transition:
+          border-color 120ms ease,
+          box-shadow 120ms ease;
       }
 
       input::placeholder {
-        color: var(--muted);
+        color: var(--muted-foreground);
+      }
+
+      input:focus {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 30%, transparent);
       }
 
       button {
         border: 0;
-        border-radius: 10px;
+        border-radius: var(--radius);
         padding: 10px 12px;
-        background: var(--button);
-        color: var(--button-fg);
         font: inherit;
         font-weight: 600;
         cursor: pointer;
         font-size: 12px;
+        background: var(--primary);
+        color: var(--primary-foreground);
       }
 
       button:disabled {
@@ -99,22 +124,26 @@ export const uiHtml = String.raw`<!doctype html>
 
       .status {
         min-height: 40px;
-        border-radius: 12px;
+        border-radius: calc(var(--radius) + 2px);
         padding: 10px 12px;
-        background: var(--surface);
+        background: var(--muted);
+        color: var(--card-foreground);
         font-size: 12px;
         line-height: 1.5;
         white-space: pre-wrap;
+        border: 1px solid var(--border);
       }
 
       .status.error {
-        background: var(--surface-error);
-        color: var(--surface-error-fg);
+        background: color-mix(in oklch, var(--destructive) 12%, var(--background));
+        color: var(--destructive);
+        border-color: color-mix(in oklch, var(--destructive) 24%, var(--border));
       }
 
       .status.success {
-        background: var(--surface-success);
-        color: var(--surface-success-fg);
+        background: color-mix(in oklch, var(--primary) 12%, var(--background));
+        color: var(--foreground);
+        border-color: color-mix(in oklch, var(--primary) 24%, var(--border));
       }
     </style>
   </head>
