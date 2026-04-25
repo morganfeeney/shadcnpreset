@@ -1,7 +1,9 @@
 {
+  "id": "1629785761451501897",
   "name": "Shadcn Preset Variables",
-  "id": "shadcn-preset-variables",
   "api": "1.0.0",
   "editorType": ["figma"],
-  "main": "dist/code.js"
+  "main": "dist/code.js",
+  "networkAccess": { "allowedDomains": ["none"] },
+  "documentAccess": "dynamic-page"
 }
