@@ -29,12 +29,18 @@ type VariableStringPayload = {
   value: string
 }
 
+type VariableNumberPayload = {
+  name: string
+  value: number
+}
+
 export type GeneratedVariablePayload = {
   collectionName: string
   presetCode: string
   summary: string
   colors: VariableColorPayload[]
   strings: VariableStringPayload[]
+  numbers: VariableNumberPayload[]
 }
 
 const DEFAULT_PRESET: Required<
@@ -197,6 +203,24 @@ function titleCase(value: string) {
     .join(" ")
 }
 
+function cssLengthToNumber(value: string) {
+  const trimmed = value.trim().toLowerCase()
+  const match = trimmed.match(/^(-?\d*\.?\d+)(px|rem)?$/)
+
+  if (!match) {
+    throw new Error(`Could not convert CSS length "${value}" to number.`)
+  }
+
+  const amount = Number(match[1])
+  const unit = match[2] ?? "px"
+
+  if (unit === "rem") {
+    return amount * 16
+  }
+
+  return amount
+}
+
 function sortTokens(tokens: string[]) {
   const ordered = TOKEN_ORDER.filter((token) => tokens.includes(token))
   const extras = tokens
@@ -273,9 +297,12 @@ export function generateVariablePayload(
           ? titleCase(resolved.font)
           : titleCase(resolved.fontHeading),
     },
+  ]
+
+  const numbers: VariableNumberPayload[] = [
     {
-      name: "radius/css",
-      value: lightVars.radius ?? darkVars.radius ?? "0.625rem",
+      name: "radius/base",
+      value: cssLengthToNumber(lightVars.radius ?? darkVars.radius ?? "0.625rem"),
     },
   ]
 
@@ -286,5 +313,6 @@ export function generateVariablePayload(
     summary: `${resolved.style} • ${resolved.baseColor}/${resolved.theme} • ${resolved.effectiveChartColor}`,
     colors,
     strings,
+    numbers,
   }
 }

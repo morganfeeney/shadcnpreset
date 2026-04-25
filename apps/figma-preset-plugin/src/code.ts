@@ -65,7 +65,13 @@ function createOrUpdateVariables(
     variable.setValueForMode(darkModeId, stringVariable.value)
   }
 
-  return payload.colors.length + payload.strings.length
+  for (const numberVariable of payload.numbers) {
+    const variable = getOrCreateVariable(collection, numberVariable.name, "FLOAT")
+    variable.setValueForMode(lightModeId, numberVariable.value)
+    variable.setValueForMode(darkModeId, numberVariable.value)
+  }
+
+  return payload.colors.length + payload.strings.length + payload.numbers.length
 }
 
 figma.showUI(uiHtml, {
