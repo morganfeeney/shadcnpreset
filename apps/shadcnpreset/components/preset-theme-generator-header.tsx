@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { generateRandomPreset } from "shadcn/preset"
 
 import {
   PageHeaderDescription,
@@ -14,6 +15,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { PRESET_THEME_GENERATOR_TOOL } from "@/app/tools/tools"
+import { trackPresetThemeDecodeSubmit } from "@/lib/analytics-events"
 
 type PresetThemeGeneratorHeaderProps = {
   defaultCode: string
@@ -31,10 +33,7 @@ export function PresetThemeGeneratorHeader({
     setValue(defaultCode)
   }, [defaultCode])
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const nextCode = value.trim()
+  function updateCode(nextCode: string) {
     const params = new URLSearchParams(searchParams.toString())
 
     if (nextCode) {
@@ -45,6 +44,26 @@ export function PresetThemeGeneratorHeader({
 
     const nextSearch = params.toString()
     router.push(nextSearch ? `${pathname}?${nextSearch}` : pathname)
+  }
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const nextCode = value.trim()
+
+    if (nextCode) {
+      trackPresetThemeDecodeSubmit({
+        pagePath: pathname,
+        presetCode: nextCode,
+      })
+    }
+
+    updateCode(nextCode)
+  }
+
+  function onRandomize() {
+    const nextCode = generateRandomPreset()
+    setValue(nextCode)
+    updateCode(nextCode)
   }
 
   return (
@@ -71,6 +90,7 @@ export function PresetThemeGeneratorHeader({
             spellCheck={false}
           />
           <InputGroupAddon align="inline-end">
+            <InputGroupButton onClick={onRandomize}>Random</InputGroupButton>
             <InputGroupButton type="submit" variant="secondary">
               Decode
             </InputGroupButton>
