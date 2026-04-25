@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { generateRandomPreset } from "shadcn/preset"
 
 import {
   PageHeaderDescription,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/input-group"
 import { PRESET_THEME_GENERATOR_TOOL } from "@/app/tools/tools"
 import { trackPresetThemeDecodeSubmit } from "@/lib/analytics-events"
+import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 
 type PresetThemeGeneratorHeaderProps = {
   defaultCode: string
@@ -61,7 +61,7 @@ export function PresetThemeGeneratorHeader({
   }
 
   function onRandomize() {
-    const nextCode = generateRandomPreset()
+    const nextCode = generateRandomCompatiblePreset()
     setValue(nextCode)
     updateCode(nextCode)
   }
