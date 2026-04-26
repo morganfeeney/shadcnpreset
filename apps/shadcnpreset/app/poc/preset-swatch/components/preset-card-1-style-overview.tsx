@@ -21,6 +21,8 @@ import { PreviewIconGrid } from "@/app/poc/preset-swatch/components/cards/icon-p
 import { StyleOverview } from "@/app/poc/preset-swatch/components/cards/style-overview"
 import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
 import { cn } from "@/lib/utils"
+import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+import { type } from "node:os"
 
 function cssVarsToStyle(vars?: Record<string, string>): CSSProperties {
   const style: CSSProperties = {}
@@ -152,6 +154,10 @@ export function PresetCard1StyleOverview({
                 font={resolved.font}
                 fontHeading={resolved.fontHeading}
               />
+              <div className="grid grid-cols-2 gap-2">
+                <TypographySpecimen font={resolved.fontHeading} type="body" />
+                <TypographySpecimen font={resolved.font} type="heading" />
+              </div>
               <TypographySpecimenCard
                 font={resolved.font}
                 fontHeading={resolved.fontHeading}
