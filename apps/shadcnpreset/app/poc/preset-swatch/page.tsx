@@ -57,8 +57,9 @@ export default async function PresetSwatchPocPage() {
                 Style Overview variant
               </h3>
               <p className="text-sm text-muted-foreground">
-                Same header + random control; body uses the v4 example Style
-                Overview (token swatch grid) instead of the typography swatch.
+                Same header + random. The body interleaves the ported v4 style
+                overview, token grid, icon grid, and observability card as
+                separate components.
               </p>
               <PresetCard1StyleOverview initialCode={homepagePresets[0].code} />
             </div>

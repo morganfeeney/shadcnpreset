@@ -17,8 +17,9 @@ import { getFontFamily, resolvePresetFromCode } from "@/lib/preset"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 import { ObservabilityCard } from "@/app/poc/preset-swatch/components/cards/observability-card"
+import { PreviewIconGrid } from "@/app/poc/preset-swatch/components/cards/icon-preview-grid"
+import { StyleOverview } from "@/app/poc/preset-swatch/components/cards/style-overview"
 import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
-import { PresetSwatchStyleOverviewCard } from "@/app/poc/preset-swatch/components/style-overview-card"
 import { cn } from "@/lib/utils"
 
 function cssVarsToStyle(vars?: Record<string, string>): CSSProperties {
@@ -35,9 +36,9 @@ type PresetCard1StyleOverviewProps = {
 }
 
 /**
- * Like `PresetCard1`, but the body adds the v4-style overview stack: typography specimen,
- * then Style Overview (token grid) + icon grid. Still decodes a preset, applies
- * `buildRegistryTheme`, and keeps the Random control.
+ * Like `PresetCard1`, with a v4-style stack: `TypographySpecimenCard`, {@link StyleOverview}
+ * (title + token grid), {@link PreviewIconGrid}, and {@link ObservabilityCard}. Still decodes
+ * a preset, applies `buildRegistryTheme`, and keeps the Random control.
  */
 export function PresetCard1StyleOverview({
   initialCode,
@@ -144,13 +145,22 @@ export function PresetCard1StyleOverview({
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 pt-0">
-            <PresetSwatchStyleOverviewCard iconLibrary={resolved.iconLibrary} />
-            <TypographySpecimenCard
-              font={resolved.font}
-              fontHeading={resolved.fontHeading}
-            />
-            <ObservabilityCard iconLibrary={resolved.iconLibrary} />
+          <CardContent className="grid grid-cols-2 items-start gap-4 pt-0">
+            <div className="flex flex-col gap-4">
+              <StyleOverview
+                style={resolved.style}
+                font={resolved.font}
+                fontHeading={resolved.fontHeading}
+              />
+              <TypographySpecimenCard
+                font={resolved.font}
+                fontHeading={resolved.fontHeading}
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <PreviewIconGrid iconLibrary={resolved.iconLibrary} />
+              <ObservabilityCard iconLibrary={resolved.iconLibrary} />
+            </div>
           </CardContent>
         </Card>
       </div>

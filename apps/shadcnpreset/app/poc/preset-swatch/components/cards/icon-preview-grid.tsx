@@ -1,34 +1,12 @@
 "use client"
 
-import * as React from "react"
 import type { IconLibraryName } from "shadcn/icons"
 
 import { IconPlaceholder } from "@/components/icon-placeholder"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/poc/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 
-const STYLE_OVERVIEW_TOKENS = [
-  "--background",
-  "--foreground",
-  "--primary",
-  "--secondary",
-  "--muted",
-  "--accent",
-  "--border",
-  "--chart-1",
-  "--chart-2",
-  "--chart-3",
-  "--chart-4",
-  "--chart-5",
-] as const
-
-/** Same set as v4 `examples/demo` icon grid. */
-const DEMO_ICON_NAMES: Array<Record<IconLibraryName, string>> = [
+/** Same icon set as v4 `blocks/preview/cards/icon-preview-grid`. */
+export const PREVIEW_ICON_NAMES: Array<Record<IconLibraryName, string>> = [
   {
     lucide: "CopyIcon",
     tabler: "IconCopy",
@@ -143,65 +121,26 @@ const DEMO_ICON_NAMES: Array<Record<IconLibraryName, string>> = [
   },
 ]
 
-type PresetSwatchStyleOverviewCardProps = {
-  /** From decoded preset; drives which set of `IconPlaceholder` names is shown. */
+export type PreviewIconGridProps = {
   iconLibrary: IconLibraryName
 }
 
-/**
- * v4 `examples/demo` left column: Style Overview + icon grid, using PoC `Card` and
- * shared `IconPlaceholder` (with `iconLibrary` override for routes without /create).
- */
-export function PresetSwatchStyleOverviewCard({
-  iconLibrary,
-}: PresetSwatchStyleOverviewCardProps) {
+/** Port of v4 `icon-preview-grid` (card-wrapped tiles to match PoC). */
+export function PreviewIconGrid({ iconLibrary }: PreviewIconGridProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Style Overview</CardTitle>
-          <CardDescription className="line-clamp-2">
-            Designers love packing quirky glyphs into test phrases. This is a
-            preview of the typography styles.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-6 gap-3">
-            {STYLE_OVERVIEW_TOKENS.map((variant) => (
-              <div
-                key={variant}
-                className="flex flex-col flex-wrap items-center gap-2"
-              >
-                <div
-                  className="relative aspect-square w-full rounded-lg bg-(--color) after:absolute after:inset-0 after:rounded-lg after:border after:border-border after:mix-blend-darken dark:after:mix-blend-lighten"
-                  style={
-                    {
-                      "--color": `var(${variant})`,
-                    } as React.CSSProperties
-                  }
-                />
-                <div className="hidden max-w-14 truncate font-mono text-[0.60rem] md:block">
-                  {variant}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent>
-          <div className="grid grid-cols-8 place-items-center gap-4">
-            {DEMO_ICON_NAMES.map((names) => (
-              <Card
-                key={names.lucide}
-                className="flex size-8 items-center justify-center p-0 shadow-none *:[svg]:size-4"
-              >
-                <IconPlaceholder iconLibrary={iconLibrary} {...names} />
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardContent>
+        <div className="grid grid-cols-8 place-items-center gap-4">
+          {PREVIEW_ICON_NAMES.map((names) => (
+            <Card
+              key={names.lucide}
+              className="flex size-8 items-center justify-center p-0 shadow-none *:[svg]:size-4"
+            >
+              <IconPlaceholder iconLibrary={iconLibrary} {...names} />
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

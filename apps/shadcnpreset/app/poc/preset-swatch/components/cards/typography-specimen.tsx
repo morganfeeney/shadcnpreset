@@ -3,11 +3,7 @@
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import {
   Dialog,
   DialogClose,
@@ -85,69 +81,6 @@ export function TypographySpecimenCard({
           feeling dense.
         </p>
       </CardContent>
-      <CardFooter>
-        <Dialog>
-          <DialogTrigger
-            render={<Button variant="outline" className="w-full" />}
-          >
-            Share Feedback
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Share Feedback</DialogTitle>
-              <DialogDescription>
-                Let us know how we can improve your experience.
-              </DialogDescription>
-            </DialogHeader>
-            <FieldGroup>
-              <div className="grid grid-cols-2 gap-3">
-                <Field>
-                  <FieldLabel htmlFor="feedback-name">Name</FieldLabel>
-                  <Input id="feedback-name" placeholder="Your name" />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="feedback-email">Email</FieldLabel>
-                  <Input
-                    id="feedback-email"
-                    type="email"
-                    placeholder="you@example.com"
-                  />
-                </Field>
-              </div>
-              <Field>
-                <FieldLabel htmlFor="feedback-category">Category</FieldLabel>
-                <Select defaultValue="general">
-                  <SelectTrigger id="feedback-category" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="bug">Bug Report</SelectItem>
-                      <SelectItem value="feature">Feature Request</SelectItem>
-                      <SelectItem value="improvement">Improvement</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="feedback-message">Message</FieldLabel>
-                <Textarea
-                  id="feedback-message"
-                  placeholder="Tell us what's on your mind..."
-                  className="min-h-24 resize-none"
-                />
-              </Field>
-            </FieldGroup>
-            <DialogFooter>
-              <DialogClose render={<Button variant="outline" />}>
-                Cancel
-              </DialogClose>
-              <Button>Submit</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardFooter>
     </Card>
   )
 }
