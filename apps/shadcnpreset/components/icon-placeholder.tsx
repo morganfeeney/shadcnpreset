@@ -45,30 +45,56 @@ void import("@/registry/icons/icon-hugeicons")
 void import("@/registry/icons/icon-phosphor")
 void import("@/registry/icons/icon-remixicon")
 
-export function IconPlaceholder({
-  ...props
-}: {
+type IconPlaceholderProps = {
   [K in IconLibraryName]: string
-} & React.ComponentProps<"svg">) {
-  const [{ iconLibrary }] = useDesignSystemSearchParams()
-  const iconName = props[iconLibrary]
+} & React.ComponentProps<"svg"> & {
+  /**
+   * When set (e.g. preset swatch), ignores the create-page URL. Otherwise the
+   * active library comes from `useDesignSystemSearchParams` (e.g. /create).
+   */
+  iconLibrary?: IconLibraryName
+}
+
+export function IconPlaceholder({
+  iconLibrary: iconLibraryFromProps,
+  lucide,
+  tabler,
+  hugeicons,
+  phosphor,
+  remixicon,
+  ...rest
+}: IconPlaceholderProps) {
+  const [{ iconLibrary: iconLibraryFromUrl }] = useDesignSystemSearchParams()
+  const iconLibrary = iconLibraryFromProps ?? iconLibraryFromUrl
+  const nameByLib: Record<IconLibraryName, string> = {
+    lucide,
+    tabler,
+    hugeicons,
+    phosphor,
+    remixicon,
+  }
+  const iconName = nameByLib[iconLibrary]
 
   if (!iconName) {
     return null
   }
 
   return (
-    <Suspense fallback={<SquareIcon {...props} />}>
-      {iconLibrary === "lucide" && <IconLucide name={iconName} {...props} />}
-      {iconLibrary === "tabler" && <IconTabler name={iconName} {...props} />}
+    <Suspense fallback={<SquareIcon {...rest} />}>
+      {iconLibrary === "lucide" && (
+        <IconLucide name={lucide} {...rest} />
+      )}
+      {iconLibrary === "tabler" && (
+        <IconTabler name={tabler} {...rest} />
+      )}
       {iconLibrary === "hugeicons" && (
-        <IconHugeicons name={iconName} {...props} />
+        <IconHugeicons name={hugeicons} {...rest} />
       )}
       {iconLibrary === "phosphor" && (
-        <IconPhosphor name={iconName} {...props} />
+        <IconPhosphor name={phosphor} {...rest} />
       )}
       {iconLibrary === "remixicon" && (
-        <IconRemixicon name={iconName} {...props} />
+        <IconRemixicon name={remixicon} {...rest} />
       )}
     </Suspense>
   )

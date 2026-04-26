@@ -4,6 +4,8 @@ import { PresetFontLoader } from "@/components/preset-font-loader"
 import { PresetSwatchPoc } from "@/components/preset-swatch-poc"
 import { getHomepageFeed } from "@/lib/preset-feed"
 import { PresetCard } from "@/app/poc/preset-swatch/components/preset-card"
+import { PresetCard1 } from "@/app/poc/preset-swatch/components/preset-card-1"
+import { PresetCard1StyleOverview } from "@/app/poc/preset-swatch/components/preset-card-1-style-overview"
 
 export default async function PresetSwatchPocPage() {
   const defaultPresetCode = encodePreset({})
@@ -29,9 +31,40 @@ export default async function PresetSwatchPocPage() {
         </h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           This route decodes a preset code and applies style, colors, radius,
-          and fonts directly to a local swatch UI. No v4 iframe bridge needed.
+          and fonts directly to a local swatch UI. No v4 iframe bridge needed
+          for that part.
         </p>
       </div>
+      {homepagePresets[0] ? (
+        <section className="mb-8 space-y-2">
+          <h2 className="text-lg font-semibold">Preset-styled card (local)</h2>
+          <p className="text-sm text-muted-foreground">
+            One card: decoded preset config,{" "}
+            <code className="rounded bg-muted px-1">buildRegistryTheme</code>,
+            and the same PoC components as the grid below (
+            <code className="rounded bg-muted px-1">
+              TypographySpecimenCard
+            </code>
+            , <code className="rounded bg-muted px-1">ColorSpecimen</code>,{" "}
+            <code className="rounded bg-muted px-1">Card</code> /{" "}
+            <code className="rounded bg-muted px-1">Button</code>
+            ). No iframe.
+          </p>
+          <div className="max-w-2xl space-y-6">
+            <PresetCard1 initialCode={homepagePresets[0].code} />
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium text-foreground">
+                Style Overview variant
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Same header + random control; body uses the v4 example Style
+                Overview (token swatch grid) instead of the typography swatch.
+              </p>
+              <PresetCard1StyleOverview initialCode={homepagePresets[0].code} />
+            </div>
+          </div>
+        </section>
+      ) : null}
       <PresetSwatchPoc defaultCode={defaultPresetCode} />
       <section className="mt-8 space-y-3">
         <h2 className="text-lg font-semibold">

@@ -1,14 +1,7 @@
 "use client"
 
 import * as React from "react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/poc/ui/card"
+import { Card, CardContent } from "@/components/poc/ui/card"
 import { Button } from "@/components/poc/ui/button"
 import Link from "next/link"
 import type { CSSProperties } from "react"
@@ -17,7 +10,9 @@ import { useTheme } from "next-themes"
 import { getFontFamily } from "@/lib/preset"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
+import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
 import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+
 import { ColorSpecimen } from "@/app/poc/preset-swatch/components/color-specimen"
 
 const COLOR_SWATCHES = [
@@ -98,13 +93,11 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
           <div className="grid gap-2">
             <Card>
               <CardContent className="grid gap-4">
-                <div className="grid gap-2">
-                  <TypographySpecimen
-                    type="heading"
-                    font={item.config.fontHeading}
-                  />
-                  <TypographySpecimen type="body" font={item.config.font} />
-                </div>
+                <TypographySpecimen
+                  type="heading"
+                  font={item.config.fontHeading}
+                />
+                <TypographySpecimen type="body" font={item.config.font} />
                 <div className="grid grid-cols-6 gap-2">
                   {COLOR_SWATCHES.map((token) => (
                     <div key={token} className="grid">
