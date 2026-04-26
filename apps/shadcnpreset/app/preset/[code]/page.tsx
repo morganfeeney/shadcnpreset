@@ -64,11 +64,11 @@ export default async function PresetCodePage({ params }: PresetPageProps) {
   const canonicalCode = encodePreset(preset)
   const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
   const createDirectUrl = new URL("/create", v4BaseUrl)
-  createDirectUrl.searchParams.set("preset", code)
+  createDirectUrl.searchParams.set("preset", canonicalCode)
   const createIframeUrl = new URL(createDirectUrl.toString())
   createIframeUrl.searchParams.set("embed", "1")
   const previewUrl = new URL("/preview/radix/preview", v4BaseUrl)
-  previewUrl.searchParams.set("preset", code)
+  previewUrl.searchParams.set("preset", canonicalCode)
 
   return (
     <PresetPageLiveProvider initialPresetCode={code}>

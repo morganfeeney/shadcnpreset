@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { Check, Copy } from "lucide-react"
 
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { PresetIframeCard } from "@/components/preset-iframe-card"
@@ -13,13 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 
 type PresetThemeExtractorProps = {
-  defaultCode: string
+  code: string
 }
 
 const DETAIL_FIELDS: ReadonlyArray<{
@@ -77,14 +76,54 @@ const DETAIL_FIELDS: ReadonlyArray<{
   },
 ]
 
-export function PresetThemeExtractor({
-  defaultCode,
-}: PresetThemeExtractorProps) {
-  const [codeInput, setCodeInput] = React.useState(defaultCode)
-  const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
-  const code = codeInput.trim()
+function CssOutputBlock({
+  value,
+  copyLabel,
+  copyKey,
+  copiedKey,
+  onCopy,
+}: {
+  value: string
+  copyLabel: string
+  copyKey: string
+  copiedKey: string | null
+  onCopy: (value: string, key: string) => void
+}) {
+  return (
+    <div className="relative">
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        className="absolute top-3 right-3 z-10"
+        onClick={() => onCopy(value, copyKey)}
+        aria-label={copiedKey === copyKey ? "Copied" : copyLabel}
+        title={copiedKey === copyKey ? "Copied" : copyLabel}
+      >
+        {copiedKey === copyKey ? (
+          <Check aria-hidden className="size-4" />
+        ) : (
+          <Copy aria-hidden className="size-4" />
+        )}
+      </Button>
+      <Textarea
+        readOnly
+        value={value}
+        className="min-h-140 font-mono text-xs"
+      />
+    </div>
+  )
+}
 
-  const bundle = React.useMemo(() => getPresetThemeCssBundle(code), [code])
+export function PresetThemeExtractor({
+  code,
+}: PresetThemeExtractorProps) {
+  const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+  const normalizedCode = code.trim()
+
+  const bundle = React.useMemo(
+    () => getPresetThemeCssBundle(normalizedCode),
+    [normalizedCode]
+  )
 
   React.useEffect(() => {
     if (!copiedKey) return
@@ -95,7 +134,7 @@ export function PresetThemeExtractor({
   async function handleCopy(value: string, key: string) {
     const hasCopied = await copyToClipboardWithMeta(value, {
       name: "preset_theme_copy",
-      properties: { key, code },
+      properties: { key, code: normalizedCode },
     })
 
     if (hasCopied) {
@@ -104,40 +143,8 @@ export function PresetThemeExtractor({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid gap-6 md:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Decode a preset</CardTitle>
-            <CardDescription>
-              Paste any preset code and get ready-to-copy CSS custom properties.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Input
-              value={codeInput}
-              onChange={(event) => setCodeInput(event.target.value)}
-              placeholder="Enter preset code"
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            <p className="text-xs text-muted-foreground">
-              Works with the carousel codes you pasted, plus any other canonical
-              preset code.
-            </p>
-            {bundle ? (
-              <Link
-                href={`/preset/${bundle.resolved.code}`}
-                className="inline-block text-xs text-primary underline-offset-4 hover:underline"
-              >
-                Open preset page
-              </Link>
-            ) : null}
-          </CardContent>
-        </Card>
-
         {bundle ? (
           <PresetIframeCard
             code={bundle.resolved.code}
@@ -155,46 +162,49 @@ export function PresetThemeExtractor({
           </CardHeader>
           <CardContent>
             {!bundle ? (
-              <p className="text-sm text-destructive">
-                Enter a valid preset code to decode it.
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-destructive">
+                  This preset code could not be decoded.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Try another code in the header field above.
+                </p>
+              </div>
             ) : (
-              <dl className="grid gap-3">
-                {DETAIL_FIELDS.map((field) => (
-                  <div
-                    key={field.key}
-                    className="grid gap-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
-                  >
-                    <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                      {field.label}
-                    </dt>
-                    <dd className="text-sm break-all">
-                      {field.getValue(bundle)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <div className="space-y-3">
+                <Link
+                  href={`/preset/${bundle.resolved.code}`}
+                  className="inline-block text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  Open preset page
+                </Link>
+                <dl className="grid gap-3">
+                  {DETAIL_FIELDS.map((field) => (
+                    <div
+                      key={field.key}
+                      className="grid gap-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+                    >
+                      <dt className="text-xs tracking-wide text-muted-foreground uppercase">
+                        {field.label}
+                      </dt>
+                      <dd className="text-sm break-all">
+                        {field.getValue(bundle)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             )}
           </CardContent>
         </Card>
-
-        {bundle ? (
-          <div className="space-y-3">
-            <div>
-              <h2 className="text-base font-semibold">Preset preview</h2>
-              <p className="text-sm text-muted-foreground">
-                Uses the same iframe preview card as the homepage carousel.
-              </p>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Theme custom properties</CardTitle>
           <CardDescription>
-            Copy the combined CSS block, or just the light or dark variables.
+            Combined light and dark CSS, with a copy action inside the code
+            block.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -203,64 +213,13 @@ export function PresetThemeExtractor({
               This preset code could not be decoded.
             </div>
           ) : (
-            <Tabs defaultValue="combined" className="gap-4">
-              <TabsList>
-                <TabsTrigger value="combined">Combined</TabsTrigger>
-                <TabsTrigger value="light">Light</TabsTrigger>
-                <TabsTrigger value="dark">Dark</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="combined" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.combinedCss, "combined")}
-                  >
-                    {copiedKey === "combined" ? "Copied" : "Copy combined CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.combinedCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-
-              <TabsContent value="light" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.lightCss, "light")}
-                  >
-                    {copiedKey === "light" ? "Copied" : "Copy light CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.lightCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-
-              <TabsContent value="dark" className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(bundle.darkCss, "dark")}
-                  >
-                    {copiedKey === "dark" ? "Copied" : "Copy dark CSS"}
-                  </Button>
-                </div>
-                <Textarea
-                  readOnly
-                  value={bundle.darkCss}
-                  className="min-h-[560px] font-mono text-xs"
-                />
-              </TabsContent>
-            </Tabs>
+            <CssOutputBlock
+              value={bundle.combinedCss}
+              copyLabel="Copy code"
+              copyKey="combined"
+              copiedKey={copiedKey}
+              onCopy={handleCopy}
+            />
           )}
         </CardContent>
       </Card>

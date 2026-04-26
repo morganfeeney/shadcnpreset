@@ -6,6 +6,7 @@ import {
   isPresetCode,
   type PresetConfig,
 } from "shadcn/preset"
+import { DEFAULT_CONFIG, getBaseColor, getThemesForBaseColor } from "@/registry/config"
 
 export type ResolvedPreset = PresetConfig & {
   code: string
@@ -43,6 +44,38 @@ const FONT_STACKS = {
   "instrument-serif": '"Instrument Serif", serif',
 } as const satisfies Record<(typeof PRESET_FONTS)[number], string>
 
+function isTranslucentMenuColor(menuColor: ResolvedPreset["menuColor"]) {
+  return (
+    menuColor === "default-translucent" || menuColor === "inverted-translucent"
+  )
+}
+
+function normalizeResolvedPreset(resolved: ResolvedPreset): ResolvedPreset {
+  const baseColor = (
+    getBaseColor(resolved.baseColor) ? resolved.baseColor : DEFAULT_CONFIG.baseColor
+  ) as PresetConfig["baseColor"]
+
+  const availableThemes = getThemesForBaseColor(baseColor)
+  const availableThemeNames = new Set<PresetConfig["theme"]>(
+    availableThemes.map((theme) => theme.name as PresetConfig["theme"])
+  )
+  const fallbackTheme: PresetConfig["theme"] =
+    (availableThemes[0]?.name as PresetConfig["theme"] | undefined) ?? baseColor
+
+  return {
+    ...resolved,
+    baseColor,
+    theme: availableThemeNames.has(resolved.theme) ? resolved.theme : fallbackTheme,
+    effectiveChartColor: availableThemeNames.has(resolved.effectiveChartColor)
+      ? resolved.effectiveChartColor
+      : fallbackTheme,
+    menuAccent:
+      resolved.menuAccent === "bold" && isTranslucentMenuColor(resolved.menuColor)
+        ? "subtle"
+        : resolved.menuAccent,
+  }
+}
+
 export function resolvePresetFromCode(code: string): ResolvedPreset | null {
   if (!isPresetCode(code)) {
     return null
@@ -66,13 +99,13 @@ export function resolvePresetFromCode(code: string): ResolvedPreset | null {
       ? "none"
       : (decoded.radius as PresetConfig["radius"])
 
-  return {
+  return normalizeResolvedPreset({
     ...decoded,
     code,
     isLegacyCode: code.startsWith("a"),
     effectiveChartColor,
     effectiveRadius,
-  }
+  })
 }
 
 /** Matches v4 `PreviewSwitcher`: `/preview/radix/preview` vs `/preview/radix/preview-02`. */
@@ -93,9 +126,10 @@ export function getPresetPreviewUrl(
 ): string | null {
   const resolved = resolvePresetFromCode(code)
   if (!resolved) return null
+  const canonicalCode = encodePreset(resolved)
   const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
   const previewUrl = new URL(`/preview/radix/${pageName}`, v4BaseUrl)
-  previewUrl.searchParams.set("preset", code)
+  previewUrl.searchParams.set("preset", canonicalCode)
   previewUrl.searchParams.set("iconLibrary", resolved.iconLibrary)
   return previewUrl.toString()
 }

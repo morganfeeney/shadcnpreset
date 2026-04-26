@@ -46,3 +46,6 @@ tsconfig.tsbuildinfo
 .playwright-mcp
 shadcn-workspace
 .codex-artifacts
+
+# figma plugin build output
+apps/figma-preset-plugin/dist/
