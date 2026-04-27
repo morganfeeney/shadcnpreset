@@ -2,6 +2,7 @@ import { encodePreset } from "shadcn/preset"
 
 import { PresetFontLoader } from "@/components/preset-font-loader"
 import { PresetSwatchPoc } from "@/components/preset-swatch-poc"
+import { effectiveHeadingFont } from "@/lib/preset"
 import { getHomepageFeed } from "@/lib/preset-feed"
 import { PresetCard } from "@/app/poc/preset-swatch/components/preset-card"
 import { PresetCard1 } from "@/app/poc/preset-swatch/components/preset-card-1"
@@ -14,9 +15,7 @@ export default async function PresetSwatchPocPage() {
     new Set(
       homepagePresets.flatMap((item) => [
         item.config.font,
-        item.config.fontHeading === "inherit"
-          ? item.config.font
-          : item.config.fontHeading,
+        effectiveHeadingFont(item.config.font, item.config.fontHeading),
       ])
     )
   )

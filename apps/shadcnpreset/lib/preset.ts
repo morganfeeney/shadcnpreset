@@ -15,6 +15,16 @@ export type ResolvedPreset = PresetConfig & {
   effectiveRadius: PresetConfig["radius"]
 }
 
+/**
+ * Heading font token for styling: when the preset says `inherit`, use the body font.
+ */
+export function effectiveHeadingFont(
+  bodyFont: string,
+  headingFont: string
+): string {
+  return headingFont === "inherit" ? bodyFont : headingFont
+}
+
 const FONT_STACKS = {
   inter: '"Inter", system-ui, sans-serif',
   "noto-sans": '"Noto Sans", system-ui, sans-serif',

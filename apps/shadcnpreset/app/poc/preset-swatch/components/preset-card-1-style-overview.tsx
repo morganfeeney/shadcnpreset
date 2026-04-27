@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
-import type { CSSProperties } from "react"
 
 import { Button } from "@/components/poc/ui/button"
 import {
@@ -13,7 +12,8 @@ import {
   CardTitle,
 } from "@/components/poc/ui/card"
 import { PresetFontLoader } from "@/components/preset-font-loader"
-import { getFontFamily, resolvePresetFromCode } from "@/lib/preset"
+import { PresetThemeSurface } from "@/components/preset-theme-surface"
+import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 import { ObservabilityCard } from "@/app/poc/preset-swatch/components/cards/observability-card"
@@ -22,15 +22,6 @@ import { StyleOverview } from "@/app/poc/preset-swatch/components/cards/style-ov
 import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
 import { cn } from "@/lib/utils"
 import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
-import { type } from "node:os"
-
-function cssVarsToStyle(vars?: Record<string, string>): CSSProperties {
-  const style: CSSProperties = {}
-  for (const [key, value] of Object.entries(vars ?? {})) {
-    ;(style as Record<string, string>)[`--${key}`] = value
-  }
-  return style
-}
 
 type PresetCard1StyleOverviewProps = {
   initialCode: string
@@ -76,35 +67,18 @@ export function PresetCard1StyleOverview({
     })
   }, [resolved])
 
-  const surfaceStyle = React.useMemo(() => {
-    if (!resolved || !theme) {
-      return undefined
-    }
-    const next = cssVarsToStyle(theme.cssVars?.[mode] as Record<string, string>)
-    ;(next as Record<string, string>)["--font-sans"] = getFontFamily(
-      resolved.font
-    )
-    ;(next as Record<string, string>)["--font-heading"] = getFontFamily(
-      resolved.fontHeading === "inherit" ? resolved.font : resolved.fontHeading
-    )
-    return next
-  }, [resolved, mode, theme])
-
   const fontValues = React.useMemo(() => {
     if (!resolved) {
       return [] as string[]
     }
-    return [
-      resolved.font,
-      resolved.fontHeading === "inherit" ? resolved.font : resolved.fontHeading,
-    ]
+    return [resolved.font, effectiveHeadingFont(resolved.font, resolved.fontHeading)]
   }, [resolved])
 
   if (!mounted) {
     return null
   }
 
-  if (!resolved || !theme || !surfaceStyle) {
+  if (!resolved || !theme) {
     return (
       <Card className={cn("border-dashed", className)}>
         <CardHeader>
@@ -118,11 +92,12 @@ export function PresetCard1StyleOverview({
   return (
     <div className={className}>
       <PresetFontLoader fontValues={fontValues} />
-      <div
-        className={[mode === "dark" ? "dark" : null, `style-${resolved.style}`]
-          .filter(Boolean)
-          .join(" ")}
-        style={surfaceStyle}
+      <PresetThemeSurface
+        registryTheme={theme}
+        surfaceMode={mode}
+        bodyFont={resolved.font}
+        headingFont={resolved.fontHeading}
+        styleName={resolved.style}
       >
         <Card className="overflow-hidden border-border bg-card text-card-foreground shadow-sm">
           <CardHeader className="gap-2">
@@ -155,8 +130,14 @@ export function PresetCard1StyleOverview({
                 fontHeading={resolved.fontHeading}
               />
               <div className="grid grid-cols-2 gap-2">
-                <TypographySpecimen font={resolved.fontHeading} type="body" />
-                <TypographySpecimen font={resolved.font} type="heading" />
+                <TypographySpecimen type="body" font={resolved.font} />
+                <TypographySpecimen
+                  type="heading"
+                  font={effectiveHeadingFont(
+                    resolved.font,
+                    resolved.fontHeading
+                  )}
+                />
               </div>
               <TypographySpecimenCard
                 font={resolved.font}
@@ -169,7 +150,7 @@ export function PresetCard1StyleOverview({
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PresetThemeSurface>
     </div>
   )
 }

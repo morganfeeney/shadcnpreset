@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { getPresetPreviewUrl, resolvePresetFromCode } from "@/lib/preset"
+import {
+  effectiveHeadingFont,
+  getPresetPreviewUrl,
+  resolvePresetFromCode,
+} from "@/lib/preset"
 
 describe("resolvePresetFromCode", () => {
   it("normalizes the crashing preset code", () => {
@@ -12,6 +16,18 @@ describe("resolvePresetFromCode", () => {
     expect(resolved?.theme).toBe("green")
     expect(resolved?.effectiveChartColor).toBe("neutral")
     expect(resolved?.menuAccent).toBe("subtle")
+  })
+})
+
+describe("effectiveHeadingFont", () => {
+  it("uses body when heading is inherit", () => {
+    expect(effectiveHeadingFont("inter", "inherit")).toBe("inter")
+  })
+
+  it("keeps a concrete heading font", () => {
+    expect(effectiveHeadingFont("inter", "playfair-display")).toBe(
+      "playfair-display"
+    )
   })
 })
 

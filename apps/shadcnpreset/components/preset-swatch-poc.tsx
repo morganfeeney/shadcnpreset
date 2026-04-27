@@ -14,7 +14,8 @@ import {
 } from "@/components/poc/ui/card"
 import { Input } from "@/components/poc/ui/input"
 import { PresetFontLoader } from "@/components/preset-font-loader"
-import { getFontFamily, resolvePresetFromCode } from "@/lib/preset"
+import { PresetThemeSurface } from "@/components/preset-theme-surface"
+import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 
 type PresetSwatchPocProps = {
@@ -35,15 +36,6 @@ const COLOR_SWATCHES = [
   "chart-4",
   "chart-5",
 ] as const
-function cssVarsToStyle(vars?: Record<string, string>): React.CSSProperties {
-  const style: React.CSSProperties = {}
-
-  for (const [key, value] of Object.entries(vars ?? {})) {
-    ;(style as Record<string, string>)[`--${key}`] = value
-  }
-
-  return style
-}
 
 export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
   const [codeInput, setCodeInput] = React.useState(defaultCode)
@@ -67,48 +59,9 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
     })
   }, [resolved])
 
-  const lightStyle = React.useMemo(() => {
-    const style = cssVarsToStyle(
-      theme?.cssVars?.light as Record<string, string>
-    )
-
-    if (resolved) {
-      ;(style as Record<string, string>)["--font-sans"] = getFontFamily(
-        resolved.font
-      )
-      ;(style as Record<string, string>)["--font-heading"] = getFontFamily(
-        resolved.fontHeading === "inherit"
-          ? resolved.font
-          : resolved.fontHeading
-      )
-    }
-
-    return style
-  }, [theme, resolved])
-
-  const darkStyle = React.useMemo(() => {
-    const style = cssVarsToStyle(theme?.cssVars?.dark as Record<string, string>)
-
-    if (resolved) {
-      ;(style as Record<string, string>)["--font-sans"] = getFontFamily(
-        resolved.font
-      )
-      ;(style as Record<string, string>)["--font-heading"] = getFontFamily(
-        resolved.fontHeading === "inherit"
-          ? resolved.font
-          : resolved.fontHeading
-      )
-    }
-
-    return style
-  }, [theme, resolved])
-
   const fontValues = React.useMemo(() => {
     if (!resolved) return []
-    return [
-      resolved.font,
-      resolved.fontHeading === "inherit" ? resolved.font : resolved.fontHeading,
-    ]
+    return [resolved.font, effectiveHeadingFont(resolved.font, resolved.fontHeading)]
   }, [resolved])
 
   const { resolvedTheme } = useTheme()
@@ -117,8 +70,8 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
   }, [])
 
   const isDark = mounted && resolvedTheme === "dark"
-  const activeStyle = isDark ? darkStyle : lightStyle
-  const altStyle = isDark ? lightStyle : darkStyle
+  const activeSurface: "light" | "dark" = isDark ? "dark" : "light"
+  const alternateSurface: "light" | "dark" = isDark ? "light" : "dark"
 
   if (!mounted) {
     return null
@@ -141,7 +94,7 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
         <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           Invalid or non-canonical preset code.
         </div>
-      ) : (
+      ) : theme ? (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Decoded: style <strong>{resolved.style}</strong>, base color{" "}
@@ -151,11 +104,12 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
           </p>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div
-              className={[isDark ? "dark" : null, `style-${resolved.style}`]
-                .filter(Boolean)
-                .join(" ")}
-              style={activeStyle}
+            <PresetThemeSurface
+              registryTheme={theme}
+              surfaceMode={activeSurface}
+              bodyFont={resolved.font}
+              headingFont={resolved.fontHeading}
+              styleName={resolved.style}
             >
               <Card className="gap-3 p-4 text-card-foreground">
                 <CardHeader className="gap-1 px-0 pt-0">
@@ -191,13 +145,14 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
                   <Button variant="outline">Outline</Button>
                 </CardFooter>
               </Card>
-            </div>
+            </PresetThemeSurface>
 
-            <div
-              className={[isDark ? null : "dark", `style-${resolved.style}`]
-                .filter(Boolean)
-                .join(" ")}
-              style={altStyle}
+            <PresetThemeSurface
+              registryTheme={theme}
+              surfaceMode={alternateSurface}
+              bodyFont={resolved.font}
+              headingFont={resolved.fontHeading}
+              styleName={resolved.style}
             >
               <Card className="gap-3 p-4 text-card-foreground">
                 <CardHeader className="gap-1 px-0 pt-0">
@@ -232,10 +187,10 @@ export function PresetSwatchPoc({ defaultCode }: PresetSwatchPocProps) {
                   <Button variant="outline">Outline</Button>
                 </CardFooter>
               </Card>
-            </div>
+            </PresetThemeSurface>
           </div>
         </div>
-      )}
+      ) : null}
     </section>
   )
 }

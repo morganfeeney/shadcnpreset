@@ -4,10 +4,10 @@ import * as React from "react"
 import { Card, CardContent } from "@/components/poc/ui/card"
 import { Button } from "@/components/poc/ui/button"
 import Link from "next/link"
-import type { CSSProperties } from "react"
 import { useTheme } from "next-themes"
 
-import { getFontFamily } from "@/lib/preset"
+import { PresetThemeSurface } from "@/components/preset-theme-surface"
+import { effectiveHeadingFont } from "@/lib/preset"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
@@ -29,14 +29,6 @@ const COLOR_SWATCHES = [
   "chart-4",
   "chart-5",
 ] as const
-
-function cssVarsToStyle(vars?: Record<string, string>): CSSProperties {
-  const style: CSSProperties = {}
-  for (const [key, value] of Object.entries(vars ?? {})) {
-    ;(style as Record<string, string>)[`--${key}`] = value
-  }
-  return style
-}
 
 export function PresetCard({ item }: { item: PresetPageItem }) {
   const { resolvedTheme } = useTheme()
@@ -62,42 +54,31 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
     [item]
   )
 
-  const style = React.useMemo(() => {
-    const nextStyle = cssVarsToStyle(
-      theme.cssVars?.[mode] as Record<string, string>
-    )
-    ;(nextStyle as Record<string, string>)["--font-sans"] = getFontFamily(
-      item.config.font
-    )
-    ;(nextStyle as Record<string, string>)["--font-heading"] = getFontFamily(
-      item.config.fontHeading === "inherit"
-        ? item.config.font
-        : item.config.fontHeading
-    )
-    return nextStyle
-  }, [item, mode, theme])
-
   if (!mounted) {
     return null
   }
 
   return (
-    <div
-      className={[mode === "dark" ? "dark" : null, `style-${item.config.style}`]
-        .filter(Boolean)
-        .join(" ")}
-      style={style}
+    <PresetThemeSurface
+      registryTheme={theme}
+      surfaceMode={mode}
+      bodyFont={item.config.font}
+      headingFont={item.config.fontHeading}
+      styleName={item.config.style}
     >
       <div className="bg-background">
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-2">
             <Card>
               <CardContent className="grid gap-4">
+                <TypographySpecimen type="body" font={item.config.font} />
                 <TypographySpecimen
                   type="heading"
-                  font={item.config.fontHeading}
+                  font={effectiveHeadingFont(
+                    item.config.font,
+                    item.config.fontHeading
+                  )}
                 />
-                <TypographySpecimen type="body" font={item.config.font} />
                 <div className="grid grid-cols-6 gap-2">
                   {COLOR_SWATCHES.map((token) => (
                     <div key={token} className="grid">
@@ -118,9 +99,6 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
                   ))}
                 </div>
               </CardContent>
-            </Card>
-            <Card>
-              <CardContent></CardContent>
             </Card>
           </div>
           <Card>
@@ -145,6 +123,6 @@ export function PresetCard({ item }: { item: PresetPageItem }) {
           </Card>
         </div>
       </div>
-    </div>
+    </PresetThemeSurface>
   )
 }
