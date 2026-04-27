@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/poc/ui/card"
+import { CardHeader } from "@/components/ui/card"
 
 interface TypographySpecimenProps {
   type: "heading" | "body"
@@ -7,20 +9,22 @@ interface TypographySpecimenProps {
 
 export function TypographySpecimen({ type, font }: TypographySpecimenProps) {
   return (
-    <div className="@container grid gap-1 rounded-md bg-muted p-2 text-muted-foreground">
-      <div className="flex justify-between gap-x-2 overflow-hidden text-xs">
-        <div className="truncate">{type}</div>
-        <div className="truncate">{font}</div>
-      </div>
-      <div
-        className={cn(
-          "justify-self-end text-6xl text-foreground",
-          type === "body" && "font-sans",
-          type === "heading" && "cn-font-heading"
-        )}
-      >
-        Aa
-      </div>
-    </div>
+    <Card className="@container grid gap-1">
+      <CardHeader className="grid gap-0 text-xs capitalize">
+        <div className="truncate text-muted-foreground">{type}</div>
+        <div className="truncate text-muted-foreground">{font}</div>
+      </CardHeader>
+      <CardContent>
+        <div
+          className={cn(
+            "justify-self-start text-7xl text-foreground",
+            type === "body" && "font-sans",
+            type === "heading" && "cn-font-heading"
+          )}
+        >
+          Aa
+        </div>
+      </CardContent>
+    </Card>
   )
 }

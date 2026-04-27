@@ -11,6 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/poc/ui/card"
+
+import {
+  Card as ShadcnCard,
+  CardContent as ShadcnCardContent,
+  CardDescription as ShadcnCardDescription,
+  CardHeader as ShadcnCardHeader,
+  CardTitle as ShadcnCardTitle,
+} from "@/components/ui/card"
+
 import { PresetFontLoader } from "@/components/preset-font-loader"
 import { PresetThemeSurface } from "@/components/preset-theme-surface"
 import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
@@ -71,7 +80,10 @@ export function PresetCard1StyleOverview({
     if (!resolved) {
       return [] as string[]
     }
-    return [resolved.font, effectiveHeadingFont(resolved.font, resolved.fontHeading)]
+    return [
+      resolved.font,
+      effectiveHeadingFont(resolved.font, resolved.fontHeading),
+    ]
   }, [resolved])
 
   if (!mounted) {
@@ -99,8 +111,8 @@ export function PresetCard1StyleOverview({
         headingFont={resolved.fontHeading}
         styleName={resolved.style}
       >
-        <Card className="overflow-hidden border-border bg-card text-card-foreground shadow-sm">
-          <CardHeader className="gap-2">
+        <ShadcnCard className="bg-muted dark:bg-background">
+          <ShadcnCardHeader className="gap-2">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0">
                 <CardTitle className="cn-font-heading text-lg">
@@ -121,8 +133,8 @@ export function PresetCard1StyleOverview({
                 Random
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 items-start gap-4 pt-0">
+          </ShadcnCardHeader>
+          <ShadcnCardContent className="grid grid-cols-2 items-start gap-4 pt-0">
             <div className="flex flex-col gap-4">
               <StyleOverview
                 style={resolved.style}
@@ -148,8 +160,8 @@ export function PresetCard1StyleOverview({
               <PreviewIconGrid iconLibrary={resolved.iconLibrary} />
               <ObservabilityCard iconLibrary={resolved.iconLibrary} />
             </div>
-          </CardContent>
-        </Card>
+          </ShadcnCardContent>
+        </ShadcnCard>
       </PresetThemeSurface>
     </div>
   )
