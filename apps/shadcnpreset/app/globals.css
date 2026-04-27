@@ -148,10 +148,6 @@
     @apply border-border outline-ring/50;
   }
 
-  .cn-font-heading {
-    font-family: var(--font-heading);
-  }
-
   body {
     @apply bg-background text-foreground;
   }
@@ -189,4 +185,10 @@
 
 @utility font-display {
   @apply font-semibold tracking-tight;
+}
+
+@layer utilities {
+  .cn-font-heading {
+    font-family: var(--font-heading);
+  }
 }
