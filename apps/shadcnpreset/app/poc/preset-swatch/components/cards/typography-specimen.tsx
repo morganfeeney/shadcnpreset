@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/poc/ui/card"
 
 import { FONTS } from "@/app/(create)/lib/fonts"
 

@@ -3,7 +3,7 @@
 import * as React from "react"
 import type { PresetConfig } from "shadcn/preset"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/poc/ui/card"
 import { FONTS } from "@/app/(create)/lib/fonts"
 import { STYLES } from "@/registry/styles"
 import { StyleOverviewTokenGrid } from "@/app/poc/preset-swatch/components/cards/style-overview-tokens"
@@ -29,7 +29,11 @@ export type StyleOverviewProps = Pick<
  * preset props instead of `useDesignSystemSearchParams`. Composes {@link StyleOverviewTokenGrid}
  * in the same card. Pair with {@link PreviewIconGrid} in the parent for the full column.
  */
-export function StyleOverview({ style, font, fontHeading }: StyleOverviewProps) {
+export function StyleOverview({
+  style,
+  font,
+  fontHeading,
+}: StyleOverviewProps) {
   const currentStyle = React.useMemo(
     () => STYLES.find((s) => s.name === style),
     [style]
@@ -54,7 +58,7 @@ export function StyleOverview({ style, font, fontHeading }: StyleOverviewProps) 
   const headingDisplayName =
     fontHeading === "inherit"
       ? undefined
-      : currentFontHeading?.name ?? labelForFontValue(fontHeading)
+      : (currentFontHeading?.name ?? labelForFontValue(fontHeading))
 
   const nameAfterDash =
     headingDisplayName && headingDisplayName !== bodyDisplayName

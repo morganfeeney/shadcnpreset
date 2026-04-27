@@ -11,7 +11,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/poc/ui/card"
 
 export type ObservabilityCardProps = {
   iconLibrary: IconLibraryName

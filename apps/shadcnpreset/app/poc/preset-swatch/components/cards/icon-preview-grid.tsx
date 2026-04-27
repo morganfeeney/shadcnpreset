@@ -3,7 +3,7 @@
 import type { IconLibraryName } from "shadcn/icons"
 
 import { IconPlaceholder } from "@/components/icon-placeholder"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/poc/ui/card"
 
 /** Same icon set as v4 `blocks/preview/cards/icon-preview-grid`. */
 export const PREVIEW_ICON_NAMES: Array<Record<IconLibraryName, string>> = [
