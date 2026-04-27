@@ -15,6 +15,7 @@ export function TypographySpecimen({ type, font }: TypographySpecimenProps) {
       <div
         className={cn(
           "justify-self-end text-6xl text-foreground",
+          type === "body" && "font-sans",
           type === "heading" && "cn-font-heading"
         )}
       >
