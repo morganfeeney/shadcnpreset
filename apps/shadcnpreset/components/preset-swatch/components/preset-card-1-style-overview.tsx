@@ -85,7 +85,12 @@ export function PresetCard1StyleOverview({
   }
 
   return (
-    <div className={className}>
+    <div
+      className={cn(
+        className,
+        "[--gap:--spacing(4)] 3xl:[--gap:--spacing(12)] md:[--gap:--spacing(10)] style-lyra:md:[--gap:--spacing(6)] style-mira:md:[--gap:--spacing(6)]"
+      )}
+    >
       <PresetFontLoader fontValues={fontValues} />
       <PresetThemeSurface
         registryTheme={theme}
@@ -95,7 +100,7 @@ export function PresetCard1StyleOverview({
         styleName={resolved.style}
       >
         <ShadcnCard className="bg-muted dark:bg-background">
-          <ShadcnCardContent className="grid grid-cols-2 items-start gap-4 pt-0">
+          <ShadcnCardContent className="grid grid-cols-2 items-start gap-(--gap) bg-muted p-(--gap) dark:bg-background *:[div]:gap-(--gap)">
             <div className="flex flex-col gap-4">
               <StyleOverview
                 style={resolved.style}
