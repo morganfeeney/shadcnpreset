@@ -135,7 +135,7 @@ export function PresetStyleOverviewCard2({
   }
 
   return (
-    <div className="grid gap-1">
+    <div className="grid gap-0.5">
       <div
         ref={wrapperRef}
         className="relative w-full overflow-hidden rounded-sm"
@@ -176,7 +176,7 @@ export function PresetStyleOverviewCard2({
       <div className="grid gap-3">
         <div className="flex w-full items-center justify-between gap-2">
           <div>
-            <p className="truncate pl-2 font-mono text-sm font-medium">
+            <p className="truncate pl-2 font-mono text-xs font-medium">
               {title}
             </p>
           </div>
