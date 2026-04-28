@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Check, Copy } from "lucide-react"
 
 import { copyToClipboardWithMeta } from "@/components/copy-button"
-import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -146,7 +146,7 @@ export function PresetThemeExtractor({ code }: PresetThemeExtractorProps) {
     <div className="grid gap-6 md:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
         {bundle ? (
-          <PresetIframeCard
+          <PresetStyleOverviewCard
             code={bundle.resolved.code}
             title={bundle.resolved.code}
             description={`${bundle.resolved.baseColor} base, ${bundle.resolved.theme} theme, ${bundle.resolved.effectiveChartColor} charts, ${bundle.resolved.iconLibrary}`}

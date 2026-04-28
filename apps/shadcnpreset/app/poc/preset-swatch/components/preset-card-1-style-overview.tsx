@@ -34,26 +34,19 @@ type PresetCard1StyleOverviewProps = {
 /**
  * Like `PresetCard1`, with a v4-style stack: `TypographySpecimenCard`, {@link StyleOverview}
  * (title + token grid), {@link PreviewIconGrid}, and {@link ObservabilityCard}. Still decodes
- * a preset, applies `buildRegistryTheme`, and keeps the Random control.
+ * a preset, applies `buildRegistryTheme`, and composes v4-style preview blocks (no iframe).
  */
 export function PresetCard1StyleOverview({
   initialCode,
   className,
 }: PresetCard1StyleOverviewProps) {
   const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  const [code, setCode] = React.useState(initialCode)
 
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  React.useEffect(() => {
-    setCode(initialCode)
-  }, [initialCode])
-
-  const resolved = React.useMemo(() => resolvePresetFromCode(code), [code])
-  const mode = mounted && resolvedTheme === "dark" ? "dark" : "light"
+  const resolved = React.useMemo(
+    () => resolvePresetFromCode(initialCode),
+    [initialCode]
+  )
+  const mode = resolvedTheme === "dark" ? "dark" : "light"
 
   const theme = React.useMemo(() => {
     if (!resolved) {
@@ -79,10 +72,6 @@ export function PresetCard1StyleOverview({
       effectiveHeadingFont(resolved.font, resolved.fontHeading),
     ]
   }, [resolved])
-
-  if (!mounted) {
-    return null
-  }
 
   if (!resolved || !theme) {
     return (
