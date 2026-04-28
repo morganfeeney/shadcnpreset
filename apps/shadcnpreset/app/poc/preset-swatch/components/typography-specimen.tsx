@@ -9,22 +9,24 @@ interface TypographySpecimenProps {
 
 export function TypographySpecimen({ type, font }: TypographySpecimenProps) {
   return (
-    <Card className="@container grid gap-1">
-      <CardHeader className="grid gap-0 text-xs capitalize">
-        <div className="truncate text-muted-foreground">{type}</div>
-        <div className="truncate text-muted-foreground">{font}</div>
-      </CardHeader>
-      <CardContent>
-        <div
-          className={cn(
-            "justify-self-start text-7xl text-foreground",
-            type === "body" && "font-sans",
-            type === "heading" && "cn-font-heading"
-          )}
-        >
-          Aa
-        </div>
-      </CardContent>
-    </Card>
+    <div className="@container">
+      <Card className="grid gap-1 @2xs:grid-cols-2">
+        <CardHeader className="grid gap-0 capitalize">
+          <div className="truncate text-sm text-foreground">{font}</div>
+          <div className="truncate text-xs text-muted-foreground">{type}</div>
+        </CardHeader>
+        <CardContent>
+          <div
+            className={cn(
+              "justify-self-start text-8xl text-foreground",
+              type === "body" && "font-sans",
+              type === "heading" && "cn-font-heading"
+            )}
+          >
+            Aa
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
