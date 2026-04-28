@@ -12,7 +12,9 @@ export function TypographySpecimen({ type, font }: TypographySpecimenProps) {
     <div className="@container">
       <Card className="grid gap-1 @2xs:grid-cols-2">
         <CardHeader className="grid gap-0 capitalize">
-          <div className="truncate text-sm text-foreground">{font}</div>
+          <div className="truncate text-xs text-foreground @2xs:text-sm">
+            {font}
+          </div>
           <div className="truncate text-xs text-muted-foreground">{type}</div>
         </CardHeader>
         <CardContent>

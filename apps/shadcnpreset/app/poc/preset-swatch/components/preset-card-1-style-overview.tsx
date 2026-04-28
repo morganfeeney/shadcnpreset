@@ -3,10 +3,8 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
-import { Button } from "@/components/poc/ui/button"
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -15,15 +13,11 @@ import {
 import {
   Card as ShadcnCard,
   CardContent as ShadcnCardContent,
-  CardDescription as ShadcnCardDescription,
-  CardHeader as ShadcnCardHeader,
-  CardTitle as ShadcnCardTitle,
 } from "@/components/ui/card"
 
 import { PresetFontLoader } from "@/components/preset-font-loader"
 import { PresetThemeSurface } from "@/components/preset-theme-surface"
 import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
-import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 import { ObservabilityCard } from "@/app/poc/preset-swatch/components/cards/observability-card"
 import { PreviewIconGrid } from "@/app/poc/preset-swatch/components/cards/icon-preview-grid"
@@ -112,28 +106,6 @@ export function PresetCard1StyleOverview({
         styleName={resolved.style}
       >
         <ShadcnCard className="bg-muted dark:bg-background">
-          <ShadcnCardHeader className="gap-2">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-              <div className="min-w-0">
-                <CardTitle className="cn-font-heading text-lg">
-                  Preset preview
-                </CardTitle>
-                <CardDescription className="font-mono text-xs break-all text-muted-foreground">
-                  {code}
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full shrink-0 sm:w-auto"
-                onClick={() => {
-                  setCode(generateRandomCompatiblePreset())
-                }}
-              >
-                Random
-              </Button>
-            </div>
-          </ShadcnCardHeader>
           <ShadcnCardContent className="grid grid-cols-2 items-start gap-4 pt-0">
             <div className="flex flex-col gap-4">
               <StyleOverview
@@ -141,7 +113,15 @@ export function PresetCard1StyleOverview({
                 font={resolved.font}
                 fontHeading={resolved.fontHeading}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <PreviewIconGrid iconLibrary={resolved.iconLibrary} />
+              <TypographySpecimenCard
+                font={resolved.font}
+                fontHeading={resolved.fontHeading}
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <ObservabilityCard iconLibrary={resolved.iconLibrary} />
+              <div className="grid grid-cols-2 gap-4">
                 <TypographySpecimen type="body" font={resolved.font} />
                 <TypographySpecimen
                   type="heading"
@@ -151,14 +131,6 @@ export function PresetCard1StyleOverview({
                   )}
                 />
               </div>
-              <TypographySpecimenCard
-                font={resolved.font}
-                fontHeading={resolved.fontHeading}
-              />
-            </div>
-            <div className="flex flex-col gap-4">
-              <PreviewIconGrid iconLibrary={resolved.iconLibrary} />
-              <ObservabilityCard iconLibrary={resolved.iconLibrary} />
             </div>
           </ShadcnCardContent>
         </ShadcnCard>
