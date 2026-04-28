@@ -18,7 +18,7 @@ export function TypographySpecimen({ type, font }: TypographySpecimenProps) {
         <CardContent>
           <div
             className={cn(
-              "justify-self-start text-8xl text-foreground",
+              "justify-self-start text-8xl text-[clamp(1rem,50cqi,6rem)] leading-none text-foreground",
               type === "body" && "font-sans",
               type === "heading" && "cn-font-heading"
             )}
