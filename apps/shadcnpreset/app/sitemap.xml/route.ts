@@ -15,6 +15,10 @@ export function GET() {
       loc: `${siteConfig.url}/sitemaps/static.xml`,
       lastmod: nowIso,
     },
+    {
+      loc: `${siteConfig.url}/sitemaps/community-presets.xml`,
+      lastmod: nowIso,
+    },
     ...Array.from({ length: presetChunkCount }, (_, chunk) => ({
       loc: `${siteConfig.url}/sitemaps/presets/${chunk}`,
       lastmod: nowIso,
