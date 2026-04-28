@@ -6,7 +6,7 @@ import type { PresetConfig } from "shadcn/preset"
 import { Card, CardContent } from "@/components/poc/ui/card"
 import { FONTS } from "@/app/(create)/lib/fonts"
 import { STYLES } from "@/registry/styles"
-import { StyleOverviewTokenGrid } from "@/app/poc/preset-swatch/components/cards/style-overview-tokens"
+import { StyleOverviewTokenGrid } from "@/components/preset-swatch/components/cards/style-overview-tokens"
 
 function labelForFontValue(value: string): string {
   const match = FONTS.find((f) => f.value === value)

@@ -15,9 +15,9 @@ import { PresetThemeSurface } from "@/components/preset-theme-surface"
 import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
-import { ColorSpecimen } from "@/app/poc/preset-swatch/components/color-specimen"
+import { ColorSpecimen } from "@/components/preset-swatch/components/color-specimen"
 import { cn } from "@/lib/utils"
-import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+import { TypographySpecimen } from "@/components/preset-swatch/components/typography-specimen"
 
 const SWATCH_TOKENS = [
   "background",

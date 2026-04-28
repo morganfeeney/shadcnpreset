@@ -19,12 +19,12 @@ import { PresetFontLoader } from "@/components/preset-font-loader"
 import { PresetThemeSurface } from "@/components/preset-theme-surface"
 import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
-import { ObservabilityCard } from "@/app/poc/preset-swatch/components/cards/observability-card"
-import { PreviewIconGrid } from "@/app/poc/preset-swatch/components/cards/icon-preview-grid"
-import { StyleOverview } from "@/app/poc/preset-swatch/components/cards/style-overview"
-import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
+import { ObservabilityCard } from "@/components/preset-swatch/components/cards/observability-card"
+import { PreviewIconGrid } from "@/components/preset-swatch/components/cards/icon-preview-grid"
+import { StyleOverview } from "@/components/preset-swatch/components/cards/style-overview"
+import { TypographySpecimenCard } from "@/components/preset-swatch/components/cards/typography-specimen"
 import { cn } from "@/lib/utils"
-import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+import { TypographySpecimen } from "@/components/preset-swatch/components/typography-specimen"
 
 type PresetCard1StyleOverviewProps = {
   initialCode: string

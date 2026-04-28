@@ -10,10 +10,10 @@ import { PresetThemeSurface } from "@/components/preset-theme-surface"
 import { effectiveHeadingFont } from "@/lib/preset"
 import type { PresetPageItem } from "@/lib/preset-catalog"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
-import { TypographySpecimenCard } from "@/app/poc/preset-swatch/components/cards/typography-specimen"
-import { TypographySpecimen } from "@/app/poc/preset-swatch/components/typography-specimen"
+import { TypographySpecimenCard } from "@/components/preset-swatch/components/cards/typography-specimen"
+import { TypographySpecimen } from "@/components/preset-swatch/components/typography-specimen"
 
-import { ColorSpecimen } from "@/app/poc/preset-swatch/components/color-specimen"
+import { ColorSpecimen } from "@/components/preset-swatch/components/color-specimen"
 
 const COLOR_SWATCHES = [
   "background",

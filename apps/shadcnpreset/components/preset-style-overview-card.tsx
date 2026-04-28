@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner"
 import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { PresetPreviewDialog } from "@/components/preset-preview-dialog"
-import { PresetCard1StyleOverview } from "@/app/poc/preset-swatch/components/preset-card-1-style-overview"
+import { PresetCard1StyleOverview } from "@/components/preset-swatch/components/preset-card-1-style-overview"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
