@@ -35,6 +35,9 @@ type PresetCard1StyleOverviewProps = {
  * Like `PresetCard1`, with a v4-style stack: `TypographySpecimenCard`, {@link StyleOverview}
  * (title + token grid), {@link PreviewIconGrid}, and {@link ObservabilityCard}. Still decodes
  * a preset, applies `buildRegistryTheme`, and composes v4-style preview blocks (no iframe).
+ *
+ * Spacing uses `@container` so gaps track the **preview surface width** (e.g. the fixed
+ * layout width under `transform: scale`), not the viewport.
  */
 export function PresetCard1StyleOverview({
   initialCode,
@@ -85,12 +88,7 @@ export function PresetCard1StyleOverview({
   }
 
   return (
-    <div
-      className={cn(
-        className,
-        "[--gap:--spacing(4)] 3xl:[--gap:--spacing(12)] md:[--gap:--spacing(10)] style-lyra:md:[--gap:--spacing(6)] style-mira:md:[--gap:--spacing(6)]"
-      )}
-    >
+    <div className={cn("@container", className)}>
       <PresetFontLoader fontValues={fontValues} />
       <PresetThemeSurface
         registryTheme={theme}
@@ -99,9 +97,9 @@ export function PresetCard1StyleOverview({
         headingFont={resolved.fontHeading}
         styleName={resolved.style}
       >
-        <ShadcnCard className="bg-muted dark:bg-background">
-          <ShadcnCardContent className="grid grid-cols-2 items-start gap-(--gap) bg-muted p-(--gap) dark:bg-background *:[div]:gap-(--gap)">
-            <div className="flex flex-col gap-4">
+        <ShadcnCard className="bg-muted pt-0 [--gap:--spacing(4)] @md:[--gap:--spacing(6)] @3xl:[--gap:--spacing(12)] dark:bg-background style-lyra:@md:[--gap:--spacing(3)] style-mira:@md:[--gap:--spacing(3)]">
+          <ShadcnCardContent className="grid grid-cols-2 items-start gap-(--gap) bg-muted p-(--gap)">
+            <div className="flex flex-col gap-(--gap)">
               <StyleOverview
                 style={resolved.style}
                 font={resolved.font}
@@ -113,9 +111,9 @@ export function PresetCard1StyleOverview({
                 fontHeading={resolved.fontHeading}
               />
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-(--gap)">
               <ObservabilityCard iconLibrary={resolved.iconLibrary} />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-(--gap)">
                 <TypographySpecimen type="body" font={resolved.font} />
                 <TypographySpecimen
                   type="heading"
