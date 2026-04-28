@@ -3,7 +3,14 @@ import { buildUrlSetXml } from "@/lib/sitemap"
 
 export const revalidate = 86_400
 
-const STATIC_PATHS = ["/", "/community", "/assistant", "/my-presets"] as const
+const STATIC_PATHS = [
+  "/",
+  "/community",
+  "/assistant",
+  "/my-presets",
+  "/tools",
+  "/tools/preset-theme-generator",
+] as const
 
 export function GET() {
   const nowIso = new Date().toISOString()
