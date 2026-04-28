@@ -25,7 +25,6 @@ import { StyleOverview } from "@/components/preset-swatch/components/cards/style
 import { TypographySpecimenCard } from "@/components/preset-swatch/components/cards/typography-specimen"
 import { cn } from "@/lib/utils"
 import { TypographySpecimen } from "@/components/preset-swatch/components/typography-specimen"
-import { ColorBlocks } from "@/components/preset-swatch/components/cards/color-blocks"
 
 type PresetCard2StyleOverviewProps = {
   initialCode: string
@@ -101,7 +100,11 @@ export function PresetCard2StyleOverview({
         <ShadcnCard className="rounded-none bg-muted pt-0 [--gap:--spacing(4)] @md:[--gap:--spacing(6)] @3xl:[--gap:--spacing(12)] dark:bg-background style-lyra:@md:[--gap:--spacing(3)] style-mira:@md:[--gap:--spacing(3)]">
           <ShadcnCardContent className="grid grid-cols-2 items-start gap-(--gap) bg-muted p-(--gap)">
             <div className="flex flex-col gap-(--gap)">
-              <ColorBlocks />
+              <StyleOverview
+                style={resolved.style}
+                font={resolved.font}
+                fontHeading={resolved.fontHeading}
+              />
               <PreviewIconGrid iconLibrary={resolved.iconLibrary} />
               <TypographySpecimenCard
                 font={resolved.font}
@@ -109,12 +112,17 @@ export function PresetCard2StyleOverview({
               />
             </div>
             <div className="flex flex-col gap-(--gap)">
-              <TypographySpecimen type="body" font={resolved.font} />
-              <TypographySpecimen
-                type="heading"
-                font={effectiveHeadingFont(resolved.font, resolved.fontHeading)}
-              />
               <ObservabilityCard iconLibrary={resolved.iconLibrary} />
+              <div className="grid grid-cols-2 gap-2">
+                <TypographySpecimen type="body" font={resolved.font} />
+                <TypographySpecimen
+                  type="heading"
+                  font={effectiveHeadingFont(
+                    resolved.font,
+                    resolved.fontHeading
+                  )}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-(--gap)"></div>
             </div>
           </ShadcnCardContent>

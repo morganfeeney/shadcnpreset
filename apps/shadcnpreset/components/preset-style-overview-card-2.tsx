@@ -138,7 +138,7 @@ export function PresetStyleOverviewCard2({
     <div className="grid gap-1">
       <div
         ref={wrapperRef}
-        className="relative w-full overflow-hidden rounded-lg"
+        className="relative w-full overflow-hidden rounded-sm"
         style={{ aspectRatio: `${virtualWidth} / ${virtualHeight}` }}
       >
         {canRenderPreview ? (
