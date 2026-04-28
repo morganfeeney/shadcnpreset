@@ -25,7 +25,7 @@ import {
 } from "@/components/ai-elements/prompt-input"
 import { Shimmer } from "@/components/ai-elements/shimmer"
 import { AssistantChatProvider } from "@/components/assistant/assistant-chat-context"
-import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -146,7 +146,7 @@ export function AssistantChat() {
                                   <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
                                     {m.presets.map((p, presetIndex) => (
                                       <li key={`${i}-${presetIndex}-${p.code}`}>
-                                        <PresetIframeCard
+                                        <PresetStyleOverviewCard
                                           code={p.code}
                                           title={p.code}
                                           description={p.description}

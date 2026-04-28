@@ -1,11 +1,25 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "../../v4/registry/styles/style-vega.css" layer(base);
+@import "../../v4/registry/styles/style-nova.css" layer(base);
+@import "../../v4/registry/styles/style-lyra.css" layer(base);
+@import "../../v4/registry/styles/style-maia.css" layer(base);
+@import "../../v4/registry/styles/style-mira.css" layer(base);
+@import "../../v4/registry/styles/style-luma.css" layer(base);
+@import "../../v4/registry/styles/style-sera.css" layer(base);
 
 @source "../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 @custom-variant fixed (&:is(.layout-fixed *));
+@custom-variant style-vega (&:where(.style-vega *));
+@custom-variant style-nova (&:where(.style-nova *));
+@custom-variant style-lyra (&:where(.style-lyra *));
+@custom-variant style-maia (&:where(.style-maia *));
+@custom-variant style-mira (&:where(.style-mira *));
+@custom-variant style-luma (&:where(.style-luma *));
+@custom-variant style-sera (&:where(.style-sera *));
 
 @theme inline {
   --breakpoint-3xl: 1600px;
@@ -171,4 +185,10 @@
 
 @utility font-display {
   @apply font-semibold tracking-tight;
+}
+
+@layer utilities {
+  .cn-font-heading {
+    font-family: var(--font-heading);
+  }
 }

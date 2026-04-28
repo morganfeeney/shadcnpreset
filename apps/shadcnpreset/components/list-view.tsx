@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { useMemo, useState } from "react"
-import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { Button } from "@/components/ui/button"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
 import { trackFeedLoadMore } from "@/lib/analytics-events"
@@ -98,7 +98,7 @@ export function ListView({
       <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {visibleItems.map((item) => (
           <li key={item.code}>
-            <PresetIframeCard
+            <PresetStyleOverviewCard
               code={item.code}
               title={item.code}
               description={`${item.baseColor} base, ${item.theme} theme, ${item.chartColor} charts, ${item.iconLibrary}, ${formatTypographyLine(item.fontHeading, item.font)}`}

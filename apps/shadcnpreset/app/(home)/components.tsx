@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { cn } from "@/lib/utils"
-import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 
 export function HomeHeroButtons() {
   return (
@@ -192,7 +192,7 @@ export function HomePresetCarousel({
                 isActive ? "pointer-events-auto" : "pointer-events-none"
               )}
             >
-              <PresetIframeCard
+              <PresetStyleOverviewCard
                 code={item.code}
                 title={item.title}
                 description={item.description}

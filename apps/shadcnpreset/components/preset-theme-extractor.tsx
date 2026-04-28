@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Check, Copy } from "lucide-react"
 
 import { copyToClipboardWithMeta } from "@/components/copy-button"
-import { PresetIframeCard } from "@/components/preset-iframe-card"
+import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
+import { InfoIcon } from "@phosphor-icons/react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type PresetThemeExtractorProps = {
   code: string
@@ -114,9 +116,7 @@ function CssOutputBlock({
   )
 }
 
-export function PresetThemeExtractor({
-  code,
-}: PresetThemeExtractorProps) {
+export function PresetThemeExtractor({ code }: PresetThemeExtractorProps) {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
   const normalizedCode = code.trim()
 
@@ -146,7 +146,7 @@ export function PresetThemeExtractor({
     <div className="grid gap-6 md:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
         {bundle ? (
-          <PresetIframeCard
+          <PresetStyleOverviewCard
             code={bundle.resolved.code}
             title={bundle.resolved.code}
             description={`${bundle.resolved.baseColor} base, ${bundle.resolved.theme} theme, ${bundle.resolved.effectiveChartColor} charts, ${bundle.resolved.iconLibrary}`}
@@ -155,45 +155,37 @@ export function PresetThemeExtractor({
 
         <Card>
           <CardHeader>
-            <CardTitle>Decoded preset</CardTitle>
+            <CardTitle>
+              About preset{" "}
+              <span className="truncate font-mono text-sm">{code}</span>
+            </CardTitle>
             <CardDescription>
-              Parsed config for the current preset code.
+              Decoded data for the current preset code.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {!bundle ? (
-              <div className="space-y-2">
-                <p className="text-sm text-destructive">
-                  This preset code could not be decoded.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Try another code in the header field above.
-                </p>
-              </div>
+              <Alert variant="destructive">
+                <InfoIcon />
+                <AlertTitle>This preset code could not be decoded.</AlertTitle>
+                <AlertDescription>Try a different code.</AlertDescription>
+              </Alert>
             ) : (
-              <div className="space-y-3">
-                <Link
-                  href={`/preset/${bundle.resolved.code}`}
-                  className="inline-block text-xs text-primary underline-offset-4 hover:underline"
-                >
-                  Open preset page
-                </Link>
-                <dl className="grid gap-3">
-                  {DETAIL_FIELDS.map((field) => (
-                    <div
-                      key={field.key}
-                      className="grid gap-1 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
-                    >
-                      <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                        {field.label}
-                      </dt>
-                      <dd className="text-sm break-all">
-                        {field.getValue(bundle)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
+              <dl className="grid gap-3">
+                {DETAIL_FIELDS.map((field) => (
+                  <div
+                    key={field.key}
+                    className="grid gap-0.5 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+                  >
+                    <dt className="text-[10px] tracking-wide text-muted-foreground uppercase">
+                      {field.label}
+                    </dt>
+                    <dd className="text-sm break-all">
+                      {field.getValue(bundle)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             )}
           </CardContent>
         </Card>
@@ -203,8 +195,8 @@ export function PresetThemeExtractor({
         <CardHeader>
           <CardTitle>Theme custom properties</CardTitle>
           <CardDescription>
-            Combined light and dark CSS, with a copy action inside the code
-            block.
+            Copy and paste into your{" "}
+            <code className="text-[13px]">globals.css</code> file.
           </CardDescription>
         </CardHeader>
         <CardContent>

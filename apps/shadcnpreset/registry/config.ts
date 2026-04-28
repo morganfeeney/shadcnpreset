@@ -166,11 +166,14 @@ export function buildRegistryTheme(config: DesignSystemConfig) {
     darkVars["accent-foreground"] = darkVars["primary-foreground"]
   }
 
-  if (config.radius && config.radius !== "default") {
-    const radius = RADII.find((item) => item.name === config.radius)
-    if (radius && radius.value) {
-      lightVars.radius = radius.value
-    }
+  const resolvedRadius =
+    config.radius && config.radius !== "default"
+      ? RADII.find((item) => item.name === config.radius)?.value
+      : lightVars.radius ?? darkVars.radius
+
+  if (resolvedRadius) {
+    lightVars.radius = resolvedRadius
+    darkVars.radius = resolvedRadius
   }
 
   return {

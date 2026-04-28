@@ -17,12 +17,12 @@ export type PresetThemeCssBundle = {
 }
 
 function getFontVars(resolved: ResolvedPreset): ThemeVars {
-  const headingFont =
-    resolved.fontHeading === "inherit" ? resolved.font : resolved.fontHeading
-
   return {
     "font-sans": getFontFamily(resolved.font),
-    "font-heading": getFontFamily(headingFont),
+    "font-heading":
+      resolved.fontHeading === "inherit"
+        ? "var(--font-sans)"
+        : getFontFamily(resolved.fontHeading),
   }
 }
 

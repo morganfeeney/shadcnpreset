@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner"
 import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { PresetPreviewDialog } from "@/components/preset-preview-dialog"
-import { PresetV4Frame } from "@/components/preset-v4-frame"
+import { PresetCard1StyleOverview } from "@/components/preset-swatch/components/preset-card-1-style-overview"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -19,9 +19,8 @@ import {
   trackPresetPreview,
   trackPresetVoteClick,
 } from "@/lib/analytics-events"
-import { getPresetPreviewUrl } from "@/lib/preset"
 
-type PresetIframeCardProps = {
+type PresetStyleOverviewCardProps = {
   code: string
   title: string
   description: string
@@ -29,17 +28,16 @@ type PresetIframeCardProps = {
   virtualHeight?: number
 }
 
-export function PresetIframeCard({
+export function PresetStyleOverviewCard({
   code,
   title,
   description,
   virtualWidth = 700,
   virtualHeight = 575,
-}: PresetIframeCardProps) {
+}: PresetStyleOverviewCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
   const [shouldRender, setShouldRender] = useState(false)
-  const [iframeLoaded, setIframeLoaded] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const isMobile = useIsMobile()
   const pathname = usePathname()
@@ -75,9 +73,6 @@ export function PresetIframeCard({
           return
         }
 
-        if (!isVisible) {
-          setIframeLoaded(false)
-        }
         setShouldRender(isVisible)
       },
       {
@@ -95,10 +90,7 @@ export function PresetIframeCard({
     return containerWidth / virtualWidth
   }, [containerWidth, virtualWidth])
 
-  const iframeSrc = useMemo(() => getPresetPreviewUrl(code) ?? "", [code])
-
-  const canRenderIframe =
-    shouldRender && containerWidth > 0 && Boolean(iframeSrc)
+  const canRenderPreview = shouldRender && containerWidth > 0
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
     code,
     {
@@ -150,7 +142,7 @@ export function PresetIframeCard({
         className="relative w-full overflow-hidden"
         style={{ aspectRatio: `${virtualWidth} / ${virtualHeight}` }}
       >
-        {canRenderIframe ? (
+        {canRenderPreview ? (
           <>
             <CardContent
               className="absolute inset-0 p-0 will-change-transform"
@@ -159,25 +151,13 @@ export function PresetIframeCard({
                 height: virtualHeight,
                 transform: `scale(${scale})`,
                 transformOrigin: "top left",
-                opacity: iframeLoaded ? 1 : 0,
-                transition: "opacity 180ms ease",
               }}
             >
-              <PresetV4Frame
-                title={`Preset preview ${code}`}
-                src={iframeSrc}
-                loading="lazy"
-                sandbox="allow-scripts allow-same-origin"
-                tabIndex={-1}
-                className="pointer-events-none h-full w-full border-0"
-                onLoad={() => setIframeLoaded(true)}
+              <PresetCard1StyleOverview
+                initialCode={code}
+                className="h-full w-full overflow-auto"
               />
             </CardContent>
-            {!iframeLoaded ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Spinner />
-              </div>
-            ) : null}
             <div className="absolute inset-0">
               <div
                 aria-hidden
