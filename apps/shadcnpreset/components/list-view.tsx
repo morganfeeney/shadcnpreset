@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { usePresetFeed } from "@/hooks/use-preset-feed"
 import { trackFeedLoadMore } from "@/lib/analytics-events"
 import type { PresetPageItem } from "@/lib/preset-catalog"
+import { PresetStyleOverviewCard2 } from "@/components/preset-style-overview-card-2"
 
 export type ListViewItem = {
   code: string
@@ -95,10 +96,10 @@ export function ListView({
 
   return (
     <section>
-      <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
         {visibleItems.map((item) => (
           <li key={item.code}>
-            <PresetStyleOverviewCard
+            <PresetStyleOverviewCard2
               code={item.code}
               title={item.code}
               description={`${item.baseColor} base, ${item.theme} theme, ${item.chartColor} charts, ${item.iconLibrary}, ${formatTypographyLine(item.fontHeading, item.font)}`}
