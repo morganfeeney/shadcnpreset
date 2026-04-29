@@ -3,12 +3,7 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/poc/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import {
   Card as ShadcnCard,
@@ -77,14 +72,7 @@ export function PresetCard2StyleOverview({
   }, [resolved])
 
   if (!resolved || !theme) {
-    return (
-      <Card className={cn("border-dashed", className)}>
-        <CardHeader>
-          <CardTitle className="text-base">Invalid preset</CardTitle>
-          <CardDescription>Could not decode this code.</CardDescription>
-        </CardHeader>
-      </Card>
-    )
+    return <Skeleton className="absolute inset-0" />
   }
 
   return (
@@ -123,7 +111,6 @@ export function PresetCard2StyleOverview({
                   )}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-(--gap)"></div>
             </div>
           </ShadcnCardContent>
         </ShadcnCard>

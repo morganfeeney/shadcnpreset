@@ -2,9 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { HeartIcon, EyeIcon, DotsThreeIcon } from "@phosphor-icons/react"
+import { HeartIcon, EyeIcon } from "@phosphor-icons/react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Spinner } from "@/components/ui/spinner"
 
 import useVote from "@/hooks/use-vote"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -18,6 +17,7 @@ import {
   trackPresetVoteClick,
 } from "@/lib/analytics-events"
 import { PresetCard2StyleOverview } from "@/components/preset-swatch/components/preset-card-2-style-overview"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type PresetStyleOverviewCard2Props = {
   code: string
@@ -90,6 +90,7 @@ export function PresetStyleOverviewCard2({
   }, [containerWidth, virtualWidth])
 
   const canRenderPreview = shouldRender && containerWidth > 0
+
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
     code,
     {
@@ -138,7 +139,7 @@ export function PresetStyleOverviewCard2({
     <div className="grid gap-0.5">
       <div
         ref={wrapperRef}
-        className="relative w-full overflow-hidden rounded-sm"
+        className="pointer-events-none relative w-full rounded-sm"
         style={{ aspectRatio: `${virtualWidth} / ${virtualHeight}` }}
       >
         {canRenderPreview ? (
@@ -159,9 +160,7 @@ export function PresetStyleOverviewCard2({
             </div>
           </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Spinner />
-          </div>
+          <Skeleton className="absolute inset-0 flex items-center justify-center" />
         )}
       </div>
 
@@ -187,7 +186,7 @@ export function PresetStyleOverviewCard2({
               size="icon"
               variant="ghost"
             >
-              <EyeIcon className="size-4.5" />
+              <EyeIcon />
             </Button>
             <Button
               onClick={handleVoteClick}
@@ -201,22 +200,10 @@ export function PresetStyleOverviewCard2({
                   : "Sign in to vote"
               }
             >
-              <HeartIcon className="size-4.5" />
+              <HeartIcon />
               {voteCount}
             </Button>
           </div>
-        </div>
-        <div className="flex w-full flex-wrap gap-2 [@media(hover:hover)]:hidden">
-          <Button type="button" onClick={handlePreview}>
-            Preview
-          </Button>
-          <Link
-            href={`/preset/${code}`}
-            className={cn(buttonVariants({ variant: "outline" }))}
-            onClick={handleEditNavigate}
-          >
-            Edit
-          </Link>
         </div>
       </div>
     </div>

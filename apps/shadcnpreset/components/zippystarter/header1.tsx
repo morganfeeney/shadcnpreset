@@ -28,7 +28,7 @@ const HEADER_LINKS: ComponentLink[] = [
   { type: "link", href: "/assistant", label: "Ask AI" },
   { type: "link", href: "/community", label: "Community" },
   { type: "link", href: "/tools", label: "Tools" },
-  { type: "action", action: "open-preset", label: "Open Preset" },
+  { type: "link", href: "/my-presets", label: "My presets" },
 ]
 
 const isPathActive = (pathname: string, href: string) => {
