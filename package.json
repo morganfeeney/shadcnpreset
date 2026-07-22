@@ -1,0 +1,18 @@
+{
+  "name": "shadcnpreset-workspace",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "dev": "pnpm --filter=shadcnpreset dev",
+    "build": "pnpm --filter=shadcnpreset build",
+    "start": "pnpm --filter=shadcnpreset start",
+    "lint": "pnpm --filter=shadcnpreset lint",
+    "test": "pnpm --filter=shadcnpreset test",
+    "typecheck": "pnpm -r typecheck",
+    "figma:build": "pnpm --filter=figma-preset-plugin build",
+    "sync:v4-vendor": "./scripts/sync-v4-vendor.sh",
+    "refresh:community-snapshot": "pnpm --filter=shadcnpreset refresh:community-snapshot"
+  }
+}
