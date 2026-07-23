@@ -3,14 +3,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-FORK="${SHADCNPRESET_FORK_PATH:-$ROOT/../shadcnpreset}"
+FORK="${SHADCNPRESET_FORK_PATH:-$ROOT/../shadcn-ui-fork}"
 SRC_STYLES="$FORK/apps/v4/registry/styles"
 SRC_THEMES="$FORK/apps/v4/registry/themes.ts"
-DEST="$ROOT/vendor/v4/registry"
+DEST="$ROOT/apps/shadcnpreset/vendor/v4/registry"
 
 if [[ ! -d "$SRC_STYLES" || ! -f "$SRC_THEMES" ]]; then
   echo "sync-v4-vendor: fork assets not found at $FORK" >&2
-  echo "Set SHADCNPRESET_FORK_PATH to your shadcn/ui fork clone (default: \$REPO_ROOT/../shadcnpreset)." >&2
+  echo "Set SHADCNPRESET_FORK_PATH to your shadcn/ui fork clone (default: ../shadcn-ui-fork)." >&2
   exit 1
 fi
 

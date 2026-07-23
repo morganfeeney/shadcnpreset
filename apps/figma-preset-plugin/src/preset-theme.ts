@@ -6,7 +6,7 @@ import {
   type PresetConfig,
 } from "shadcn/preset"
 
-import { THEMES } from "../../../vendor/v4/registry/themes"
+import { THEMES } from "../../shadcnpreset/vendor/v4/registry/themes"
 
 type ThemeVars = Record<string, string>
 

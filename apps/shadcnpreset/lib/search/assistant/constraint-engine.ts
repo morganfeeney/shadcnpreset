@@ -1,7 +1,6 @@
 import {
   PRESET_BASE_COLORS,
   PRESET_ICON_LIBRARIES,
-  PRESET_SERIF_FONTS,
   PRESET_STYLES,
   PRESET_THEMES,
   type PresetConfig,
@@ -9,7 +8,13 @@ import {
 
 import { formatPresetCardDescription } from "@/lib/preset-card-description"
 
-const SERIF_FONTS = new Set<PresetConfig["font"]>(PRESET_SERIF_FONTS)
+const SERIF_FONTS = new Set<PresetConfig["font"]>([
+  "lora",
+  "merriweather",
+  "playfair-display",
+  "noto-serif",
+  "roboto-slab",
+])
 const BASE_COLOR_SET = new Set<PresetConfig["baseColor"]>(PRESET_BASE_COLORS)
 const THEME_SET = new Set<PresetConfig["theme"]>(PRESET_THEMES)
 

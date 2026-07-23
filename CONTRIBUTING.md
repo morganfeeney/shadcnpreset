@@ -14,7 +14,7 @@ This repository is a **pnpm monorepo** for the shadcnpreset product:
 |------|-------------|
 | `apps/shadcnpreset` | Theme discovery platform and developer tools |
 | `apps/figma-preset-plugin` | Figma variables plugin |
-| `vendor/v4` | Vendored create/theme assets from the shadcn/ui fork |
+| `apps/shadcnpreset/vendor/v4/registry` | Vendored create/v4 registry (themes, styles CSS, config) — sync via `pnpm sync:v4-vendor` |
 
 The create/customizer UI lives in a separate fork of [shadcn/ui](https://github.com/shadcn-ui/ui) and is embedded via iframe (`NEXT_PUBLIC_V4_URL`).
 

@@ -1,14 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "../../../vendor/v4/registry/styles/style-vega.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-nova.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-lyra.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-maia.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-mira.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-luma.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-sera.css" layer(base);
-@import "../../../vendor/v4/registry/styles/style-rhea.css" layer(base);
+@import "../vendor/v4/registry/styles/style-vega.css" layer(base);
+@import "../vendor/v4/registry/styles/style-nova.css" layer(base);
+@import "../vendor/v4/registry/styles/style-lyra.css" layer(base);
+@import "../vendor/v4/registry/styles/style-maia.css" layer(base);
+@import "../vendor/v4/registry/styles/style-mira.css" layer(base);
+@import "../vendor/v4/registry/styles/style-luma.css" layer(base);
+@import "../vendor/v4/registry/styles/style-sera.css" layer(base);
+@import "../vendor/v4/registry/styles/style-rhea.css" layer(base);
 
 @source "../node_modules/streamdown/dist/*.js";
 

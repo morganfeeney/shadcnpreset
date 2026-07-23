@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "culori": "^4.0.2",
-    "shadcn": "4.13.1"
+    "shadcn": "4.14.0"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.125.0",
