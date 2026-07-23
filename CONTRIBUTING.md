@@ -45,11 +45,7 @@ pnpm install
 ### Run the apps
 
 ```bash
-# Product site → http://localhost:4010
 pnpm dev
-
-# Figma plugin bundle
-pnpm figma:build
 ```
 
 For live create/customizer iframes, also run the sibling fork:

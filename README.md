@@ -80,7 +80,3 @@ Copyright (c) 2026 Morgan Feeney
 [![Contributors](https://contrib.rocks/image?repo=morganfeeney/shadcnpreset)](https://github.com/morganfeeney/shadcnpreset/graphs/contributors)
 
 > Made with [contrib.rocks](https://contrib.rocks)
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=morganfeeney/shadcnpreset&type=Date)](https://star-history.com/#morganfeeney/shadcnpreset&Date)
