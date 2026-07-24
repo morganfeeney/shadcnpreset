@@ -14,5 +14,8 @@
     "figma:build": "pnpm --filter=figma-preset-plugin build",
     "sync:v4-vendor": "./scripts/sync-v4-vendor.sh",
     "refresh:community-snapshot": "pnpm --filter=shadcnpreset refresh:community-snapshot"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
   }
 }

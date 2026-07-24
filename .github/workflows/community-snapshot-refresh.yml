@@ -44,6 +44,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify tsx is installed
+        run: |
+          pnpm exec tsx --version
+          test -e node_modules/tsx -o -e apps/shadcnpreset/node_modules/tsx
+
       - name: Refresh snapshot JSON
         env:
           DATABASE_URL: ${{ secrets.SHADCNPRESET_DATABASE_URL }}

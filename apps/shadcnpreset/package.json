@@ -13,7 +13,7 @@
     "verify:search": "node --import tsx/esm ./scripts/verify-search.ts",
     "generate:preset-embeddings": "node --import tsx/esm ./scripts/generate-preset-embeddings.ts",
     "generate:high-contrast-dataset": "node --import tsx/esm ./scripts/find-perfect-contrast-presets.ts --random --target 8000 --max-tries 20000000 --out ./data/high-contrast-presets.json",
-    "refresh:community-snapshot": "node --import tsx/esm ./scripts/refresh-community-snapshot.ts",
+    "refresh:community-snapshot": "tsx ./scripts/refresh-community-snapshot.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "next typegen && tsc --noEmit"
   },
