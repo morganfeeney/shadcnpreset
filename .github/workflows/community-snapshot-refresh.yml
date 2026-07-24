@@ -73,12 +73,32 @@ jobs:
           add-paths: |
             apps/shadcnpreset/data/community-presets-snapshot.json
 
-      - name: Enable auto-merge
+      - name: Wait for checks and merge
         if: steps.create-pr.outcome == 'success' && steps.create-pr.outputs.pull-request-number != ''
+        timeout-minutes: 30
         env:
           GH_TOKEN: ${{ secrets.SHADCNPRESET_GH_PAT || github.token }}
         run: |
-          gh pr merge "${{ steps.create-pr.outputs.pull-request-number }}" --auto --squash
+          PR="${{ steps.create-pr.outputs.pull-request-number }}"
+
+          # --auto merges immediately when main has no required status checks.
+          # Wait for real check runs instead, then squash-merge.
+          count=0
+          for _ in $(seq 1 60); do
+            count="$(gh pr view "$PR" --json statusCheckRollup --jq '.statusCheckRollup | length')"
+            if [ "${count:-0}" -gt 0 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "${count:-0}" -eq 0 ]; then
+            echo "::error::No checks appeared on PR #$PR within 10 minutes; refusing to merge."
+            exit 1
+          fi
+
+          gh pr checks "$PR" --watch --fail-fast --interval 15
+          gh pr merge "$PR" --squash --delete-branch
 
       - name: Report pull request permission fallback
         if: steps.create-pr.outcome == 'failure'
