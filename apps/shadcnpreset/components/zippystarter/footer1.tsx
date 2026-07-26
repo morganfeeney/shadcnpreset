@@ -47,6 +47,10 @@ const COLUMNS = [
         href: "https://x.com/morganfeeney",
         label: "Get in touch",
       },
+      {
+        label: "Buy me a coffee",
+        href: siteConfig.links.buyMeACoffee,
+      },
     ],
   },
 ]
