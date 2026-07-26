@@ -37,11 +37,11 @@
 | `apps/shadcnpreset` | Next.js platform (discovery, tools, auth, voting) |
 | `apps/figma-preset-plugin` | Figma variables plugin |
 
-The embedded **create** customizer is hosted by a separate shadcn/ui fork and loaded via `NEXT_PUBLIC_V4_URL`.
+The embedded _create_ customizer is hosted by a separate shadcn/ui fork and loaded via `NEXT_PUBLIC_V4_URL`.
 
 ## Development
 
-In order to utilise the shadcn/ui create customizer this repo is dependent upon a custom fork of shadcn/ui, it will run without it, but is required preset previews and create functionality.
+In order to utilise the shadcn/ui create customizer this repo is dependent upon a custom fork of shadcn/ui, it will run without it, but is required for preset previews and create functionality.
 
 ```bash
 pnpm install
@@ -57,7 +57,7 @@ cd ../shadcn-ui-fork
 pnpm v4:dev          # http://localhost:4000
 ```
 
-shadcnpreset is also dependent upon shadcn/ui styles/themes, the following script can be run to sync them in this repo from the fork:
+shadcnpreset is also dependent upon shadcn/ui styles/themes, the following script can be run to sync them in this repo from the fork if they need updating:
 
 ```bash
 pnpm sync:v4-vendor
