@@ -73,10 +73,4 @@ Contributions are welcome! Please see the [Contributing Guide](./CONTRIBUTING.md
 
 Licensed under the [MIT License](./LICENSE.md).
 
-Copyright (c) 2026 Morgan Feeney  
-
-## Contributors
-
-[![Contributors](https://contrib.rocks/image?repo=morganfeeney/shadcnpreset)](https://github.com/morganfeeney/shadcnpreset/graphs/contributors)
-
-> Made with [contrib.rocks](https://contrib.rocks)
+Copyright (c) 2026 Morgan Feeney
