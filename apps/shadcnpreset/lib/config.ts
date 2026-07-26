@@ -15,6 +15,7 @@ export const siteConfig = {
   links: {
     twitter: "https://twitter.com/morganfeeney",
     github: "https://github.com/morganfeeney/shadcnpreset",
+    buyMeACoffee: "https://buymeacoffee.com/morganf",
   },
   analytics: {
     // Google Analytics - if not provided, will not be included
