@@ -1,8 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
-import { HomeIcon, SquarePen } from "lucide-react"
+import { SquarePen } from "lucide-react"
 
 import {
   Conversation,
@@ -14,20 +13,12 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message"
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-  type PromptInputMessage,
-} from "@/components/ai-elements/prompt-input"
 import { Shimmer } from "@/components/ai-elements/shimmer"
 import { AssistantChatProvider } from "@/components/assistant/assistant-chat-context"
+import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -47,15 +38,14 @@ export function AssistantChat() {
   const chat = useAssistantChat()
   const {
     activeChatId,
+    composerResetKey,
     error,
     hasInteracted,
-    input,
     lastTurn,
     messages,
     onPromptSubmit,
     pending,
     sendContent,
-    setInput,
     startNewChat,
   } = chat
   const bottomRef = React.useRef<HTMLDivElement>(null)
@@ -225,48 +215,12 @@ export function AssistantChat() {
             ) : null}
           </div>
 
-            <PromptInput
-              onSubmit={(message: PromptInputMessage) =>
-                onPromptSubmit(message.text)
-              }
-              className={cn(
-                "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
-                hasInteracted
-                  ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
-                  : ""
-              )}
-            >
-              <PromptInputBody>
-                <PromptInputTextarea
-                  rows={hasInteracted ? 3 : 2}
-                  placeholder={
-                    hasInteracted ? "Reply to refine..." : "Ask AI to build..."
-                  }
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  disabled={pending}
-                  className="min-h-[88px] resize-y"
-                />
-              </PromptInputBody>
-              <PromptInputFooter>
-                <PromptInputTools>
-                  <Link
-                    href="/"
-                    className={buttonVariants({ variant: "ghost", size: "sm" })}
-                  >
-                    <HomeIcon className="mr-1.5 size-4 opacity-70" />
-                    Home
-                  </Link>
-                  {pending ? (
-                    <Shimmer className="text-xs">Thinking...</Shimmer>
-                  ) : null}
-                </PromptInputTools>
-                <PromptInputSubmit
-                  status={pending ? "submitted" : "ready"}
-                  disabled={pending || !input.trim()}
-                />
-              </PromptInputFooter>
-            </PromptInput>
+            <AssistantPromptComposer
+              hasInteracted={hasInteracted}
+              pending={pending}
+              resetKey={composerResetKey}
+              onPromptSubmit={onPromptSubmit}
+            />
           </div>
         </div>
       </SidebarProvider>
