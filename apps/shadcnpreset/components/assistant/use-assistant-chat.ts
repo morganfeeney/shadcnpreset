@@ -4,11 +4,7 @@ import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { usePathname } from "next/navigation"
 
-import {
-  clearPendingAssistantPrompt,
-  readPendingAssistantPrompt,
-  writePendingAssistantPrompt,
-} from "@/lib/pending-assistant-prompt"
+import { writePendingAssistantPrompt } from "@/lib/pending-assistant-prompt"
 import { trackEvent } from "@/lib/analytics-events"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { useAuthStore } from "@/stores/auth-store"
@@ -90,21 +86,61 @@ function hydrateMessages(
   return hydrated
 }
 
+function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null {
+  const latestAssistant = [...messages]
+    .reverse()
+    .find(
+      (
+        message
+      ): message is Extract<ChatMessage, { role: "assistant"; kind: "text" }> =>
+        message.role === "assistant" && message.kind === "text"
+    )
+
+  if (!latestAssistant?.followUpQuestions?.length) {
+    return null
+  }
+
+  return {
+    phase: "gathering",
+    assistantMessage: latestAssistant.content,
+    followUpQuestions: latestAssistant.followUpQuestions,
+  }
+}
+
+class AssistantSendError extends Error {
+  readonly errorType: string
+
+  constructor(message: string, errorType: string) {
+    super(message)
+    this.name = "AssistantSendError"
+    this.errorType = errorType
+  }
+}
+
 export function useAssistantChat() {
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
-  const [input, setInput] = React.useState("")
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
   const [activeChatId, setActiveChatId] = React.useState<string | null>(null)
   const [deletingChatId, setDeletingChatId] = React.useState<string | null>(null)
+  const [composerResetKey, setComposerResetKey] = React.useState(0)
   const authStatus = useAuthStore((state) => state.status)
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const queryClient = useQueryClient()
+  const [syncedAuthStatus, setSyncedAuthStatus] = React.useState(authStatus)
+  const [syncedActiveChatId, setSyncedActiveChatId] = React.useState(activeChatId)
+  const [syncedChatData, setSyncedChatData] = React.useState<
+    AssistantChatDetailResponse["chat"] | undefined
+  >(undefined)
 
   const hasInteracted = messages.some((message) => message.role === "user")
   const requiresAuth = authStatus !== "authenticated"
+
+  const resetComposer = React.useCallback(() => {
+    setComposerResetKey((key) => key + 1)
+  }, [])
 
   const recentChatsQuery = useQuery<AssistantChatListItem[], Error>({
     queryKey: ["assistantChats", authStatus],
@@ -139,56 +175,37 @@ export function useAssistantChat() {
 
   const recentChats = recentChatsQuery.data ?? []
   const isLoadingRecentChats = recentChatsQuery.isLoading
+  const chatLoadError = activeChatQuery.isError
+    ? "Could not load this chat. Try again."
+    : null
 
-  React.useEffect(() => {
-    const pendingPrompt = readPendingAssistantPrompt()
-    if (!pendingPrompt) {
-      return
-    }
-    setInput((current) => (current.trim().length ? current : pendingPrompt))
-    clearPendingAssistantPrompt()
-  }, [])
-
-  React.useEffect(() => {
+  // Adjust local chat state while rendering when auth/query inputs change.
+  // https://react.dev/learn/you-might-not-need-an-effect
+  if (authStatus !== syncedAuthStatus) {
+    setSyncedAuthStatus(authStatus)
     if (authStatus !== "authenticated") {
       setMessages([])
       setActiveChatId(null)
-    }
-  }, [authStatus])
-
-  React.useEffect(() => {
-    if (activeChatQuery.isError) {
-      setError("Could not load this chat. Try again.")
-    }
-  }, [activeChatQuery.isError])
-
-  React.useEffect(() => {
-    const chat = activeChatQuery.data
-    if (!chat) {
-      return
-    }
-    const hydrated = hydrateMessages(chat.messages)
-    setMessages(hydrated)
-    const latestAssistant = [...hydrated]
-      .reverse()
-      .find(
-        (
-          message
-        ): message is Extract<ChatMessage, { role: "assistant"; kind: "text" }> =>
-          message.role === "assistant" && message.kind === "text"
-      )
-    if (latestAssistant?.followUpQuestions?.length) {
-      setLastTurn({
-        phase: "gathering",
-        assistantMessage: latestAssistant.content,
-        followUpQuestions: latestAssistant.followUpQuestions,
-      })
-    } else {
       setLastTurn(null)
+      setSyncedActiveChatId(null)
+      setSyncedChatData(undefined)
     }
-    setInput("")
-    setError(null)
-  }, [activeChatQuery.data])
+  } else if (activeChatId !== syncedActiveChatId) {
+    setSyncedActiveChatId(activeChatId)
+    setSyncedChatData(undefined)
+  } else if (
+    authStatus === "authenticated" &&
+    activeChatQuery.data !== syncedChatData
+  ) {
+    setSyncedChatData(activeChatQuery.data)
+    if (activeChatQuery.data) {
+      const hydrated = hydrateMessages(activeChatQuery.data.messages)
+      setMessages(hydrated)
+      setLastTurn(getLastTurnFromMessages(hydrated))
+      setComposerResetKey((key) => key + 1)
+      setError(null)
+    }
+  }
 
   type SendVars = {
     trimmed: string
@@ -197,15 +214,20 @@ export function useAssistantChat() {
     chatId: string | null
   }
 
-  type SendData = {
-    response: Response
-    data: AssistantSendResponse
-    args: SendVars
-  }
+  type SendData =
+    | {
+        kind: "ok"
+        response: Response
+        data: Extract<AssistantSendResponse, { phase: string }>
+        args: SendVars
+      }
+    | {
+        kind: "auth_required"
+        args: SendVars
+      }
 
   type SendContext = {
     previousMessages: ChatMessage[]
-    previousInput: string
     requestStartedAt: number
   }
 
@@ -232,59 +254,53 @@ export function useAssistantChat() {
       } catch {
         parsedData = {}
       }
-      return { response, data: parsedData as AssistantSendResponse, args }
-    },
-    onMutate: async (args) => {
-      setError(null)
-      setPending(true)
-      setLastTurn(null)
-      setInput("")
-      const previousMessages = messages
-      setMessages(args.nextMessages)
-      return { previousMessages, previousInput: input, requestStartedAt: Date.now() }
-    },
-    onSuccess: async ({ response, data, args }, _variables, context) => {
-      const latencyMs = context
-        ? Math.max(0, Date.now() - context.requestStartedAt)
-        : 0
+      const data = parsedData as AssistantSendResponse
+
       if (
         response.status === 401 &&
         "code" in data &&
         data.code === "auth_required"
       ) {
+        return { kind: "auth_required", args }
+      }
+
+      if (!response.ok) {
+        throw new AssistantSendError(
+          "error" in data && typeof data.error === "string"
+            ? data.error
+            : `Request failed (${response.status}) — try again.`,
+          `http_${response.status}`
+        )
+      }
+
+      if (!("phase" in data)) {
+        throw new AssistantSendError(
+          "Unexpected response — try again.",
+          "unexpected_payload"
+        )
+      }
+
+      return { kind: "ok", response, data, args }
+    },
+    onMutate: async (args) => {
+      setError(null)
+      setPending(true)
+      setLastTurn(null)
+      const previousMessages = messages
+      setMessages(args.nextMessages)
+      return { previousMessages, requestStartedAt: Date.now() }
+    },
+    onSuccess: async (result, _variables, context) => {
+      if (result.kind === "auth_required") {
         setMessages(context?.previousMessages ?? [])
-        setInput(args.trimmed)
         await ensureAuthenticated()
         return
       }
 
-      if (!response.ok) {
-        trackEvent("ai_assistant_response_error", {
-          page_path: pathname,
-          latency_ms: latencyMs,
-          error_type: `http_${response.status}`,
-        })
-        setMessages(context?.previousMessages ?? [])
-        setInput(args.trimmed)
-        setError(
-          "error" in data && typeof data.error === "string"
-            ? data.error
-            : `Request failed (${response.status}) — try again.`
-        )
-        return
-      }
-
-      if (!("phase" in data)) {
-        trackEvent("ai_assistant_response_error", {
-          page_path: pathname,
-          latency_ms: latencyMs,
-          error_type: "unexpected_payload",
-        })
-        setMessages(context?.previousMessages ?? [])
-        setInput(args.trimmed)
-        setError("Unexpected response — try again.")
-        return
-      }
+      const latencyMs = context
+        ? Math.max(0, Date.now() - context.requestStartedAt)
+        : 0
+      const { data } = result
       trackEvent("ai_assistant_response_success", {
         page_path: pathname,
         latency_ms: latencyMs,
@@ -323,18 +339,18 @@ export function useAssistantChat() {
         },
       ])
     },
-    onError: (_error, _vars, context) => {
+    onError: (error, _vars, context) => {
       const latencyMs = context
         ? Math.max(0, Date.now() - context.requestStartedAt)
         : undefined
+      const isSendError = error instanceof AssistantSendError
       trackEvent("ai_assistant_response_error", {
         page_path: pathname,
         ...(latencyMs !== undefined ? { latency_ms: latencyMs } : {}),
-        error_type: "network_error",
+        error_type: isSendError ? error.errorType : "network_error",
       })
       setMessages(context?.previousMessages ?? [])
-      setInput(context?.previousInput ?? "")
-      setError("Network error — try again.")
+      setError(isSendError ? error.message : "Network error — try again.")
     },
     onSettled: () => {
       setPending(false)
@@ -365,7 +381,7 @@ export function useAssistantChat() {
         setActiveChatId(null)
         setMessages([])
         setLastTurn(null)
-        setInput("")
+        resetComposer()
       }
 
       await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
@@ -403,12 +419,19 @@ export function useAssistantChat() {
       )
     const previousPresetCodes = previousPresetMessage?.presets?.map((p) => p.code) ?? []
 
-    await sendMutation.mutateAsync({
+    const result = await sendMutation.mutateAsync({
       trimmed,
       nextMessages,
       previousPresetCodes,
       chatId: activeChatId,
     })
+
+    if (result.kind === "auth_required") {
+      throw new AssistantSendError(
+        "Authentication required",
+        "auth_required"
+      )
+    }
   }
 
   async function onPromptSubmit(text: string) {
@@ -426,7 +449,7 @@ export function useAssistantChat() {
     }
     setActiveChatId(null)
     setMessages([])
-    setInput("")
+    resetComposer()
     setError(null)
     setLastTurn(null)
   }
@@ -434,18 +457,17 @@ export function useAssistantChat() {
   return {
     activeChatId,
     activeChatQuery,
+    composerResetKey,
     deletingChatId,
     deleteChat,
-    error,
+    error: error ?? chatLoadError,
     hasInteracted,
-    input,
     lastTurn,
     messages,
     pending,
     recentChats,
     isLoadingRecentChats,
     setActiveChatId,
-    setInput,
     sendContent,
     onPromptSubmit,
     startNewChat,
