@@ -56,7 +56,7 @@ export function PresetPreviewLayoutPicker({
             type="button"
             aria-label="Choose preview layout"
             className={cn(
-              "h-8 w-full min-w-42 justify-between gap-2 px-3 text-xs font-normal sm:w-auto",
+              "h-8 min-w-42 justify-between gap-2 px-3 text-xs font-normal w-auto",
               className
             )}
           />
@@ -67,8 +67,8 @@ export function PresetPreviewLayoutPicker({
       </PopoverTrigger>
       <PopoverContent
         className="w-72 p-0"
-        side="top"
-        align="end"
+        side="bottom"
+        align="start"
         sideOffset={8}
       >
         <Command>

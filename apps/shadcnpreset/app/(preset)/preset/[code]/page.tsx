@@ -76,22 +76,22 @@ export default async function PresetCodePage({
   })
 
   return (
-    <div className="mx-auto w-full max-w-[2000px]">
+    <div className="w-full">
       <main className="grid gap-2">
-        <Container aria-label="Preset details and actions">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <Container aria-label="Preset details and actions" className="max-w-full">
+          <div className="flex flex-wrap items-start justify-between gap-4 py-6">
             <PresetCodeTitle
               presetCode={preset.code}
               description={description}
             />
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <PresetButtons preset={preset.code} />
             </div>
           </div>
         </Container>
         <Suspense
           fallback={
-            <div className="relative flex min-h-[calc(100dvh-100px)] items-center justify-center">
+            <div className="relative flex min-h-[calc(100dvh-14rem)] items-center justify-center">
               <Spinner />
             </div>
           }

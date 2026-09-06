@@ -4,9 +4,17 @@ import Link from "next/link"
 import * as React from "react"
 
 import { copyToClipboardWithMeta } from "@/components/copy-button"
+import { GetCodeDialog } from "@/components/get-code-dialog"
+import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
-import { InfoIcon, CopyIcon, CheckIcon, ShareIcon } from "@phosphor-icons/react"
+import {
+  CheckIcon,
+  CodeIcon,
+  CopyIcon,
+  InfoIcon,
+  ShareIcon,
+} from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 
 export function PresetCodeTitle({
@@ -19,8 +27,8 @@ export function PresetCodeTitle({
   const { isCopied: hasCopied, copyToClipboard } = useCopyToClipboard()
 
   return (
-    <div>
-      <h1 className="flex items-center gap-1.5 font-mono text-lg text-foreground md:text-2xl">
+    <div className="min-w-0">
+      <h1 className="flex items-center gap-1.5 font-mono text-2xl tracking-tight text-foreground">
         <span className="min-w-0 truncate">{presetCode}</span>
         <Button
           type="button"
@@ -38,7 +46,7 @@ export function PresetCodeTitle({
         </Button>
       </h1>
       {description ? (
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       ) : null}
     </div>
   )
@@ -46,6 +54,7 @@ export function PresetCodeTitle({
 
 export function PresetButtons({ preset }: { preset: string }) {
   const [hasCopied, setHasCopied] = React.useState(false)
+  const [getCodeOpen, setGetCodeOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (hasCopied) {
@@ -65,13 +74,12 @@ export function PresetButtons({ preset }: { preset: string }) {
 
   return (
     <>
-      <Link
-        href={`/pdp/${preset}`}
-        className={cn(buttonVariants({ variant: "outline" }))}
-      >
-        Details <InfoIcon />
-      </Link>
-      <Button variant="outline" onClick={handleShare}>
+      <PresetVoteButton size="lg" code={preset} />
+      <Button size="lg" variant="outline" onClick={() => setGetCodeOpen(true)}>
+        <CodeIcon className="size-4" />
+        Code
+      </Button>
+      <Button variant="outline" size="lg" onClick={handleShare}>
         {hasCopied ? "Copied" : "Share"}
         {hasCopied ? (
           <CheckIcon aria-hidden className="size-4" />
@@ -79,6 +87,17 @@ export function PresetButtons({ preset }: { preset: string }) {
           <ShareIcon aria-hidden className="size-4" />
         )}
       </Button>
+      <Link
+        href={`/pdp/${preset}`}
+        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+      >
+        Details <InfoIcon />
+      </Link>
+      <GetCodeDialog
+        open={getCodeOpen}
+        onOpenChange={setGetCodeOpen}
+        presetCode={preset}
+      />
     </>
   )
 }
