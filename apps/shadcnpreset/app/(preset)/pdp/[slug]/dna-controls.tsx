@@ -1,17 +1,16 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   CaretLeftIcon,
   CaretRightIcon,
+  CodeIcon,
   ShuffleIcon,
-  SlidersHorizontalIcon,
 } from "@phosphor-icons/react"
-import { useMemo, type MouseEvent } from "react"
+import { useMemo, useState, type MouseEvent } from "react"
 
 import { PresetVoteButton } from "@/components/preset-vote-button"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   InputGroup,
   InputGroupAddon,
@@ -20,6 +19,7 @@ import {
 import type { ResolvedPreset } from "@/lib/preset"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 
+import { GetCodeDialog } from "./get-code-dialog"
 import { getRelatedPresets } from "./related-presets"
 import { cn } from "@/lib/utils"
 
@@ -30,6 +30,7 @@ type DnaControlsProps = {
 
 export function DnaControls({ resolved, className }: DnaControlsProps) {
   const router = useRouter()
+  const [getCodeOpen, setGetCodeOpen] = useState(false)
   const navCodes = useMemo(() => {
     const related = getRelatedPresets(resolved, 12).filter(
       (code) => code !== resolved.code
@@ -110,13 +111,19 @@ export function DnaControls({ resolved, className }: DnaControlsProps) {
         </InputGroupAddon>
       </InputGroup>
       <PresetVoteButton code={resolved.code} />
-      <Link
-        href={`/preset/${resolved.code}`}
-        className={buttonVariants({ variant: "outline" })}
+      <Button
+        variant="outline"
+        onMouseDown={preventPointerFocus}
+        onClick={() => setGetCodeOpen(true)}
       >
-        Edit
-        <SlidersHorizontalIcon className="size-4" />
-      </Link>
+        <CodeIcon className="size-4" />
+        Get Code
+      </Button>
+      <GetCodeDialog
+        open={getCodeOpen}
+        onOpenChange={setGetCodeOpen}
+        presetCode={resolved.code}
+      />
     </div>
   )
 }
