@@ -29,7 +29,7 @@ type PresetStyleOverviewCardProps = {
   initialHasVoted?: boolean
   /**
    * `inline` — local React preview (default).
-   * `v4-iframe` — scaled shadcn v4 create preview URL (same as PresetPreviewDialog /create).
+   * `v4-iframe` — scaled shadcn v4 preview URL (same as PresetPreviewDialog).
    */
   previewVariant?: "inline" | "v4-iframe"
   previewStepOrder?: readonly PresetPreviewStepItem[]
