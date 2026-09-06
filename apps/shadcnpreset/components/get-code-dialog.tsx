@@ -94,6 +94,7 @@ export function GetCodeDialog({
   onOpenChange: (open: boolean) => void
   presetCode: string
 }) {
+  const id = React.useId()
   const [config, setConfig] = useConfig()
   const [copiedTarget, setCopiedTarget] = React.useState<CopyTarget | null>(
     null
@@ -221,7 +222,7 @@ export function GetCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="dark no-scrollbar flex max-h-[calc(100svh-2rem)] flex-col rounded-2xl p-0 shadow-xl **:data-[slot=dialog-close]:top-4.5 **:data-[slot=dialog-close]:right-4 **:data-[slot=field-separator]:h-2 sm:max-w-md">
+      <DialogContent className="dark z-60 no-scrollbar flex max-h-[calc(100svh-2rem)] flex-col rounded-2xl p-0 shadow-xl **:data-[slot=dialog-close]:top-4.5 **:data-[slot=dialog-close]:right-4 **:data-[slot=field-separator]:h-2 sm:max-w-md">
         <div className="flex min-w-0 flex-1 flex-col gap-0 overflow-hidden rounded-2xl">
           <DialogHeader className="border-b px-6 py-5">
             <ToggleGroup
@@ -246,6 +247,7 @@ export function GetCodeDialog({
                 <Field className="gap-3">
                   <FieldLabel>Template</FieldLabel>
                   <TemplateGrid
+                    idPrefix={id}
                     template={options.template}
                     onTemplateChange={(template) =>
                       setOptions((current) => ({ ...current, template }))
@@ -256,6 +258,7 @@ export function GetCodeDialog({
                 <Field>
                   <FieldLabel>Base</FieldLabel>
                   <BaseGrid
+                    idPrefix={id}
                     base={options.base}
                     onBaseChange={(base) =>
                       setOptions((current) => ({ ...current, base }))
@@ -268,7 +271,7 @@ export function GetCodeDialog({
                     Options
                   </FieldLegend>
                   <Field orientation="horizontal">
-                    <FieldLabel htmlFor="get-code-pointer">
+                    <FieldLabel htmlFor={`${id}-pointer`}>
                       <HugeiconsIcon
                         icon={HandPointingRight04Icon}
                         className="size-4 -rotate-90"
@@ -276,7 +279,7 @@ export function GetCodeDialog({
                       Use pointer on buttons
                     </FieldLabel>
                     <Switch
-                      id="get-code-pointer"
+                      id={`${id}-pointer`}
                       checked={options.pointer}
                       onCheckedChange={(checked) =>
                         setOptions((current) => ({
@@ -291,7 +294,7 @@ export function GetCodeDialog({
                     orientation="horizontal"
                     data-disabled={hasMonorepo ? undefined : "true"}
                   >
-                    <FieldLabel htmlFor="get-code-monorepo">
+                    <FieldLabel htmlFor={`${id}-monorepo`}>
                       <span
                         className="size-4 text-neutral-100 [&_svg]:size-4 [&_svg]:fill-current"
                         dangerouslySetInnerHTML={{
@@ -301,7 +304,7 @@ export function GetCodeDialog({
                       Create a monorepo
                     </FieldLabel>
                     <Switch
-                      id="get-code-monorepo"
+                      id={`${id}-monorepo`}
                       checked={isMonorepo}
                       disabled={!hasMonorepo}
                       onCheckedChange={(checked) =>
@@ -317,12 +320,12 @@ export function GetCodeDialog({
                   </Field>
                   <FieldSeparator className="-mx-6" />
                   <Field orientation="horizontal">
-                    <FieldLabel htmlFor="get-code-rtl">
+                    <FieldLabel htmlFor={`${id}-rtl`}>
                       <HugeiconsIcon icon={Globe02Icon} className="size-4" />
                       Enable RTL support
                     </FieldLabel>
                     <Switch
-                      id="get-code-rtl"
+                      id={`${id}-rtl`}
                       checked={options.rtl}
                       onCheckedChange={(checked) =>
                         setOptions((current) => ({
@@ -358,7 +361,11 @@ export function GetCodeDialog({
                   <FieldDescription>
                     Pick which parts of the preset to apply.
                   </FieldDescription>
-                  <ApplyModeGrid mode={applyMode} setMode={setApplyMode} />
+                  <ApplyModeGrid
+                    idPrefix={id}
+                    mode={applyMode}
+                    setMode={setApplyMode}
+                  />
                 </FieldSet>
               </FieldGroup>
               <DialogFooter className="m-0 min-w-0 p-6">
@@ -493,9 +500,11 @@ function CommandCopy({
 }
 
 function TemplateGrid({
+  idPrefix,
   template,
   onTemplateChange,
 }: {
+  idPrefix: string
   template: string
   onTemplateChange: (template: string) => void
 }) {
@@ -513,7 +522,7 @@ function TemplateGrid({
       {TEMPLATES.map((item) => (
         <FieldLabel
           key={item.value}
-          htmlFor={`get-code-template-${item.value}`}
+          htmlFor={`${idPrefix}-template-${item.value}`}
           className="block w-full"
         >
           <Field
@@ -531,7 +540,7 @@ function TemplateGrid({
             </FieldContent>
             <RadioGroupItem
               value={item.value}
-              id={`get-code-template-${item.value}`}
+              id={`${idPrefix}-template-${item.value}`}
               className="sr-only absolute"
             />
           </Field>
@@ -542,9 +551,11 @@ function TemplateGrid({
 }
 
 function ApplyModeGrid({
+  idPrefix,
   mode,
   setMode,
 }: {
+  idPrefix: string
   mode: ApplyMode
   setMode: (mode: ApplyMode) => void
 }) {
@@ -557,12 +568,12 @@ function ApplyModeGrid({
       {APPLY_MODES.map((option) => (
         <FieldLabel
           key={option.value}
-          htmlFor={`get-code-apply-${option.value}`}
+          htmlFor={`${idPrefix}-apply-${option.value}`}
         >
           <Field orientation="horizontal">
             <RadioGroupItem
               value={option.value}
-              id={`get-code-apply-${option.value}`}
+              id={`${idPrefix}-apply-${option.value}`}
             />
             <FieldContent>
               <FieldTitle>{option.title}</FieldTitle>
@@ -576,9 +587,11 @@ function ApplyModeGrid({
 }
 
 function BaseGrid({
+  idPrefix,
   base,
   onBaseChange,
 }: {
+  idPrefix: string
   base: BaseName
   onBaseChange: (base: BaseName) => void
 }) {
@@ -592,7 +605,7 @@ function BaseGrid({
       {BASES.map((item) => (
         <FieldLabel
           key={item.name}
-          htmlFor={`get-code-base-${item.name}`}
+          htmlFor={`${idPrefix}-base-${item.name}`}
           className="block w-full"
         >
           <Field
@@ -610,7 +623,7 @@ function BaseGrid({
             </FieldContent>
             <RadioGroupItem
               value={item.name}
-              id={`get-code-base-${item.name}`}
+              id={`${idPrefix}-base-${item.name}`}
               className="sr-only absolute"
             />
           </Field>
