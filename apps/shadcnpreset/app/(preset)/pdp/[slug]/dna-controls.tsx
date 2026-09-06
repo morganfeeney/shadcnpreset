@@ -117,7 +117,7 @@ export function DnaControls({ resolved, className }: DnaControlsProps) {
         onClick={() => setGetCodeOpen(true)}
       >
         <CodeIcon className="size-4" />
-        Get Code
+        Code
       </Button>
       <GetCodeDialog
         open={getCodeOpen}
