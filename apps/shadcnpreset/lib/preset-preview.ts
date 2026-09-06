@@ -75,6 +75,28 @@ export function getPresetPreviewView(page: PresetPreviewPageName) {
   return PRESET_PREVIEW_VIEWS.find((item) => item.page === page) ?? null
 }
 
+export function isPresetPreviewPageName(
+  value: string | undefined | null
+): value is PresetPreviewPageName {
+  return PRESET_PREVIEW_VIEWS.some((item) => item.page === value)
+}
+
+export function parsePresetPreviewPageName(
+  value: string | undefined | null
+): PresetPreviewPageName {
+  return isPresetPreviewPageName(value) ? value : "preview"
+}
+
+export function presetBrowsePath(
+  code: string,
+  view: PresetPreviewPageName = "preview"
+): string {
+  if (view === "preview") {
+    return `/preset/${code}`
+  }
+  return `/preset/${code}?view=${view}`
+}
+
 export function isLocalPresetPreviewExample(
   value: string
 ): value is LocalPresetPreviewExample {

@@ -1,55 +1,31 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 
 import {
-  CheckIcon,
-  CaretDownIcon,
+  ArrowUpRightIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  CheckIcon,
   CopyIcon,
-  SlidersHorizontalIcon,
   XIcon,
-  InfoIcon,
-  CodeIcon,
 } from "@phosphor-icons/react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useState } from "react"
 
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { GetCodeDialog } from "@/components/get-code-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Spinner } from "@/components/ui/spinner"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
-import { trackEvent } from "@/lib/analytics-events"
 import { getPresetPreviewUrl } from "@/lib/preset"
-import {
-  PRESET_PREVIEW_VIEWS,
-  type PresetPreviewPageName,
-} from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
 import {
@@ -96,17 +72,11 @@ export function PresetPreviewDialog({
   description,
   previewStepOrder,
 }: PresetPreviewDialogProps) {
-  const pathname = usePathname()
   const [loadGen, setLoadGen] = useState(0)
-  const [previewPage, setPreviewPage] =
-    useState<PresetPreviewPageName>("preview")
-  const [previewPickerOpen, setPreviewPickerOpen] = useState(false)
-  const [getCodeOpen, setGetCodeOpen] = useState(false)
+  const { isCopied: hasCopiedCode, copyToClipboard } = useCopyToClipboard()
 
   const afterPreviewStep = useCallback(() => {
-    setPreviewPage("preview")
     setLoadGen((g) => g + 1)
-    setPreviewPickerOpen(false)
   }, [])
 
   const {
@@ -124,104 +94,66 @@ export function PresetPreviewDialog({
     afterStep: afterPreviewStep,
   })
 
-  const { isCopied: hasCopiedCode, copyToClipboard } = useCopyToClipboard()
-
-  const currentPreviewLabel = useMemo(
-    () =>
-      PRESET_PREVIEW_VIEWS.find((v) => v.page === previewPage)?.label ??
-      previewPage,
-    [previewPage]
-  )
-
-  const basePreviewUrl = getPresetPreviewUrl(viewCode)
-  if (!basePreviewUrl) return null
-
-  const previewSrc = getPresetPreviewUrl(viewCode, previewPage)!
+  const previewSrc = getPresetPreviewUrl(viewCode)
+  if (!previewSrc) return null
 
   return (
-    <>
     <Dialog
       open={open}
       onOpenChange={(next) => {
         if (next) {
           setLoadGen((g) => g + 1)
-          setPreviewPage("preview")
-          setPreviewPickerOpen(false)
-        } else {
-          setGetCodeOpen(false)
         }
         onOpenChange(next)
       }}
     >
       <DialogContent
-        className="grid h-[90dvh] w-full max-w-[90dvw]! grid-rows-[auto_1fr_auto] gap-0"
+        className="grid xl:h-[60dvh] h-[90dvh] w-full max-w-[90dvw]! xl:max-w-[60dvw]!  grid-rows-[auto_1fr] gap-0"
         showCloseButton={false}
       >
         <DialogHeader className="gap-0 pb-4">
           <div className="flex justify-between">
-            <div className="min-w-0">
-              <DialogTitle className="flex items-center gap-1.5 font-mono text-sm tracking-tight md:text-xl">
-                <span className="min-w-0 truncate">{displayTitle}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => copyToClipboard(viewCode)}
-                  aria-label={hasCopiedCode ? "Copied" : "Copy preset code"}
-                >
-                  {hasCopiedCode ? (
-                    <CheckIcon aria-hidden className="size-4" />
-                  ) : (
-                    <CopyIcon aria-hidden className="size-4" />
-                  )}
-                </Button>
-              </DialogTitle>
-              {displayDesc ? (
-                <DialogDescription className="line-clamp-2 text-xs">
-                  {displayDesc}
-                </DialogDescription>
-              ) : null}
-            </div>
-            <div className="flex shrink-0 flex-wrap justify-end gap-2">
-              <PresetVoteButton code={viewCode} enabled={open} />
-              <Link
-                href={`/pdp/${viewCode}`}
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                  })
-                )}
-              >
-                Details <InfoIcon />
-              </Link>
-              <Link
-                href={`/preset/${viewCode}`}
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                  }),
-                  "gap-2"
-                )}
-              >
-                Edit
-                <SlidersHorizontalIcon aria-hidden />
-              </Link>
+          <div className="min-w-0">
+            <DialogTitle className="flex items-center gap-1.5 font-mono text-sm tracking-tight md:text-xl">
+              <span className="min-w-0 truncate">{displayTitle}</span>
               <Button
-                variant="outline"
-                onClick={() => setGetCodeOpen(true)}
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                onClick={() => copyToClipboard(viewCode)}
+                aria-label={hasCopiedCode ? "Copied" : "Copy preset code"}
               >
-                Code
-                <CodeIcon className="size-4" />
+                {hasCopiedCode ? (
+                  <CheckIcon aria-hidden className="size-4" />
+                ) : (
+                  <CopyIcon aria-hidden className="size-4" />
+                )}
               </Button>
-              <DialogTrigger
-                render={
-                  <Button variant="outline">
-                    <XIcon />
-                  </Button>
-                }
-              />
-            </div>
+            </DialogTitle>
+            {displayDesc ? (
+              <DialogDescription className="line-clamp-2 text-xs">
+                {displayDesc}
+              </DialogDescription>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            <PresetVoteButton code={viewCode} enabled={open} />
+            <Link
+              href={`/preset/${viewCode}`}
+              className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+            >
+              View
+              <ArrowUpRightIcon aria-hidden />
+            </Link>
+            <DialogTrigger
+              render={
+                <Button variant="outline" size="icon" aria-label="Close">
+                  <XIcon />
+                </Button>
+              }
+            />
+          </div>
           </div>
         </DialogHeader>
         <div className="relative -mx-4">
@@ -233,7 +165,6 @@ export function PresetPreviewDialog({
               disabled={!canPrev}
               className={cn(
                 "absolute top-1/2 z-10 -translate-y-1/2",
-                "hover:opacity-100",
                 "-left-4",
                 "lg:-left-12 lg:size-10",
                 "transition-none active:translate-y-[calc(-50%+1px)]!"
@@ -243,11 +174,11 @@ export function PresetPreviewDialog({
               <CaretLeftIcon className="size-4" weight="bold" />
             </Button>
           ) : null}
-          <DialogPreviewIframe
-            key={`${viewCode}-${previewPage}-${loadGen}`}
-            src={previewSrc}
-            title={`Preset preview ${viewCode} ${previewPage}`}
-          />
+            <DialogPreviewIframe
+              key={`${viewCode}-${loadGen}`}
+              src={previewSrc}
+              title={`Preset preview ${viewCode}`}
+            />
           {canStep ? (
             <Button
               type="button"
@@ -256,7 +187,6 @@ export function PresetPreviewDialog({
               disabled={!canNext}
               className={cn(
                 "absolute top-1/2 z-10 -translate-y-1/2",
-                "hover:opacity-100",
                 "-right-4",
                 "lg:-right-12 lg:size-10",
                 "transition-none active:translate-y-[calc(-50%+1px)]!"
@@ -267,74 +197,7 @@ export function PresetPreviewDialog({
             </Button>
           ) : null}
         </div>
-        <DialogFooter>
-          <Popover open={previewPickerOpen} onOpenChange={setPreviewPickerOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  aria-label="Choose preview layout"
-                  className="h-8 w-full min-w-42 justify-between gap-2 px-3 text-xs font-normal sm:w-auto"
-                />
-              }
-            >
-              <span className="truncate">{currentPreviewLabel}</span>
-              <CaretDownIcon className="size-3.5 shrink-0 opacity-50" />
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-72 p-0"
-              side="top"
-              align="end"
-              sideOffset={8}
-            >
-              <Command>
-                <CommandInput placeholder="Search previews…" />
-                <CommandList>
-                  <CommandEmpty>No preview found.</CommandEmpty>
-                  <CommandGroup heading="Layouts">
-                    {PRESET_PREVIEW_VIEWS.map(({ page, label }) => (
-                      <CommandItem
-                        key={page}
-                        value={page}
-                        keywords={[label, page]}
-                        className="[&>svg:last-child]:hidden"
-                        onSelect={() => {
-                          const previous = previewPage
-                          setPreviewPage(page)
-                          setPreviewPickerOpen(false)
-                          if (page !== previous) {
-                            trackEvent("preset_demo_view_select", {
-                              page_path: pathname,
-                              preset_code: viewCode,
-                              demo_view: page,
-                            })
-                          }
-                        }}
-                      >
-                        <span className="truncate">{label}</span>
-                        <CheckIcon
-                          className={cn(
-                            "ml-auto size-4 shrink-0",
-                            previewPage === page ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
-    <GetCodeDialog
-      open={getCodeOpen}
-      onOpenChange={setGetCodeOpen}
-      presetCode={viewCode}
-    />
-    </>
   )
 }
