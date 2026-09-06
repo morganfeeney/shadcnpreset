@@ -1,28 +1,23 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react"
-import { useMemo, useState } from "react"
+import { DotsThreeVerticalIcon } from "@phosphor-icons/react"
 
 import { Button } from "@/components/ui/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { trackEvent } from "@/lib/analytics-events"
-import {
-  PRESET_PREVIEW_VIEWS,
-  type PresetPreviewPageName,
-} from "@/lib/preset-preview"
+import { type PresetPreviewPageName } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
 type PresetPreviewLayoutPickerProps = {
@@ -32,6 +27,13 @@ type PresetPreviewLayoutPickerProps = {
   className?: string
 }
 
+const pillClassName = cn(
+  "h-auto flex-none rounded-full px-3 py-1 text-sm font-medium shadow-none",
+  "text-muted-foreground hover:bg-transparent hover:text-foreground",
+  "data-active:bg-secondary data-active:text-secondary-foreground",
+  "dark:data-active:bg-secondary dark:data-active:text-secondary-foreground"
+)
+
 export function PresetPreviewLayoutPicker({
   value,
   onValueChange,
@@ -39,75 +41,76 @@ export function PresetPreviewLayoutPicker({
   className,
 }: PresetPreviewLayoutPickerProps) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
 
-  const currentLabel = useMemo(
-    () => PRESET_PREVIEW_VIEWS.find((view) => view.page === value)?.label ?? value,
-    [value]
-  )
+  function selectView(page: PresetPreviewPageName) {
+    if (page === value) return
+    onValueChange(page)
+    trackEvent("preset_demo_view_select", {
+      page_path: pathname,
+      preset_code: presetCode,
+      demo_view: page,
+    })
+  }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            aria-label="Choose preview layout"
-            className={cn(
-              "h-8 min-w-42 justify-between gap-2 px-3 text-xs font-normal w-auto",
-              className
-            )}
-          />
-        }
-      >
-        <span className="truncate">{currentLabel}</span>
-        <CaretDownIcon className="size-3.5 shrink-0 opacity-50" />
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-72 p-0"
-        side="bottom"
-        align="start"
-        sideOffset={8}
-      >
-        <Command>
-          <CommandInput placeholder="Search previews…" />
-          <CommandList>
-            <CommandEmpty>No preview found.</CommandEmpty>
-            <CommandGroup heading="Layouts">
-              {PRESET_PREVIEW_VIEWS.map(({ page, label }) => (
-                <CommandItem
-                  key={page}
-                  value={page}
-                  keywords={[label, page]}
-                  className="[&>svg:last-child]:hidden"
-                  onSelect={() => {
-                    const previous = value
-                    onValueChange(page)
-                    setOpen(false)
-                    if (page !== previous) {
-                      trackEvent("preset_demo_view_select", {
-                        page_path: pathname,
-                        preset_code: presetCode,
-                        demo_view: page,
-                      })
-                    }
-                  }}
+    <Tabs
+      value={value}
+      onValueChange={(next) => selectView(next as PresetPreviewPageName)}
+      className={cn("min-w-0", className)}
+    >
+      <TabsList className="inline-flex h-auto w-fit items-center justify-center rounded-full bg-transparent px-0 text-muted-foreground">
+        <TabsTrigger value="preview" className={pillClassName}>
+          View 1
+        </TabsTrigger>
+        <TabsTrigger value="preview-02" className={pillClassName}>
+          View 2
+        </TabsTrigger>
+        <TabsTrigger value="dashboard" className={cn(pillClassName, "hidden min-[400px]:flex")}>
+          Dashboard
+        </TabsTrigger>
+        <TabsTrigger value="login-02" className={cn(pillClassName, "hidden sm:flex")}>
+          Login 02
+        </TabsTrigger>
+        <TabsTrigger value="login-04" className={cn(pillClassName, "hidden sm:flex")}>
+          Login 04
+        </TabsTrigger>
+
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <DropdownMenuTrigger
+                  className="hidden max-sm:flex"
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="More previews"
+                    />
+                  }
                 >
-                  <span className="truncate">{label}</span>
-                  <CheckIcon
-                    className={cn(
-                      "ml-auto size-4 shrink-0",
-                      value === page ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                  <DotsThreeVerticalIcon className="size-4" />
+                </DropdownMenuTrigger>
+              }
+            />
+            <TooltipContent>More previews</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              className="md:hidden"
+              onClick={() => selectView("dashboard")}
+            >
+              Dashboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectView("login-02")}>
+              Login 02
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectView("login-04")}>
+              Login 04
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TabsList>
+    </Tabs>
   )
 }
