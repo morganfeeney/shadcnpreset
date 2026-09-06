@@ -6,6 +6,7 @@ import * as React from "react"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { InfoIcon, CopyIcon, CheckIcon, ShareIcon } from "@phosphor-icons/react"
@@ -14,22 +15,8 @@ import { cn } from "@/lib/utils"
 export function PresetCodeTitle({ presetCode }: { presetCode: string }) {
   const live = usePresetPageLiveOptional()
   const displayCode = live?.livePresetCode ?? presetCode
-  const [hasCopied, setHasCopied] = React.useState(false)
-
-  React.useEffect(() => {
-    if (hasCopied) {
-      const timer = setTimeout(() => setHasCopied(false), 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [hasCopied])
-
-  const handleCopy = React.useCallback(() => {
-    copyToClipboardWithMeta(displayCode, {
-      name: "copy_preset_code",
-      properties: { preset: displayCode },
-    })
-    setHasCopied(true)
-  }, [displayCode])
+  const { isCopied: hasCopied, copyToClipboard } =
+    useCopyToClipboard()
 
   return (
     <h1 className="flex items-center gap-1.5 font-mono text-lg text-foreground md:text-2xl">
@@ -39,7 +26,7 @@ export function PresetCodeTitle({ presetCode }: { presetCode: string }) {
         variant="ghost"
         size="icon-sm"
         className="shrink-0 text-muted-foreground hover:text-foreground"
-        onClick={handleCopy}
+        onClick={() => copyToClipboard(displayCode)}
         aria-label={hasCopied ? "Copied" : "Copy preset code"}
       >
         {hasCopied ? (

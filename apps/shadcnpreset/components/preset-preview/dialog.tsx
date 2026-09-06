@@ -8,6 +8,7 @@ import {
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  CopyIcon,
   SlidersHorizontalIcon,
   XIcon,
   InfoIcon,
@@ -42,6 +43,7 @@ import { GetCodeDialog } from "@/components/get-code-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Spinner } from "@/components/ui/spinner"
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import { trackEvent } from "@/lib/analytics-events"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import {
@@ -122,6 +124,8 @@ export function PresetPreviewDialog({
     afterStep: afterPreviewStep,
   })
 
+  const { isCopied: hasCopiedCode, copyToClipboard } = useCopyToClipboard()
+
   const currentPreviewLabel = useMemo(
     () =>
       PRESET_PREVIEW_VIEWS.find((v) => v.page === previewPage)?.label ??
@@ -156,8 +160,22 @@ export function PresetPreviewDialog({
         <DialogHeader className="gap-0 pb-4">
           <div className="flex justify-between">
             <div className="min-w-0">
-              <DialogTitle className="font-mono text-sm tracking-tight md:text-xl">
-                {displayTitle}
+              <DialogTitle className="flex items-center gap-1.5 font-mono text-sm tracking-tight md:text-xl">
+                <span className="min-w-0 truncate">{displayTitle}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => copyToClipboard(viewCode)}
+                  aria-label={hasCopiedCode ? "Copied" : "Copy preset code"}
+                >
+                  {hasCopiedCode ? (
+                    <CheckIcon aria-hidden className="size-4" />
+                  ) : (
+                    <CopyIcon aria-hidden className="size-4" />
+                  )}
+                </Button>
               </DialogTitle>
               {displayDesc ? (
                 <DialogDescription className="line-clamp-2 text-xs">
@@ -193,8 +211,8 @@ export function PresetPreviewDialog({
                 variant="outline"
                 onClick={() => setGetCodeOpen(true)}
               >
+                Code
                 <CodeIcon className="size-4" />
-                Get Code
               </Button>
               <DialogTrigger
                 render={
