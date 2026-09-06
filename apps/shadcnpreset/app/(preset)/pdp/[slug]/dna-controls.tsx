@@ -19,7 +19,7 @@ import {
 import type { ResolvedPreset } from "@/lib/preset"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
 
-import { GetCodeDialog } from "./get-code-dialog"
+import { GetCodeDialog } from "@/components/get-code-dialog"
 import { getRelatedPresets } from "./related-presets"
 import { cn } from "@/lib/utils"
 

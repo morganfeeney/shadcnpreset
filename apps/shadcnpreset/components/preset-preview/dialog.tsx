@@ -11,6 +11,7 @@ import {
   SlidersHorizontalIcon,
   XIcon,
   InfoIcon,
+  CodeIcon,
 } from "@phosphor-icons/react"
 import { useCallback, useMemo, useState } from "react"
 
@@ -37,6 +38,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { GetCodeDialog } from "@/components/get-code-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Spinner } from "@/components/ui/spinner"
@@ -97,6 +99,7 @@ export function PresetPreviewDialog({
   const [previewPage, setPreviewPage] =
     useState<PresetPreviewPageName>("preview")
   const [previewPickerOpen, setPreviewPickerOpen] = useState(false)
+  const [getCodeOpen, setGetCodeOpen] = useState(false)
 
   const afterPreviewStep = useCallback(() => {
     setPreviewPage("preview")
@@ -132,6 +135,7 @@ export function PresetPreviewDialog({
   const previewSrc = getPresetPreviewUrl(viewCode, previewPage)!
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(next) => {
@@ -139,6 +143,8 @@ export function PresetPreviewDialog({
           setLoadGen((g) => g + 1)
           setPreviewPage("preview")
           setPreviewPickerOpen(false)
+        } else {
+          setGetCodeOpen(false)
         }
         onOpenChange(next)
       }}
@@ -183,6 +189,13 @@ export function PresetPreviewDialog({
                 Edit
                 <SlidersHorizontalIcon aria-hidden />
               </Link>
+              <Button
+                variant="outline"
+                onClick={() => setGetCodeOpen(true)}
+              >
+                <CodeIcon className="size-4" />
+                Get Code
+              </Button>
               <DialogTrigger
                 render={
                   <Button variant="outline">
@@ -299,5 +312,11 @@ export function PresetPreviewDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <GetCodeDialog
+      open={getCodeOpen}
+      onOpenChange={setGetCodeOpen}
+      presetCode={viewCode}
+    />
+    </>
   )
 }
