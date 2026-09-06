@@ -1,36 +1,27 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { encodePreset } from "shadcn/preset"
+import { Suspense } from "react"
 
-import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Container } from "@/components/zippystarter/container"
+import { Spinner } from "@/components/ui/spinner"
 import { siteConfig } from "@/lib/config"
 import { isCommunityPresetCode } from "@/lib/community-presets"
 import { presetMetaDescription } from "@/lib/data/metadata/preset-meta"
 import { buildPageMetadata, getPresetOgImageUrl } from "@/lib/page-metadata"
 import { resolvePresetFromCode } from "@/lib/preset"
+import { formatPresetCardDescription } from "@/lib/preset-card-description"
+import { parsePresetPreviewPageName } from "@/lib/preset-preview"
+import { PresetBrowseSurface } from "./browse-surface"
 import { PresetButtons, PresetCodeTitle } from "./components"
-import { PresetPageLiveProvider } from "@/components/preset-page-live-context"
 
 type PresetPageProps = {
   params: Promise<{
     code: string
   }>
   searchParams: Promise<{
-    embed?: string
-    pointer?: string
-    baseCustomColor?: string
-    themeCustomColor?: string
-    chartCustomColor?: string
+    view?: string
   }>
 }
-
-const CREATE_PASS_THROUGH_PARAMS = [
-  "pointer",
-  "baseCustomColor",
-  "themeCustomColor",
-  "chartCustomColor",
-] as const
 
 export async function generateMetadata({
   params,
@@ -73,38 +64,41 @@ export default async function PresetCodePage({
     notFound()
   }
 
-  const canonicalCode = encodePreset(preset)
-  const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
-  const createIframeUrl = new URL("/create", v4BaseUrl)
-  createIframeUrl.searchParams.set("preset", canonicalCode)
-  createIframeUrl.searchParams.set("embed", "1")
-
-  for (const key of CREATE_PASS_THROUGH_PARAMS) {
-    const value = query[key]
-    if (value) {
-      createIframeUrl.searchParams.set(key, value)
-    }
-  }
+  const view = parsePresetPreviewPageName(query.view)
+  const description = formatPresetCardDescription({
+    style: preset.style,
+    baseColor: preset.baseColor,
+    theme: preset.theme,
+    chartColor: preset.effectiveChartColor,
+    iconLibrary: preset.iconLibrary,
+    font: preset.font,
+    fontHeading: preset.fontHeading,
+  })
 
   return (
-    <PresetPageLiveProvider initialPresetCode={code}>
-      <div className="mx-auto w-full max-w-[2000px]">
-        <main className="grid gap-2">
-          <Container aria-label="Preset details and actions">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <PresetCodeTitle presetCode={code} />
-              <div className="flex items-center gap-2">
-                <PresetButtons preset={canonicalCode} />
-              </div>
+    <div className="w-full">
+      <main className="grid gap-2">
+        <Container aria-label="Preset details and actions" className="max-w-full">
+          <div className="flex flex-wrap items-start justify-between gap-4 py-6">
+            <PresetCodeTitle
+              presetCode={preset.code}
+              description={description}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <PresetButtons preset={preset.code} />
             </div>
-          </Container>
-          <PresetV4Frame
-            className="-mx-2 block h-[calc(100dvh-100px)] w-[calc(100%+16px)] border-0"
-            src={createIframeUrl.toString()}
-            title={`v4 create preset ${code}`}
-          />
-        </main>
-      </div>
-    </PresetPageLiveProvider>
+          </div>
+        </Container>
+        <Suspense
+          fallback={
+            <div className="relative flex min-h-[calc(100dvh-14rem)] items-center justify-center">
+              <Spinner />
+            </div>
+          }
+        >
+          <PresetBrowseSurface resolved={preset} initialView={view} />
+        </Suspense>
+      </main>
+    </div>
   )
 }

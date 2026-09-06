@@ -10,11 +10,13 @@ type PresetVoteButtonProps = {
   code: string
   /** When false, skips vote query (e.g. closed dialogs). */
   enabled?: boolean
+  size?: "sm" | "lg"
 }
 
 export function PresetVoteButton({
   code,
   enabled = true,
+  size
 }: PresetVoteButtonProps) {
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(
     code,
@@ -23,6 +25,7 @@ export function PresetVoteButton({
 
   return (
     <Button
+      size={size}
       type="button"
       onClick={toggleVote}
       disabled={isVoting}
