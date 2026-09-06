@@ -31,6 +31,8 @@ type PresetBrowseControlsProps = {
   search?: string
   className?: string
   children?: ReactNode
+  /** Icon cycle controls only — used on the preset page tab row. */
+  cycleOnly?: boolean
 }
 
 export function PresetBrowseControls({
@@ -39,6 +41,7 @@ export function PresetBrowseControls({
   search = "",
   className,
   children,
+  cycleOnly = false,
 }: PresetBrowseControlsProps) {
   const router = useRouter()
   const [getCodeOpen, setGetCodeOpen] = useState(false)
@@ -83,6 +86,43 @@ export function PresetBrowseControls({
     navigateToPreset(nextCode)
   }
 
+  const cycleButtons = (
+    <InputGroup className="w-auto">
+      <InputGroupAddon align="inline-start" className="gap-0 px-0">
+        <InputGroupButton
+          size="icon-sm"
+          onMouseDown={preventPointerFocus}
+          onClick={onPreviousPreset}
+          disabled={!canCyclePresets}
+          aria-label="Previous related preset"
+        >
+          <CaretLeftIcon className="size-4" />
+        </InputGroupButton>
+        <InputGroupButton
+          size="icon-sm"
+          onMouseDown={preventPointerFocus}
+          onClick={onRandomPreset}
+          aria-label="Random preset"
+        >
+          <ShuffleIcon className="size-4" />
+        </InputGroupButton>
+        <InputGroupButton
+          size="icon-sm"
+          onMouseDown={preventPointerFocus}
+          onClick={onNextPreset}
+          disabled={!canCyclePresets}
+          aria-label="Next related preset"
+        >
+          <CaretRightIcon className="size-4" />
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
+  )
+
+  if (cycleOnly) {
+    return <div className={cn("flex items-center", className)}>{cycleButtons}</div>
+  }
+
   return (
     <div
       className={cn(
@@ -92,36 +132,7 @@ export function PresetBrowseControls({
       )}
     >
       {children}
-      <InputGroup className="w-auto">
-        <InputGroupAddon align="inline-start" className="gap-0 px-0">
-          <InputGroupButton
-            size="icon-sm"
-            onMouseDown={preventPointerFocus}
-            onClick={onPreviousPreset}
-            disabled={!canCyclePresets}
-            aria-label="Previous related preset"
-          >
-            <CaretLeftIcon className="size-4" />
-          </InputGroupButton>
-          <InputGroupButton
-            size="icon-sm"
-            onMouseDown={preventPointerFocus}
-            onClick={onRandomPreset}
-            aria-label="Random preset"
-          >
-            <ShuffleIcon className="size-4" />
-          </InputGroupButton>
-          <InputGroupButton
-            size="icon-sm"
-            onMouseDown={preventPointerFocus}
-            onClick={onNextPreset}
-            disabled={!canCyclePresets}
-            aria-label="Next related preset"
-          >
-            <CaretRightIcon className="size-4" />
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
+      {cycleButtons}
       <PresetVoteButton code={resolved.code} />
       <Button
         variant="outline"

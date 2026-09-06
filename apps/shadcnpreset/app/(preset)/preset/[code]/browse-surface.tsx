@@ -14,6 +14,7 @@ import {
   presetBrowsePath,
   type PresetPreviewPageName,
 } from "@/lib/preset-preview"
+import { Container } from "@/components/zippystarter/container"
 
 type PresetBrowseSurfaceProps = {
   resolved: ResolvedPreset
@@ -44,11 +45,24 @@ export function PresetBrowseSurface({
   }
 
   return (
-    <>
-      <div className="relative min-h-[calc(100dvh-100px)] overflow-hidden">
+    <Container className="max-w-full grid gap-4">
+      <div className="flex items-center justify-between gap-1.5">
+        <PresetPreviewLayoutPicker
+          value={view}
+          onValueChange={onViewChange}
+          presetCode={resolved.code}
+        />
+        <PresetBrowseControls
+          resolved={resolved}
+          basePath="/preset"
+          search={search}
+          cycleOnly
+        />
+      </div>
+      <div className="relative min-h-[calc(100dvh-14rem)] flex-1 overflow-hidden rounded-lg">
         <PresetV4Frame
           key={frameKey}
-          className="block h-[calc(100dvh-100px)] w-full border-0"
+          className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
           src={previewSrc}
           title={`Preset preview ${resolved.code} ${view}`}
           sandbox="allow-scripts allow-same-origin"
@@ -64,19 +78,6 @@ export function PresetBrowseSurface({
           </div>
         ) : null}
       </div>
-      <div className="pb-safe sticky bottom-6 z-40 my-10 grid justify-center">
-        <PresetBrowseControls
-          resolved={resolved}
-          basePath="/preset"
-          search={search}
-        >
-          <PresetPreviewLayoutPicker
-            value={view}
-            onValueChange={onViewChange}
-            presetCode={resolved.code}
-          />
-        </PresetBrowseControls>
-      </div>
-    </>
+    </Container>
   )
 }
