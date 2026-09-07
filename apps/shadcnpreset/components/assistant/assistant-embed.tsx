@@ -28,7 +28,7 @@ const REFINE_CHIPS = ["Warmer palette", "Serif headings", "Higher contrast"]
 
 type AssistantEmbedProps = {
   resolved: ResolvedPreset
-  onApply?: (code: string) => void
+  onApply?: () => void
 }
 
 export function AssistantEmbed({
@@ -61,7 +61,7 @@ export function AssistantEmbed({
       document.activeElement.blur()
     }
     live?.selectLivePreset(code)
-    onApply?.(code)
+    onApply?.()
   }
 
   return (

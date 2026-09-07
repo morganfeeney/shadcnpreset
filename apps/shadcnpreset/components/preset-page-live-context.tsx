@@ -131,6 +131,14 @@ export function PresetPageLiveProvider({
   )
 }
 
+export function usePresetPageLive() {
+  const context = React.useContext(PresetPageLiveContext)
+  if (!context) {
+    throw new Error("usePresetPageLive must be used within PresetPageLiveProvider")
+  }
+  return context
+}
+
 export function usePresetPageLiveOptional() {
   return React.useContext(PresetPageLiveContext)
 }
