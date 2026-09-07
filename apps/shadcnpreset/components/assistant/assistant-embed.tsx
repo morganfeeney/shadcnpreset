@@ -124,7 +124,7 @@ export function AssistantEmbed({
               <EmptyMedia variant="icon">
                 <SparklesIcon />
               </EmptyMedia>
-              <EmptyTitle>Refine this preset</EmptyTitle>
+              <EmptyTitle>Describe your ideal shadcn preset</EmptyTitle>
               <EmptyDescription>
                 Describe the direction you want. Results apply into the live
                 preview.
