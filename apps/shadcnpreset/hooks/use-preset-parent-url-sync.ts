@@ -11,9 +11,8 @@ import { SHADCNPRESET_PRESET_CODE_MESSAGE_TYPE } from "@/lib/shadcnpreset-postme
  * When the v4 create iframe posts a new preset code, update `/preset/[code]` on the host.
  * Pass the same ref `PresetV4Frame` uses for the iframe so only that frame’s messages apply.
  *
- * When `onPresetFromIframe` is set (preset page + `PresetPageLiveProvider`), the URL is updated
- * with `history.replaceState` so the document and iframe do not reload. Otherwise falls back to
- * `router.replace` (legacy / rare).
+ * When `onPresetFromIframe` is set, the host updates the URL through the Next.js router.
+ * Otherwise falls back to `router.replace`.
  */
 export function usePresetParentUrlSync(
   iframeRef: React.RefObject<HTMLIFrameElement | null>,

@@ -1,23 +1,27 @@
 "use client"
 
 import * as React from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { decodePreset, encodePreset } from "shadcn/preset"
 
 import {
   parsePresetPreviewPageName,
   parsePresetSidebarTab,
   presetBrowsePath,
+  type PresetPreviewPageName,
+  type PresetSidebarTab,
 } from "@/lib/preset-preview"
-import { parsePresetCodeFromPathname } from "@/lib/preset-route"
 import { syncPresetPageSocialMeta } from "@/lib/sync-preset-social-meta"
 
 type PresetPageLiveContextValue = {
   livePresetCode: string
-  /** Normalized preset string for vote/share APIs */
   canonicalPresetCode: string
+  view: PresetPreviewPageName
+  tab: PresetSidebarTab
   onPresetFromIframe: (preset: string) => void
-  /** Swap the live preset without a Next.js page navigation. */
   selectLivePreset: (preset: string) => void
+  setLiveView: (view: PresetPreviewPageName) => void
+  setLiveTab: (tab: PresetSidebarTab) => void
 }
 
 const PresetPageLiveContext =
@@ -28,70 +32,61 @@ function normalizeCanonical(code: string): string {
   return decoded ? encodePreset(decoded) : code
 }
 
-function writePresetPath(preset: string, historyMode: "push" | "replace") {
-  const params = new URLSearchParams(window.location.search)
-  const path = presetBrowsePath(
-    preset,
-    parsePresetPreviewPageName(params.get("view")),
-    parsePresetSidebarTab(params.get("tab"))
-  )
-  if (historyMode === "push") {
-    window.history.pushState(window.history.state, "", path)
-    return
-  }
-  window.history.replaceState(window.history.state, "", path)
-}
-
 export function PresetPageLiveProvider({
-  initialPresetCode,
   children,
 }: {
-  initialPresetCode: string
   children: React.ReactNode
 }) {
-  const [livePresetCode, setLivePresetCode] = React.useState(initialPresetCode)
-  const [syncedInitialCode, setSyncedInitialCode] =
-    React.useState(initialPresetCode)
-  const liveCodeRef = React.useRef(livePresetCode)
-
-  if (initialPresetCode !== syncedInitialCode) {
-    setSyncedInitialCode(initialPresetCode)
-    setLivePresetCode(initialPresetCode)
-  }
-
-  React.useEffect(() => {
-    liveCodeRef.current = livePresetCode
-  }, [livePresetCode])
+  const router = useRouter()
+  const params = useParams<{ code: string }>()
+  const searchParams = useSearchParams()
+  const livePresetCode = params.code ?? ""
+  const view = parsePresetPreviewPageName(searchParams.get("view"))
+  const tab = parsePresetSidebarTab(searchParams.get("tab"))
 
   const canonicalPresetCode = React.useMemo(
     () => normalizeCanonical(livePresetCode),
     [livePresetCode]
   )
 
-  const onPresetFromIframe = React.useCallback((preset: string) => {
-    liveCodeRef.current = preset
-    setLivePresetCode(preset)
-    writePresetPath(preset, "replace")
-  }, [])
+  const selectLivePreset = React.useCallback(
+    (preset: string) => {
+      if (preset === livePresetCode) return
+      router.push(presetBrowsePath(preset, view, tab), { scroll: false })
+    },
+    [livePresetCode, router, tab, view]
+  )
 
-  const selectLivePreset = React.useCallback((preset: string) => {
-    if (liveCodeRef.current === preset) return
-    liveCodeRef.current = preset
-    setLivePresetCode(preset)
-    writePresetPath(preset, "push")
-  }, [])
+  const onPresetFromIframe = React.useCallback(
+    (preset: string) => {
+      if (preset === livePresetCode) return
+      router.replace(presetBrowsePath(preset, view, tab), { scroll: false })
+    },
+    [livePresetCode, router, tab, view]
+  )
+
+  const setLiveView = React.useCallback(
+    (next: PresetPreviewPageName) => {
+      if (next === view) return
+      router.replace(presetBrowsePath(livePresetCode, next, tab), {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router, tab, view]
+  )
+
+  const setLiveTab = React.useCallback(
+    (next: PresetSidebarTab) => {
+      if (next === tab) return
+      router.replace(presetBrowsePath(livePresetCode, view, next), {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router, tab, view]
+  )
 
   React.useEffect(() => {
-    function onPopState() {
-      const code = parsePresetCodeFromPathname(window.location.pathname)
-      if (code) setLivePresetCode(code)
-    }
-
-    window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
-  }, [])
-
-  React.useEffect(() => {
+    if (!livePresetCode) return
     let cancelled = false
 
     void (async () => {
@@ -110,10 +105,23 @@ export function PresetPageLiveProvider({
     () => ({
       livePresetCode,
       canonicalPresetCode,
+      view,
+      tab,
       onPresetFromIframe,
       selectLivePreset,
+      setLiveView,
+      setLiveTab,
     }),
-    [livePresetCode, canonicalPresetCode, onPresetFromIframe, selectLivePreset]
+    [
+      livePresetCode,
+      canonicalPresetCode,
+      view,
+      tab,
+      onPresetFromIframe,
+      selectLivePreset,
+      setLiveView,
+      setLiveTab,
+    ]
   )
 
   return (

@@ -1,6 +1,10 @@
 "use client"
 
-import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
+import {
+  PresetStyleOverviewCardDefaultFooter,
+  PresetStyleOverviewCardPreview,
+  PresetStyleOverviewCardRoot,
+} from "@/components/preset-style-overview-card"
 import { usePresetVoteMapsForItems } from "@/hooks/use-preset-votes-batch"
 import type { PresetSidebarItem } from "@/lib/preset-sidebar-item"
 import { cn } from "@/lib/utils"
@@ -32,15 +36,24 @@ export function PresetRelatedList({
 
         return (
           <li key={item.code}>
-            <PresetStyleOverviewCard
-              code={item.code}
-              title={item.title}
-              description={item.description}
-              initialVoteCount={votesByCode[item.code] ?? 0}
-              initialHasVoted={hasVotedByCode[item.code] ?? false}
+            <PresetStyleOverviewCardRoot
               className={cn(selected && "ring-2 ring-ring")}
-              onPreview={() => navigateToPreset(item.code)}
-            />
+            >
+              <PresetStyleOverviewCardPreview
+                code={item.code}
+                title={item.title}
+                description={item.description}
+                onPreview={() => navigateToPreset(item.code)}
+                hoverHint={false}
+              />
+              <PresetStyleOverviewCardDefaultFooter
+                code={item.code}
+                title={item.title}
+                description={item.description}
+                initialVoteCount={votesByCode[item.code] ?? 0}
+                initialHasVoted={hasVotedByCode[item.code] ?? false}
+              />
+            </PresetStyleOverviewCardRoot>
           </li>
         )
       })}

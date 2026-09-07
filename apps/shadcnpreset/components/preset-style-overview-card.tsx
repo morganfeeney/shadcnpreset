@@ -38,6 +38,8 @@ type PresetStyleOverviewCardProps = {
   className?: string
   /** Replace the default preview dialog (e.g. navigate to the preset page). */
   onPreview?: () => void
+  /** Hover “Preview” hint. Defaults on unless `onPreview` replaces the dialog. */
+  hoverHint?: boolean
 }
 
 type PresetStyleOverviewCardRootProps = React.ComponentProps<typeof Card>
@@ -51,6 +53,7 @@ type PresetStyleOverviewCardPreviewProps = {
   virtualWidth?: number
   virtualHeight?: number
   onPreview?: () => void
+  hoverHint?: boolean
 }
 
 const voteTapTransition = {
@@ -85,6 +88,7 @@ export function PresetStyleOverviewCard({
   virtualHeight = 700,
   className,
   onPreview,
+  hoverHint,
 }: PresetStyleOverviewCardProps) {
   return (
     <PresetStyleOverviewCardRoot className={className}>
@@ -97,6 +101,7 @@ export function PresetStyleOverviewCard({
         virtualWidth={virtualWidth}
         virtualHeight={virtualHeight}
         onPreview={onPreview}
+        hoverHint={hoverHint}
       />
       <PresetStyleOverviewCardDefaultFooter
         code={code}
@@ -133,6 +138,7 @@ export function PresetStyleOverviewCardPreview({
   virtualWidth = 1400,
   virtualHeight = 700,
   onPreview,
+  hoverHint,
 }: PresetStyleOverviewCardPreviewProps) {
   return (
     <RouteScoped scope={code}>
@@ -145,6 +151,7 @@ export function PresetStyleOverviewCardPreview({
         virtualWidth={virtualWidth}
         virtualHeight={virtualHeight}
         onPreview={onPreview}
+        hoverHint={hoverHint}
       />
     </RouteScoped>
   )
@@ -159,6 +166,7 @@ function PresetStyleOverviewCardPreviewInner({
   virtualWidth = 1400,
   virtualHeight = 700,
   onPreview,
+  hoverHint,
 }: PresetStyleOverviewCardPreviewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -224,6 +232,8 @@ function PresetStyleOverviewCardPreviewInner({
     ? shouldRender && containerWidth > 0 && previewSrc !== null
     : shouldRender && containerWidth > 0
 
+  const showHoverHint = hoverHint ?? !onPreview
+
   function handlePreview() {
     if (onPreview) {
       onPreview()
@@ -260,7 +270,9 @@ function PresetStyleOverviewCardPreviewInner({
             "absolute inset-0 z-30 rounded-sm border border-transparent bg-transparent p-0 transition-all outline-none select-none",
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
           )}
-          aria-label={`Open preview for ${title}`}
+          aria-label={
+            onPreview ? `Select preset ${title}` : `Open preview for ${title}`
+          }
           onClick={handlePreview}
         />
         {showV4UrlError ? (
@@ -278,15 +290,7 @@ function PresetStyleOverviewCardPreviewInner({
                 virtualWidth={virtualWidth}
                 className="absolute inset-0"
               />
-              <div
-                aria-hidden
-                className="absolute inset-0 z-10 flex items-center justify-center rounded-t-xl rounded-b-none"
-              >
-                <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100" />
-                <span className="pointer-events-none invisible relative z-10 group-hover/card:visible">
-                  <span className={cn(buttonVariants())}>Preview</span>
-                </span>
-              </div>
+              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
             </>
           ) : (
             <>
@@ -303,15 +307,7 @@ function PresetStyleOverviewCardPreviewInner({
                   <PresetCard1StyleOverview initialCode={code} className="h-full w-full" />
                 </div>
               </CardContent>
-              <div
-                aria-hidden
-                className="absolute inset-0 z-10 flex items-center justify-center rounded-t-xl rounded-b-none"
-              >
-                <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100" />
-                <span className="pointer-events-none invisible relative z-10 group-hover/card:visible">
-                  <span className={cn(buttonVariants())}>Preview</span>
-                </span>
-              </div>
+              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
             </>
           )
         ) : (
@@ -332,6 +328,20 @@ function PresetStyleOverviewCardPreviewInner({
         />
       )}
     </>
+  )
+}
+
+function PresetStyleOverviewCardHoverHint() {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 z-10 flex items-center justify-center rounded-t-xl rounded-b-none"
+    >
+      <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100" />
+      <span className="pointer-events-none invisible relative z-10 group-hover/card:visible">
+        <span className={cn(buttonVariants())}>Preview</span>
+      </span>
+    </div>
   )
 }
 
