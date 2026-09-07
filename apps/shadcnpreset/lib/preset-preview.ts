@@ -5,6 +5,8 @@ export type PresetPreviewPageName =
   | "login-02"
   | "login-04"
 
+export type PresetSidebarTab = "community" | "yours" | "ask-ai"
+
 type PresetPreviewTarget =
   | {
       kind: "v4"
@@ -87,14 +89,28 @@ export function parsePresetPreviewPageName(
   return isPresetPreviewPageName(value) ? value : "preview"
 }
 
+export function isPresetSidebarTab(
+  value: string | undefined | null
+): value is PresetSidebarTab {
+  return value === "community" || value === "yours" || value === "ask-ai"
+}
+
+export function parsePresetSidebarTab(
+  value: string | undefined | null
+): PresetSidebarTab {
+  return isPresetSidebarTab(value) ? value : "community"
+}
+
 export function presetBrowsePath(
   code: string,
-  view: PresetPreviewPageName = "preview"
+  view: PresetPreviewPageName = "preview",
+  tab: PresetSidebarTab = "community"
 ): string {
-  if (view === "preview") {
-    return `/preset/${code}`
-  }
-  return `/preset/${code}?view=${view}`
+  const params = new URLSearchParams()
+  if (view !== "preview") params.set("view", view)
+  if (tab !== "community") params.set("tab", tab)
+  const query = params.toString()
+  return query ? `/preset/${code}?${query}` : `/preset/${code}`
 }
 
 export function isLocalPresetPreviewExample(

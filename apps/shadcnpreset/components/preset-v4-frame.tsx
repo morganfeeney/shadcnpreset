@@ -84,6 +84,10 @@ export function PresetV4Frame({
   }, [clearRetryTimers, postThemeMode])
 
   React.useEffect(() => {
+    hasLoadedRef.current = false
+  }, [src])
+
+  React.useEffect(() => {
     if (!hasLoadedRef.current) {
       return
     }
