@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 
-import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
+import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
 import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
@@ -23,36 +23,35 @@ import {
 } from "./preset-browse-sidebar"
 
 type PresetBrowseSurfaceProps = {
-  resolved: ResolvedPreset
   communityItems: PresetSidebarItem[]
   children: ReactNode
 }
 
 export function PresetBrowseSurface({
-  resolved,
   communityItems,
   children,
 }: PresetBrowseSurfaceProps) {
-  const live = usePresetPageLiveOptional()
-  const liveCode = live?.livePresetCode ?? resolved.code
-  const view = live?.view ?? "preview"
-  const tab = live?.tab ?? "community"
+  const live = usePresetPageLive()
   const liveResolved = useMemo(
-    () => resolvePresetFromCode(liveCode) ?? resolved,
-    [liveCode, resolved]
+    () => resolvePresetFromCode(live.livePresetCode),
+    [live.livePresetCode]
   )
-  const [askAiMounted, setAskAiMounted] = useState(tab === "ask-ai")
+  const [askAiMounted, setAskAiMounted] = useState(live.tab === "ask-ai")
 
   useEffect(() => {
-    if (tab === "ask-ai") setAskAiMounted(true)
-  }, [tab])
+    if (live.tab === "ask-ai") setAskAiMounted(true)
+  }, [live.tab])
 
   function onSelectPreset(code: string) {
-    if (code === liveResolved.code) return
+    if (code === live.livePresetCode) return
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
-    live?.selectLivePreset(code)
+    live.selectLivePreset(code)
+  }
+
+  if (!liveResolved) {
+    return <div className="w-full">{children}</div>
   }
 
   return (
@@ -73,14 +72,14 @@ export function PresetBrowseSurface({
               <PresetBrowseSidebarSheet
                 resolved={liveResolved}
                 communityItems={communityItems}
-                tab={tab}
-                onTabChange={(next) => live?.setLiveTab(next)}
+                tab={live.tab}
+                onTabChange={live.setLiveTab}
                 askAiMounted={askAiMounted}
                 onSelectPreset={onSelectPreset}
               />
               <PresetPreviewLayoutPicker
-                value={view}
-                onValueChange={(page) => live?.setLiveView(page)}
+                value={live.view}
+                onValueChange={live.setLiveView}
                 presetCode={liveResolved.code}
               />
             </div>
@@ -95,8 +94,8 @@ export function PresetBrowseSurface({
             <PresetBrowseSidebar
               resolved={liveResolved}
               communityItems={communityItems}
-              tab={tab}
-              onTabChange={(next) => live?.setLiveTab(next)}
+              tab={live.tab}
+              onTabChange={live.setLiveTab}
               askAiMounted={askAiMounted}
               onSelectPreset={onSelectPreset}
             />

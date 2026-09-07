@@ -60,6 +60,7 @@ type PresetBrowseSidebarProps = {
   onTabChange: (tab: PresetSidebarTab) => void
   askAiMounted: boolean
   onSelectPreset: (code: string) => void
+  onAskAiApplied?: () => void
   className?: string
 }
 
@@ -149,6 +150,7 @@ function PresetBrowseSidebarBody({
   onTabChange,
   askAiMounted,
   onSelectPreset,
+  onAskAiApplied,
   className,
 }: PresetBrowseSidebarProps) {
   return (
@@ -215,7 +217,7 @@ function PresetBrowseSidebarBody({
         )}
       >
         {askAiMounted ? (
-          <AssistantEmbed resolved={resolved} onApply={onSelectPreset} />
+          <AssistantEmbed resolved={resolved} onApply={onAskAiApplied} />
         ) : null}
       </div>
     </Tabs>
@@ -251,6 +253,10 @@ export function PresetBrowseSidebarSheet({
     setOpen(false)
   }
 
+  function closeSheet() {
+    setOpen(false)
+  }
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
@@ -277,6 +283,7 @@ export function PresetBrowseSidebarSheet({
           onTabChange={onTabChange}
           askAiMounted={askAiMounted}
           onSelectPreset={selectAndClose}
+          onAskAiApplied={closeSheet}
           className="h-full pt-10"
         />
       </SheetContent>
