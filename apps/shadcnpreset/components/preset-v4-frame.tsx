@@ -30,11 +30,16 @@ export function PresetV4Frame({
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
   const hasLoadedRef = React.useRef(false)
+  const [activeSrc, setActiveSrc] = React.useState<string | null>(null)
   const live = usePresetPageLiveOptional()
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
 
   usePresetParentUrlSync(iframeRef, live?.onPresetFromIframe)
+
+  React.useEffect(() => {
+    setActiveSrc(src)
+  }, [src])
 
   const targetOrigin = React.useMemo(() => {
     try {
@@ -84,6 +89,10 @@ export function PresetV4Frame({
   }, [clearRetryTimers, postThemeMode])
 
   React.useEffect(() => {
+    hasLoadedRef.current = false
+  }, [activeSrc])
+
+  React.useEffect(() => {
     if (!hasLoadedRef.current) {
       return
     }
@@ -102,13 +111,19 @@ export function PresetV4Frame({
     }
   }, [clearRetryTimers])
 
+  if (!activeSrc) {
+    return <div className={className} aria-hidden />
+  }
+
   return (
     <iframe
       ref={iframeRef}
       className={className}
-      src={src}
+      src={activeSrc}
       title={title}
       onLoad={(event) => {
+        const loadedSrc = event.currentTarget.src
+        if (!loadedSrc || loadedSrc === "about:blank") return
         hasLoadedRef.current = true
         postThemeModeWithRetry()
         onLoad?.(event)

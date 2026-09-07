@@ -1,15 +1,27 @@
 "use client"
 
 import * as React from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { decodePreset, encodePreset } from "shadcn/preset"
 
+import {
+  parsePresetPreviewPageName,
+  parsePresetSidebarTab,
+  presetBrowsePath,
+  type PresetPreviewPageName,
+  type PresetSidebarTab,
+} from "@/lib/preset-preview"
 import { syncPresetPageSocialMeta } from "@/lib/sync-preset-social-meta"
 
 type PresetPageLiveContextValue = {
   livePresetCode: string
-  /** Normalized preset string for vote/share APIs */
   canonicalPresetCode: string
+  view: PresetPreviewPageName
+  tab: PresetSidebarTab
   onPresetFromIframe: (preset: string) => void
+  selectLivePreset: (preset: string) => void
+  setLiveView: (view: PresetPreviewPageName) => void
+  setLiveTab: (tab: PresetSidebarTab) => void
 }
 
 const PresetPageLiveContext =
@@ -21,26 +33,60 @@ function normalizeCanonical(code: string): string {
 }
 
 export function PresetPageLiveProvider({
-  initialPresetCode,
   children,
 }: {
-  initialPresetCode: string
   children: React.ReactNode
 }) {
-  const [livePresetCode, setLivePresetCode] = React.useState(initialPresetCode)
+  const router = useRouter()
+  const params = useParams<{ code: string }>()
+  const searchParams = useSearchParams()
+  const livePresetCode = params.code ?? ""
+  const view = parsePresetPreviewPageName(searchParams.get("view"))
+  const tab = parsePresetSidebarTab(searchParams.get("tab"))
 
   const canonicalPresetCode = React.useMemo(
     () => normalizeCanonical(livePresetCode),
     [livePresetCode]
   )
 
-  const onPresetFromIframe = React.useCallback((preset: string) => {
-    setLivePresetCode(preset)
-    const path = `/preset/${encodeURIComponent(preset)}${window.location.search}`
-    window.history.replaceState(window.history.state, "", path)
-  }, [])
+  const selectLivePreset = React.useCallback(
+    (preset: string) => {
+      if (preset === livePresetCode) return
+      router.push(presetBrowsePath(preset, view, tab), { scroll: false })
+    },
+    [livePresetCode, router, tab, view]
+  )
+
+  const onPresetFromIframe = React.useCallback(
+    (preset: string) => {
+      if (preset === livePresetCode) return
+      router.replace(presetBrowsePath(preset, view, tab), { scroll: false })
+    },
+    [livePresetCode, router, tab, view]
+  )
+
+  const setLiveView = React.useCallback(
+    (next: PresetPreviewPageName) => {
+      if (next === view) return
+      router.replace(presetBrowsePath(livePresetCode, next, tab), {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router, tab, view]
+  )
+
+  const setLiveTab = React.useCallback(
+    (next: PresetSidebarTab) => {
+      if (next === tab) return
+      router.replace(presetBrowsePath(livePresetCode, view, next), {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router, tab, view]
+  )
 
   React.useEffect(() => {
+    if (!livePresetCode) return
     let cancelled = false
 
     void (async () => {
@@ -59,9 +105,23 @@ export function PresetPageLiveProvider({
     () => ({
       livePresetCode,
       canonicalPresetCode,
+      view,
+      tab,
       onPresetFromIframe,
+      selectLivePreset,
+      setLiveView,
+      setLiveTab,
     }),
-    [livePresetCode, canonicalPresetCode, onPresetFromIframe]
+    [
+      livePresetCode,
+      canonicalPresetCode,
+      view,
+      tab,
+      onPresetFromIframe,
+      selectLivePreset,
+      setLiveView,
+      setLiveTab,
+    ]
   )
 
   return (
@@ -69,6 +129,14 @@ export function PresetPageLiveProvider({
       {children}
     </PresetPageLiveContext.Provider>
   )
+}
+
+export function usePresetPageLive() {
+  const context = React.useContext(PresetPageLiveContext)
+  if (!context) {
+    throw new Error("usePresetPageLive must be used within PresetPageLiveProvider")
+  }
+  return context
 }
 
 export function usePresetPageLiveOptional() {

@@ -26,6 +26,9 @@ type AssistantPromptComposerProps = {
   pending: boolean
   resetKey: number
   onPromptSubmit: (text: string) => Promise<void>
+  variant?: "default" | "compact"
+  placeholder?: string
+  className?: string
 }
 
 export function AssistantPromptComposer({
@@ -33,6 +36,9 @@ export function AssistantPromptComposer({
   pending,
   resetKey,
   onPromptSubmit,
+  variant = "default",
+  placeholder,
+  className,
 }: AssistantPromptComposerProps) {
   const [input, setInput] = React.useState("")
   const [syncedResetKey, setSyncedResetKey] = React.useState(resetKey)
@@ -56,6 +62,11 @@ export function AssistantPromptComposer({
     }
   }
 
+  const compact = variant === "compact"
+  const resolvedPlaceholder =
+    placeholder ??
+    (hasInteracted ? "Reply to refine..." : "Ask AI to build...")
+
   return (
     <PromptInput
       onSubmit={async (message: PromptInputMessage) => {
@@ -69,33 +80,38 @@ export function AssistantPromptComposer({
         }
       }}
       className={cn(
-        "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
-        hasInteracted
-          ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
-          : ""
+        compact
+          ? "w-full p-3"
+          : cn(
+              "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
+              hasInteracted
+                ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
+                : ""
+            ),
+        className
       )}
     >
       <PromptInputBody>
         <PromptInputTextarea
-          rows={hasInteracted ? 3 : 2}
-          placeholder={
-            hasInteracted ? "Reply to refine..." : "Ask AI to build..."
-          }
+          rows={compact ? 2 : hasInteracted ? 3 : 2}
+          placeholder={resolvedPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={pending}
-          className="min-h-[88px] resize-y"
+          className={compact ? "min-h-14 resize-none" : "min-h-[88px] resize-y"}
         />
       </PromptInputBody>
       <PromptInputFooter>
         <PromptInputTools>
-          <Link
-            href="/"
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
-          >
-            <HomeIcon className="mr-1.5 size-4 opacity-70" />
-            Home
-          </Link>
+          {compact ? null : (
+            <Link
+              href="/"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              <HomeIcon className="mr-1.5 size-4 opacity-70" />
+              Home
+            </Link>
+          )}
           {pending ? (
             <Shimmer className="text-xs">Thinking...</Shimmer>
           ) : null}
