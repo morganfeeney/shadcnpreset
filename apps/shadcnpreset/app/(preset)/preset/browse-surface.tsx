@@ -130,9 +130,7 @@ export function PresetBrowsePreview({
         src={previewSrc}
         title={`Preset preview ${resolved.code} ${view}`}
         sandbox="allow-scripts allow-same-origin"
-        onLoad={(event) => {
-          const src = event.currentTarget.getAttribute("src")
-          if (!src || src === "about:blank") return
+        onLoad={() => {
           setLoadedKey(frameKey)
         }}
       />
