@@ -81,6 +81,7 @@ export default function useVote(code: string, options: UseVoteOptions = {}) {
         }
       )
       void queryClient.invalidateQueries({ queryKey: ["presetFeed"] })
+      void queryClient.invalidateQueries({ queryKey: ["myPresets"] })
     },
   })
 

@@ -117,7 +117,12 @@ class AssistantSendError extends Error {
   }
 }
 
-export function useAssistantChat() {
+type UseAssistantChatOptions = {
+  seedPresetCodes?: string[]
+}
+
+export function useAssistantChat(options?: UseAssistantChatOptions) {
+  const seedPresetCodes = options?.seedPresetCodes ?? []
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -134,6 +139,7 @@ export function useAssistantChat() {
   const [syncedChatData, setSyncedChatData] = React.useState<
     AssistantChatDetailResponse["chat"] | undefined
   >(undefined)
+  const [skipNextChatHydrate, setSkipNextChatHydrate] = React.useState(false)
 
   const hasInteracted = messages.some((message) => message.role === "user")
   const requiresAuth = authStatus !== "authenticated"
@@ -197,8 +203,12 @@ export function useAssistantChat() {
     authStatus === "authenticated" &&
     activeChatQuery.data !== syncedChatData
   ) {
+    const isChatSwitchLoad = syncedChatData === undefined
+    if (skipNextChatHydrate) {
+      setSkipNextChatHydrate(false)
+    }
     setSyncedChatData(activeChatQuery.data)
-    if (activeChatQuery.data) {
+    if (activeChatQuery.data && isChatSwitchLoad && !skipNextChatHydrate) {
       const hydrated = hydrateMessages(activeChatQuery.data.messages)
       setMessages(hydrated)
       setLastTurn(getLastTurnFromMessages(hydrated))
@@ -306,14 +316,6 @@ export function useAssistantChat() {
         latency_ms: latencyMs,
       })
 
-      if (typeof data.chatId === "string") {
-        setActiveChatId(data.chatId)
-        await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
-        await queryClient.invalidateQueries({
-          queryKey: ["assistantChat", data.chatId],
-        })
-      }
-
       if (data.phase === "ready") {
         setMessages((prev) => [
           ...prev,
@@ -325,19 +327,27 @@ export function useAssistantChat() {
           },
         ])
         setLastTurn(null)
-        return
+      } else {
+        setLastTurn(data)
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            kind: "text",
+            content: data.assistantMessage,
+            followUpQuestions: data.followUpQuestions,
+          },
+        ])
       }
 
-      setLastTurn(data)
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          kind: "text",
-          content: data.assistantMessage,
-          followUpQuestions: data.followUpQuestions,
-        },
-      ])
+      if (typeof data.chatId === "string") {
+        setSkipNextChatHydrate(true)
+        setActiveChatId(data.chatId)
+        await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
+        await queryClient.invalidateQueries({
+          queryKey: ["assistantChat", data.chatId],
+        })
+      }
     },
     onError: (error, _vars, context) => {
       const latencyMs = context
@@ -403,7 +413,10 @@ export function useAssistantChat() {
       page_path: pathname,
       assistant_prompt: trimmed,
       prompt_length: trimmed.length,
-      intent: hasPreviousUserMessage ? "preset_refinement" : "preset_discovery",
+      intent:
+        hasPreviousUserMessage || seedPresetCodes.length > 0
+          ? "preset_refinement"
+          : "preset_discovery",
     })
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }]
@@ -417,7 +430,9 @@ export function useAssistantChat() {
           message.kind === "presets" &&
           Boolean(message.presets?.length)
       )
-    const previousPresetCodes = previousPresetMessage?.presets?.map((p) => p.code) ?? []
+    const fromChat = previousPresetMessage?.presets?.map((preset) => preset.code)
+    const previousPresetCodes =
+      fromChat && fromChat.length > 0 ? fromChat : seedPresetCodes
 
     const result = await sendMutation.mutateAsync({
       trimmed,
@@ -465,6 +480,7 @@ export function useAssistantChat() {
     lastTurn,
     messages,
     pending,
+    requiresAuth,
     recentChats,
     isLoadingRecentChats,
     setActiveChatId,
