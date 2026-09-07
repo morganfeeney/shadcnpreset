@@ -33,6 +33,8 @@ type PresetBrowseControlsProps = {
   children?: ReactNode
   /** Icon cycle controls only — used on the preset page tab row. */
   cycleOnly?: boolean
+  /** When set, skip Next.js navigation so the browse chrome can stay mounted. */
+  onSelectPreset?: (code: string) => void
 }
 
 export function PresetBrowseControls({
@@ -42,6 +44,7 @@ export function PresetBrowseControls({
   className,
   children,
   cycleOnly = false,
+  onSelectPreset,
 }: PresetBrowseControlsProps) {
   const router = useRouter()
   const [getCodeOpen, setGetCodeOpen] = useState(false)
@@ -61,6 +64,10 @@ export function PresetBrowseControls({
     // which can scroll the new page down to this section.
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
+    }
+    if (onSelectPreset) {
+      onSelectPreset(code)
+      return
     }
     const suffix = search.startsWith("?") ? search : search ? `?${search}` : ""
     // Keep current scroll position across preset-to-preset navigation.

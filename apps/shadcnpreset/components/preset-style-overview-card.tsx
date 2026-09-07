@@ -36,6 +36,8 @@ type PresetStyleOverviewCardProps = {
   virtualWidth?: number
   virtualHeight?: number
   className?: string
+  /** Replace the default preview dialog (e.g. navigate to the preset page). */
+  onPreview?: () => void
 }
 
 type PresetStyleOverviewCardRootProps = React.ComponentProps<typeof Card>
@@ -48,6 +50,7 @@ type PresetStyleOverviewCardPreviewProps = {
   previewStepOrder?: readonly PresetPreviewStepItem[]
   virtualWidth?: number
   virtualHeight?: number
+  onPreview?: () => void
 }
 
 const voteTapTransition = {
@@ -81,6 +84,7 @@ export function PresetStyleOverviewCard({
   virtualWidth = 1400,
   virtualHeight = 700,
   className,
+  onPreview,
 }: PresetStyleOverviewCardProps) {
   return (
     <PresetStyleOverviewCardRoot className={className}>
@@ -92,6 +96,7 @@ export function PresetStyleOverviewCard({
         previewStepOrder={previewStepOrder}
         virtualWidth={virtualWidth}
         virtualHeight={virtualHeight}
+        onPreview={onPreview}
       />
       <PresetStyleOverviewCardDefaultFooter
         code={code}
@@ -127,6 +132,7 @@ export function PresetStyleOverviewCardPreview({
   previewStepOrder,
   virtualWidth = 1400,
   virtualHeight = 700,
+  onPreview,
 }: PresetStyleOverviewCardPreviewProps) {
   return (
     <RouteScoped scope={code}>
@@ -138,6 +144,7 @@ export function PresetStyleOverviewCardPreview({
         previewStepOrder={previewStepOrder}
         virtualWidth={virtualWidth}
         virtualHeight={virtualHeight}
+        onPreview={onPreview}
       />
     </RouteScoped>
   )
@@ -151,6 +158,7 @@ function PresetStyleOverviewCardPreviewInner({
   previewStepOrder,
   virtualWidth = 1400,
   virtualHeight = 700,
+  onPreview,
 }: PresetStyleOverviewCardPreviewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -217,6 +225,10 @@ function PresetStyleOverviewCardPreviewInner({
     : shouldRender && containerWidth > 0
 
   function handlePreview() {
+    if (onPreview) {
+      onPreview()
+      return
+    }
     trackEvent("preset_preview", {
       page_path: pathname,
       preset_code: code,
@@ -309,14 +321,16 @@ function PresetStyleOverviewCardPreviewInner({
         )}
       </div>
 
-      <PresetPreviewDialog
-        code={code}
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        title={title}
-        description={description}
-        previewStepOrder={previewStepOrder}
-      />
+      {onPreview ? null : (
+        <PresetPreviewDialog
+          code={code}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          title={title}
+          description={description}
+          previewStepOrder={previewStepOrder}
+        />
+      )}
     </>
   )
 }

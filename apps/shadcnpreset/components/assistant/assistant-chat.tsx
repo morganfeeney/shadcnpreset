@@ -3,18 +3,8 @@
 import * as React from "react"
 import { SquarePen } from "lucide-react"
 
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation"
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message"
-import { Shimmer } from "@/components/ai-elements/shimmer"
 import { AssistantChatProvider } from "@/components/assistant/assistant-chat-context"
+import { AssistantConversation } from "@/components/assistant/assistant-conversation"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
@@ -48,11 +38,6 @@ export function AssistantChat() {
     sendContent,
     startNewChat,
   } = chat
-  const bottomRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, lastTurn, pending])
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
@@ -107,113 +92,61 @@ export function AssistantChat() {
                 </h1>
               </div>
 
-            {hasInteracted ? (
-              <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
-                <Conversation>
-                  <ConversationContent>
-                    {messages.map((m, i) => {
-                      if (m.role === "user") {
-                        return (
-                          <Message from="user" key={`${i}-${m.role}`}>
-                            <MessageContent>
-                              <MessageResponse>{m.content}</MessageResponse>
-                            </MessageContent>
-                          </Message>
-                        )
-                      }
-
-                      switch (m.kind) {
-                        case "presets":
-                          return (
-                            <Message
-                              from="assistant"
-                              key={`${i}-${m.role}`}
-                              className="@container"
-                            >
-                              <MessageContent className="overflow-visible">
-                                <MessageResponse>{m.content}</MessageResponse>
-                                {m.presets.length ? (
-                                  <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
-                                    {m.presets.map((p, presetIndex) => (
-                                      <li key={`${i}-${presetIndex}-${p.code}`}>
-                                        <PresetStyleOverviewCard
-                                          code={p.code}
-                                          title={p.code}
-                                          description={p.description}
-                                        />
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : null}
-                              </MessageContent>
-                            </Message>
-                          )
-                        case "text":
-                        default:
-                          return (
-                            <Message from="assistant" key={`${i}-${m.role}`}>
-                              <MessageContent>
-                                <MessageResponse>{m.content}</MessageResponse>
-                              </MessageContent>
-                            </Message>
-                          )
-                      }
-                    })}
-
-                    {pending ? (
-                      <Message from="assistant">
-                        <MessageContent className="w-full rounded-lg">
-                          <Shimmer className="text-sm">
-                            Generating presets...
-                          </Shimmer>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
-                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
-                            <div className="h-36 animate-pulse rounded-lg border border-border/60 bg-muted/30" />
-                          </div>
-                        </MessageContent>
-                      </Message>
-                    ) : null}
-                    <div ref={bottomRef} />
-                  </ConversationContent>
-                  <ConversationScrollButton />
-                </Conversation>
-              </div>
-            ) : null}
-
-            {lastTurn?.phase === "gathering" &&
-            lastTurn.followUpQuestions.length ? (
-              <div className="mx-auto w-full max-w-4xl space-y-2 p-4">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Quick replies
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {lastTurn.followUpQuestions.map((q) => (
-                    <Button
-                      key={q}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-auto max-w-full py-2 text-left text-xs whitespace-normal"
-                      onClick={() => void sendContent(q)}
-                      disabled={pending}
-                    >
-                      {q}
-                    </Button>
-                  ))}
+              {hasInteracted ? (
+                <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
+                  <AssistantConversation
+                    messages={messages}
+                    pending={pending}
+                    renderPresets={(m, i) => (
+                      <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
+                        {m.presets.map((p, presetIndex) => (
+                          <li key={`${i}-${presetIndex}-${p.code}`}>
+                            <PresetStyleOverviewCard
+                              code={p.code}
+                              title={p.code}
+                              description={p.description}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  />
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {error ? (
-              <p
-                className="mx-auto w-full max-w-4xl text-sm text-destructive"
-                role="alert"
-              >
-                {error}
-              </p>
-            ) : null}
-          </div>
+              {lastTurn?.phase === "gathering" &&
+              lastTurn.followUpQuestions.length ? (
+                <div className="mx-auto w-full max-w-4xl flex flex-col gap-2 p-4">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    Quick replies
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {lastTurn.followUpQuestions.map((q) => (
+                      <Button
+                        key={q}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-auto max-w-full py-2 text-left text-xs whitespace-normal"
+                        onClick={() => void sendContent(q)}
+                        disabled={pending}
+                      >
+                        {q}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {error ? (
+                <p
+                  className="mx-auto w-full max-w-4xl text-sm text-destructive"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              ) : null}
+            </div>
 
             <AssistantPromptComposer
               hasInteracted={hasInteracted}

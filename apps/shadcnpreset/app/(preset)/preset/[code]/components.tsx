@@ -15,6 +15,9 @@ import {
   InfoIcon,
   ShareIcon,
 } from "@phosphor-icons/react"
+import { formatPresetCardDescription } from "@/lib/preset-card-description"
+import { resolvePresetFromCode } from "@/lib/preset"
+import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { cn } from "@/lib/utils"
 
 export function PresetCodeTitle({
@@ -48,6 +51,30 @@ export function PresetCodeTitle({
       {description ? (
         <p className="text-sm text-muted-foreground">{description}</p>
       ) : null}
+    </div>
+  )
+}
+
+export function PresetLiveHero({
+  initialCode,
+  initialDescription,
+}: {
+  initialCode: string
+  initialDescription: string
+}) {
+  const live = usePresetPageLiveOptional()
+  const code = live?.livePresetCode ?? initialCode
+  const resolved = resolvePresetFromCode(code)
+  const description = resolved
+    ? formatPresetCardDescription(resolved)
+    : initialDescription
+
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-4 py-6">
+      <PresetCodeTitle presetCode={code} description={description} />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <PresetButtons preset={resolved?.code ?? code} />
+      </div>
     </div>
   )
 }
