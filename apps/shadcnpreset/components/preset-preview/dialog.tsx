@@ -156,7 +156,7 @@ export function PresetPreviewDialog({
           </div>
           </div>
         </DialogHeader>
-        <div className="relative -mx-4">
+        <div className="relative -mx-4 -mb-4 rounded-b-2xl overflow-hidden">
           {canStep ? (
             <Button
               type="button"
