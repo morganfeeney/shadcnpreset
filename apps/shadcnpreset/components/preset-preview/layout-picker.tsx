@@ -60,10 +60,10 @@ export function PresetPreviewLayoutPicker({
     >
       <TabsList className="inline-flex h-auto w-fit items-center justify-center rounded-full bg-transparent px-0 text-muted-foreground">
         <TabsTrigger value="preview" className={pillClassName}>
-          View 1
+          Cards 1
         </TabsTrigger>
         <TabsTrigger value="preview-02" className={pillClassName}>
-          View 2
+          Cards 2
         </TabsTrigger>
         <TabsTrigger value="dashboard" className={cn(pillClassName, "hidden min-[400px]:flex")}>
           Dashboard
