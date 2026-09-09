@@ -1,5 +1,7 @@
 "use client"
 
+import { memo, useCallback } from "react"
+
 import {
   PresetStyleOverviewCardDefaultFooter,
   PresetStyleOverviewCardPreview,
@@ -16,7 +18,48 @@ type PresetRelatedListProps = {
   className?: string
 }
 
-export function PresetRelatedList({
+const PresetRelatedListItem = memo(function PresetRelatedListItem({
+  item,
+  selected,
+  voteCount,
+  hasVoted,
+  onSelectPreset,
+}: {
+  item: PresetSidebarItem
+  selected: boolean
+  voteCount: number
+  hasVoted: boolean
+  onSelectPreset: (code: string) => void
+}) {
+  const onPreview = useCallback(() => {
+    onSelectPreset(item.code)
+  }, [item.code, onSelectPreset])
+
+  return (
+    <li>
+      <PresetStyleOverviewCardRoot
+        className={cn(selected && "ring-2 ring-ring")}
+      >
+        <PresetStyleOverviewCardPreview
+          code={item.code}
+          title={item.title}
+          description={item.description}
+          onPreview={onPreview}
+          hoverHint={false}
+        />
+        <PresetStyleOverviewCardDefaultFooter
+          code={item.code}
+          title={item.title}
+          description={item.description}
+          initialVoteCount={voteCount}
+          initialHasVoted={hasVoted}
+        />
+      </PresetStyleOverviewCardRoot>
+    </li>
+  )
+})
+
+export const PresetRelatedList = memo(function PresetRelatedList({
   items,
   currentCode,
   onSelectPreset,
@@ -24,39 +67,18 @@ export function PresetRelatedList({
 }: PresetRelatedListProps) {
   const { votesByCode, hasVotedByCode } = usePresetVoteMapsForItems(items)
 
-  function navigateToPreset(code: string) {
-    if (code === currentCode) return
-    onSelectPreset(code)
-  }
-
   return (
     <ul className={cn("flex flex-col gap-3 p-2", className)}>
-      {items.map((item) => {
-        const selected = item.code === currentCode
-
-        return (
-          <li key={item.code}>
-            <PresetStyleOverviewCardRoot
-              className={cn(selected && "ring-2 ring-ring")}
-            >
-              <PresetStyleOverviewCardPreview
-                code={item.code}
-                title={item.title}
-                description={item.description}
-                onPreview={() => navigateToPreset(item.code)}
-                hoverHint={false}
-              />
-              <PresetStyleOverviewCardDefaultFooter
-                code={item.code}
-                title={item.title}
-                description={item.description}
-                initialVoteCount={votesByCode[item.code] ?? 0}
-                initialHasVoted={hasVotedByCode[item.code] ?? false}
-              />
-            </PresetStyleOverviewCardRoot>
-          </li>
-        )
-      })}
+      {items.map((item) => (
+        <PresetRelatedListItem
+          key={item.code}
+          item={item}
+          selected={item.code === currentCode}
+          voteCount={votesByCode[item.code] ?? 0}
+          hasVoted={hasVotedByCode[item.code] ?? false}
+          onSelectPreset={onSelectPreset}
+        />
+      ))}
     </ul>
   )
-}
+})
