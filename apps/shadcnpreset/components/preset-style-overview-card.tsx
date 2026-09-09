@@ -1,9 +1,8 @@
 "use client"
 
-import { usePathname } from "next/navigation"
 import { HeartIcon } from "@phosphor-icons/react"
 import { motion, useReducedMotion } from "motion/react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -15,11 +14,14 @@ import {
 } from "@/components/preset-preview/dialog"
 import { PresetV4ScaledFrame } from "@/components/preset-v4-scaled-frame"
 import { PresetCard1StyleOverview } from "@/components/preset-swatch/components/preset-card-1-style-overview"
-import { RouteScoped } from "@/components/route-scoped"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics-events"
+
+function getPagePath() {
+  return window.location.pathname
+}
 
 type PresetStyleOverviewCardProps = {
   code: string
@@ -129,19 +131,19 @@ export function PresetStyleOverviewCardRoot({
   )
 }
 
-export function PresetStyleOverviewCardPreview({
-  code,
-  title,
-  description,
-  previewVariant = "inline",
-  previewStepOrder,
-  virtualWidth = 1400,
-  virtualHeight = 700,
-  onPreview,
-  hoverHint,
-}: PresetStyleOverviewCardPreviewProps) {
-  return (
-    <RouteScoped scope={code}>
+export const PresetStyleOverviewCardPreview = memo(
+  function PresetStyleOverviewCardPreview({
+    code,
+    title,
+    description,
+    previewVariant = "inline",
+    previewStepOrder,
+    virtualWidth = 1400,
+    virtualHeight = 700,
+    onPreview,
+    hoverHint,
+  }: PresetStyleOverviewCardPreviewProps) {
+    return (
       <PresetStyleOverviewCardPreviewInner
         code={code}
         title={title}
@@ -153,9 +155,9 @@ export function PresetStyleOverviewCardPreview({
         onPreview={onPreview}
         hoverHint={hoverHint}
       />
-    </RouteScoped>
-  )
-}
+    )
+  }
+)
 
 function PresetStyleOverviewCardPreviewInner({
   code,
@@ -173,7 +175,6 @@ function PresetStyleOverviewCardPreviewInner({
   const [shouldRender, setShouldRender] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const isMobile = useIsMobile()
-  const pathname = usePathname()
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -239,17 +240,18 @@ function PresetStyleOverviewCardPreviewInner({
       onPreview()
       return
     }
+    const pagePath = getPagePath()
     trackEvent("preset_preview", {
-      page_path: pathname,
+      page_path: pagePath,
       preset_code: code,
     })
     trackEvent("preset_demo_dialog_open", {
-      page_path: pathname,
+      page_path: pagePath,
       preset_code: code,
     })
-    if (pathname.startsWith("/assistant")) {
+    if (pagePath.startsWith("/assistant")) {
       trackEvent("ai_assistant_result_click", {
-        page_path: pathname,
+        page_path: pagePath,
         result_type: "action",
         target_id: `preview:${code}`,
       })
@@ -360,7 +362,8 @@ export function PresetStyleOverviewCardFooter({
   )
 }
 
-export function PresetStyleOverviewCardDefaultFooter({
+export const PresetStyleOverviewCardDefaultFooter = memo(
+  function PresetStyleOverviewCardDefaultFooter({
   code,
   title,
   description,
@@ -375,7 +378,6 @@ export function PresetStyleOverviewCardDefaultFooter({
 }) {
   /** Bumped only on this card's “add vote” click — not derived from `hasVoted` (reorder/async would replay). */
   const [voteCelebrateGeneration, setVoteCelebrateGeneration] = useState(0)
-  const pathname = usePathname()
   const reduceMotion = useReducedMotion()
   const { toggleVote, voteCount, isVoting, hasVoted, authStatus } = useVote(code, {
     initialVotes: initialVoteCount,
@@ -383,13 +385,14 @@ export function PresetStyleOverviewCardDefaultFooter({
   })
 
   function handleVoteClick() {
+    const pagePath = getPagePath()
     trackEvent("preset_vote_click", {
-      page_path: pathname,
+      page_path: pagePath,
       preset_code: code,
     })
-    if (pathname.startsWith("/assistant")) {
+    if (pagePath.startsWith("/assistant")) {
       trackEvent("ai_assistant_result_click", {
-        page_path: pathname,
+        page_path: pagePath,
         result_type: "action",
         target_id: `vote:${code}`,
       })
@@ -448,4 +451,4 @@ export function PresetStyleOverviewCardDefaultFooter({
       </Button>
     </PresetStyleOverviewCardFooter>
   )
-}
+})

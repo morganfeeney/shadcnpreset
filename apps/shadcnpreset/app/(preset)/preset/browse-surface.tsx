@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 
 import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
@@ -27,78 +27,72 @@ type PresetBrowseSurfaceProps = {
   children: ReactNode
 }
 
+function PresetBrowseHero() {
+  const { livePresetCode } = usePresetPageLive()
+  if (!resolvePresetFromCode(livePresetCode)) return null
+
+  return (
+    <Container aria-label="Preset details and actions" className="max-w-full">
+      <PresetLiveHero initialCode={livePresetCode} initialDescription="" />
+    </Container>
+  )
+}
+
+function PresetBrowseViewPicker() {
+  const { livePresetCode, view, setLiveView } = usePresetPageLive()
+  if (!resolvePresetFromCode(livePresetCode)) return null
+
+  return (
+    <PresetPreviewLayoutPicker
+      value={view}
+      onValueChange={setLiveView}
+      presetCode={livePresetCode}
+    />
+  )
+}
+
+function PresetBrowseCycleControls() {
+  const { livePresetCode, selectLivePreset } = usePresetPageLive()
+  const resolved = useMemo(
+    () => resolvePresetFromCode(livePresetCode),
+    [livePresetCode]
+  )
+
+  if (!resolved) return null
+
+  return (
+    <PresetBrowseControls
+      resolved={resolved}
+      basePath="/preset"
+      cycleOnly
+      onSelectPreset={(code) => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+        selectLivePreset(code)
+      }}
+    />
+  )
+}
+
 export function PresetBrowseSurface({
   communityItems,
   children,
 }: PresetBrowseSurfaceProps) {
-  const live = usePresetPageLive()
-  const liveResolved = useMemo(
-    () => resolvePresetFromCode(live.livePresetCode),
-    [live.livePresetCode]
-  )
-  const [askAiMounted, setAskAiMounted] = useState(live.tab === "ask-ai")
-
-  useEffect(() => {
-    if (live.tab === "ask-ai") setAskAiMounted(true)
-  }, [live.tab])
-
-  function onSelectPreset(code: string) {
-    if (code === live.livePresetCode) return
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
-    }
-    live.selectLivePreset(code)
-  }
-
-  if (!liveResolved) {
-    return <div className="w-full">{children}</div>
-  }
-
   return (
     <div className="w-full">
       <main className="grid gap-2">
-        <Container
-          aria-label="Preset details and actions"
-          className="max-w-full"
-        >
-          <PresetLiveHero
-            initialCode={liveResolved.code}
-            initialDescription=""
-          />
-        </Container>
+        <PresetBrowseHero />
         <Container className="max-w-full grid gap-4">
           <div className="flex items-center justify-between gap-1.5">
             <div className="flex min-w-0 items-center gap-2">
-              <PresetBrowseSidebarSheet
-                resolved={liveResolved}
-                communityItems={communityItems}
-                tab={live.tab}
-                onTabChange={live.setLiveTab}
-                askAiMounted={askAiMounted}
-                onSelectPreset={onSelectPreset}
-              />
-              <PresetPreviewLayoutPicker
-                value={live.view}
-                onValueChange={live.setLiveView}
-                presetCode={liveResolved.code}
-              />
+              <PresetBrowseSidebarSheet communityItems={communityItems} />
+              <PresetBrowseViewPicker />
             </div>
-            <PresetBrowseControls
-              resolved={liveResolved}
-              basePath="/preset"
-              cycleOnly
-              onSelectPreset={onSelectPreset}
-            />
+            <PresetBrowseCycleControls />
           </div>
           <div className="flex min-h-0 items-stretch gap-4">
-            <PresetBrowseSidebar
-              resolved={liveResolved}
-              communityItems={communityItems}
-              tab={live.tab}
-              onTabChange={live.setLiveTab}
-              askAiMounted={askAiMounted}
-              onSelectPreset={onSelectPreset}
-            />
+            <PresetBrowseSidebar communityItems={communityItems} />
             {children}
           </div>
         </Container>

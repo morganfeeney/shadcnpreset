@@ -14,6 +14,9 @@ type CodeLike = {
   code: string
 }
 
+const EMPTY_VOTES: Record<string, number> = {}
+const EMPTY_HAS_VOTED: Record<string, boolean> = {}
+
 export function usePresetVotesBatch(codes: string[], enabled = true) {
   const authStatus = useAuthStore((state) => state.status)
   const normalizedCodes = useMemo(
@@ -52,7 +55,7 @@ export function usePresetVoteMapsForItems<T extends CodeLike>(items: T[]) {
   const votesQuery = usePresetVotesBatch(itemCodes, itemCodes.length > 0)
 
   return {
-    votesByCode: votesQuery.data?.votesByCode ?? {},
-    hasVotedByCode: votesQuery.data?.hasVotedByCode ?? {},
+    votesByCode: votesQuery.data?.votesByCode ?? EMPTY_VOTES,
+    hasVotedByCode: votesQuery.data?.hasVotedByCode ?? EMPTY_HAS_VOTED,
   }
 }

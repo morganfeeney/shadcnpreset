@@ -1,9 +1,10 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { HeartIcon, SidebarSimpleIcon, SparkleIcon } from "@phosphor-icons/react"
 
+import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetRelatedList } from "@/components/preset-related-list"
 import { MyVotesSignInPrompt } from "@/components/my-votes-sign-in-prompt"
 import { Button } from "@/components/ui/button"
@@ -25,12 +26,9 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMyPresets } from "@/hooks/use-my-presets"
+import { resolvePresetFromCode } from "@/lib/preset"
 import type { PresetSidebarItem } from "@/lib/preset-sidebar-item"
-import type { ResolvedPreset } from "@/lib/preset"
-import {
-  parsePresetSidebarTab,
-  type PresetSidebarTab,
-} from "@/lib/preset-preview"
+import { parsePresetSidebarTab } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -54,13 +52,7 @@ const MOBILE_SHEET_CLASS =
   "w-[min(100vw-1rem,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&>button]:text-sidebar-foreground"
 
 type PresetBrowseSidebarProps = {
-  resolved: ResolvedPreset
   communityItems: PresetSidebarItem[]
-  tab: PresetSidebarTab
-  onTabChange: (tab: PresetSidebarTab) => void
-  askAiMounted: boolean
-  onSelectPreset: (code: string) => void
-  onAskAiApplied?: () => void
   className?: string
 }
 
@@ -144,19 +136,45 @@ function YoursTabPanel({
 }
 
 function PresetBrowseSidebarBody({
-  resolved,
   communityItems,
-  tab,
-  onTabChange,
-  askAiMounted,
   onSelectPreset,
   onAskAiApplied,
   className,
-}: PresetBrowseSidebarProps) {
+}: {
+  communityItems: PresetSidebarItem[]
+  onSelectPreset?: (code: string) => void
+  onAskAiApplied?: () => void
+  className?: string
+}) {
+  const { livePresetCode, tab, selectLivePreset, setLiveTab } = usePresetPageLive()
+  const [askAiMounted, setAskAiMounted] = useState(tab === "ask-ai")
+  if (tab === "ask-ai" && !askAiMounted) {
+    setAskAiMounted(true)
+  }
+  const resolved = useMemo(
+    () => resolvePresetFromCode(livePresetCode),
+    [livePresetCode]
+  )
+
+  const handleSelectPreset = useCallback(
+    (code: string) => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
+      }
+      selectLivePreset(code)
+      onSelectPreset?.(code)
+    },
+    [onSelectPreset, selectLivePreset]
+  )
+
   return (
     <Tabs
       value={tab}
-      onValueChange={(next) => onTabChange(parsePresetSidebarTab(next))}
+      onValueChange={(next) => {
+        const parsed = parsePresetSidebarTab(next)
+        if (parsed === "ask-ai") setAskAiMounted(true)
+        setLiveTab(parsed)
+      }}
       className={cn("flex h-full min-h-0 flex-col gap-0", className)}
     >
       <div className="shrink-0 border-b p-2">
@@ -183,8 +201,8 @@ function PresetBrowseSidebarBody({
         {communityItems.length ? (
           <PresetRelatedList
             items={communityItems}
-            currentCode={resolved.code}
-            onSelectPreset={onSelectPreset}
+            currentCode={livePresetCode}
+            onSelectPreset={handleSelectPreset}
           />
         ) : (
           <Empty className="h-full border-0">
@@ -205,8 +223,8 @@ function PresetBrowseSidebarBody({
         )}
       >
         <YoursTabPanel
-          currentCode={resolved.code}
-          onSelectPreset={onSelectPreset}
+          currentCode={livePresetCode}
+          onSelectPreset={handleSelectPreset}
         />
       </div>
 
@@ -216,7 +234,7 @@ function PresetBrowseSidebarBody({
           tab !== "ask-ai" && "hidden"
         )}
       >
-        {askAiMounted ? (
+        {askAiMounted && resolved ? (
           <AssistantEmbed resolved={resolved} onApply={onAskAiApplied} />
         ) : null}
       </div>
@@ -224,38 +242,27 @@ function PresetBrowseSidebarBody({
   )
 }
 
-export function PresetBrowseSidebar(props: PresetBrowseSidebarProps) {
+export function PresetBrowseSidebar({
+  communityItems,
+  className,
+}: PresetBrowseSidebarProps) {
   return (
     <aside
       className={cn(
         "hidden w-80 shrink-0 overflow-hidden rounded-lg border bg-sidebar text-sidebar-foreground md:flex md:flex-col md:self-start",
         PREVIEW_HEIGHT,
-        props.className
+        className
       )}
     >
-      <PresetBrowseSidebarBody {...props} />
+      <PresetBrowseSidebarBody communityItems={communityItems} />
     </aside>
   )
 }
 
 export function PresetBrowseSidebarSheet({
-  resolved,
   communityItems,
-  tab,
-  onTabChange,
-  askAiMounted,
-  onSelectPreset,
-}: Omit<PresetBrowseSidebarProps, "className">) {
+}: Pick<PresetBrowseSidebarProps, "communityItems">) {
   const [open, setOpen] = useState(false)
-
-  function selectAndClose(code: string) {
-    onSelectPreset(code)
-    setOpen(false)
-  }
-
-  function closeSheet() {
-    setOpen(false)
-  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -277,13 +284,9 @@ export function PresetBrowseSidebarSheet({
           <SheetTitle>Community, your presets, and Ask AI</SheetTitle>
         </SheetHeader>
         <PresetBrowseSidebarBody
-          resolved={resolved}
           communityItems={communityItems}
-          tab={tab}
-          onTabChange={onTabChange}
-          askAiMounted={askAiMounted}
-          onSelectPreset={selectAndClose}
-          onAskAiApplied={closeSheet}
+          onSelectPreset={() => setOpen(false)}
+          onAskAiApplied={() => setOpen(false)}
           className="h-full pt-10"
         />
       </SheetContent>
