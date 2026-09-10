@@ -58,6 +58,8 @@ export function AssistantPreviewCard({
         <span className="truncate text-xs font-medium">{preview.title}</span>
         {openHref ? (
           <Button
+            // Rendering as an anchor, so Base UI must not assume a native button.
+            nativeButton={false}
             render={
               <Link
                 href={openHref}
