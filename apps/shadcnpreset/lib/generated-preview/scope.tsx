@@ -298,15 +298,15 @@ const LAYOUT_CLASSES: Record<PreviewLayout, string> = {
   single: "flex min-h-svh items-center justify-center p-6",
   // Many items of a kind. Wraps into rows and reads from the left: centred
   // content that overflows spills off both edges at once and neither end can
-  // be reached. `[&>*]` covers the row the generated markup nests inside.
+  // be reached. `*` covers the row the generated markup nests inside.
   gallery:
-    "flex min-h-svh flex-wrap content-center justify-start gap-3 p-6 [&>*]:max-w-full [&>*]:flex-wrap [&>*]:content-center [&>*]:justify-start [&>*]:gap-3",
+    "flex min-h-svh flex-wrap content-center justify-start gap-3 p-6 *:max-w-full *:flex-wrap *:content-center *:justify-start *:gap-3 items-center",
   // A whole screen — sidebar layouts, dashboards, login pages. Fills the
   // canvas edge to edge, so no centring and no padding of our own.
   page: "block min-h-svh w-full",
   // A column of items, centred as a block.
   stack:
-    "flex min-h-svh flex-col items-center justify-center gap-3 p-6 [&>*]:max-w-full",
+    "flex min-h-svh flex-col items-center justify-center gap-3 p-6 *:max-w-full",
 }
 
 /**
