@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { trackEvent } from "@/lib/analytics-events"
+import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
 export function AssistantChat() {
@@ -98,9 +99,20 @@ export function AssistantChat() {
                   <AssistantConversation
                     messages={messages}
                     pending={pending}
-                    renderPreview={(m) => (
-                      <AssistantPreviewCard preview={m.preview} />
-                    )}
+                    renderPreview={(m) =>
+                      m.preview.presetCode ? (
+                        <AssistantPreviewCard
+                          preview={m.preview}
+                          openHref={presetBrowsePath(
+                            m.preview.presetCode,
+                            "generated",
+                            "ask-ai"
+                          )}
+                        />
+                      ) : (
+                        <AssistantPreviewCard preview={m.preview} />
+                      )
+                    }
                     renderPresets={(m, i) => (
                       <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
                         {m.presets.map((p, presetIndex) => (
