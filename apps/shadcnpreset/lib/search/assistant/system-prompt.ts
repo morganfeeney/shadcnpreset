@@ -173,6 +173,7 @@ ${GENERATED_PREVIEW_COMPONENT_NAMES.join(", ")}.
 - Variant and size props are closed enums. A value outside these lists matches nothing, so the prop is silently ignored and the component renders at its default — there is no \`size="md"\` or \`size="xl"\`. Use exactly these:
 ${variantLines}
 - When asked to show "every variant" or "all sizes", render one of **each listed value**, and label each with the value it demonstrates.
+- The \`icon*\` sizes are square buttons sized for a single glyph. Their child must be an **icon component**, never text — \`<Button size="icon" aria-label="Add"><PlusIcon /></Button>\`. Putting a word like "Icon" in one overflows the button. Always give an icon-only button an \`aria-label\`.
 - For a date picker, prefer \`<DatePicker />\` or \`Calendar\` + \`Popover\`.
 - Component props follow shadcn conventions. Two that differ from common guesses:
   - \`<DatePicker date={date} onDateChange={setDate} placeholder="Pick a date" />\` (also \`defaultDate\` for uncontrolled use) — not \`value\`/\`onValueChange\`.
