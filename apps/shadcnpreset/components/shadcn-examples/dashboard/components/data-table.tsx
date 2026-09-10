@@ -472,7 +472,7 @@ export function DataTable({
                   <IconPlaceholder
                     lucide="Columns3Icon"
                     tabler="IconLayoutColumns"
-                    hugeicons="Layout7Icon"
+                    hugeicons="Layout07Icon"
                     phosphor="ColumnsIcon"
                     remixicon="RiLayoutGridLine"
                   />

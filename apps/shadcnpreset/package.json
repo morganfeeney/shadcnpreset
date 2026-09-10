@@ -15,6 +15,7 @@
     "generate:high-contrast-dataset": "node --import tsx/esm ./scripts/find-perfect-contrast-presets.ts --random --target 8000 --max-tries 20000000 --out ./data/high-contrast-presets.json",
     "refresh:community-snapshot": "tsx ./scripts/refresh-community-snapshot.ts",
     "sync:cn-ui": "tsx ./scripts/sync-cn-ui.ts",
+    "generate:icon-allowlists": "tsx ./scripts/generate-icon-allowlists.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "next typegen && tsc --noEmit"
   },
