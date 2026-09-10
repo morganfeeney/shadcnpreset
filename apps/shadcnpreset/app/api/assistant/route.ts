@@ -17,6 +17,7 @@ import {
   extractPaletteConstraints,
   extractTypographyConstraints,
 } from "@/lib/search/assistant/constraint-engine"
+import { extractNamedPresetCode } from "@/lib/search/assistant/named-preset"
 import { toPersistedAssistantMessage } from "@/lib/search/assistant/message-persistence"
 import { normalizeQuickReplies } from "@/lib/search/assistant/quick-replies"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
@@ -64,10 +65,20 @@ const bodySchema = z.object({
   livePresetCode: z.string().min(2).max(32).optional(),
 })
 
-function buildLivePresetContext(livePresetCode: string | null): string {
+function buildLivePresetContext(
+  livePresetCode: string | null,
+  namedPresetCode: string | null
+): string {
   if (!livePresetCode) return ""
+  const named = namedPresetCode
+    ? [
+        `They named preset ${namedPresetCode} in their message, and the preview will use it.`,
+        "Do not ask which preset to use — it is already resolved.",
+      ]
+    : []
   return [
     `The user is currently viewing preset ${livePresetCode} in the main preview.`,
+    ...named,
     'If they ask to show, display, or render a component/block/layout with this preset, use phase "preview".',
     "Do not invent a new preset for show/display requests; apply generated UI onto the current live preset.",
   ].join("\n")
@@ -269,7 +280,17 @@ export async function POST(request: Request) {
     ? resolvePresetFromCode(parsed.data.livePresetCode)
     : null
   const livePresetCode = livePreset ? encodePreset(livePreset) : null
-  const livePresetContext = buildLivePresetContext(livePresetCode)
+  // A preset named in the request wins over the one currently on screen.
+  const lastUserMessage = [...parsed.data.messages]
+    .reverse()
+    .find((message) => message.role === "user")
+  const namedPresetCode = lastUserMessage
+    ? extractNamedPresetCode(lastUserMessage.content)
+    : null
+  const livePresetContext = buildLivePresetContext(
+    livePresetCode,
+    namedPresetCode
+  )
   const canPreview = Boolean(livePresetCode)
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
@@ -349,7 +370,10 @@ export async function POST(request: Request) {
       const previewTurn: AssistantPreview = {
         phase: "preview",
         assistantMessage: normalized.assistantMessage,
-        preview: { ...normalized.preview, presetCode: livePresetCode },
+        preview: {
+          ...normalized.preview,
+          presetCode: namedPresetCode ?? livePresetCode,
+        },
       }
       const persistedMessages = [
         ...chatMessages.map((message) => toPersistedAssistantMessage(message)),

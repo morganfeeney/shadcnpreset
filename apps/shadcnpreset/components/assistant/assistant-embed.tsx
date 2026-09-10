@@ -9,10 +9,7 @@ import {
   AssistantPendingCompact,
 } from "@/components/assistant/assistant-conversation"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
-import {
-  useAssistantChat,
-  type AssistantPreviewMessage,
-} from "@/components/assistant/use-assistant-chat"
+import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { PresetRelatedList } from "@/components/preset-related-list"
 import { Button } from "@/components/ui/button"
@@ -52,27 +49,13 @@ export function AssistantEmbed({
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const authStatus = useAuthStore((state) => state.status)
 
-  const setGeneratedPreview = live?.setGeneratedPreview
-  const setLiveView = live?.setLiveView
-
-  /**
-   * Previews are shown in the main preview pane only — the sidebar is too
-   * narrow to render one usefully, and the pane is already right there.
-   */
-  const showInMainPreview = React.useCallback(
-    (preview: AssistantPreviewMessage["preview"]) => {
-      if (!setGeneratedPreview || !setLiveView) return
-      setGeneratedPreview({ title: preview.title, code: preview.code })
-      setLiveView("generated")
-    },
-    [setGeneratedPreview, setLiveView]
-  )
-
   const chat = useAssistantChat({
     seedPresetCodes: [liveCode],
     livePresetCode: liveCode,
     initialChatId,
-    onPreview: showInMainPreview,
+    // Previews go to the main preview pane only — the sidebar is too narrow to
+    // render one usefully, and the pane is already right there.
+    onPreview: live?.showGeneratedPreview,
   })
   const {
     activeChatQuery,
