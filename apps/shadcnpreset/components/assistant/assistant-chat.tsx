@@ -152,6 +152,7 @@ export function AssistantChat({
                   <AssistantConversation
                     messages={messages}
                     pending={pending}
+                    scrollLatestIntoView
                     renderPreview={(m) =>
                       m.preview.presetCode ? (
                         <AssistantPreviewCard

@@ -32,6 +32,13 @@ type AssistantConversationProps = {
   conversationContentClassName?: string
   pendingContent?: React.ReactNode
   className?: string
+  /**
+   * Scrolls the page down to the newest turn as it arrives. For the full-page
+   * assistant, where the conversation grows the document and a reply otherwise
+   * lands below the fold. The sidebar leaves it off: that pane scrolls on its
+   * own, and dragging the preset page around underneath it is jarring.
+   */
+  scrollLatestIntoView?: boolean
 }
 
 export function AssistantConversation({
@@ -42,7 +49,15 @@ export function AssistantConversation({
   conversationContentClassName,
   pendingContent,
   className,
+  scrollLatestIntoView = false,
 }: AssistantConversationProps) {
+  const bottomRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (!scrollLatestIntoView) return
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [scrollLatestIntoView, messages, pending])
+
   return (
     <Conversation className={className}>
       <ConversationContent className={conversationContentClassName}>
@@ -110,6 +125,8 @@ export function AssistantConversation({
             </Message>
           )
         ) : null}
+
+        {scrollLatestIntoView ? <div ref={bottomRef} /> : null}
       </ConversationContent>
       <ConversationScrollButton />
     </Conversation>
