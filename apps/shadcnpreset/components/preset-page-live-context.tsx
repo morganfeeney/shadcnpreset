@@ -31,6 +31,14 @@ type PresetPageLiveContextValue = {
   setLiveView: (view: PresetPreviewPageName) => void
   setLiveTab: (tab: PresetSidebarTab) => void
   setGeneratedPreview: (preview: GeneratedPreviewPayload | null) => void
+  /**
+   * Shows a generated preview in the main pane, switching preset when the
+   * preview names a different one (e.g. "show buttons with preset b0"). One
+   * navigation, so preset and view cannot race each other.
+   */
+  showGeneratedPreview: (
+    preview: GeneratedPreviewPayload & { presetCode?: string }
+  ) => void
 }
 
 const PresetPageLiveContext =
@@ -124,6 +132,17 @@ export function PresetPageLiveProvider({
     []
   )
 
+  const showGeneratedPreview = React.useCallback(
+    (preview: GeneratedPreviewPayload & { presetCode?: string }) => {
+      setStoredGeneratedPreview({ title: preview.title, code: preview.code })
+      const nextCode = preview.presetCode ?? livePresetCode
+      router.replace(presetBrowsePath(nextCode, "generated", tab), {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router, tab]
+  )
+
   const value = React.useMemo(
     () => ({
       livePresetCode,
@@ -136,6 +155,7 @@ export function PresetPageLiveProvider({
       setLiveView,
       setLiveTab,
       setGeneratedPreview,
+      showGeneratedPreview,
     }),
     [
       livePresetCode,
@@ -148,6 +168,7 @@ export function PresetPageLiveProvider({
       setLiveView,
       setLiveTab,
       setGeneratedPreview,
+      showGeneratedPreview,
     ]
   )
 

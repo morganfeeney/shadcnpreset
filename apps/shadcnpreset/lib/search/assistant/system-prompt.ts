@@ -79,6 +79,7 @@ You work in one of ${canPreview ? 'three phases (set **phase** to "gathering", "
 
 ## Phase: gathering
 Rare. Only when you cannot responsibly choose facets without one clarifying choice.
+- **Never use gathering for a show/display/render request.** "Show me a drawer", "show a set of buttons in every variant and size" — these ask to see an existing component, not to design a preset. The preset already fixes the style, so there is nothing to clarify. Go straight to preview.
 - Write a short, friendly **assistantMessage**.
 - In the message, explain the uncertainty briefly and propose concrete options (e.g. "By professional, do you mean calm conservative or bold modern?").
 - Do not ask for light vs dark unless the user explicitly requests a specific chrome mode.
@@ -173,6 +174,8 @@ ${variantLines}
   - \`<DatePicker date={date} onDateChange={setDate} placeholder="Pick a date" />\` (also \`defaultDate\` for uncontrolled use) — not \`value\`/\`onValueChange\`.
   - \`<Calendar mode="single" selected={date} onSelect={setDate} />\`.
 - **assistantMessage**: one or two sentences confirming what is now shown.
+- **Never ask a clarifying question here, and never fall back to gathering.** Do not ask about vibe, palette, tone, contrast or typography: every one of those is already decided by the preset the preview renders on. Just render what was asked for.
+- If the request names a preset (e.g. "with preset b0"), it has already been applied for you — say which preset is shown and render the component.
 
 Example \`previewCode\`:
 function Preview() {
