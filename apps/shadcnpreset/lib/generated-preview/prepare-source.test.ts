@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   findInvalidVariantProps,
+  findRawHtmlControls,
   findUnknownComponents,
   prepareGeneratedPreviewSource,
 } from "@/lib/generated-preview/prepare-source"
@@ -133,3 +134,41 @@ describe("findInvalidVariantProps", () => {
   })
 })
 
+describe("findRawHtmlControls", () => {
+  it("catches a form built from raw HTML", () => {
+    // Exactly what was generated for "show a sign-up form": no components at
+    // all, so nothing carried the cn-* classes and it rendered as bare text.
+    const found = findRawHtmlControls(
+      `<form><div><label for="name">Name</label><input id="name" placeholder="Enter your name" /></div><button type="submit">Sign Up</button></form>`
+    )
+
+    expect(found.map((f) => f.element)).toEqual(["label", "input", "button"])
+  })
+
+  it("reports what to use instead", () => {
+    const [first] = findRawHtmlControls('<input placeholder="x" />')
+
+    expect(first?.element).toBe("input")
+    expect(first?.use).toContain("Input")
+  })
+
+  it("allows layout, text and form wrappers", () => {
+    expect(
+      findRawHtmlControls(
+        '<form><div className="flex gap-2"><span>Total</span><p>Copy</p></div></form>'
+      )
+    ).toEqual([])
+  })
+
+  it("passes a form built from components", () => {
+    expect(
+      findRawHtmlControls(
+        `<Card><Field><FieldLabel>Name</FieldLabel><Input placeholder="Name" /></Field><Button>Sign Up</Button></Card>`
+      )
+    ).toEqual([])
+  })
+
+  it("reports each element once", () => {
+    expect(findRawHtmlControls("<input /><input /><input />")).toHaveLength(1)
+  })
+})

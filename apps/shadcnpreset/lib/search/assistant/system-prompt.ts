@@ -153,7 +153,8 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - Wrap the demo in \`<PreviewFrame>\` so it is centered on the canvas.
 - Layout is not your concern. \`<PreviewFrame>\` takes no props: the canvas layout is derived from the markup you return, so do not add \`flex-wrap\`, sizing or centring to make it fit. Write the component plainly and let the frame place it.
 - Use semantic tokens (\`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`border-border\`). Never hard-code hex colours.
-- Prefer real components over custom markup.
+- **Never use raw HTML controls.** No \`<input>\`, \`<button>\`, \`<select>\`, \`<textarea>\` or \`<label>\` — use \`Input\`, \`Button\`, \`Select\`, \`Textarea\`, \`FieldLabel\`. Raw elements carry none of the preset's styling and render as unstyled text, which defeats the point of the preview; a preview that uses them is rejected. \`<div>\`, \`<span>\`, \`<p>\` and \`<form>\` are fine as wrappers.
+- A form is \`Card\` + \`FieldGroup\` + \`Field\` + \`FieldLabel\` + \`Input\` + \`Button\`.
 - These identifiers are in scope, and **nothing else is** — never invent a component or subcomponent name (there is no \`DrawerBody\`; a drawer is \`Drawer\` + \`DrawerTrigger\` + \`DrawerContent\` + \`DrawerHeader\` + \`DrawerTitle\` + \`DrawerFooter\`):
 ${GENERATED_PREVIEW_COMPONENT_NAMES.join(", ")}.
 - Variant and size props are closed enums. A value outside these lists matches nothing, so the prop is silently ignored and the component renders at its default — there is no \`size="md"\` or \`size="xl"\`. Use exactly these:

@@ -1,11 +1,15 @@
 import * as React from "react"
 
-import type { InvalidVariantProp } from "@/lib/generated-preview/prepare-source"
+import type {
+  InvalidVariantProp,
+  RawHtmlControl,
+} from "@/lib/generated-preview/prepare-source"
 import { transform } from "sucrase"
 
 import { GENERATED_PREVIEW_COMPONENT_VARIANTS } from "@/lib/generated-preview/catalog"
 import {
   findInvalidVariantProps,
+  findRawHtmlControls,
   findUnknownComponents,
   prepareGeneratedPreviewSource,
 } from "@/lib/generated-preview/prepare-source"
@@ -22,6 +26,8 @@ export type CompileGeneratedPreviewResult =
       unknownComponents?: string[]
       /** Variant props set to a value the component does not define. */
       invalidProps?: InvalidVariantProp[]
+      /** Raw HTML controls used where a scope component exists. */
+      rawControls?: RawHtmlControl[]
     }
 
 export function compileGeneratedPreview(
@@ -42,6 +48,18 @@ export function compileGeneratedPreview(
         unknownComponents.length === 1 ? "is" : "are"
       } not available here.`,
       unknownComponents,
+    }
+  }
+
+  const rawControls = findRawHtmlControls(prepared.code)
+  if (rawControls.length) {
+    const detail = rawControls
+      .map(({ element, use }) => `<${element}> (use ${use})`)
+      .join("; ")
+    return {
+      ok: false,
+      error: `This preview uses raw HTML controls, which the preset cannot style: ${detail}.`,
+      rawControls,
     }
   }
 

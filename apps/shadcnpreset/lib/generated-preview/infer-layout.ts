@@ -28,13 +28,68 @@ function unwrapFrame(code: string): string {
   return code.slice(start + 1, close)
 }
 
-/** Counts the most-repeated component name among JSX elements. */
-function largestRepeatedGroup(code: string): number {
-  const counts = new Map<string, number>()
-  for (const match of code.matchAll(/<\s*([A-Z][\w$]*)/g)) {
-    const name = match[1]!
-    counts.set(name, (counts.get(name) ?? 0) + 1)
+type RootScan = {
+  /** Component names appearing as direct children of the root element. */
+  childNames: string[]
+  /** Whether a `.map(` sits directly inside the root rather than nested deeper. */
+  mapsAtRoot: boolean
+}
+
+/**
+ * Walks the JSX far enough to see the root element's direct children.
+ *
+ * Depth matters: a sign-up form repeats `Field` four times, but those live
+ * inside a Card, so the preview is still one component. Counting repeats across
+ * the whole tree classified it as a gallery and squeezed it into a column.
+ */
+function scanRoot(body: string): RootScan {
+  const tag = /<\s*(\/)?\s*([A-Za-z][\w$.]*)([^>]*?)(\/)?>/g
+  const childNames: string[] = []
+  let depth = -1
+  let rootStart = -1
+  let rootEnd = body.length
+  let match: RegExpExecArray | null
+
+  while ((match = tag.exec(body))) {
+    const [full, closing, name, , selfClosing] = match
+    const isSelfClosing = Boolean(selfClosing) || full.endsWith("/>")
+
+    if (closing) {
+      depth -= 1
+      if (depth < 0) {
+        rootEnd = match.index
+        break
+      }
+      continue
+    }
+
+    depth += 1
+    // depth 0 is the root; its direct children are depth 1.
+    if (depth === 1 && /^[A-Z]/.test(name!)) {
+      childNames.push(name!)
+    }
+    if (depth === 0) {
+      rootStart = tag.lastIndex
+    }
+    if (isSelfClosing) {
+      depth -= 1
+      if (depth < 0) break
+    }
   }
+
+  // A `.map` nested inside a child (a table's rows, say) does not make the
+  // preview a gallery; one sitting directly in the root does.
+  const inner = rootStart === -1 ? body : body.slice(rootStart, rootEnd)
+  const nested = inner.replace(/<\s*([A-Z][\w$.]*)[\s\S]*?<\/\s*\1\s*>/g, "")
+  const mapsAtRoot = /\.map\s*\(/.test(nested)
+
+  return { childNames, mapsAtRoot }
+}
+
+/** How many times the most-repeated name appears. */
+function largestRepeat(names: string[]): number {
+  const counts = new Map<string, number>()
+  for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1)
   return Math.max(0, ...counts.values())
 }
 
@@ -56,10 +111,11 @@ export function inferPreviewLayout(code: string): PreviewLayout {
     return "page"
   }
 
-  // Either the same component written out many times, or a `.map` rendering a
-  // list — a map writes its component once in the source but yields many.
-  const repeated = largestRepeatedGroup(body)
-  const rendersList = /\.map\s*\(/.test(body) && /<\s*[A-Z]/.test(body)
+  // Only the root's direct children count: repeats deeper down are the internals
+  // of one component, not a set of many.
+  const { childNames, mapsAtRoot } = scanRoot(body)
+  const repeated = largestRepeat(childNames)
+  const rendersList = mapsAtRoot && childNames.length > 0
 
   if (repeated >= GALLERY_THRESHOLD || rendersList) {
     return /\bflex-col\b/.test(body) ? "stack" : "gallery"
