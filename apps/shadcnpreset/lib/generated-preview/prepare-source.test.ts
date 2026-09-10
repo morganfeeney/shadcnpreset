@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  findInvalidVariantProps,
   findUnknownComponents,
   prepareGeneratedPreviewSource,
 } from "@/lib/generated-preview/prepare-source"
@@ -91,5 +92,43 @@ describe("findUnknownComponents", () => {
         scope
       )
     ).toEqual([])
+  })
+})
+
+describe("findInvalidVariantProps", () => {
+  const variants = {
+    Button: {
+      variant: ["default", "outline", "secondary", "ghost", "destructive", "link"],
+      size: ["default", "xs", "sm", "lg", "icon"],
+    },
+  }
+
+  it("catches sizes that silently render as default", () => {
+    const found = findInvalidVariantProps(
+      '<Button size="md">Medium</Button><Button size="xl">Extra</Button>',
+      variants
+    )
+
+    expect(found.map((f) => f.value)).toEqual(["md", "xl"])
+    expect(found[0]?.component).toBe("Button")
+    expect(found[0]?.prop).toBe("size")
+  })
+
+  it("accepts every documented value", () => {
+    const code = variants.Button.size
+      .map((size) => `<Button size="${size}">x</Button>`)
+      .join("")
+
+    expect(findInvalidVariantProps(code, variants)).toEqual([])
+  })
+
+  it("ignores props that are not variant enums", () => {
+    expect(
+      findInvalidVariantProps('<Button className="w-full" type="submit" />', variants)
+    ).toEqual([])
+  })
+
+  it("ignores components without variants", () => {
+    expect(findInvalidVariantProps('<Card size="md" />', variants)).toEqual([])
   })
 })

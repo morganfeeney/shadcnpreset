@@ -141,3 +141,44 @@ export function findUnknownComponents(
 
   return [...unknown].sort()
 }
+
+export type InvalidVariantProp = {
+  component: string
+  prop: string
+  value: string
+  allowed: readonly string[]
+}
+
+/**
+ * Variant/size props set to a value the component's cva does not define.
+ *
+ * These fail silently: cva matches no branch, emits no class, and the component
+ * renders at its default. `<Button size="md">` looked identical to a default
+ * button rather than erroring, so the preview was quietly wrong.
+ */
+export function findInvalidVariantProps(
+  code: string,
+  variants: Record<string, Record<string, readonly string[]>>
+): InvalidVariantProp[] {
+  const found: InvalidVariantProp[] = []
+
+  for (const match of code.matchAll(/<\s*([A-Z][\w$]*)([^>]*)>/g)) {
+    const component = match[1]!
+    const groups = variants[component]
+    if (!groups) continue
+
+    for (const attr of match[2]!.matchAll(/([\w-]+)="([^"]*)"/g)) {
+      const allowed = groups[attr[1]!]
+      if (allowed && !allowed.includes(attr[2]!)) {
+        found.push({
+          component,
+          prop: attr[1]!,
+          value: attr[2]!,
+          allowed,
+        })
+      }
+    }
+  }
+
+  return found
+}
