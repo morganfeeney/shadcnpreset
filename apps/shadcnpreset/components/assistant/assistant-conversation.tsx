@@ -13,7 +13,10 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message"
 import { Shimmer } from "@/components/ai-elements/shimmer"
-import type { ChatMessage } from "@/components/assistant/use-assistant-chat"
+import type {
+  AssistantPreviewMessage,
+  ChatMessage,
+} from "@/components/assistant/use-assistant-chat"
 
 type PresetMessage = Extract<ChatMessage, { role: "assistant"; kind: "presets" }>
 
@@ -21,6 +24,11 @@ type AssistantConversationProps = {
   messages: ChatMessage[]
   pending: boolean
   renderPresets: (message: PresetMessage, index: number) => React.ReactNode
+  /** Omit on surfaces that cannot render a generated preview; the text still shows. */
+  renderPreview?: (
+    message: AssistantPreviewMessage,
+    index: number
+  ) => React.ReactNode
   conversationContentClassName?: string
   pendingContent?: React.ReactNode
   className?: string
@@ -30,6 +38,7 @@ export function AssistantConversation({
   messages,
   pending,
   renderPresets,
+  renderPreview,
   conversationContentClassName,
   pendingContent,
   className,
@@ -49,6 +58,19 @@ export function AssistantConversation({
           }
 
           switch (m.kind) {
+            case "preview":
+              return (
+                <Message
+                  from="assistant"
+                  key={`${i}-${m.role}`}
+                  className="@container"
+                >
+                  <MessageContent className="overflow-visible">
+                    <MessageResponse>{m.content}</MessageResponse>
+                    {renderPreview?.(m, i)}
+                  </MessageContent>
+                </Message>
+              )
             case "presets":
               return (
                 <Message
@@ -94,11 +116,15 @@ export function AssistantConversation({
   )
 }
 
-export function AssistantPendingCompact() {
+export function AssistantPendingCompact({
+  label = "Generating presets...",
+}: {
+  label?: string
+}) {
   return (
     <Message from="assistant">
       <MessageContent className="w-full rounded-lg">
-        <Shimmer className="text-sm">Generating presets...</Shimmer>
+        <Shimmer className="text-sm">{label}</Shimmer>
         <div className="mt-3 flex flex-col gap-3">
           <div className="aspect-[2/1] animate-pulse rounded-lg border border-border/60 bg-muted/30" />
           <div className="aspect-[2/1] animate-pulse rounded-lg border border-border/60 bg-muted/30" />

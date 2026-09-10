@@ -46,3 +46,7 @@ The shell listens for `postMessage` with type `shadcnpreset:theme-mode` so the p
 1. Register the example in `lib/preset-preview.ts` (`LOCAL_PRESET_PREVIEW_EXAMPLES`, `PRESET_PREVIEW_VIEWS`).
 2. Branch in `ExampleView` inside `preview-example-shell.tsx`.
 3. Prefer `cn-ui/*` primitives for components that must respect `.style-*` / `cn-*` rules in style bundles.
+
+`generated` is an ad-hoc Ask AI preview. It is not listed in the default view picker. The parent posts `{ type: "shadcnpreset:generated-preview", title, code }` after the iframe signals `shadcnpreset:generated-preview-ready`.
+
+The code is session-scoped (`lib/generated-preview/store.ts`), not part of the URL, so a `?view=generated` link opened elsewhere has nothing to render: the host falls back to the default view and the embed shows an empty state. Generated source is compiled with sucrase and evaluated in this iframe — see the guard-rail note in `lib/generated-preview/prepare-source.ts` for what that does and does not contain.

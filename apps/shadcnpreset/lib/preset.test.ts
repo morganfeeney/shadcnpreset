@@ -63,4 +63,12 @@ describe("getPresetPreviewUrl", () => {
     expect(url).toContain("/preset-preview/login-04")
     expect(url).toContain("preset=b5aFUJkSzC")
   })
+
+  it("points the generated view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "generated")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/generated")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
 })

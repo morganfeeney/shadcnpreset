@@ -23,6 +23,7 @@ import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt
 import {
   assistantTurnOutputSchema,
   normalizeAssistantTurn,
+  type AssistantPreview,
   type AssistantPresetVariantPayload,
   type AssistantReady,
 } from "@/lib/search/assistant/schema"
@@ -36,7 +37,7 @@ const bodySchema = z.object({
       z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().min(1).max(12000),
-        kind: z.enum(["text", "presets"]).optional(),
+        kind: z.enum(["text", "presets", "preview"]).optional(),
         presets: z
           .array(
             z.object({
@@ -47,13 +48,30 @@ const bodySchema = z.object({
           )
           .max(4)
           .optional(),
+        preview: z
+          .object({
+            title: z.string().min(1).max(60),
+            code: z.string().min(1).max(24000),
+            presetCode: z.string().min(2).max(32).optional(),
+          })
+          .optional(),
         followUpQuestions: z.array(z.string().min(1).max(160)).max(4).optional(),
       })
     )
     .min(1)
     .max(32),
   previousPresetCodes: z.array(z.string().min(2).max(32)).max(4).optional(),
+  livePresetCode: z.string().min(2).max(32).optional(),
 })
+
+function buildLivePresetContext(livePresetCode: string | null): string {
+  if (!livePresetCode) return ""
+  return [
+    `The user is currently viewing preset ${livePresetCode} in the main preview.`,
+    'If they ask to show, display, or render a component/block/layout with this preset, use phase "preview".',
+    "Do not invent a new preset for show/display requests; apply generated UI onto the current live preset.",
+  ].join("\n")
+}
 
 function variantToConfig(v: AssistantPresetVariantPayload): PresetConfig {
   const { caption, ...rest } = v
@@ -245,6 +263,14 @@ export async function POST(request: Request) {
     .map((code) => resolvePresetFromCode(code))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
   const previousPresetContext = buildPreviousPresetContext(previousPresets)
+  // Only offer the preview phase when the caller has a real preset on screen to
+  // render onto — otherwise the model can promise a preview nothing can display.
+  const livePreset = parsed.data.livePresetCode
+    ? resolvePresetFromCode(parsed.data.livePresetCode)
+    : null
+  const livePresetCode = livePreset ? encodePreset(livePreset) : null
+  const livePresetContext = buildLivePresetContext(livePresetCode)
+  const canPreview = Boolean(livePresetCode)
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
@@ -260,7 +286,11 @@ export async function POST(request: Request) {
   try {
     const result = await generateText({
       model: openai(modelId),
-      system: [buildAssistantSystemPrompt(), previousPresetContext]
+      system: [
+        buildAssistantSystemPrompt({ canPreview }),
+        livePresetContext,
+        previousPresetContext,
+      ]
         .filter((s) => s.trim().length > 0)
         .join("\n\n"),
       messages: chatMessages.map((m) => ({
@@ -270,8 +300,9 @@ export async function POST(request: Request) {
       output: Output.object({
         schema: assistantTurnOutputSchema,
         name: "PresetAssistantTurn",
-        description:
-          'Gathering: follow-up tap labels, empty presetVariants. Ready: 1–4 full facet tuples + captions, empty followUpQuestions strings.',
+        description: canPreview
+          ? "Gathering: follow-up tap labels, empty presetVariants and previewCode. Ready: 1–4 full facet tuples + captions, empty followUpQuestions and previewCode. Preview: JSX Preview() in previewCode, empty presetVariants and followUpQuestions."
+          : "Gathering: follow-up tap labels, empty presetVariants. Ready: 1–4 full facet tuples + captions, empty followUpQuestions. Always leave previewTitle and previewCode empty.",
       }),
       temperature: 0.35,
       maxRetries: 0,
@@ -299,6 +330,42 @@ export async function POST(request: Request) {
         },
         { status: 422 }
       )
+    }
+
+    if (normalized.phase === "preview") {
+      if (!livePresetCode) {
+        // The preview phase is hidden from the prompt without a live preset; if
+        // the model reaches for it anyway there is nowhere to render the result.
+        return NextResponse.json(
+          {
+            error:
+              "Component previews are only available on a preset page. Try again from a preset preview.",
+            code: "preview_unavailable",
+          },
+          { status: 422 }
+        )
+      }
+
+      const previewTurn: AssistantPreview = {
+        phase: "preview",
+        assistantMessage: normalized.assistantMessage,
+        preview: { ...normalized.preview, presetCode: livePresetCode },
+      }
+      const persistedMessages = [
+        ...chatMessages.map((message) => toPersistedAssistantMessage(message)),
+        {
+          role: "assistant" as const,
+          kind: "preview" as const,
+          content: previewTurn.assistantMessage,
+          preview: previewTurn.preview,
+        },
+      ]
+      const persisted = await saveAssistantChatForUser({
+        user,
+        chatId: parsed.data.chatId,
+        messages: persistedMessages,
+      })
+      return NextResponse.json({ ...previewTurn, chatId: persisted.chatId })
     }
 
     if (normalized.phase === "ready") {

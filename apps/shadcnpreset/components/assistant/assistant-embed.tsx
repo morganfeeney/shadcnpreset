@@ -7,8 +7,12 @@ import {
   AssistantConversation,
   AssistantPendingCompact,
 } from "@/components/assistant/assistant-conversation"
+import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-card"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
-import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
+import {
+  useAssistantChat,
+  type AssistantPreviewMessage,
+} from "@/components/assistant/use-assistant-chat"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { PresetRelatedList } from "@/components/preset-related-list"
 import { Button } from "@/components/ui/button"
@@ -20,6 +24,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
 import { trackEvent } from "@/lib/analytics-events"
 import type { ResolvedPreset } from "@/lib/preset"
 import { useAuthStore } from "@/stores/auth-store"
@@ -39,7 +44,25 @@ export function AssistantEmbed({
   const liveCode = live?.livePresetCode ?? resolved.code
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const authStatus = useAuthStore((state) => state.status)
-  const chat = useAssistantChat({ seedPresetCodes: [liveCode] })
+
+  const setGeneratedPreview = live?.setGeneratedPreview
+  const setLiveView = live?.setLiveView
+
+  /** Moves a generated preview into the main preview area. */
+  const showInMainPreview = React.useCallback(
+    (preview: AssistantPreviewMessage["preview"]) => {
+      if (!setGeneratedPreview || !setLiveView) return
+      setGeneratedPreview({ title: preview.title, code: preview.code })
+      setLiveView("generated")
+    },
+    [setGeneratedPreview, setLiveView]
+  )
+
+  const chat = useAssistantChat({
+    seedPresetCodes: [liveCode],
+    livePresetCode: liveCode,
+    onPreview: showInMainPreview,
+  })
   const {
     composerResetKey,
     error,
@@ -50,6 +73,13 @@ export function AssistantEmbed({
     pending,
     sendContent,
   } = chat
+  const lastUserText = React.useMemo(
+    () =>
+      [...messages].reverse().find((message) => message.role === "user")?.content,
+    [messages]
+  )
+  const pendingPreview =
+    pending && Boolean(lastUserText && looksLikePreviewRequest(lastUserText))
   const openedPathRef = React.useRef(`/preset/${liveCode}`)
 
   React.useEffect(() => {
@@ -73,7 +103,24 @@ export function AssistantEmbed({
             messages={messages}
             pending={pending}
             conversationContentClassName="gap-4 p-3"
-            pendingContent={<AssistantPendingCompact />}
+            pendingContent={
+              <AssistantPendingCompact
+                label={
+                  pendingPreview ? "Generating preview..." : "Generating presets..."
+                }
+              />
+            }
+            renderPreview={(message) => (
+              <AssistantPreviewCard
+                preview={message.preview}
+                fallbackPresetCode={liveCode}
+                onOpenInMainPreview={
+                  setGeneratedPreview && setLiveView
+                    ? () => showInMainPreview(message.preview)
+                    : undefined
+                }
+              />
+            )}
             renderPresets={(message) => (
               <PresetRelatedList
                 items={message.presets.map((preset) => ({

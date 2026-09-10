@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { useTheme } from "next-themes"
 
 import DashboardDemo from "@/components/shadcn-examples/dashboard"
@@ -8,6 +9,21 @@ import { Login02Demo } from "@/components/shadcn-examples/login-02"
 import { Login04Demo } from "@/components/shadcn-examples/login-04"
 import { Spinner } from "@/components/ui/spinner"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
+
+const GeneratedPreviewExample = dynamic(
+  () =>
+    import("@/components/generated-preview/example").then(
+      (mod) => mod.GeneratedPreviewExample
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-svh items-center justify-center bg-background">
+        <Spinner />
+      </div>
+    ),
+  }
+)
 
 const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 const FONT_READY_FALLBACK_MS = 5000
@@ -59,6 +75,8 @@ function ExampleView({
           <Login04Demo />
         </div>
       )
+    case "generated":
+      return <GeneratedPreviewExample />
     default:
       return null
   }

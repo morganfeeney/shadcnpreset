@@ -26,6 +26,12 @@ export type ChatMessage =
       content: string
       presets: Extract<AssistantTurn, { phase: "ready" }>["presets"]
     }
+  | {
+      role: "assistant"
+      kind: "preview"
+      content: string
+      preview: Extract<AssistantTurn, { phase: "preview" }>["preview"]
+    }
 
 export type AssistantChatListItem = {
   id: string
@@ -39,9 +45,10 @@ type AssistantChatDetailResponse = {
     id: string
     messages: Array<{
       role: "user" | "assistant"
-      kind: "text" | "presets"
+      kind: "text" | "presets" | "preview"
       content: string
       presets?: Extract<ChatMessage, { role: "assistant"; kind: "presets" }>["presets"]
+      preview?: Extract<ChatMessage, { role: "assistant"; kind: "preview" }>["preview"]
       followUpQuestions?: string[]
     }>
   }
@@ -68,6 +75,16 @@ function hydrateMessages(
         kind: "presets",
         content: message.content,
         presets: message.presets,
+      })
+      continue
+    }
+
+    if (message.kind === "preview" && message.preview) {
+      hydrated.push({
+        role: "assistant",
+        kind: "preview",
+        content: message.content,
+        preview: message.preview,
       })
       continue
     }
@@ -117,12 +134,30 @@ class AssistantSendError extends Error {
   }
 }
 
+export type AssistantPreviewMessage = Extract<
+  ChatMessage,
+  { role: "assistant"; kind: "preview" }
+>
+
 type UseAssistantChatOptions = {
   seedPresetCodes?: string[]
+  livePresetCode?: string
+  /**
+   * Fired only when a preview arrives from a live send — never when an existing
+   * chat is hydrated, so opening an old conversation cannot hijack the surface
+   * the user is currently looking at.
+   */
+  onPreview?: (preview: AssistantPreviewMessage["preview"]) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
   const seedPresetCodes = options?.seedPresetCodes ?? []
+  const livePresetCode = options?.livePresetCode
+  const onPreview = options?.onPreview
+  const onPreviewRef = React.useRef(onPreview)
+  React.useEffect(() => {
+    onPreviewRef.current = onPreview
+  }, [onPreview])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -222,6 +257,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     nextMessages: ChatMessage[]
     previousPresetCodes: string[]
     chatId: string | null
+    livePresetCode?: string
   }
 
   type SendData =
@@ -242,12 +278,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   }
 
   const sendMutation = useMutation<SendData, Error, SendVars, SendContext>({
-    mutationFn: async (args: {
-      trimmed: string
-      nextMessages: ChatMessage[]
-      previousPresetCodes: string[]
-      chatId: string | null
-    }) => {
+    mutationFn: async (args: SendVars) => {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,6 +286,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           chatId: args.chatId ?? undefined,
           messages: args.nextMessages,
           previousPresetCodes: args.previousPresetCodes,
+          livePresetCode: args.livePresetCode,
         }),
       })
       const raw = await response.text()
@@ -327,6 +359,18 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           },
         ])
         setLastTurn(null)
+      } else if (data.phase === "preview") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            kind: "preview",
+            content: data.assistantMessage,
+            preview: data.preview,
+          },
+        ])
+        setLastTurn(null)
+        onPreviewRef.current?.(data.preview)
       } else {
         setLastTurn(data)
         setMessages((prev) => [
@@ -439,6 +483,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       nextMessages,
       previousPresetCodes,
       chatId: activeChatId,
+      livePresetCode,
     })
 
     if (result.kind === "auth_required") {

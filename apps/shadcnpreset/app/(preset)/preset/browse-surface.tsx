@@ -27,6 +27,14 @@ type PresetBrowseSurfaceProps = {
   children: ReactNode
 }
 
+/** `generated` only resolves while a preview is in session storage. */
+function resolveEffectiveView(
+  view: PresetPreviewPageName,
+  hasGeneratedPreview: boolean
+): PresetPreviewPageName {
+  return view === "generated" && !hasGeneratedPreview ? "preview" : view
+}
+
 function PresetBrowseHero() {
   const { livePresetCode } = usePresetPageLive()
   if (!resolvePresetFromCode(livePresetCode)) return null
@@ -39,14 +47,20 @@ function PresetBrowseHero() {
 }
 
 function PresetBrowseViewPicker() {
-  const { livePresetCode, view, setLiveView } = usePresetPageLive()
+  const { livePresetCode, view, setLiveView, generatedPreview } =
+    usePresetPageLive()
   if (!resolvePresetFromCode(livePresetCode)) return null
+
+  const adHocView = generatedPreview
+    ? { page: "generated" as const, label: generatedPreview.title }
+    : undefined
 
   return (
     <PresetPreviewLayoutPicker
-      value={view}
+      value={resolveEffectiveView(view, Boolean(generatedPreview))}
       onValueChange={setLiveView}
       presetCode={livePresetCode}
+      adHocView={adHocView}
     />
   )
 }
@@ -108,10 +122,14 @@ export function PresetBrowsePreview({
   resolved: ResolvedPreset
   view: PresetPreviewPageName
 }) {
-  const frameKey = `${resolved.code}-${view}`
+  const { generatedPreview } = usePresetPageLive()
+  // `?view=generated` survives reloads and shared links, but the code itself is
+  // session-scoped — fall back to the default view when there is nothing to show.
+  const effectiveView = resolveEffectiveView(view, Boolean(generatedPreview))
+  const frameKey = `${resolved.code}-${effectiveView}`
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const loaded = loadedKey === frameKey
-  const previewSrc = getPresetPreviewUrl(resolved.code, view)
+  const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
 
   if (!previewSrc) {
     return null
@@ -122,8 +140,9 @@ export function PresetBrowsePreview({
       <PresetV4Frame
         className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
         src={previewSrc}
-        title={`Preset preview ${resolved.code} ${view}`}
+        title={`Preset preview ${resolved.code} ${effectiveView}`}
         sandbox="allow-scripts allow-same-origin"
+        generatedPreview={effectiveView === "generated" ? generatedPreview : null}
         onLoad={() => {
           setLoadedKey(frameKey)
         }}
