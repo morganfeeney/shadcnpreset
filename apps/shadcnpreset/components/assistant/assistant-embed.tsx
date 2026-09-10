@@ -59,8 +59,9 @@ export function AssistantEmbed({
   })
   const {
     activeChatQuery,
+    chatLoadError,
     composerResetKey,
-    error,
+    error: sendError,
     hasInteracted,
     lastTurn,
     messages,
@@ -68,6 +69,7 @@ export function AssistantEmbed({
     pending,
     sendContent,
   } = chat
+  const error = sendError ?? chatLoadError
   const lastUserText = React.useMemo(
     () =>
       [...messages].reverse().find((message) => message.role === "user")?.content,
