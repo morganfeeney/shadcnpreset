@@ -1,6 +1,10 @@
 import { openai } from "@ai-sdk/openai"
 import { generateText, Output } from "ai"
-import { encodePreset, type PresetConfig } from "shadcn/preset"
+import {
+  DEFAULT_PRESET_CONFIG,
+  encodePreset,
+  type PresetConfig,
+} from "shadcn/preset"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
@@ -67,18 +71,29 @@ const bodySchema = z.object({
 
 function buildLivePresetContext(
   livePresetCode: string | null,
-  namedPresetCode: string | null
+  namedPresetCode: string | null,
+  previewPresetCode: string
 ): string {
-  if (!livePresetCode && !namedPresetCode) return ""
-  const lines = livePresetCode
-    ? [`The user is currently viewing preset ${livePresetCode} in the main preview.`]
-    : []
-  if (namedPresetCode) {
+  const lines: string[] = []
+  if (livePresetCode) {
     lines.push(
-      `They named preset ${namedPresetCode} in their message, and the preview will use it.`,
-      "Do not ask which preset to use — it is already resolved."
+      `The user is currently viewing preset ${livePresetCode} in the main preview.`
     )
   }
+  if (namedPresetCode) {
+    lines.push(
+      `They named preset ${namedPresetCode} in their message, and the preview will use it.`
+    )
+  }
+  if (!livePresetCode && !namedPresetCode) {
+    lines.push(
+      `No preset is on screen. A preview will render on the default preset, ${previewPresetCode}.`,
+      "Say which preset it is using, and mention they can name another (e.g. \"with preset b0\") or open a preset page to change it."
+    )
+  }
+  lines.push(
+    "A preset is always available, so never ask which one to use, and never ask about style before showing a component."
+  )
   return [
     ...lines,
     'If they ask to show, display, or render a component/block/layout with this preset, use phase "preview".',
@@ -287,15 +302,16 @@ export async function POST(request: Request) {
   const namedPresetCode = lastUserMessage
     ? extractNamedPresetCode(lastUserMessage.content)
     : null
-  // Any preset will do — naming one is enough to render a preview, so
-  // "show buttons with preset b0" works from the standalone assistant too.
-  // Without one there is nothing to render onto, and the phase stays hidden.
-  const previewPresetCode = namedPresetCode ?? livePresetCode
+  // There is always something to render onto: a preset named in the request, the
+  // one on screen, or the default. A "show me X" request should never turn into
+  // a question about which preset to use.
+  const previewPresetCode =
+    namedPresetCode ?? livePresetCode ?? encodePreset(DEFAULT_PRESET_CONFIG)
   const livePresetContext = buildLivePresetContext(
     livePresetCode,
-    namedPresetCode
+    namedPresetCode,
+    previewPresetCode
   )
-  const canPreview = Boolean(previewPresetCode)
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
@@ -312,7 +328,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: openai(modelId),
       system: [
-        buildAssistantSystemPrompt({ canPreview }),
+        buildAssistantSystemPrompt(),
         livePresetContext,
         previousPresetContext,
       ]
@@ -325,9 +341,8 @@ export async function POST(request: Request) {
       output: Output.object({
         schema: assistantTurnOutputSchema,
         name: "PresetAssistantTurn",
-        description: canPreview
-          ? "Gathering: follow-up tap labels, empty presetVariants and previewCode. Ready: 1–4 full facet tuples + captions, empty followUpQuestions and previewCode. Preview: JSX Preview() in previewCode, empty presetVariants and followUpQuestions."
-          : "Gathering: follow-up tap labels, empty presetVariants. Ready: 1–4 full facet tuples + captions, empty followUpQuestions. Always leave previewTitle and previewCode empty.",
+        description:
+          "Gathering: follow-up tap labels, empty presetVariants and previewCode. Ready: 1–4 full facet tuples + captions, empty followUpQuestions and previewCode. Preview: JSX Preview() in previewCode, empty presetVariants and followUpQuestions.",
       }),
       temperature: 0.35,
       maxRetries: 0,
@@ -358,19 +373,6 @@ export async function POST(request: Request) {
     }
 
     if (normalized.phase === "preview") {
-      if (!previewPresetCode) {
-        // The preview phase is hidden from the prompt without a preset; if the
-        // model reaches for it anyway there is nowhere to render the result.
-        return NextResponse.json(
-          {
-            error:
-              "Component previews need a preset. Open one, or name it in your message (e.g. \"with preset b0\").",
-            code: "preview_unavailable",
-          },
-          { status: 422 }
-        )
-      }
-
       const previewTurn: AssistantPreview = {
         phase: "preview",
         assistantMessage: normalized.assistantMessage,
