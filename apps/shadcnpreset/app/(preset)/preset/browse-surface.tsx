@@ -27,12 +27,20 @@ type PresetBrowseSurfaceProps = {
   children: ReactNode
 }
 
-/** `generated` only resolves while a preview is in session storage. */
+/**
+ * `generated` only resolves while a preview is in session storage.
+ *
+ * While one is still being recovered from a linked chat the view is left alone,
+ * so the pane can show it loading rather than flashing the default view and
+ * snapping back once the preview arrives.
+ */
 function resolveEffectiveView(
   view: PresetPreviewPageName,
-  hasGeneratedPreview: boolean
+  hasGeneratedPreview: boolean,
+  pending: boolean
 ): PresetPreviewPageName {
-  return view === "generated" && !hasGeneratedPreview ? "preview" : view
+  if (view !== "generated" || hasGeneratedPreview || pending) return view
+  return "preview"
 }
 
 function PresetBrowseHero() {
@@ -47,17 +55,28 @@ function PresetBrowseHero() {
 }
 
 function PresetBrowseViewPicker() {
-  const { livePresetCode, view, setLiveView, generatedPreview } =
-    usePresetPageLive()
+  const {
+    livePresetCode,
+    view,
+    setLiveView,
+    generatedPreview,
+    generatedPreviewPending,
+  } = usePresetPageLive()
   if (!resolvePresetFromCode(livePresetCode)) return null
 
   const adHocView = generatedPreview
     ? { page: "generated" as const, label: generatedPreview.title }
-    : undefined
+    : generatedPreviewPending
+      ? { page: "generated" as const, label: "", pending: true }
+      : undefined
 
   return (
     <PresetPreviewLayoutPicker
-      value={resolveEffectiveView(view, Boolean(generatedPreview))}
+      value={resolveEffectiveView(
+        view,
+        Boolean(generatedPreview),
+        generatedPreviewPending
+      )}
       onValueChange={setLiveView}
       presetCode={livePresetCode}
       adHocView={adHocView}
@@ -97,7 +116,7 @@ export function PresetBrowseSurface({
     <div className="w-full">
       <main className="grid gap-2">
         <PresetBrowseHero />
-        <Container className="max-w-full grid gap-4">
+        <Container className="grid max-w-full gap-4">
           <div className="flex items-center justify-between gap-1.5">
             <div className="flex min-w-0 items-center gap-2">
               <PresetBrowseSidebarSheet communityItems={communityItems} />
@@ -122,14 +141,28 @@ export function PresetBrowsePreview({
   resolved: ResolvedPreset
   view: PresetPreviewPageName
 }) {
-  const { generatedPreview } = usePresetPageLive()
+  const { generatedPreview, generatedPreviewPending } = usePresetPageLive()
   // `?view=generated` survives reloads and shared links, but the code itself is
   // session-scoped — fall back to the default view when there is nothing to show.
-  const effectiveView = resolveEffectiveView(view, Boolean(generatedPreview))
+  const effectiveView = resolveEffectiveView(
+    view,
+    Boolean(generatedPreview),
+    generatedPreviewPending
+  )
   const frameKey = `${resolved.code}-${effectiveView}`
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const loaded = loadedKey === frameKey
   const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
+
+  if (generatedPreviewPending) {
+    return (
+      <div className="relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg border bg-card">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    )
+  }
 
   if (!previewSrc) {
     return null
@@ -142,7 +175,9 @@ export function PresetBrowsePreview({
         src={previewSrc}
         title={`Preset preview ${resolved.code} ${effectiveView}`}
         sandbox="allow-scripts allow-same-origin"
-        generatedPreview={effectiveView === "generated" ? generatedPreview : null}
+        generatedPreview={
+          effectiveView === "generated" ? generatedPreview : null
+        }
         onLoad={() => {
           setLoadedKey(frameKey)
         }}
