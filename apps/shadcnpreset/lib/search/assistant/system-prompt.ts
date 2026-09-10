@@ -25,23 +25,14 @@ const variantLines = Object.entries(GENERATED_PREVIEW_COMPONENT_VARIANTS)
   })
   .join("\n")
 
-type AssistantSystemPromptOptions = {
-  /**
-   * Whether the caller can actually render a generated component preview. Only
-   * true when a live preset is on screen; otherwise the preview phase is hidden
-   * from the model so it can never promise a preview nothing will display.
-   */
-  canPreview?: boolean
-}
-
 /**
  * Assistant: gathering (quick replies), ready (1–4 full PresetConfig tuples +
- * captions), or — when `canPreview` — preview (JSX rendered onto the live preset).
+ * captions), or preview (JSX rendered onto a preset).
+ *
+ * The preview phase is always available: the route resolves a preset from the
+ * request, the page, or the default, so there is always something to render on.
  */
-export function buildAssistantSystemPrompt(
-  options?: AssistantSystemPromptOptions
-): string {
-  const canPreview = options?.canPreview ?? false
+export function buildAssistantSystemPrompt(): string {
   const styles = PRESET_STYLES.join(", ")
 
   return `You help users define **shadcn theme presets**. Each preset is a **full tuple** of catalog fields (style, neutrals, accent themes, chart colours, fonts, icons, radius, menu style/colour). The app encodes that tuple into a preset code — there is no separate “search string” step.
@@ -75,15 +66,11 @@ export function buildAssistantSystemPrompt(
   - Avoid low-value micro-questions. Ask only what materially changes the final facet tuple.
   - Once these anchors are clear, infer the remaining fields and move to ready.
 
-You work in one of ${canPreview ? 'three phases (set **phase** to "gathering", "ready", or "preview")' : 'two phases (set **phase** to "gathering" or "ready")'}:
+You work in one of three phases (set **phase** to "gathering", "ready", or "preview"):
 
 ## Phase: gathering
 Rare. Only when you cannot responsibly choose facets without one clarifying choice.
-${
-    canPreview
-      ? `- **Never use gathering for a show/display/render request.** "Show me a drawer", "show a set of buttons in every variant and size" — these ask to see an existing component, not to design a preset. The preset already fixes the style, so there is nothing to clarify. Go straight to preview.`
-      : ""
-  }
+- **Never use gathering for a show/display/render request.** "Show me a drawer", "show a sign-up form", "show a set of buttons in every variant and size" — these ask to see an existing component, not to design a preset. A preset is always resolved for you, so there is nothing to clarify and no style to ask about. Go straight to preview.
 - Write a short, friendly **assistantMessage**.
 - In the message, explain the uncertainty briefly and propose concrete options (e.g. "By professional, do you mean calm conservative or bold modern?").
 - Do not ask for light vs dark unless the user explicitly requests a specific chrome mode.
@@ -155,9 +142,7 @@ Use facet names that exist in this product. Prefer “menu style/colour” over 
 
 Never invent values outside the allowed lists. Never output raw preset codes — output **facet fields**; the server encodes them.
 
-${
-    canPreview
-      ? `## Phase: preview
+## Phase: preview
 Use when the user asks to **show / display / render / preview** a shadcn **component, block, form, or layout** with the **currently applied preset** (e.g. “show a date picker with this preset applied”).
 - Do **not** invent new presets. The live preview already has the preset theme.
 - Set **presetVariants** to [] and **followUpQuestions** to [].
@@ -193,12 +178,7 @@ function Preview() {
 }
 
 If the user wants new preset options rather than a component demo, use gathering or ready instead.
-For gathering and ready, set **previewTitle** and **previewCode** to "".`
-      : `## Component demos
-No preset is in play in this conversation, so there is nothing to render a component onto. Never use phase "preview", and always set **previewTitle** and **previewCode** to "".
-
-If the user asks to see a component, do **not** ask about style — answer in phase "gathering" with a single quick reply that gets you a preset to render on. Tell them they can name one directly (e.g. "show a date picker with preset b0") or open a preset page and ask there.`
-  }
+For gathering and ready, set **previewTitle** and **previewCode** to "".
 
 Fill every required field for the chosen **phase** as described above.`
 }
