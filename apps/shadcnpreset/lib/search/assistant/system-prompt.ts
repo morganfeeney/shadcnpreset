@@ -166,7 +166,7 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - Do not declare a variable that shadows one of the in-scope component names.
 - No network calls, timers against external services, storage APIs, or \`eval\`/\`Function\` — the preview runs sandboxed and such code is rejected.
 - Wrap the demo in \`<PreviewFrame>\` so it is centered on the canvas.
-- Choose the frame layout: \`<PreviewFrame>\` centres a single component (a form, a card, one date picker). \`<PreviewFrame layout="gallery">\` is for a set of many small items — every variant, a range of sizes, a row of badges — and wraps them into rows from the left. The canvas can be a few hundred pixels wide, so a gallery that does not wrap runs off both edges.
+- Layout is not your concern. \`<PreviewFrame>\` takes no props: the canvas layout is derived from the markup you return, so do not add \`flex-wrap\`, sizing or centring to make it fit. Write the component plainly and let the frame place it.
 - Use semantic tokens (\`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`border-border\`). Never hard-code hex colours.
 - Prefer real components over custom markup.
 - These identifiers are in scope, and **nothing else is** — never invent a component or subcomponent name (there is no \`DrawerBody\`; a drawer is \`Drawer\` + \`DrawerTrigger\` + \`DrawerContent\` + \`DrawerHeader\` + \`DrawerTitle\` + \`DrawerFooter\`):

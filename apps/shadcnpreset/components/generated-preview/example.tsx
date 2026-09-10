@@ -3,12 +3,16 @@
 import * as React from "react"
 
 import { compileGeneratedPreview } from "@/lib/generated-preview/compile"
+import { inferPreviewLayout } from "@/lib/generated-preview/infer-layout"
 import {
   GENERATED_PREVIEW_READY_MESSAGE_TYPE,
   isGeneratedPreviewMessage,
   type GeneratedPreviewPayload,
 } from "@/lib/generated-preview/messages"
-import { GENERATED_PREVIEW_SCOPE } from "@/lib/generated-preview/scope"
+import {
+  GENERATED_PREVIEW_SCOPE,
+  PreviewLayoutProvider,
+} from "@/lib/generated-preview/scope"
 import { Spinner } from "@/components/ui/spinner"
 
 class PreviewErrorBoundary extends React.Component<
@@ -53,13 +57,20 @@ function CompiledPreview({ code }: { code: string }) {
     () => compileGeneratedPreview(code, GENERATED_PREVIEW_SCOPE),
     [code]
   )
+  // Read off the returned code, not chosen by the model, so the same output
+  // always renders in the same layout.
+  const layout = React.useMemo(() => inferPreviewLayout(code), [code])
 
   if (!compiled.ok) {
     return <GeneratedPreviewError message={compiled.error} />
   }
 
   const Preview = compiled.component
-  return <Preview />
+  return (
+    <PreviewLayoutProvider layout={layout}>
+      <Preview />
+    </PreviewLayoutProvider>
+  )
 }
 
 /** How long to wait for the host before assuming no preview is coming. */
