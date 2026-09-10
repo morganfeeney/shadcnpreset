@@ -154,34 +154,28 @@ export function PresetBrowsePreview({
   const loaded = loadedKey === frameKey
   const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
 
-  if (generatedPreviewPending) {
-    return (
-      <div className="relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg border bg-card">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Spinner />
-        </div>
-      </div>
-    )
-  }
-
   if (!previewSrc) {
     return null
   }
 
   return (
     <div className="relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg">
-      <PresetV4Frame
-        className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
-        src={previewSrc}
-        title={`Preset preview ${resolved.code} ${effectiveView}`}
-        sandbox="allow-scripts allow-same-origin"
-        generatedPreview={
-          effectiveView === "generated" ? generatedPreview : null
-        }
-        onLoad={() => {
-          setLoadedKey(frameKey)
-        }}
-      />
+      {/* Holding the frame back while a linked preview is still being recovered
+          leaves `loaded` false, so the overlay below covers the wait. */}
+      {generatedPreviewPending ? null : (
+        <PresetV4Frame
+          className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
+          src={previewSrc}
+          title={`Preset preview ${resolved.code} ${effectiveView}`}
+          sandbox="allow-scripts allow-same-origin"
+          generatedPreview={
+            effectiveView === "generated" ? generatedPreview : null
+          }
+          onLoad={() => {
+            setLoadedKey(frameKey)
+          }}
+        />
+      )}
       {!loaded ? (
         <div className="absolute inset-0 flex items-center justify-center bg-background">
           <Spinner />
