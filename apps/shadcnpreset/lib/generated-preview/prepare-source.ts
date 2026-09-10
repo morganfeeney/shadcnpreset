@@ -183,3 +183,38 @@ export function findInvalidVariantProps(
   return found
 }
 
+export type RawHtmlControl = {
+  element: string
+  use: string
+}
+
+/**
+ * Raw HTML form controls used where a scope component exists.
+ *
+ * The whole point of a preview is to show a preset applied to real components.
+ * A bare `<input>` carries none of the `cn-*` classes the style bundles target,
+ * so a form built from raw HTML renders as unstyled text — labels running into
+ * inputs, no borders, no button — and nothing about it explains why. Layout and
+ * text elements are fine; only controls with a component equivalent are caught.
+ */
+const RAW_CONTROL_REPLACEMENTS: Record<string, string> = {
+  input: "Input (or Checkbox, Switch, RadioGroup)",
+  button: "Button",
+  select: "Select or NativeSelect",
+  textarea: "Textarea",
+  label: "FieldLabel or Label",
+}
+
+export function findRawHtmlControls(code: string): RawHtmlControl[] {
+  const found = new Map<string, string>()
+
+  for (const match of code.matchAll(/<\s*([a-z][\w-]*)/g)) {
+    const element = match[1]!
+    const replacement = RAW_CONTROL_REPLACEMENTS[element]
+    if (replacement) {
+      found.set(element, replacement)
+    }
+  }
+
+  return [...found].map(([element, use]) => ({ element, use }))
+}

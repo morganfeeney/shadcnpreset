@@ -67,4 +67,23 @@ describe("inferPreviewLayout", () => {
       )
     ).toBe("gallery")
   })
+
+  it("keeps a form with several fields as a single component", () => {
+    // `Field` repeats four times, but inside a Card — the preview is still one
+    // component, and classing it as a gallery squeezed it into a column.
+    expect(
+      inferPreviewLayout(
+        `<PreviewFrame><Card className="w-[340px]"><CardHeader><CardTitle>Create an account</CardTitle></CardHeader><CardContent><FieldGroup><Field><FieldLabel>Name</FieldLabel><Input /></Field><Field><FieldLabel>Email</FieldLabel><Input /></Field><Field><FieldLabel>Password</FieldLabel><Input /></Field><Field><Checkbox /><FieldLabel>Terms</FieldLabel></Field></FieldGroup></CardContent><CardFooter><Button>Sign Up</Button></CardFooter></Card></PreviewFrame>`
+      )
+    ).toBe("single")
+  })
+
+  it("ignores a list nested inside one component", () => {
+    // Rows mapped inside a table are that component's internals.
+    expect(
+      inferPreviewLayout(
+        `<PreviewFrame><Card><CardContent><Table><TableBody>{rows.map(r => <TableRow key={r} />)}</TableBody></Table></CardContent></Card></PreviewFrame>`
+      )
+    ).toBe("single")
+  })
 })
