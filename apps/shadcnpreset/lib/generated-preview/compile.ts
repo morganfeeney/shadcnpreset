@@ -1,7 +1,10 @@
 import * as React from "react"
 import { transform } from "sucrase"
 
-import { prepareGeneratedPreviewSource } from "@/lib/generated-preview/prepare-source"
+import {
+  findUnknownComponents,
+  prepareGeneratedPreviewSource,
+} from "@/lib/generated-preview/prepare-source"
 
 export type CompileGeneratedPreviewResult =
   | {
@@ -11,6 +14,8 @@ export type CompileGeneratedPreviewResult =
   | {
       ok: false
       error: string
+      /** Component names the preview used that the scope does not provide. */
+      unknownComponents?: string[]
     }
 
 export function compileGeneratedPreview(
@@ -19,6 +24,20 @@ export function compileGeneratedPreview(
 ): CompileGeneratedPreviewResult {
   const prepared = prepareGeneratedPreviewSource(raw)
   if (!prepared.ok) return prepared
+
+  const unknownComponents = findUnknownComponents(
+    prepared.code,
+    Object.keys(scope)
+  )
+  if (unknownComponents.length) {
+    return {
+      ok: false,
+      error: `This preview uses ${unknownComponents.join(", ")}, which ${
+        unknownComponents.length === 1 ? "is" : "are"
+      } not available here.`,
+      unknownComponents,
+    }
+  }
 
   let transformed: string
   try {

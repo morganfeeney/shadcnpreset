@@ -149,7 +149,9 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - No network calls, timers against external services, storage APIs, or \`eval\`/\`Function\` — the preview runs sandboxed and such code is rejected.
 - Wrap the demo in \`<PreviewFrame>\` so it is centered on the canvas.
 - Use semantic tokens (\`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`border-border\`). Never hard-code hex colours.
-- Prefer real components over custom markup. Available: ${join(GENERATED_PREVIEW_COMPONENT_NAMES)}.
+- Prefer real components over custom markup.
+- These identifiers are in scope, and **nothing else is** — never invent a component or subcomponent name (there is no \`DrawerBody\`; a drawer is \`Drawer\` + \`DrawerTrigger\` + \`DrawerContent\` + \`DrawerHeader\` + \`DrawerTitle\` + \`DrawerFooter\`):
+${GENERATED_PREVIEW_COMPONENT_NAMES.join(", ")}.
 - For a date picker, prefer \`<DatePicker />\` or \`Calendar\` + \`Popover\`.
 - Component props follow shadcn conventions. Two that differ from common guesses:
   - \`<DatePicker date={date} onDateChange={setDate} placeholder="Pick a date" />\` (also \`defaultDate\` for uncontrolled use) — not \`value\`/\`onValueChange\`.
