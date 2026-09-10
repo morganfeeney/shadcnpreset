@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { prepareGeneratedPreviewSource } from "@/lib/generated-preview/prepare-source"
+import {
+  findUnknownComponents,
+  prepareGeneratedPreviewSource,
+} from "@/lib/generated-preview/prepare-source"
 
 describe("prepareGeneratedPreviewSource", () => {
   it("wraps bare JSX in Preview", () => {
@@ -54,5 +57,39 @@ function Preview() {
       ok: false,
       error: "Generated preview was empty.",
     })
+  })
+})
+
+describe("findUnknownComponents", () => {
+  const scope = ["Drawer", "DrawerContent", "DrawerHeader", "Button", "Card"]
+
+  it("names a subcomponent the scope does not bind", () => {
+    expect(
+      findUnknownComponents(
+        "<Drawer><DrawerContent><DrawerBody>hi</DrawerBody></DrawerContent></Drawer>",
+        scope
+      )
+    ).toEqual(["DrawerBody"])
+  })
+
+  it("passes when every component resolves", () => {
+    expect(
+      findUnknownComponents("<Card><Button>Go</Button></Card>", scope)
+    ).toEqual([])
+  })
+
+  it("ignores DOM elements and namespaced members", () => {
+    expect(
+      findUnknownComponents("<div><span /><Drawer.Trigger /></div>", scope)
+    ).toEqual([])
+  })
+
+  it("allows components the preview declares itself", () => {
+    expect(
+      findUnknownComponents(
+        "function Row() { return <Button /> }\nconst Preview = () => <Row />",
+        scope
+      )
+    ).toEqual([])
   })
 })

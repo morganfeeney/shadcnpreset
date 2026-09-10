@@ -16,6 +16,7 @@
     "refresh:community-snapshot": "tsx ./scripts/refresh-community-snapshot.ts",
     "sync:cn-ui": "tsx ./scripts/sync-cn-ui.ts",
     "generate:icon-allowlists": "tsx ./scripts/generate-icon-allowlists.ts",
+    "generate:preview-catalog": "tsx ./scripts/generate-preview-catalog.ts",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "next typegen && tsc --noEmit"
   },

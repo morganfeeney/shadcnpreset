@@ -104,3 +104,40 @@ export function prepareGeneratedPreviewSource(raw: string): {
 
   return { ok: true, code: code.trim() }
 }
+
+/**
+ * Component identifiers a preview references but the scope does not bind.
+ *
+ * Unknown names are free variables inside the compiled function, so without
+ * this they surface as a `ReferenceError` from deep inside React's render —
+ * `DrawerBody is not defined` — with no indication of what is actually
+ * available. Checking first turns that into an actionable message, and gives
+ * the caller the names to feed back to the model for a repair pass.
+ *
+ * Only JSX element names are checked. A bare identifier in an expression
+ * (`format(...)`) is still a render-time failure.
+ */
+export function findUnknownComponents(
+  code: string,
+  scopeNames: Iterable<string>
+): string[] {
+  const known = new Set(scopeNames)
+  const unknown = new Set<string>()
+
+  // `<Foo`, `<Foo.Bar` — capitalised only; lowercase tags are DOM elements.
+  for (const match of code.matchAll(/<\s*([A-Z][\w$]*)(?:\.[\w$]+)*/g)) {
+    const name = match[1]!
+    if (!known.has(name)) {
+      unknown.add(name)
+    }
+  }
+
+  // Locally declared components are fine — the preview may define helpers.
+  for (const match of code.matchAll(
+    /(?:function|const|let|class)\s+([A-Z][\w$]*)/g
+  )) {
+    unknown.delete(match[1]!)
+  }
+
+  return [...unknown].sort()
+}
