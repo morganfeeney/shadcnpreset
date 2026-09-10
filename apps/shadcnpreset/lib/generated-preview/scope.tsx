@@ -268,17 +268,34 @@ import { Toggle } from "@/components/cn-ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "@/components/cn-ui/toggle-group"
 import { cn } from "@/lib/utils"
 
+/**
+ * Canvas for a generated preview.
+ *
+ * Two layouts, because they want opposite things. A single component should sit
+ * in the middle of the canvas. A set of many small items — every button
+ * variant, a range of sizes — must wrap, and must start at the left: centred
+ * content that overflows spills off both edges at once and neither end can be
+ * reached, which is how a row of twelve buttons ends up clipped at both sides
+ * of a narrow chat card.
+ */
 function PreviewFrame({
   children,
+  layout = "single",
   className,
 }: {
   children: React.ReactNode
+  layout?: "single" | "gallery"
   className?: string
 }) {
   return (
     <div
       className={cn(
-        "flex min-h-svh items-center justify-center bg-background p-6 text-foreground",
+        "flex min-h-svh bg-background p-6 text-foreground",
+        layout === "gallery"
+          ? // Pushed onto the direct child too, since generated markup usually
+            // nests its own row in here rather than laying items out directly.
+            "flex-wrap content-center justify-start gap-3 [&>*]:flex-wrap [&>*]:content-center [&>*]:justify-start [&>*]:max-w-full"
+          : "items-center justify-center",
         className
       )}
     >
