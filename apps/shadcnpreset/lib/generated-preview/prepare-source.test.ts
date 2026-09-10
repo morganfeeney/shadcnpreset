@@ -132,3 +132,4 @@ describe("findInvalidVariantProps", () => {
     expect(findInvalidVariantProps('<Card size="md" />', variants)).toEqual([])
   })
 })
+
