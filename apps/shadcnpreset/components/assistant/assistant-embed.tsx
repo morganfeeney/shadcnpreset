@@ -77,6 +77,40 @@ export function AssistantEmbed({
   )
   const pendingPreview =
     pending && Boolean(lastUserText && looksLikePreviewRequest(lastUserText))
+
+  /**
+   * Restores the preview when landing on a `?view=generated&chat=…` link cold.
+   *
+   * Clicking Open seeds session storage before navigating, but the generated
+   * code lives only there — a shared or reloaded link arrives with nothing to
+   * render and falls back to the default view. The chat in the URL holds the
+   * preview, so once it hydrates the view can be honoured.
+   *
+   * Only when the URL actually asked for the generated view: opening an old
+   * chat any other way must not commandeer whatever is on screen.
+   */
+  const wantsGeneratedView = live?.view === "generated"
+  const hasStoredPreview = Boolean(live?.generatedPreview)
+  const setGeneratedPreview = live?.setGeneratedPreview
+  const linkedPreview = React.useMemo(() => {
+    if (!initialChatId || !wantsGeneratedView || hasStoredPreview) return null
+    return (
+      [...messages]
+        .reverse()
+        .find(
+          (message): message is Extract<typeof message, { kind: "preview" }> =>
+            message.role === "assistant" && message.kind === "preview"
+        )?.preview ?? null
+    )
+  }, [initialChatId, wantsGeneratedView, hasStoredPreview, messages])
+
+  React.useEffect(() => {
+    if (!linkedPreview || !setGeneratedPreview) return
+    setGeneratedPreview({
+      title: linkedPreview.title,
+      code: linkedPreview.code,
+    })
+  }, [linkedPreview, setGeneratedPreview])
   const openedPathRef = React.useRef(`/preset/${liveCode}`)
 
   React.useEffect(() => {
