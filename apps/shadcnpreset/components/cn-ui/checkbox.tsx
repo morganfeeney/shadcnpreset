@@ -1,22 +1,35 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/checkbox.tsx
+ */
 "use client"
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
-import { CheckIcon } from "lucide-react"
-
 import { cn } from "@/lib/utils"
+
+import { IconPlaceholder } from "@/components/icon-placeholder"
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
-      className={cn("cn-checkbox peer relative flex size-4 shrink-0", className)}
+      className={cn(
+        "cn-checkbox peer relative shrink-0 outline-none after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
       {...props}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
-        className="cn-checkbox-indicator grid place-content-center text-current transition-none [&>svg]:size-3.5"
+        className="cn-checkbox-indicator grid place-content-center text-current transition-none"
       >
-        <CheckIcon />
+        <IconPlaceholder
+          lucide="CheckIcon"
+          tabler="IconCheck"
+          hugeicons="Tick02Icon"
+          phosphor="CheckIcon"
+          remixicon="RiCheckLine"
+        />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )

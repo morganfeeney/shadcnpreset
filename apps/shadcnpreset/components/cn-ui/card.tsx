@@ -1,5 +1,8 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/card.tsx
+ */
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 
 function Card({
