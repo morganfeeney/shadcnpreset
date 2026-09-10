@@ -559,16 +559,24 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     setActiveChatId(chatId)
   }, [])
 
-  const startNewChat = React.useCallback(() => {
-    if (pending) {
-      return
-    }
-    setActiveChatId(null)
-    setMessages([])
-    resetComposer()
-    setError(null)
-    setLastTurn(null)
-  }, [pending, resetComposer])
+  /**
+   * Put the conversation where the URL says. The route is the source of truth,
+   * so this follows it unconditionally — a send in flight is a reason to block
+   * the navigation, never a reason to leave the chat behind the address bar.
+   */
+  const openChatFromRoute = React.useCallback(
+    (chatId: string | null) => {
+      setActiveChatId(chatId)
+      if (chatId) {
+        return
+      }
+      setMessages([])
+      resetComposer()
+      setError(null)
+      setLastTurn(null)
+    },
+    [resetComposer]
+  )
 
   return {
     activeChatId,
@@ -588,6 +596,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     setActiveChatId: selectChat,
     sendContent,
     onPromptSubmit,
-    startNewChat,
+    openChatFromRoute,
   }
 }
