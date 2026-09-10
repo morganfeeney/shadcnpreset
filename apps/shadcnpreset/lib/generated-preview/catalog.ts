@@ -262,6 +262,9 @@ export const GENERATED_PREVIEW_COMPONENT_VARIANTS: Record<
   string,
   Record<string, readonly string[]>
 > = {
+  Alert: {
+    variant: ["default", "destructive"],
+  },
   Attachment: {
     size: ["default", "sm", "xs"],
     orientation: ["horizontal", "vertical"],
@@ -288,6 +291,9 @@ export const GENERATED_PREVIEW_COMPONENT_VARIANTS: Record<
   },
   EmptyMedia: {
     variant: ["default", "icon"],
+  },
+  Field: {
+    orientation: ["vertical", "horizontal", "responsive"],
   },
   InputGroupAddon: {
     align: ["inline-start", "inline-end", "block-start", "block-end"],

@@ -53,6 +53,63 @@ function readBlock(source: string, from: number): string {
   return ""
 }
 
+/**
+ * Yields `key: {...}` pairs at the top level of an object body.
+ *
+ * Brace depth rather than indentation: components write cva either as
+ * `cva(\n  "base",\n  {` or `cva("base", {` on one line, which indent their
+ * keys differently. Matching a fixed indent silently missed every component
+ * using the second form — including Field, whose `orientation` variant is what
+ * puts a checkbox beside its label instead of stretched above it.
+ */
+function* topLevelKeys(body: string): Generator<[string, string]> {
+  let depth = 0
+  let quote: string | null = null
+  const key = /([\w-]+)\s*:/g
+  for (let i = 0; i < body.length; i += 1) {
+    const char = body[i]!
+
+    // Class strings are full of `variant:` lookalikes — `@md/field-group:flex-row`
+    // parsed as a variant group until this skipped them.
+    if (quote) {
+      if (char === quote && body[i - 1] !== "\\") quote = null
+      continue
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      // A quoted key is still a key — `"icon-lg": "..."` defines a variant.
+      const end = body.indexOf(char, i + 1)
+      const after = end === -1 ? "" : body.slice(end + 1)
+      const colon = after.search(/\S/)
+      if (depth === 0 && end !== -1 && after[colon] === ":") {
+        const name = body.slice(i + 1, end)
+        const rest = after.slice(colon + 1)
+        const brace = rest.search(/\S/)
+        yield [name, rest[brace] === "{" ? readBlock(rest, brace) : ""]
+        i = end + colon + 1
+        continue
+      }
+      quote = char
+      continue
+    }
+
+    if (char === "{" || char === "[") depth += 1
+    else if (char === "}" || char === "]") depth -= 1
+    else if (depth === 0) {
+      key.lastIndex = i
+      const match = key.exec(body)
+      if (match && match.index === i) {
+        const rest = body.slice(key.lastIndex)
+        const brace = rest.search(/\S/)
+        yield [
+          match[1]!,
+          rest[brace] === "{" ? readBlock(rest, brace) : "",
+        ]
+        i = key.lastIndex - 1
+      }
+    }
+  }
+}
+
 /** `buttonVariants` -> `Button`, `sidebarMenuButtonVariants` -> `SidebarMenuButton`. */
 function componentNameFor(cvaName: string): string {
   const base = cvaName.replace(/Variants$/, "")
@@ -81,12 +138,9 @@ export function extractVariants(
 
       const variantsBlock = readBlock(config, variantsIndex)
       const groups: Record<string, string[]> = {}
-      for (const group of variantsBlock.matchAll(/^\s{6}([\w-]+):\s*\{$/gm)) {
-        const values = readBlock(variantsBlock, group.index!)
-          .split("\n")
-          .map((line) => /^\s+"?([\w-]+)"?:/.exec(line)?.[1])
-          .filter((v): v is string => Boolean(v))
-        if (values.length) groups[group[1]!] = values
+      for (const [name, block] of topLevelKeys(variantsBlock)) {
+        const values = [...topLevelKeys(block)].map(([value]) => value)
+        if (values.length) groups[name] = values
       }
       if (Object.keys(groups).length) out[component] = groups
     }
