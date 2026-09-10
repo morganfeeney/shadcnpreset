@@ -15,6 +15,7 @@ import {
   parsePresetPreviewPageName,
   parsePresetSidebarTab,
   presetBrowsePath,
+  PRESET_CHAT_PARAM,
   type PresetPreviewPageName,
   type PresetSidebarTab,
 } from "@/lib/preset-preview"
@@ -26,6 +27,12 @@ type PresetPageLiveContextValue = {
   view: PresetPreviewPageName
   tab: PresetSidebarTab
   generatedPreview: GeneratedPreviewPayload | null
+  /**
+   * A generated view was linked to, and its preview is still being recovered
+   * from the chat in the URL. The tab and the pane hold their shape for this
+   * window rather than falling back to the default view and snapping back.
+   */
+  generatedPreviewPending: boolean
   onPresetFromIframe: (preset: string) => void
   selectLivePreset: (preset: string) => void
   setLiveView: (view: PresetPreviewPageName) => void
@@ -40,6 +47,9 @@ type PresetPageLiveContextValue = {
     preview: GeneratedPreviewPayload & { presetCode?: string }
   ) => void
 }
+
+/** How long to wait for a linked chat before giving up on its preview. */
+const GENERATED_PREVIEW_RESTORE_TIMEOUT_MS = 8000
 
 const PresetPageLiveContext =
   React.createContext<PresetPageLiveContextValue | null>(null)
@@ -67,6 +77,24 @@ export function PresetPageLiveProvider({
     getGeneratedPreviewSnapshot,
     getGeneratedPreviewServerSnapshot
   )
+
+  // Bounded: a chat that never arrives — signed out, deleted, a bad id — must
+  // not leave the pane spinning. On timeout the view falls back as before.
+  const wantsRestore =
+    view === "generated" && Boolean(searchParams.get(PRESET_CHAT_PARAM))
+  const [restoreTimedOut, setRestoreTimedOut] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!wantsRestore) return
+    const id = window.setTimeout(
+      () => setRestoreTimedOut(true),
+      GENERATED_PREVIEW_RESTORE_TIMEOUT_MS
+    )
+    return () => window.clearTimeout(id)
+  }, [wantsRestore])
+
+  const generatedPreviewPending =
+    wantsRestore && !generatedPreview && !restoreTimedOut
 
   const canonicalPresetCode = React.useMemo(
     () => normalizeCanonical(livePresetCode),
@@ -150,6 +178,7 @@ export function PresetPageLiveProvider({
       view,
       tab,
       generatedPreview,
+      generatedPreviewPending,
       onPresetFromIframe,
       selectLivePreset,
       setLiveView,
@@ -163,6 +192,7 @@ export function PresetPageLiveProvider({
       view,
       tab,
       generatedPreview,
+      generatedPreviewPending,
       onPresetFromIframe,
       selectLivePreset,
       setLiveView,
