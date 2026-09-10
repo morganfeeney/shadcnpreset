@@ -7,7 +7,6 @@ import {
   AssistantConversation,
   AssistantPendingCompact,
 } from "@/components/assistant/assistant-conversation"
-import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-card"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import {
   useAssistantChat,
@@ -48,7 +47,10 @@ export function AssistantEmbed({
   const setGeneratedPreview = live?.setGeneratedPreview
   const setLiveView = live?.setLiveView
 
-  /** Moves a generated preview into the main preview area. */
+  /**
+   * Previews are shown in the main preview pane only — the sidebar is too
+   * narrow to render one usefully, and the pane is already right there.
+   */
   const showInMainPreview = React.useCallback(
     (preview: AssistantPreviewMessage["preview"]) => {
       if (!setGeneratedPreview || !setLiveView) return
@@ -110,17 +112,6 @@ export function AssistantEmbed({
                 }
               />
             }
-            renderPreview={(message) => (
-              <AssistantPreviewCard
-                preview={message.preview}
-                fallbackPresetCode={liveCode}
-                onOpenInMainPreview={
-                  setGeneratedPreview && setLiveView
-                    ? () => showInMainPreview(message.preview)
-                    : undefined
-                }
-              />
-            )}
             renderPresets={(message) => (
               <PresetRelatedList
                 items={message.presets.map((preset) => ({

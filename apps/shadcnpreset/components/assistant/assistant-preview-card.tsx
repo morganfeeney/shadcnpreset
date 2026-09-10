@@ -1,12 +1,14 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { MaximizeIcon } from "lucide-react"
 
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import type { AssistantPreviewMessage } from "@/components/assistant/use-assistant-chat"
+import { setStoredGeneratedPreview } from "@/lib/generated-preview/store"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import { cn } from "@/lib/utils"
 
@@ -14,8 +16,12 @@ type AssistantPreviewCardProps = {
   preview: AssistantPreviewMessage["preview"]
   /** Preset to render onto when the preview itself does not carry one. */
   fallbackPresetCode?: string
-  /** Shown when the surface can move this preview into the main preview area. */
-  onOpenInMainPreview?: () => void
+  /**
+   * Preset page to open this preview in. The standalone assistant has no main
+   * preview pane or preset picker of its own, so "Open" hands the preview to a
+   * surface that has both.
+   */
+  openHref?: string
   className?: string
 }
 
@@ -26,7 +32,7 @@ type AssistantPreviewCardProps = {
 export function AssistantPreviewCard({
   preview,
   fallbackPresetCode,
-  onOpenInMainPreview,
+  openHref,
   className,
 }: AssistantPreviewCardProps) {
   const presetCode = preview.presetCode ?? fallbackPresetCode
@@ -50,13 +56,19 @@ export function AssistantPreviewCard({
     <figure className={cn("mt-3 overflow-hidden rounded-lg border", className)}>
       <figcaption className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-1.5">
         <span className="truncate text-xs font-medium">{preview.title}</span>
-        {onOpenInMainPreview ? (
+        {openHref ? (
           <Button
-            type="button"
+            render={
+              <Link
+                href={openHref}
+                // The target page reads the preview from session storage, so
+                // seed it here — this card may not be the most recent preview.
+                onClick={() => setStoredGeneratedPreview(payload)}
+              />
+            }
             variant="ghost"
             size="xs"
             className="shrink-0 text-xs"
-            onClick={onOpenInMainPreview}
           >
             <MaximizeIcon />
             Open
