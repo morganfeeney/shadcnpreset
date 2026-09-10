@@ -1,17 +1,32 @@
+import type { AssistantGeneratedPreview } from "@/lib/search/assistant/schema"
+
 export type AssistantRequestMessage = {
   role: "user" | "assistant"
   content: string
-  kind?: "text" | "presets"
+  kind?: "text" | "presets" | "preview"
   presets?: Array<{ code: string; caption: string; description: string }>
+  preview?: AssistantGeneratedPreview
   followUpQuestions?: string[]
 }
 
 export type PersistedAssistantMessage = {
   role: "user" | "assistant"
-  kind: "text" | "presets"
+  kind: "text" | "presets" | "preview"
   content: string
   presets?: Array<{ code: string; caption: string; description: string }>
+  preview?: AssistantGeneratedPreview
   followUpQuestions?: string[]
+}
+
+function isPreviewPayload(value: unknown): value is AssistantGeneratedPreview {
+  if (!value || typeof value !== "object") return false
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.title === "string" &&
+    candidate.title.trim().length > 0 &&
+    typeof candidate.code === "string" &&
+    candidate.code.trim().length > 0
+  )
 }
 
 export function toPersistedAssistantMessage(
@@ -22,6 +37,20 @@ export function toPersistedAssistantMessage(
       role: "user",
       kind: "text",
       content: message.content,
+    }
+  }
+
+  if (message.kind === "preview" && isPreviewPayload(message.preview)) {
+    const presetCode = message.preview.presetCode?.trim()
+    return {
+      role: "assistant",
+      kind: "preview",
+      content: message.content,
+      preview: {
+        title: message.preview.title.trim().slice(0, 60),
+        code: message.preview.code,
+        ...(presetCode ? { presetCode } : {}),
+      },
     }
   }
 

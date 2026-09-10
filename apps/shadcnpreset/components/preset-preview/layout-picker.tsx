@@ -24,6 +24,7 @@ type PresetPreviewLayoutPickerProps = {
   value: PresetPreviewPageName
   onValueChange: (page: PresetPreviewPageName) => void
   presetCode: string
+  adHocView?: { page: "generated"; label: string }
   className?: string
 }
 
@@ -38,6 +39,7 @@ export function PresetPreviewLayoutPicker({
   value,
   onValueChange,
   presetCode,
+  adHocView,
   className,
 }: PresetPreviewLayoutPickerProps) {
   const pathname = usePathname()
@@ -74,6 +76,11 @@ export function PresetPreviewLayoutPicker({
         <TabsTrigger value="login-04" className={cn(pillClassName, "hidden sm:flex")}>
           Login 04
         </TabsTrigger>
+        {adHocView ? (
+          <TabsTrigger value={adHocView.page} className={pillClassName}>
+            {adHocView.label}
+          </TabsTrigger>
+        ) : null}
 
         <DropdownMenu>
           <Tooltip>

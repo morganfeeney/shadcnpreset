@@ -7,14 +7,28 @@ import {
   PRESET_STYLES,
 } from "shadcn/preset"
 
+import { GENERATED_PREVIEW_COMPONENT_NAMES } from "@/lib/generated-preview/catalog"
 import { PRESET_FILTER_OPTIONS } from "@/lib/preset-catalog"
 
 const join = (xs: readonly string[]) => xs.slice(0, 80).join(", ")
 
+type AssistantSystemPromptOptions = {
+  /**
+   * Whether the caller can actually render a generated component preview. Only
+   * true when a live preset is on screen; otherwise the preview phase is hidden
+   * from the model so it can never promise a preview nothing will display.
+   */
+  canPreview?: boolean
+}
+
 /**
- * Assistant: gathering (quick replies) or ready (1–4 full PresetConfig tuples + captions).
+ * Assistant: gathering (quick replies), ready (1–4 full PresetConfig tuples +
+ * captions), or — when `canPreview` — preview (JSX rendered onto the live preset).
  */
-export function buildAssistantSystemPrompt(): string {
+export function buildAssistantSystemPrompt(
+  options?: AssistantSystemPromptOptions
+): string {
+  const canPreview = options?.canPreview ?? false
   const styles = PRESET_STYLES.join(", ")
 
   return `You help users define **shadcn theme presets**. Each preset is a **full tuple** of catalog fields (style, neutrals, accent themes, chart colours, fonts, icons, radius, menu style/colour). The app encodes that tuple into a preset code — there is no separate “search string” step.
@@ -48,7 +62,7 @@ export function buildAssistantSystemPrompt(): string {
   - Avoid low-value micro-questions. Ask only what materially changes the final facet tuple.
   - Once these anchors are clear, infer the remaining fields and move to ready.
 
-You work in one of two phases (set **phase** to "gathering" or "ready"):
+You work in one of ${canPreview ? 'three phases (set **phase** to "gathering", "ready", or "preview")' : 'two phases (set **phase** to "gathering" or "ready")'}:
 
 ## Phase: gathering
 Rare. Only when you cannot responsibly choose facets without one clarifying choice.
@@ -122,6 +136,40 @@ The server **deduplicates by encoded preset code**. If two rows produce the **sa
 Use facet names that exist in this product. Prefer “menu style/colour” over invented labels.
 
 Never invent values outside the allowed lists. Never output raw preset codes — output **facet fields**; the server encodes them.
+
+${
+    canPreview
+      ? `## Phase: preview
+Use when the user asks to **show / display / render / preview** a shadcn **component, block, form, or layout** with the **currently applied preset** (e.g. “show a date picker with this preset applied”).
+- Do **not** invent new presets. The live preview already has the preset theme.
+- Set **presetVariants** to [] and **followUpQuestions** to [].
+- **previewTitle**: 2–4 word tab label (“Date picker”, “Login form”).
+- **previewCode**: a React function named \`Preview\`. **No imports.** Components, lucide icons (\`CalendarIcon\`), \`cn\`, and date-fns helpers (\`format\`, \`addDays\`) are already in scope. Hooks: \`useState\`, \`useEffect\`, \`useMemo\`, \`useRef\`, \`useId\`, \`useCallback\`.
+- Do not declare a variable that shadows one of the in-scope component names.
+- No network calls, timers against external services, storage APIs, or \`eval\`/\`Function\` — the preview runs sandboxed and such code is rejected.
+- Wrap the demo in \`<PreviewFrame>\` so it is centered on the canvas.
+- Use semantic tokens (\`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`border-border\`). Never hard-code hex colours.
+- Prefer real components over custom markup. Available: ${join(GENERATED_PREVIEW_COMPONENT_NAMES)}.
+- For a date picker, prefer \`<DatePicker />\` or \`Calendar\` + \`Popover\`.
+- Component props follow shadcn conventions. Two that differ from common guesses:
+  - \`<DatePicker date={date} onDateChange={setDate} placeholder="Pick a date" />\` (also \`defaultDate\` for uncontrolled use) — not \`value\`/\`onValueChange\`.
+  - \`<Calendar mode="single" selected={date} onSelect={setDate} />\`.
+- **assistantMessage**: one or two sentences confirming what is now shown.
+
+Example \`previewCode\`:
+function Preview() {
+  return (
+    <PreviewFrame>
+      <DatePicker />
+    </PreviewFrame>
+  )
+}
+
+If the user wants new preset options rather than a component demo, use gathering or ready instead.
+For gathering and ready, set **previewTitle** and **previewCode** to "".`
+      : `## Component demos
+There is no live preview surface in this conversation, so you cannot render component demos here. Never use phase "preview". If the user asks to see a component with a preset applied, tell them to open a preset page and ask there. Always set **previewTitle** and **previewCode** to "".`
+  }
 
 Fill every required field for the chosen **phase** as described above.`
 }

@@ -5,6 +5,7 @@ import { SquarePen } from "lucide-react"
 
 import { AssistantChatProvider } from "@/components/assistant/assistant-chat-context"
 import { AssistantConversation } from "@/components/assistant/assistant-conversation"
+import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-card"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
@@ -97,6 +98,9 @@ export function AssistantChat() {
                   <AssistantConversation
                     messages={messages}
                     pending={pending}
+                    renderPreview={(m) => (
+                      <AssistantPreviewCard preview={m.preview} />
+                    )}
                     renderPresets={(m, i) => (
                       <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
                         {m.presets.map((p, presetIndex) => (

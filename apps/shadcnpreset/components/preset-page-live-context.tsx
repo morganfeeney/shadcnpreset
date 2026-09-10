@@ -4,6 +4,13 @@ import * as React from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { decodePreset, encodePreset } from "shadcn/preset"
 
+import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
+import {
+  getGeneratedPreviewServerSnapshot,
+  getGeneratedPreviewSnapshot,
+  setStoredGeneratedPreview,
+  subscribeToGeneratedPreview,
+} from "@/lib/generated-preview/store"
 import {
   parsePresetPreviewPageName,
   parsePresetSidebarTab,
@@ -18,10 +25,12 @@ type PresetPageLiveContextValue = {
   canonicalPresetCode: string
   view: PresetPreviewPageName
   tab: PresetSidebarTab
+  generatedPreview: GeneratedPreviewPayload | null
   onPresetFromIframe: (preset: string) => void
   selectLivePreset: (preset: string) => void
   setLiveView: (view: PresetPreviewPageName) => void
   setLiveTab: (tab: PresetSidebarTab) => void
+  setGeneratedPreview: (preview: GeneratedPreviewPayload | null) => void
 }
 
 const PresetPageLiveContext =
@@ -43,6 +52,13 @@ export function PresetPageLiveProvider({
   const livePresetCode = params.code ?? ""
   const view = parsePresetPreviewPageName(searchParams.get("view"))
   const tab = parsePresetSidebarTab(searchParams.get("tab"))
+  // Session-scoped and client-only: the server snapshot is null so hydration
+  // matches, then React swaps in any preview stored earlier this session.
+  const generatedPreview = React.useSyncExternalStore(
+    subscribeToGeneratedPreview,
+    getGeneratedPreviewSnapshot,
+    getGeneratedPreviewServerSnapshot
+  )
 
   const canonicalPresetCode = React.useMemo(
     () => normalizeCanonical(livePresetCode),
@@ -101,26 +117,37 @@ export function PresetPageLiveProvider({
     }
   }, [livePresetCode])
 
+  const setGeneratedPreview = React.useCallback(
+    (preview: GeneratedPreviewPayload | null) => {
+      setStoredGeneratedPreview(preview)
+    },
+    []
+  )
+
   const value = React.useMemo(
     () => ({
       livePresetCode,
       canonicalPresetCode,
       view,
       tab,
+      generatedPreview,
       onPresetFromIframe,
       selectLivePreset,
       setLiveView,
       setLiveTab,
+      setGeneratedPreview,
     }),
     [
       livePresetCode,
       canonicalPresetCode,
       view,
       tab,
+      generatedPreview,
       onPresetFromIframe,
       selectLivePreset,
       setLiveView,
       setLiveTab,
+      setGeneratedPreview,
     ]
   )
 
