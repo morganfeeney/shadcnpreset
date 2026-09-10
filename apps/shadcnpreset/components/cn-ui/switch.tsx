@@ -1,7 +1,10 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/switch.tsx
+ */
 "use client"
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
-
 import { cn } from "@/lib/utils"
 
 function Switch({

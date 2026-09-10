@@ -1,8 +1,11 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/toggle.tsx
+ */
 "use client"
 
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const toggleVariants = cva(
