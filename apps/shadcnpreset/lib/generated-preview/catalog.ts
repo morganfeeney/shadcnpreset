@@ -254,3 +254,66 @@ export const GENERATED_PREVIEW_COMPONENT_NAMES = [
   "parseISO",
   "startOfDay",
 ] as const
+
+// cva variant enums. An unrecognised value matches no branch, so the class
+// is silently omitted and the component renders at its default — the model
+// needs the real values, and generated previews are checked against them.
+export const GENERATED_PREVIEW_COMPONENT_VARIANTS: Record<
+  string,
+  Record<string, readonly string[]>
+> = {
+  Attachment: {
+    size: ["default", "sm", "xs"],
+    orientation: ["horizontal", "vertical"],
+  },
+  AttachmentMedia: {
+    variant: ["icon", "image"],
+  },
+  Badge: {
+    variant: ["default", "secondary", "destructive", "outline", "ghost", "link"],
+  },
+  Bubble: {
+    variant: ["default", "secondary", "muted", "tinted", "outline", "ghost", "destructive"],
+  },
+  BubbleReactions: {
+    side: ["top", "bottom"],
+    align: ["start", "end"],
+  },
+  Button: {
+    variant: ["default", "outline", "secondary", "ghost", "destructive", "link"],
+    size: ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"],
+  },
+  ButtonGroup: {
+    orientation: ["horizontal", "vertical"],
+  },
+  EmptyMedia: {
+    variant: ["default", "icon"],
+  },
+  InputGroupAddon: {
+    align: ["inline-start", "inline-end", "block-start", "block-end"],
+  },
+  InputGroupButton: {
+    size: ["xs", "sm", "icon-xs", "icon-sm"],
+  },
+  Item: {
+    variant: ["default", "outline", "muted"],
+    size: ["default", "sm", "xs"],
+  },
+  ItemMedia: {
+    variant: ["default", "icon", "image"],
+  },
+  Marker: {
+    variant: ["default", "separator", "border"],
+  },
+  SidebarMenuButton: {
+    variant: ["default", "outline"],
+    size: ["default", "sm", "lg"],
+  },
+  TabsList: {
+    variant: ["default", "line"],
+  },
+  Toggle: {
+    variant: ["default", "outline"],
+    size: ["default", "sm", "lg"],
+  },
+}

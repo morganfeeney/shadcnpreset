@@ -1,7 +1,11 @@
 import * as React from "react"
+
+import type { InvalidVariantProp } from "@/lib/generated-preview/prepare-source"
 import { transform } from "sucrase"
 
+import { GENERATED_PREVIEW_COMPONENT_VARIANTS } from "@/lib/generated-preview/catalog"
 import {
+  findInvalidVariantProps,
   findUnknownComponents,
   prepareGeneratedPreviewSource,
 } from "@/lib/generated-preview/prepare-source"
@@ -16,6 +20,8 @@ export type CompileGeneratedPreviewResult =
       error: string
       /** Component names the preview used that the scope does not provide. */
       unknownComponents?: string[]
+      /** Variant props set to a value the component does not define. */
+      invalidProps?: InvalidVariantProp[]
     }
 
 export function compileGeneratedPreview(
@@ -36,6 +42,24 @@ export function compileGeneratedPreview(
         unknownComponents.length === 1 ? "is" : "are"
       } not available here.`,
       unknownComponents,
+    }
+  }
+
+  const invalidProps = findInvalidVariantProps(
+    prepared.code,
+    GENERATED_PREVIEW_COMPONENT_VARIANTS
+  )
+  if (invalidProps.length) {
+    const detail = invalidProps
+      .map(
+        ({ component, prop, value, allowed }) =>
+          `${component} ${prop}="${value}" (use ${allowed.join(", ")})`
+      )
+      .join("; ")
+    return {
+      ok: false,
+      error: `This preview sets a variant that does not exist: ${detail}.`,
+      invalidProps,
     }
   }
 
