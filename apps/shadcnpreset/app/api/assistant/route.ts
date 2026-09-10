@@ -69,16 +69,18 @@ function buildLivePresetContext(
   livePresetCode: string | null,
   namedPresetCode: string | null
 ): string {
-  if (!livePresetCode) return ""
-  const named = namedPresetCode
-    ? [
-        `They named preset ${namedPresetCode} in their message, and the preview will use it.`,
-        "Do not ask which preset to use — it is already resolved.",
-      ]
+  if (!livePresetCode && !namedPresetCode) return ""
+  const lines = livePresetCode
+    ? [`The user is currently viewing preset ${livePresetCode} in the main preview.`]
     : []
+  if (namedPresetCode) {
+    lines.push(
+      `They named preset ${namedPresetCode} in their message, and the preview will use it.`,
+      "Do not ask which preset to use — it is already resolved."
+    )
+  }
   return [
-    `The user is currently viewing preset ${livePresetCode} in the main preview.`,
-    ...named,
+    ...lines,
     'If they ask to show, display, or render a component/block/layout with this preset, use phase "preview".',
     "Do not invent a new preset for show/display requests; apply generated UI onto the current live preset.",
   ].join("\n")
@@ -274,8 +276,6 @@ export async function POST(request: Request) {
     .map((code) => resolvePresetFromCode(code))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
   const previousPresetContext = buildPreviousPresetContext(previousPresets)
-  // Only offer the preview phase when the caller has a real preset on screen to
-  // render onto — otherwise the model can promise a preview nothing can display.
   const livePreset = parsed.data.livePresetCode
     ? resolvePresetFromCode(parsed.data.livePresetCode)
     : null
@@ -287,11 +287,15 @@ export async function POST(request: Request) {
   const namedPresetCode = lastUserMessage
     ? extractNamedPresetCode(lastUserMessage.content)
     : null
+  // Any preset will do — naming one is enough to render a preview, so
+  // "show buttons with preset b0" works from the standalone assistant too.
+  // Without one there is nothing to render onto, and the phase stays hidden.
+  const previewPresetCode = namedPresetCode ?? livePresetCode
   const livePresetContext = buildLivePresetContext(
     livePresetCode,
     namedPresetCode
   )
-  const canPreview = Boolean(livePresetCode)
+  const canPreview = Boolean(previewPresetCode)
 
   const chatMessages = parsed.data.messages.filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
@@ -354,13 +358,13 @@ export async function POST(request: Request) {
     }
 
     if (normalized.phase === "preview") {
-      if (!livePresetCode) {
-        // The preview phase is hidden from the prompt without a live preset; if
-        // the model reaches for it anyway there is nowhere to render the result.
+      if (!previewPresetCode) {
+        // The preview phase is hidden from the prompt without a preset; if the
+        // model reaches for it anyway there is nowhere to render the result.
         return NextResponse.json(
           {
             error:
-              "Component previews are only available on a preset page. Try again from a preset preview.",
+              "Component previews need a preset. Open one, or name it in your message (e.g. \"with preset b0\").",
             code: "preview_unavailable",
           },
           { status: 422 }
@@ -372,7 +376,7 @@ export async function POST(request: Request) {
         assistantMessage: normalized.assistantMessage,
         preview: {
           ...normalized.preview,
-          presetCode: namedPresetCode ?? livePresetCode,
+          presetCode: previewPresetCode,
         },
       }
       const persistedMessages = [

@@ -79,7 +79,11 @@ You work in one of ${canPreview ? 'three phases (set **phase** to "gathering", "
 
 ## Phase: gathering
 Rare. Only when you cannot responsibly choose facets without one clarifying choice.
-- **Never use gathering for a show/display/render request.** "Show me a drawer", "show a set of buttons in every variant and size" — these ask to see an existing component, not to design a preset. The preset already fixes the style, so there is nothing to clarify. Go straight to preview.
+${
+    canPreview
+      ? `- **Never use gathering for a show/display/render request.** "Show me a drawer", "show a set of buttons in every variant and size" — these ask to see an existing component, not to design a preset. The preset already fixes the style, so there is nothing to clarify. Go straight to preview.`
+      : ""
+  }
 - Write a short, friendly **assistantMessage**.
 - In the message, explain the uncertainty briefly and propose concrete options (e.g. "By professional, do you mean calm conservative or bold modern?").
 - Do not ask for light vs dark unless the user explicitly requests a specific chrome mode.
@@ -189,7 +193,9 @@ function Preview() {
 If the user wants new preset options rather than a component demo, use gathering or ready instead.
 For gathering and ready, set **previewTitle** and **previewCode** to "".`
       : `## Component demos
-There is no live preview surface in this conversation, so you cannot render component demos here. Never use phase "preview". If the user asks to see a component with a preset applied, tell them to open a preset page and ask there. Always set **previewTitle** and **previewCode** to "".`
+No preset is in play in this conversation, so there is nothing to render a component onto. Never use phase "preview", and always set **previewTitle** and **previewCode** to "".
+
+If the user asks to see a component, do **not** ask about style — answer in phase "gathering" with a single quick reply that gets you a preset to render on. Tell them they can name one directly (e.g. "show a date picker with preset b0") or open a preset page and ask there.`
   }
 
 Fill every required field for the chosen **phase** as described above.`
