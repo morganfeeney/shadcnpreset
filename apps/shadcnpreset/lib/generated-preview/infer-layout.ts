@@ -5,7 +5,13 @@
  * a set of twenty buttons cannot share a container without one of them looking
  * wrong.
  */
-export const PREVIEW_LAYOUTS = ["single", "gallery", "page", "stack"] as const
+export const PREVIEW_LAYOUTS = [
+  "single",
+  "form",
+  "gallery",
+  "page",
+  "stack",
+] as const
 
 export type PreviewLayout = (typeof PREVIEW_LAYOUTS)[number]
 
@@ -14,6 +20,17 @@ const PAGE_COMPONENTS = /<\s*(SidebarProvider|Sidebar|SidebarInset)\b/
 
 /** Root sized to the viewport is also a whole screen. */
 const PAGE_SIZING = /className="[^"]*\b(min-h-screen|h-screen|min-h-svh|h-svh)\b/
+
+/**
+ * Components that mean the preview is a form.
+ *
+ * A form's inputs are full-width, so the card around them has no intrinsic
+ * width of its own. As a plain flex item it collapses to its minimum content
+ * width and truncates the fields, which is why a form needs its own width rule
+ * rather than the centring used for a self-sizing component.
+ */
+const FORM_COMPONENTS =
+  /<\s*(Field|FieldGroup|FieldLabel|FieldSet|Input|Textarea|InputGroup|NativeSelect)\b/
 
 /** How many repeated siblings before a set reads as a gallery rather than a row. */
 const GALLERY_THRESHOLD = 4
@@ -123,6 +140,10 @@ export function inferPreviewLayout(code: string): PreviewLayout {
 
   if (/\bflex-col\b/.test(body) && repeated >= 2) {
     return "stack"
+  }
+
+  if (FORM_COMPONENTS.test(body)) {
+    return "form"
   }
 
   return "single"

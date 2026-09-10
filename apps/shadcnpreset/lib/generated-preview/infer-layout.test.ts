@@ -68,12 +68,20 @@ describe("inferPreviewLayout", () => {
     ).toBe("gallery")
   })
 
-  it("keeps a form with several fields as a single component", () => {
-    // `Field` repeats four times, but inside a Card — the preview is still one
-    // component, and classing it as a gallery squeezed it into a column.
+  it("classes a card of fields as a form", () => {
+    // Full-width inputs leave the card with no intrinsic width, so it needs the
+    // form column rather than plain centring, which truncated the fields.
     expect(
       inferPreviewLayout(
         `<PreviewFrame><Card className="w-[340px]"><CardHeader><CardTitle>Create an account</CardTitle></CardHeader><CardContent><FieldGroup><Field><FieldLabel>Name</FieldLabel><Input /></Field><Field><FieldLabel>Email</FieldLabel><Input /></Field><Field><FieldLabel>Password</FieldLabel><Input /></Field><Field><Checkbox /><FieldLabel>Terms</FieldLabel></Field></FieldGroup></CardContent><CardFooter><Button>Sign Up</Button></CardFooter></Card></PreviewFrame>`
+      )
+    ).toBe("form")
+  })
+
+  it("keeps a self-sizing component as single", () => {
+    expect(
+      inferPreviewLayout(
+        `<PreviewFrame><Card><CardHeader><CardTitle>Total</CardTitle></CardHeader><CardContent><Badge>Live</Badge></CardContent></Card></PreviewFrame>`
       )
     ).toBe("single")
   })

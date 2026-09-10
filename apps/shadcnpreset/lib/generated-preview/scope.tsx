@@ -294,8 +294,12 @@ export function PreviewLayoutProvider({
 
 /** Markup per layout. These want different things, so they get different rules. */
 const LAYOUT_CLASSES: Record<PreviewLayout, string> = {
-  // One component, centred in the canvas.
+  // One self-sizing component, centred in the canvas.
   single: "flex min-h-svh items-center justify-center p-6",
+  // A form. Its fields are full-width, so the card around them has no width of
+  // its own and collapses to minimum content width as a plain flex item —
+  // truncating the inputs. Give it a comfortable column instead.
+  form: "flex min-h-svh items-center justify-center p-6 [&>*]:w-full [&>*]:max-w-sm",
   // Many items of a kind. Wraps into rows and reads from the left: centred
   // content that overflows spills off both edges at once and neither end can
   // be reached. `*` covers the row the generated markup nests inside.
