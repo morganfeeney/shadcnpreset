@@ -48,9 +48,8 @@ export function AssistantChat({
     onPromptSubmit,
     pending,
     requiresAuth,
+    openChatFromRoute,
     sendContent,
-    setActiveChatId,
-    startNewChat,
   } = chat
 
   React.useEffect(() => {
@@ -64,11 +63,7 @@ export function AssistantChat({
   const [syncedChatId, setSyncedChatId] = React.useState(routeChatId)
   if (routeChatId !== syncedChatId) {
     setSyncedChatId(routeChatId)
-    if (routeChatId) {
-      setActiveChatId(routeChatId)
-    } else {
-      startNewChat()
-    }
+    openChatFromRoute(routeChatId)
   }
 
   // The other direction, for a chat id that appears without anyone navigating:
@@ -87,8 +82,8 @@ export function AssistantChat({
   React.useEffect(() => {
     if (!chatLoadError) return
     toast.error(chatLoadError, { id: "assistant-chat-load" })
-    startNewChat()
-  }, [chatLoadError, startNewChat])
+    openChatFromRoute(null)
+  }, [chatLoadError, openChatFromRoute])
 
   // Opening a chat is somewhere the user can come back to, so it pushes.
   function openChat(chatId: string) {
@@ -103,7 +98,7 @@ export function AssistantChat({
 
   return (
     <AssistantChatProvider
-      value={{ ...chat, setActiveChatId: openChat, startNewChat: openNewChat }}
+      value={{ ...chat, setActiveChatId: openChat }}
     >
       <SidebarProvider className="min-h-0 flex-1">
         <Sidebar
