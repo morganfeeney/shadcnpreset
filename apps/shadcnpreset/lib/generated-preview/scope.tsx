@@ -266,36 +266,71 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/cn-ui/tab
 import { Textarea } from "@/components/cn-ui/textarea"
 import { Toggle } from "@/components/cn-ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "@/components/cn-ui/toggle-group"
+import type { PreviewLayout } from "@/lib/generated-preview/infer-layout"
 import { cn } from "@/lib/utils"
 
 /**
- * Canvas for a generated preview.
+ * Layout chosen for the current preview, from `inferPreviewLayout`.
  *
- * Two layouts, because they want opposite things. A single component should sit
- * in the middle of the canvas. A set of many small items — every button
- * variant, a range of sizes — must wrap, and must start at the left: centred
- * content that overflows spills off both edges at once and neither end can be
- * reached, which is how a row of twelve buttons ends up clipped at both sides
- * of a narrow chat card.
+ * Passed by the renderer rather than written into the generated markup: when
+ * the model picked — via a class, a prop, or a prompt rule — the same request
+ * rendered differently run to run.
+ */
+const PreviewLayoutContext = React.createContext<PreviewLayout>("single")
+
+export function PreviewLayoutProvider({
+  layout,
+  children,
+}: {
+  layout: PreviewLayout
+  children: React.ReactNode
+}) {
+  return (
+    <PreviewLayoutContext.Provider value={layout}>
+      {children}
+    </PreviewLayoutContext.Provider>
+  )
+}
+
+/** Markup per layout. These want different things, so they get different rules. */
+const LAYOUT_CLASSES: Record<PreviewLayout, string> = {
+  // One component, centred in the canvas.
+  single: "flex min-h-svh items-center justify-center p-6",
+  // Many items of a kind. Wraps into rows and reads from the left: centred
+  // content that overflows spills off both edges at once and neither end can
+  // be reached. `[&>*]` covers the row the generated markup nests inside.
+  gallery:
+    "flex min-h-svh flex-wrap content-center justify-start gap-3 p-6 [&>*]:max-w-full [&>*]:flex-wrap [&>*]:content-center [&>*]:justify-start [&>*]:gap-3",
+  // A whole screen — sidebar layouts, dashboards, login pages. Fills the
+  // canvas edge to edge, so no centring and no padding of our own.
+  page: "block min-h-svh w-full",
+  // A column of items, centred as a block.
+  stack:
+    "flex min-h-svh flex-col items-center justify-center gap-3 p-6 [&>*]:max-w-full",
+}
+
+/**
+ * Canvas for a generated preview. The layout comes from the context above, so
+ * a `PreviewFrame` in generated code needs no props — `layout` is only there
+ * for a caller that genuinely wants to override the inference.
  */
 function PreviewFrame({
   children,
-  layout = "single",
+  layout,
   className,
 }: {
   children: React.ReactNode
-  layout?: "single" | "gallery"
+  layout?: PreviewLayout
   className?: string
 }) {
+  const inferred = React.useContext(PreviewLayoutContext)
+  const resolved = layout ?? inferred
+
   return (
     <div
       className={cn(
-        "flex min-h-svh bg-background p-6 text-foreground",
-        layout === "gallery"
-          ? // Pushed onto the direct child too, since generated markup usually
-            // nests its own row in here rather than laying items out directly.
-            "flex-wrap content-center justify-start gap-3 [&>*]:flex-wrap [&>*]:content-center [&>*]:justify-start [&>*]:max-w-full"
-          : "items-center justify-center",
+        "bg-background text-foreground",
+        LAYOUT_CLASSES[resolved],
         className
       )}
     >
