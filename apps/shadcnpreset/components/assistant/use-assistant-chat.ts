@@ -103,6 +103,38 @@ function hydrateMessages(
   return hydrated
 }
 
+function toPersistedMessages(
+  messages: ChatMessage[]
+): NonNullable<AssistantChatDetailResponse["chat"]>["messages"] {
+  return messages.map((message) => {
+    if (message.role === "user") {
+      return { role: "user", kind: "text", content: message.content }
+    }
+    if (message.kind === "presets") {
+      return {
+        role: "assistant",
+        kind: "presets",
+        content: message.content,
+        presets: message.presets,
+      }
+    }
+    if (message.kind === "preview") {
+      return {
+        role: "assistant",
+        kind: "preview",
+        content: message.content,
+        preview: message.preview,
+      }
+    }
+    return {
+      role: "assistant",
+      kind: "text",
+      content: message.content,
+      followUpQuestions: message.followUpQuestions,
+    }
+  })
+}
+
 function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null {
   const latestAssistant = [...messages]
     .reverse()
@@ -121,6 +153,13 @@ function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null 
     phase: "gathering",
     assistantMessage: latestAssistant.content,
     followUpQuestions: latestAssistant.followUpQuestions,
+  }
+}
+
+class AssistantChatMissingError extends Error {
+  constructor() {
+    super("That chat no longer exists.")
+    this.name = "AssistantChatMissingError"
   }
 }
 
@@ -215,18 +254,22 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     queryFn: async (): Promise<AssistantChatDetailResponse["chat"]> => {
       const response = await fetch(`/api/assistant/chats/${activeChatId}`)
       const payload = (await response.json()) as AssistantChatDetailResponse
+      if (response.status === 404) {
+        throw new AssistantChatMissingError()
+      }
       if (!response.ok || !payload.chat) {
         throw new Error("Could not load this chat. Try again.")
       }
       return payload.chat
     },
+    // Retrying a chat that is not there only delays saying so.
+    retry: (failureCount, queryError) =>
+      !(queryError instanceof AssistantChatMissingError) && failureCount < 2,
   })
 
   const recentChats = recentChatsQuery.data ?? []
   const isLoadingRecentChats = recentChatsQuery.isLoading
-  const chatLoadError = activeChatQuery.isError
-    ? "Could not load this chat. Try again."
-    : null
+  const chatLoadError = activeChatQuery.error?.message ?? null
 
   // Adjust local chat state while rendering when auth/query inputs change.
   // https://react.dev/learn/you-might-not-need-an-effect
@@ -356,45 +399,45 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         latency_ms: latencyMs,
       })
 
-      if (data.phase === "ready") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "presets",
-            content: data.assistantMessage,
-            presets: data.presets,
-          },
-        ])
-        setLastTurn(null)
-      } else if (data.phase === "preview") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "preview",
-            content: data.assistantMessage,
-            preview: data.preview,
-          },
-        ])
-        setLastTurn(null)
+      const reply: ChatMessage =
+        data.phase === "ready"
+          ? {
+              role: "assistant",
+              kind: "presets",
+              content: data.assistantMessage,
+              presets: data.presets,
+            }
+          : data.phase === "preview"
+            ? {
+                role: "assistant",
+                kind: "preview",
+                content: data.assistantMessage,
+                preview: data.preview,
+              }
+            : {
+                role: "assistant",
+                kind: "text",
+                content: data.assistantMessage,
+                followUpQuestions: data.followUpQuestions,
+              }
+
+      const nextMessages = [...result.args.nextMessages, reply]
+      setMessages(nextMessages)
+      setLastTurn(data.phase === "gathering" ? data : null)
+      if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
-      } else {
-        setLastTurn(data)
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "text",
-            content: data.assistantMessage,
-            followUpQuestions: data.followUpQuestions,
-          },
-        ])
       }
 
       if (typeof data.chatId === "string") {
         setSkipNextChatHydrate(true)
         setActiveChatId(data.chatId)
+        // Naming the chat moves the page to its own URL, which remounts this
+        // surface. Seed the cache with what is already on screen so the
+        // conversation comes straight back instead of loading in from scratch.
+        queryClient.setQueryData(["assistantChat", data.chatId], {
+          id: data.chatId,
+          messages: toPersistedMessages(nextMessages),
+        })
         await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
         await queryClient.invalidateQueries({
           queryKey: ["assistantChat", data.chatId],
@@ -511,7 +554,12 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     await sendContent(text)
   }
 
-  function startNewChat() {
+  /** Open an existing chat; hydration is driven by the query above. */
+  const selectChat = React.useCallback((chatId: string) => {
+    setActiveChatId(chatId)
+  }, [])
+
+  const startNewChat = React.useCallback(() => {
     if (pending) {
       return
     }
@@ -520,7 +568,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     resetComposer()
     setError(null)
     setLastTurn(null)
-  }
+  }, [pending, resetComposer])
 
   return {
     activeChatId,
@@ -528,7 +576,8 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     composerResetKey,
     deletingChatId,
     deleteChat,
-    error: error ?? chatLoadError,
+    error,
+    chatLoadError,
     hasInteracted,
     lastTurn,
     messages,
@@ -536,7 +585,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     requiresAuth,
     recentChats,
     isLoadingRecentChats,
-    setActiveChatId,
+    setActiveChatId: selectChat,
     sendContent,
     onPromptSubmit,
     startNewChat,

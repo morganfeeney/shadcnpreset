@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { Loader2, X } from "lucide-react"
 
 import { useAssistantChatContext } from "@/components/assistant/assistant-chat-context"
@@ -10,11 +11,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { assistantChatIdFromPath } from "@/lib/assistant-chat-path"
 import { cn } from "@/lib/utils"
 
 import type { AssistantChatListItem } from "./use-assistant-chat"
 
 export function RecentChatsList() {
+  // The route says which chat is open, so opening one by link or by
+  // back/forward highlights the same row a click here does.
+  const routeChatId = assistantChatIdFromPath(usePathname())
   const {
     activeChatId,
     activeChatQuery,
@@ -35,8 +40,10 @@ export function RecentChatsList() {
           <RecentChatRow
             key={chat.id}
             chat={chat}
-            isActive={activeChatId === chat.id}
-            isActiveChatFetching={activeChatQuery.isFetching}
+            isActive={routeChatId === chat.id}
+            isActiveChatFetching={
+              activeChatId === chat.id && activeChatQuery.isFetching
+            }
             pending={pending}
             isDeleting={deletingChatId === chat.id}
             onSelectChat={setActiveChatId}
@@ -80,7 +87,6 @@ function RecentChatRow({
       <RecentChatTrigger
         title={chat.title}
         isActive={isActive}
-        isLoading={isActive && isActiveChatFetching}
         disabled={pending || isDeleting || (isActive && isActiveChatFetching)}
         onClick={() => onSelectChat(chat.id)}
       />
@@ -105,13 +111,11 @@ function RecentChatItem({ children }: { children: React.ReactNode }) {
 function RecentChatTrigger({
   title,
   isActive,
-  isLoading,
   disabled,
   onClick,
 }: {
   title: string
   isActive: boolean
-  isLoading: boolean
   disabled: boolean
   onClick: () => void
 }) {
@@ -122,11 +126,10 @@ function RecentChatTrigger({
       disabled={disabled}
       className="w-full min-w-0 pr-8 group-focus-within/menu-item:bg-sidebar-accent group-focus-within/menu-item:text-sidebar-accent-foreground group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground"
     >
-      {isLoading ? (
-        <Skeleton className="h-4 w-full max-w-[140px]" />
-      ) : (
-        <span className="truncate">{title}</span>
-      )}
+      {/* The title stays put while the chat loads: a skeleton in its place
+          disappears into the sidebar-accent row, leaving what looks like an
+          empty button. */}
+      <span className="truncate">{title}</span>
     </SidebarMenuButton>
   )
 }

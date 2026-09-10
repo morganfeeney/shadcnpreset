@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { SquarePen } from "lucide-react"
+import { toast } from "sonner"
 
 import { AssistantChatProvider } from "@/components/assistant/assistant-chat-context"
 import { AssistantConversation } from "@/components/assistant/assistant-conversation"
@@ -23,13 +25,21 @@ import {
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { trackEvent } from "@/lib/analytics-events"
+import { assistantChatPath } from "@/lib/assistant-chat-path"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
-export function AssistantChat() {
-  const chat = useAssistantChat()
+export function AssistantChat({
+  /** The chat the URL names, or null on `/assistant`. */
+  routeChatId,
+}: {
+  routeChatId: string | null
+}) {
+  const router = useRouter()
+  const chat = useAssistantChat({ initialChatId: routeChatId })
   const {
     activeChatId,
+    chatLoadError,
     composerResetKey,
     error,
     hasInteracted,
@@ -37,7 +47,9 @@ export function AssistantChat() {
     messages,
     onPromptSubmit,
     pending,
+    requiresAuth,
     sendContent,
+    setActiveChatId,
     startNewChat,
   } = chat
 
@@ -45,8 +57,54 @@ export function AssistantChat() {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
   }, [])
 
+  // The route decides which chat is open, and a link, a sidebar click and the
+  // browser's back button all arrive the same way: as a new `routeChatId`. The
+  // page stays mounted across those, so the chat has to follow the prop.
+  // https://react.dev/learn/you-might-not-need-an-effect
+  const [syncedChatId, setSyncedChatId] = React.useState(routeChatId)
+  if (routeChatId !== syncedChatId) {
+    setSyncedChatId(routeChatId)
+    if (routeChatId) {
+      setActiveChatId(routeChatId)
+    } else {
+      startNewChat()
+    }
+  }
+
+  // The other direction, for a chat id that appears without anyone navigating:
+  // the first send naming a new chat, or deleting the chat being read. It only
+  // corrects the URL, so it replaces rather than pushes. Skipped while signed
+  // out — sign-in returns to window.location.href, and the hook parks the chat
+  // id until the session resolves.
+  React.useEffect(() => {
+    if (requiresAuth || activeChatId === routeChatId) return
+    router.replace(assistantChatPath(activeChatId), { scroll: false })
+  }, [activeChatId, requiresAuth, routeChatId, router])
+
+  // A URL that names no chat: say why in a toast and hand back the new-chat
+  // page, which drops the dead id from the address bar through the effect
+  // above rather than leaving it there to be reloaded.
+  React.useEffect(() => {
+    if (!chatLoadError) return
+    toast.error(chatLoadError, { id: "assistant-chat-load" })
+    startNewChat()
+  }, [chatLoadError, startNewChat])
+
+  // Opening a chat is somewhere the user can come back to, so it pushes.
+  function openChat(chatId: string) {
+    if (pending || chatId === routeChatId) return
+    router.push(assistantChatPath(chatId), { scroll: false })
+  }
+
+  function openNewChat() {
+    if (pending || !routeChatId) return
+    router.push(assistantChatPath(null), { scroll: false })
+  }
+
   return (
-    <AssistantChatProvider value={chat}>
+    <AssistantChatProvider
+      value={{ ...chat, setActiveChatId: openChat, startNewChat: openNewChat }}
+    >
       <SidebarProvider className="min-h-0 flex-1">
         <Sidebar
           collapsible="none"
@@ -58,8 +116,8 @@ export function AssistantChat() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
-                      isActive={!activeChatId}
-                      onClick={startNewChat}
+                      isActive={!routeChatId}
+                      onClick={openNewChat}
                       disabled={pending}
                     >
                       <SquarePen />
