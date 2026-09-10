@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { SparklesIcon } from "lucide-react"
 
 import {
@@ -15,6 +16,7 @@ import {
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { PresetRelatedList } from "@/components/preset-related-list"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Empty,
   EmptyContent,
@@ -24,6 +26,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
+import { PRESET_CHAT_PARAM } from "@/lib/preset-preview"
 import { trackEvent } from "@/lib/analytics-events"
 import type { ResolvedPreset } from "@/lib/preset"
 import { useAuthStore } from "@/stores/auth-store"
@@ -41,6 +44,11 @@ export function AssistantEmbed({
 }: AssistantEmbedProps) {
   const live = usePresetPageLiveOptional()
   const liveCode = live?.livePresetCode ?? resolved.code
+  const searchParams = useSearchParams()
+  // Set once, on mount: /assistant links here with the chat to carry over.
+  const [initialChatId] = React.useState(() =>
+    searchParams.get(PRESET_CHAT_PARAM)
+  )
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const authStatus = useAuthStore((state) => state.status)
 
@@ -63,9 +71,11 @@ export function AssistantEmbed({
   const chat = useAssistantChat({
     seedPresetCodes: [liveCode],
     livePresetCode: liveCode,
+    initialChatId,
     onPreview: showInMainPreview,
   })
   const {
+    activeChatQuery,
     composerResetKey,
     error,
     hasInteracted,
@@ -96,9 +106,20 @@ export function AssistantEmbed({
     onApply?.()
   }
 
+  // A linked-to chat arrives empty for a beat; show it loading rather than
+  // flashing the "describe your ideal preset" empty state first.
+  const loadingLinkedChat =
+    Boolean(initialChatId) && !hasInteracted && activeChatQuery.isLoading
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {hasInteracted ? (
+      {loadingLinkedChat ? (
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+          <Skeleton className="h-4 w-2/3 self-end" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="aspect-[2/1] w-full" />
+        </div>
+      ) : hasInteracted ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <AssistantConversation
             className="h-full min-h-0 overscroll-contain"

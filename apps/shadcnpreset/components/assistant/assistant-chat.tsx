@@ -106,7 +106,8 @@ export function AssistantChat() {
                           openHref={presetBrowsePath(
                             m.preview.presetCode,
                             "generated",
-                            "ask-ai"
+                            "ask-ai",
+                            activeChatId ?? undefined
                           )}
                         />
                       ) : (
