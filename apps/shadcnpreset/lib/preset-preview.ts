@@ -125,14 +125,19 @@ export function parsePresetSidebarTab(
   return isPresetSidebarTab(value) ? value : "community"
 }
 
+export const PRESET_CHAT_PARAM = "chat"
+
 export function presetBrowsePath(
   code: string,
   view: PresetPreviewPageName = "preview",
-  tab: PresetSidebarTab = "community"
+  tab: PresetSidebarTab = "community",
+  /** Assistant chat to open in the sidebar, e.g. when linking from /assistant. */
+  chatId?: string
 ): string {
   const params = new URLSearchParams()
   if (view !== "preview") params.set("view", view)
   if (tab !== "community") params.set("tab", tab)
+  if (chatId) params.set(PRESET_CHAT_PARAM, chatId)
   const query = params.toString()
   return query ? `/preset/${code}?${query}` : `/preset/${code}`
 }

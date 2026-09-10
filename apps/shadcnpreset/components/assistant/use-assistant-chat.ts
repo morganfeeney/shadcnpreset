@@ -143,6 +143,12 @@ type UseAssistantChatOptions = {
   seedPresetCodes?: string[]
   livePresetCode?: string
   /**
+   * Chat to open on mount, e.g. arriving from a link that carries one. Used as
+   * the initial state only, so later navigation dropping the param from the URL
+   * does not unload the conversation.
+   */
+  initialChatId?: string | null
+  /**
    * Fired only when a preview arrives from a live send — never when an existing
    * chat is hydrated, so opening an old conversation cannot hijack the surface
    * the user is currently looking at.
@@ -163,7 +169,9 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
-  const [activeChatId, setActiveChatId] = React.useState<string | null>(null)
+  const [activeChatId, setActiveChatId] = React.useState<string | null>(
+    options?.initialChatId ?? null
+  )
   const [deletingChatId, setDeletingChatId] = React.useState<string | null>(null)
   const [composerResetKey, setComposerResetKey] = React.useState(0)
   const authStatus = useAuthStore((state) => state.status)
