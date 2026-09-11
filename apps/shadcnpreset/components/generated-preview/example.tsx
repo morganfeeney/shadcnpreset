@@ -76,12 +76,17 @@ function CompiledPreview({ code }: { code: string }) {
 /** How long to wait for the host before assuming no preview is coming. */
 const PAYLOAD_WAIT_MS = 4000
 
+/** How often to tell the host we are here, until it answers. */
+const READY_RETRY_MS = 250
+
 export function GeneratedPreviewExample() {
   const [payload, setPayload] = React.useState<GeneratedPreviewPayload | null>(
     null
   )
   const [waitedForPayload, setWaitedForPayload] = React.useState(false)
 
+  // Listening is separate from asking, and starts first: a host that posts the
+  // moment the frame loads must not find nobody home.
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
@@ -93,23 +98,47 @@ export function GeneratedPreviewExample() {
     }
 
     window.addEventListener("message", handleMessage)
-    window.parent.postMessage(
-      { type: GENERATED_PREVIEW_READY_MESSAGE_TYPE },
-      window.location.origin
-    )
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
+
+  /**
+   * Keep announcing until the host answers.
+   *
+   * Announcing once was enough only when the host happened to be listening.
+   * It posts on the frame's load event and answers this message, so a frame
+   * the browser restored rather than loaded — coming back to a page, moving
+   * between presets — fired neither: the one announcement arrived before the
+   * host's listener existed, the load event never came, and the code sat in
+   * the message above a frame that had given up waiting for it.
+   *
+   * This side is the one that knows whether it has a payload, so it is the
+   * side that repeats itself.
+   */
+  React.useEffect(() => {
+    if (payload) return
+
+    const announce = () =>
+      window.parent.postMessage(
+        { type: GENERATED_PREVIEW_READY_MESSAGE_TYPE },
+        window.location.origin
+      )
+
+    announce()
+    const intervalId = window.setInterval(announce, READY_RETRY_MS)
 
     // A `?view=generated` URL can outlive the preview it was created for — the
-    // code lives in the host's session storage, not in the URL.
-    const timeoutId = window.setTimeout(
-      () => setWaitedForPayload(true),
-      PAYLOAD_WAIT_MS
-    )
+    // code lives in the host's session storage, not in the URL. At that point
+    // no amount of asking will help.
+    const timeoutId = window.setTimeout(() => {
+      window.clearInterval(intervalId)
+      setWaitedForPayload(true)
+    }, PAYLOAD_WAIT_MS)
 
     return () => {
+      window.clearInterval(intervalId)
       window.clearTimeout(timeoutId)
-      window.removeEventListener("message", handleMessage)
     }
-  }, [])
+  }, [payload])
 
   if (!payload) {
     return (
