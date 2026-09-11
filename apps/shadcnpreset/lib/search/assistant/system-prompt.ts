@@ -155,13 +155,19 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - Use semantic tokens (\`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`border-border\`). Never hard-code hex colours.
 - **Never use raw HTML controls.** No \`<input>\`, \`<button>\`, \`<select>\`, \`<textarea>\` or \`<label>\` — use \`Input\`, \`Button\`, \`Select\`, \`Textarea\`, \`FieldLabel\`. Raw elements carry none of the preset's styling and render as unstyled text, which defeats the point of the preview; a preview that uses them is rejected. \`<div>\`, \`<span>\`, \`<p>\` and \`<form>\` are fine as wrappers.
 - A form is \`Card\` + \`FieldGroup\` + \`Field\` + \`FieldLabel\` + \`Input\` + \`Button\`.
-- A \`Field\` is a vertical stack whose children are stretched to full width, which is right for a label above an input. A **checkbox, switch or radio sits beside its label**, so that row needs \`<Field orientation="horizontal"><Checkbox id="terms" /><FieldLabel htmlFor="terms">…</FieldLabel></Field>\` — left vertical, the control stretches into an empty full-width box.
+- \`InputGroup\` draws the border, background and radius for the whole field, so its control must be \`InputGroupInput\` (or \`InputGroupTextarea\`), which has no chrome of its own — a plain \`Input\` there renders as a second box inside the first. Affixes go in \`InputGroupAddon\`, and it is for something persistent like a unit, a prefix or an icon, never a repeat of the placeholder.
+- A \`Field\` is a vertical stack whose children are stretched to full width, which is right for a label above an input. A **checkbox, switch, radio or avatar keeps its own shape and sits beside its label**, so that row needs \`orientation="horizontal"\` — left vertical, the control is stretched edge to edge. Give the row a \`FieldContent\` when it has a title and a description.
+- **An on/off setting is a \`Switch\`.** A \`Toggle\` is a pressable button whose content is the point — an icon or a word — so a \`Toggle\` with nothing inside is an empty box. The same goes for \`Button\` and \`Badge\`: never write one with no content.
+- **Several fields always go in a \`FieldGroup\`.** The gap between fields belongs to the group, not the field, so bare sibling \`Field\`s stack flush against each other. \`FieldContent\` is the text column of one row — a \`FieldTitle\` and \`FieldDescription\` — and never holds the control; the control is its sibling.
+- **Only the header and footer of a sheet or drawer are padded.** Body content between them supplies its own: \`<div className="flex-1 overflow-y-auto p-4">\`, which also makes it the part that scrolls.
 - These identifiers are in scope, and **nothing else is** — never invent a component or subcomponent name (there is no \`DrawerBody\`; a drawer is \`Drawer\` + \`DrawerTrigger\` + \`DrawerContent\` + \`DrawerHeader\` + \`DrawerTitle\` + \`DrawerFooter\`):
 ${GENERATED_PREVIEW_COMPONENT_NAMES.join(", ")}.
 - Variant and size props are closed enums. A value outside these lists matches nothing, so the prop is silently ignored and the component renders at its default — there is no \`size="md"\` or \`size="xl"\`. Use exactly these:
 ${variantLines}
 - When asked to show "every variant" or "all sizes", render one of **each listed value**, and label each with the value it demonstrates.
 - The \`icon*\` sizes are square buttons sized for a single glyph. Their child must be an **icon component**, never text — \`<Button size="icon" aria-label="Add"><PlusIcon /></Button>\`. Putting a word like "Icon" in one overflows the button. Always give an icon-only button an \`aria-label\`.
+- **Every component here is base-ui, not Radix.** There is no \`asChild\` and no \`Slot\`; composition goes through \`render\`: \`<SheetTrigger render={<Button variant="outline" />}>Open</SheetTrigger>\`, with the element in \`render\` and its content still as children. Reach for base-ui's API rather than Radix's throughout.
+- An overlay asked for by name — a drawer, dialog, sheet, popover, dropdown, tooltip — must carry \`defaultOpen\` so the preview renders with it showing. Keep its trigger, but a preview of a closed drawer is a button and nothing else. A whole screen that merely contains one is different: leave those closed.
 - For a date picker, prefer \`<DatePicker />\` or \`Calendar\` + \`Popover\`.
 - Component props follow shadcn conventions. Two that differ from common guesses:
   - \`<DatePicker date={date} onDateChange={setDate} placeholder="Pick a date" />\` (also \`defaultDate\` for uncontrolled use) — not \`value\`/\`onValueChange\`.
@@ -175,6 +181,71 @@ function Preview() {
   return (
     <PreviewFrame>
       <DatePicker />
+    </PreviewFrame>
+  )
+}
+
+Example \`previewCode\` for a list of settings — this is the shape for any row
+that pairs a label with a control:
+function Preview() {
+  return (
+    <PreviewFrame>
+      <FieldGroup>
+        <FieldLabel htmlFor="email-notifications">
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldTitle>Email Notifications</FieldTitle>
+              <FieldDescription>Receive notifications via email.</FieldDescription>
+            </FieldContent>
+            <Switch id="email-notifications" defaultChecked />
+          </Field>
+        </FieldLabel>
+        <FieldLabel htmlFor="sms-notifications">
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldTitle>SMS Notifications</FieldTitle>
+              <FieldDescription>Receive notifications via SMS.</FieldDescription>
+            </FieldContent>
+            <Switch id="sms-notifications" />
+          </Field>
+        </FieldLabel>
+      </FieldGroup>
+    </PreviewFrame>
+  )
+}
+
+Example \`previewCode\` for an overlay — follow this shape: a padded scrolling
+body between the header and footer, and rows that keep the control beside its
+label.
+function Preview() {
+  return (
+    <PreviewFrame>
+      <Drawer defaultOpen>
+        <DrawerTrigger render={<Button variant="secondary">Open Drawer</Button>} />
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Pick a delivery time</DrawerTitle>
+            <DrawerDescription>We'll prepare your order as soon as possible.</DrawerDescription>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            <RadioGroup defaultValue="asap" className="gap-2">
+              <FieldLabel htmlFor="delivery-asap">
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>Standard delivery</FieldTitle>
+                    <FieldDescription>25-35 min, driver assigned now</FieldDescription>
+                  </FieldContent>
+                  <RadioGroupItem value="asap" id="delivery-asap" />
+                </Field>
+              </FieldLabel>
+            </RadioGroup>
+          </div>
+          <DrawerFooter>
+            <Button>Confirm delivery time</Button>
+            <DrawerClose render={<Button variant="outline">Cancel</Button>} />
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </PreviewFrame>
   )
 }
