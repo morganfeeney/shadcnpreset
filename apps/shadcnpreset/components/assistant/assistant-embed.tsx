@@ -1,17 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { SparklesIcon } from "lucide-react"
 
-import {
-  AssistantConversation,
-  AssistantPendingCompact,
-} from "@/components/assistant/assistant-conversation"
+import { AssistantConversation } from "@/components/assistant/assistant-conversation"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
 import { PresetRelatedList } from "@/components/preset-related-list"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Empty,
   EmptyContent,
@@ -20,6 +19,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { PRESET_CHAT_PARAM } from "@/lib/preset-preview"
 import { trackEvent } from "@/lib/analytics-events"
 import type { ResolvedPreset } from "@/lib/preset"
 import { useAuthStore } from "@/stores/auth-store"
@@ -37,19 +37,71 @@ export function AssistantEmbed({
 }: AssistantEmbedProps) {
   const live = usePresetPageLiveOptional()
   const liveCode = live?.livePresetCode ?? resolved.code
+  const searchParams = useSearchParams()
+  // Set once, on mount: /assistant links here with the chat to carry over.
+  const [initialChatId] = React.useState(() =>
+    searchParams.get(PRESET_CHAT_PARAM)
+  )
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const authStatus = useAuthStore((state) => state.status)
-  const chat = useAssistantChat({ seedPresetCodes: [liveCode] })
+
+  const chat = useAssistantChat({
+    seedPresetCodes: [liveCode],
+    livePresetCode: liveCode,
+    initialChatId,
+    // Previews go to the main preview pane only — the sidebar is too narrow to
+    // render one usefully, and the pane is already right there.
+    onPreview: live?.showGeneratedPreview,
+  })
   const {
+    chatLoadError,
     composerResetKey,
-    error,
+    error: sendError,
     hasInteracted,
+    isChatHydrating,
     lastTurn,
     messages,
     onPromptSubmit,
     pending,
+    pendingKind,
     sendContent,
+    startNewChat,
   } = chat
+  const error = sendError ?? chatLoadError
+
+  /**
+   * Restores the preview when landing on a `?view=generated&chat=…` link cold.
+   *
+   * Clicking Open seeds session storage before navigating, but the generated
+   * code lives only there — a shared or reloaded link arrives with nothing to
+   * render and falls back to the default view. The chat in the URL holds the
+   * preview, so once it hydrates the view can be honoured.
+   *
+   * Only when the URL actually asked for the generated view: opening an old
+   * chat any other way must not commandeer whatever is on screen.
+   */
+  const wantsGeneratedView = live?.view === "generated"
+  const hasStoredPreview = Boolean(live?.generatedPreview)
+  const setGeneratedPreview = live?.setGeneratedPreview
+  const linkedPreview = React.useMemo(() => {
+    if (!initialChatId || !wantsGeneratedView || hasStoredPreview) return null
+    return (
+      [...messages]
+        .reverse()
+        .find(
+          (message): message is Extract<typeof message, { kind: "preview" }> =>
+            message.role === "assistant" && message.kind === "preview"
+        )?.preview ?? null
+    )
+  }, [initialChatId, wantsGeneratedView, hasStoredPreview, messages])
+
+  React.useEffect(() => {
+    if (!linkedPreview || !setGeneratedPreview) return
+    setGeneratedPreview({
+      title: linkedPreview.title,
+      code: linkedPreview.code,
+    })
+  }, [linkedPreview, setGeneratedPreview])
   const openedPathRef = React.useRef(`/preset/${liveCode}`)
 
   React.useEffect(() => {
@@ -64,16 +116,34 @@ export function AssistantEmbed({
     onApply?.()
   }
 
+  /**
+   * Local only: the chat stays on the account and in the /assistant history,
+   * which is the full record. What goes is this surface's hold on it — the
+   * conversation, the generated preview behind the pane, and the chat in the
+   * URL that would otherwise restore both on reload.
+   */
+  function clearChat() {
+    startNewChat()
+    live?.clearGeneratedPreview()
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {hasInteracted ? (
+      {isChatHydrating ? (
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+          <Skeleton className="h-4 w-2/3 self-end" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="aspect-[2/1] w-full" />
+        </div>
+      ) : hasInteracted ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <AssistantConversation
             className="h-full min-h-0 overscroll-contain"
             messages={messages}
             pending={pending}
             conversationContentClassName="gap-4 p-3"
-            pendingContent={<AssistantPendingCompact />}
+            pendingKind={pendingKind}
+            pendingVariant="compact"
             renderPresets={(message) => (
               <PresetRelatedList
                 items={message.presets.map((preset) => ({
@@ -170,7 +240,9 @@ export function AssistantEmbed({
           hasInteracted={hasInteracted}
           pending={pending}
           resetKey={composerResetKey}
+          disabled={isChatHydrating}
           onPromptSubmit={onPromptSubmit}
+          onNewChat={clearChat}
           placeholder={
             hasInteracted ? "Reply to refine..." : "Refine this preset..."
           }

@@ -1,7 +1,11 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/native-select.tsx
+ */
 import * as React from "react"
+import { cn } from "@/lib/utils"
 
 import { IconPlaceholder } from "@/components/icon-placeholder"
-import { cn } from "@/lib/utils"
 
 type NativeSelectProps = Omit<React.ComponentProps<"select">, "size"> & {
   size?: "sm" | "default"

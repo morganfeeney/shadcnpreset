@@ -1,12 +1,13 @@
-"use client"
-
-import * as React from "react"
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/button-group.tsx
+ */
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
 
 import { Separator } from "@/components/cn-ui/separator"
-import { cn } from "@/lib/utils"
 
 const buttonGroupVariants = cva(
   "cn-button-group flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",

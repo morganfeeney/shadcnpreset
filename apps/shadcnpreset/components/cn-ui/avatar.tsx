@@ -1,8 +1,11 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/avatar.tsx
+ */
 "use client"
 
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
-
 import { cn } from "@/lib/utils"
 
 function Avatar({
@@ -29,7 +32,10 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("cn-avatar-image aspect-square size-full object-cover", className)}
+      className={cn(
+        "cn-avatar-image aspect-square size-full object-cover",
+        className
+      )}
       {...props}
     />
   )
@@ -89,6 +95,7 @@ function AvatarGroupCount({
       data-slot="avatar-group-count"
       className={cn(
         "cn-avatar-group-count relative flex shrink-0 items-center justify-center ring-2 ring-background",
+        "",
         className
       )}
       {...props}

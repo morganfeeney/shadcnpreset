@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/tooltip"
 import { trackEvent } from "@/lib/analytics-events"
 import { type PresetPreviewPageName } from "@/lib/preset-preview"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 type PresetPreviewLayoutPickerProps = {
   value: PresetPreviewPageName
   onValueChange: (page: PresetPreviewPageName) => void
   presetCode: string
+  adHocView?: { page: "generated"; label: string; pending?: boolean }
   className?: string
 }
 
@@ -38,6 +40,7 @@ export function PresetPreviewLayoutPicker({
   value,
   onValueChange,
   presetCode,
+  adHocView,
   className,
 }: PresetPreviewLayoutPickerProps) {
   const pathname = usePathname()
@@ -74,6 +77,21 @@ export function PresetPreviewLayoutPicker({
         <TabsTrigger value="login-04" className={cn(pillClassName, "hidden sm:flex")}>
           Login 04
         </TabsTrigger>
+        {adHocView ? (
+          <TabsTrigger
+            value={adHocView.page}
+            className={pillClassName}
+            disabled={adHocView.pending}
+          >
+            {adHocView.pending ? (
+              // Holds the tab's place while the preview loads, so the row does
+              // not shift and no other view looks selected.
+              <Skeleton className="h-4 w-20 rounded-full" />
+            ) : (
+              adHocView.label
+            )}
+          </TabsTrigger>
+        ) : null}
 
         <DropdownMenu>
           <Tooltip>

@@ -1,0 +1,225 @@
+/**
+ * Generates `lib/generated-preview/catalog.ts` from the identifiers bound in
+ * `GENERATED_PREVIEW_SCOPE`.
+ *
+ * The catalog is what the assistant prompt lists as available. Maintaining it
+ * by hand let it drift out of step with the scope: it advertised top-level
+ * names like `Drawer` without the subcomponents that actually make it usable,
+ * so the model guessed (`DrawerBody`) and the preview died with a runtime
+ * ReferenceError. Deriving it from the scope means the prompt can only name
+ * identifiers that really resolve.
+ *
+ * Usage:
+ *   pnpm generate:preview-catalog
+ *   pnpm generate:preview-catalog --check   # fail if out of date
+ */
+import { readdir, readFile, writeFile } from "node:fs/promises"
+import path from "node:path"
+
+const APP_ROOT = path.resolve(import.meta.dirname, "..")
+const SCOPE_PATH = path.join(APP_ROOT, "lib/generated-preview/scope.tsx")
+const CATALOG_PATH = path.join(APP_ROOT, "lib/generated-preview/catalog.ts")
+
+/** Reads the shorthand keys of the `GENERATED_PREVIEW_SCOPE` object literal. */
+export function extractScopeNames(source: string): string[] {
+  const start = source.indexOf("export const GENERATED_PREVIEW_SCOPE")
+  if (start === -1) {
+    throw new Error("GENERATED_PREVIEW_SCOPE not found in scope.tsx")
+  }
+  const body = source.slice(source.indexOf("{", start) + 1)
+  const names: string[] = []
+  for (const line of body.split("\n")) {
+    const match = /^\s{2}([A-Za-z_$][\w$]*),\s*$/.exec(line)
+    if (match) {
+      names.push(match[1]!)
+    }
+    if (/^}/.test(line)) break
+  }
+  return [...new Set(names)].sort()
+}
+
+/** Reads the balanced `{...}` block that starts at `from`. */
+function readBlock(source: string, from: number): string {
+  const start = source.indexOf("{", from)
+  if (start === -1) return ""
+  let depth = 0
+  for (let i = start; i < source.length; i += 1) {
+    if (source[i] === "{") depth += 1
+    else if (source[i] === "}") {
+      depth -= 1
+      if (depth === 0) return source.slice(start + 1, i)
+    }
+  }
+  return ""
+}
+
+/**
+ * Yields `key: {...}` pairs at the top level of an object body.
+ *
+ * Brace depth rather than indentation: components write cva either as
+ * `cva(\n  "base",\n  {` or `cva("base", {` on one line, which indent their
+ * keys differently. Matching a fixed indent silently missed every component
+ * using the second form — including Field, whose `orientation` variant is what
+ * puts a checkbox beside its label instead of stretched above it.
+ */
+function* topLevelKeys(body: string): Generator<[string, string]> {
+  let depth = 0
+  let quote: string | null = null
+  const key = /([\w-]+)\s*:/g
+  for (let i = 0; i < body.length; i += 1) {
+    const char = body[i]!
+
+    // Class strings are full of `variant:` lookalikes — `@md/field-group:flex-row`
+    // parsed as a variant group until this skipped them.
+    if (quote) {
+      if (char === quote && body[i - 1] !== "\\") quote = null
+      continue
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      // A quoted key is still a key — `"icon-lg": "..."` defines a variant.
+      const end = body.indexOf(char, i + 1)
+      const after = end === -1 ? "" : body.slice(end + 1)
+      const colon = after.search(/\S/)
+      if (depth === 0 && end !== -1 && after[colon] === ":") {
+        const name = body.slice(i + 1, end)
+        const rest = after.slice(colon + 1)
+        const brace = rest.search(/\S/)
+        yield [name, rest[brace] === "{" ? readBlock(rest, brace) : ""]
+        i = end + colon + 1
+        continue
+      }
+      quote = char
+      continue
+    }
+
+    if (char === "{" || char === "[") depth += 1
+    else if (char === "}" || char === "]") depth -= 1
+    else if (depth === 0) {
+      key.lastIndex = i
+      const match = key.exec(body)
+      if (match && match.index === i) {
+        const rest = body.slice(key.lastIndex)
+        const brace = rest.search(/\S/)
+        yield [
+          match[1]!,
+          rest[brace] === "{" ? readBlock(rest, brace) : "",
+        ]
+        i = key.lastIndex - 1
+      }
+    }
+  }
+}
+
+/** `buttonVariants` -> `Button`, `sidebarMenuButtonVariants` -> `SidebarMenuButton`. */
+function componentNameFor(cvaName: string): string {
+  const base = cvaName.replace(/Variants$/, "")
+  return base.charAt(0).toUpperCase() + base.slice(1)
+}
+
+/**
+ * Extracts cva variant enums, e.g. Button -> { variant: [...], size: [...] }.
+ *
+ * Names alone are not enough for the model to use a component correctly: an
+ * unrecognised value like `size="md"` matches no cva branch, so no class is
+ * applied and the component silently renders at its default. Listing the real
+ * values in the prompt is what stops that.
+ */
+export function extractVariants(
+  sources: Array<{ name: string; source: string }>
+): Record<string, Record<string, string[]>> {
+  const out: Record<string, Record<string, string[]>> = {}
+
+  for (const { source } of sources) {
+    for (const match of source.matchAll(/const\s+(\w+Variants)\s*=\s*cva\(/g)) {
+      const component = componentNameFor(match[1]!)
+      const config = readBlock(source, match.index! + match[0].length - 1)
+      const variantsIndex = config.indexOf("variants:")
+      if (variantsIndex === -1) continue
+
+      const variantsBlock = readBlock(config, variantsIndex)
+      const groups: Record<string, string[]> = {}
+      for (const [name, block] of topLevelKeys(variantsBlock)) {
+        const values = [...topLevelKeys(block)].map(([value]) => value)
+        if (values.length) groups[name] = values
+      }
+      if (Object.keys(groups).length) out[component] = groups
+    }
+  }
+
+  return out
+}
+
+function render(
+  names: string[],
+  variants: Record<string, Record<string, string[]>>
+): string {
+  const variantEntries = Object.keys(variants)
+    .sort()
+    .map((component) => {
+      const groups = Object.entries(variants[component]!)
+        .map(([prop, values]) => `    ${prop}: [${values.map((v) => `"${v}"`).join(", ")}],`)
+        .join("\n")
+      return `  ${component}: {\n${groups}\n  },`
+    })
+
+  return [
+    "// Generated by scripts/generate-preview-catalog.ts — do not edit by hand.",
+    "// Every identifier bound in GENERATED_PREVIEW_SCOPE, so the assistant",
+    "// prompt can only name components that actually resolve at render time.",
+    "export const GENERATED_PREVIEW_COMPONENT_NAMES = [",
+    ...names.map((name) => `  "${name}",`),
+    "] as const",
+    "",
+    "// cva variant enums. An unrecognised value matches no branch, so the class",
+    "// is silently omitted and the component renders at its default — the model",
+    "// needs the real values, and generated previews are checked against them.",
+    "export const GENERATED_PREVIEW_COMPONENT_VARIANTS: Record<",
+    "  string,",
+    "  Record<string, readonly string[]>",
+    "> = {",
+    ...variantEntries,
+    "}",
+    "",
+  ].join("\n")
+}
+
+async function main() {
+  const check = process.argv.includes("--check")
+  const names = extractScopeNames(await readFile(SCOPE_PATH, "utf8"))
+
+  const cnUiDir = path.join(APP_ROOT, "components/cn-ui")
+  const sources = await Promise.all(
+    (await readdir(cnUiDir))
+      .filter((f) => f.endsWith(".tsx"))
+      .map(async (name) => ({
+        name,
+        source: await readFile(path.join(cnUiDir, name), "utf8"),
+      }))
+  )
+  const variants = extractVariants(sources)
+  const next = render(names, variants)
+  const current = await readFile(CATALOG_PATH, "utf8").catch(() => null)
+
+  if (current === next) {
+    console.log(
+      `catalog: ${names.length} names, ${Object.keys(variants).length} components with variants (unchanged)`
+    )
+    return
+  }
+
+  if (check) {
+    console.error(
+      `catalog: ${names.length} names — OUT OF DATE. Run \`pnpm generate:preview-catalog\`.`
+    )
+    process.exit(1)
+  }
+
+  await writeFile(CATALOG_PATH, next)
+  console.log(
+    `catalog: ${names.length} names, ${Object.keys(variants).length} components with variants (written)`
+  )
+}
+
+if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
+  await main()
+}

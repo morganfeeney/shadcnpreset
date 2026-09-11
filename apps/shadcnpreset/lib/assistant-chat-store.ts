@@ -1,13 +1,16 @@
 import { query } from "@/lib/db"
+import type { AssistantGeneratedPreview } from "@/lib/search/assistant/schema"
 
 const MAX_TITLE_LENGTH = 120
 const MAX_PRESETS_LENGTH = 12000
+const MAX_PREVIEW_LENGTH = 100000
 
 type PersistedAssistantMessage = {
   role: "user" | "assistant"
-  kind: "text" | "presets"
+  kind: "text" | "presets" | "preview"
   content: string
   presets?: Array<{ code: string; caption: string; description: string }>
+  preview?: AssistantGeneratedPreview
   followUpQuestions?: string[]
 }
 
@@ -20,7 +23,7 @@ type ChatRow = {
 
 type ChatMessageRow = {
   role: "user" | "assistant"
-  kind: "text" | "presets"
+  kind: "text" | "presets" | "preview"
   content: string
   presets_json: string | null
   created_at: number
@@ -70,6 +73,41 @@ function parsePresets(raw: string | null): PersistedAssistantMessage["presets"] 
       .slice(0, 4)
 
     return presets.length ? presets : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function parsePreview(
+  raw: string | null
+): PersistedAssistantMessage["preview"] {
+  if (!raw || raw.length > MAX_PREVIEW_LENGTH) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== "object") {
+      return undefined
+    }
+    const candidate = parsed as Record<string, unknown>
+    if (
+      typeof candidate.title !== "string" ||
+      typeof candidate.code !== "string" ||
+      !candidate.title.trim() ||
+      !candidate.code.trim()
+    ) {
+      return undefined
+    }
+    const presetCode =
+      typeof candidate.presetCode === "string" && candidate.presetCode.trim()
+        ? candidate.presetCode.trim().slice(0, 32)
+        : undefined
+
+    return {
+      title: candidate.title.trim().slice(0, 60),
+      code: candidate.code,
+      ...(presetCode ? { presetCode } : {}),
+    }
   } catch {
     return undefined
   }
@@ -169,6 +207,7 @@ export async function getAssistantChatForUser(
       kind: row.kind,
       content: row.content,
       presets: row.kind === "presets" ? parsePresets(row.presets_json) : undefined,
+      preview: row.kind === "preview" ? parsePreview(row.presets_json) : undefined,
       followUpQuestions:
         row.kind === "text" ? parseFollowUpQuestions(row.presets_json) : undefined,
     })),
@@ -233,11 +272,13 @@ export async function saveAssistantChatForUser(args: {
   for (let index = 0; index < args.messages.length; index += 1) {
     const message = args.messages[index]!
     const presetsJson =
-      message.kind === "presets" && message.presets?.length
-        ? JSON.stringify(message.presets.slice(0, 4))
-        : message.kind === "text" && message.followUpQuestions?.length
-          ? JSON.stringify(message.followUpQuestions.slice(0, 4))
-        : null
+      message.kind === "preview" && message.preview
+        ? JSON.stringify(message.preview)
+        : message.kind === "presets" && message.presets?.length
+          ? JSON.stringify(message.presets.slice(0, 4))
+          : message.kind === "text" && message.followUpQuestions?.length
+            ? JSON.stringify(message.followUpQuestions.slice(0, 4))
+            : null
 
     await query(
       `

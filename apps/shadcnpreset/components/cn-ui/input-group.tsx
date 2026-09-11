@@ -1,12 +1,16 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/input-group.tsx
+ */
 "use client"
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/cn-ui/button"
 import { Input } from "@/components/cn-ui/input"
 import { Textarea } from "@/components/cn-ui/textarea"
-import { cn } from "@/lib/utils"
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (

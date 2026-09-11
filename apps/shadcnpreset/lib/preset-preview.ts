@@ -4,6 +4,7 @@ export type PresetPreviewPageName =
   | "dashboard"
   | "login-02"
   | "login-04"
+  | "generated"
 
 export type PresetSidebarTab = "community" | "yours" | "ask-ai"
 
@@ -71,16 +72,39 @@ export const LOCAL_PRESET_PREVIEW_EXAMPLES = [
   "dashboard",
   "login-02",
   "login-04",
+  "generated",
 ] as const
 
+/**
+ * Ad-hoc Ask AI preview. Deliberately absent from `PRESET_PREVIEW_VIEWS`: it is
+ * only reachable once the assistant has generated something, so it never shows
+ * up in the default view picker.
+ */
+export const GENERATED_PREVIEW_VIEW: {
+  page: PresetPreviewPageName
+  label: string
+  target: PresetPreviewTarget
+} = {
+  page: "generated",
+  label: "Generated",
+  target: {
+    kind: "local",
+    example: "generated",
+  },
+}
+
 export function getPresetPreviewView(page: PresetPreviewPageName) {
+  if (page === "generated") return GENERATED_PREVIEW_VIEW
   return PRESET_PREVIEW_VIEWS.find((item) => item.page === page) ?? null
 }
 
 export function isPresetPreviewPageName(
   value: string | undefined | null
 ): value is PresetPreviewPageName {
-  return PRESET_PREVIEW_VIEWS.some((item) => item.page === value)
+  return (
+    value === GENERATED_PREVIEW_VIEW.page ||
+    PRESET_PREVIEW_VIEWS.some((item) => item.page === value)
+  )
 }
 
 export function parsePresetPreviewPageName(
@@ -101,14 +125,19 @@ export function parsePresetSidebarTab(
   return isPresetSidebarTab(value) ? value : "community"
 }
 
+export const PRESET_CHAT_PARAM = "chat"
+
 export function presetBrowsePath(
   code: string,
   view: PresetPreviewPageName = "preview",
-  tab: PresetSidebarTab = "community"
+  tab: PresetSidebarTab = "community",
+  /** Assistant chat to open in the sidebar, e.g. when linking from /assistant. */
+  chatId?: string
 ): string {
   const params = new URLSearchParams()
   if (view !== "preview") params.set("view", view)
   if (tab !== "community") params.set("tab", tab)
+  if (chatId) params.set(PRESET_CHAT_PARAM, chatId)
   const query = params.toString()
   return query ? `/preset/${code}?${query}` : `/preset/${code}`
 }

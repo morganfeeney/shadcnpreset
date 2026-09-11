@@ -46,3 +46,56 @@ The shell listens for `postMessage` with type `shadcnpreset:theme-mode` so the p
 1. Register the example in `lib/preset-preview.ts` (`LOCAL_PRESET_PREVIEW_EXAMPLES`, `PRESET_PREVIEW_VIEWS`).
 2. Branch in `ExampleView` inside `preview-example-shell.tsx`.
 3. Prefer `cn-ui/*` primitives for components that must respect `.style-*` / `cn-*` rules in style bundles.
+
+`generated` is an ad-hoc Ask AI preview. It is not listed in the default view picker. The parent posts `{ type: "shadcnpreset:generated-preview", title, code }` after the iframe signals `shadcnpreset:generated-preview-ready`.
+
+The code is session-scoped (`lib/generated-preview/store.ts`), not part of the URL, so a `?view=generated` link opened elsewhere has nothing to render: the host falls back to the default view and the embed shows an empty state. Generated source is compiled with sucrase and evaluated in this iframe — see the guard-rail note in `lib/generated-preview/prepare-source.ts` for what that does and does not contain.
+
+## Driving the generated preview by hand
+
+The `generated` view renders whatever arrives over `postMessage`, so you can
+push arbitrary JSX into it from the browser console without spending an API
+call on the assistant. Useful for layout work on `PreviewFrame`.
+
+Open the embed directly, with any preset code:
+
+```
+http://localhost:4010/preset-preview/generated?preset=b0
+```
+
+Then from the console on that page:
+
+```js
+window.postMessage({
+  type: "shadcnpreset:generated-preview",
+  title: "Scratch",
+  code: `function Preview() {
+    return (
+      <PreviewFrame>
+        <div className="flex gap-4">
+          <Button>One</Button>
+          <Button variant="outline">Two</Button>
+        </div>
+      </PreviewFrame>
+    )
+  }`,
+}, location.origin)
+```
+
+Notes:
+
+- The message is only accepted from the page's own origin, so it has to be run
+  on the preview page itself, not the parent.
+- `PreviewFrame` has two layouts. The default centres a single component;
+  `<PreviewFrame layout="gallery">` wraps a set of many small items into rows
+  from the left, which is what a row of every button variant needs.
+- The code is compiled with sucrase and evaluated against
+  `lib/generated-preview/scope.tsx`. Only identifiers bound in
+  `GENERATED_PREVIEW_SCOPE` resolve — `lib/generated-preview/catalog.ts` is the
+  generated list of all 251, and it is what the assistant prompt advertises.
+- Posting again replaces the preview, so you can iterate without reloading.
+- Resize the window narrow (~320px) to reproduce how a preview behaves in the
+  chat card, which is where layout problems show up first.
+- `prepare-source.ts` rejects a few things before evaluation: unknown component
+  names, variant values a component does not define, and a short list of
+  blocked APIs. Those come back as an error in the frame rather than a crash.
