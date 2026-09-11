@@ -42,10 +42,7 @@ const SKIP_MISSING_DEPS: Record<string, string> = {
  * Deliberate local divergences. Listing a file here keeps the local copy and
  * documents why, so the sync does not silently revert a considered decision.
  */
-const KEEP_LOCAL: Record<string, string> = {
-  "drawer.tsx":
-    "local build uses vaul; the fork has migrated to @base-ui/react/drawer",
-}
+const KEEP_LOCAL: Record<string, string> = {}
 
 /** Rewrites fork-internal module paths onto this app's aliases. */
 const REWRITES: Array<[RegExp, string]> = [
