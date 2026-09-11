@@ -46,6 +46,12 @@ type PresetPageLiveContextValue = {
   showGeneratedPreview: (
     preview: GeneratedPreviewPayload & { presetCode?: string }
   ) => void
+  /**
+   * Drops the generated preview this session was holding and returns the pane
+   * to the preset's own views. The chat it came from is left alone; the URL
+   * gives up the linked chat too, so a reload does not restore either.
+   */
+  clearGeneratedPreview: () => void
 }
 
 /** How long to wait for a linked chat before giving up on its preview. */
@@ -171,6 +177,18 @@ export function PresetPageLiveProvider({
     [livePresetCode, router, tab]
   )
 
+  /**
+   * Only replaces the URL when it is actually carrying generated-view state,
+   * so clearing an already-plain page is not a navigation.
+   */
+  const clearGeneratedPreview = React.useCallback(() => {
+    setStoredGeneratedPreview(null)
+    if (view === "preview" && !searchParams.get(PRESET_CHAT_PARAM)) return
+    router.replace(presetBrowsePath(livePresetCode, "preview", tab), {
+      scroll: false,
+    })
+  }, [livePresetCode, router, searchParams, tab, view])
+
   const value = React.useMemo(
     () => ({
       livePresetCode,
@@ -185,6 +203,7 @@ export function PresetPageLiveProvider({
       setLiveTab,
       setGeneratedPreview,
       showGeneratedPreview,
+      clearGeneratedPreview,
     }),
     [
       livePresetCode,
@@ -199,6 +218,7 @@ export function PresetPageLiveProvider({
       setLiveTab,
       setGeneratedPreview,
       showGeneratedPreview,
+      clearGeneratedPreview,
     ]
   )
 

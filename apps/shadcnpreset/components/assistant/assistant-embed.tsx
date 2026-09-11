@@ -68,6 +68,7 @@ export function AssistantEmbed({
     onPromptSubmit,
     pending,
     sendContent,
+    startNewChat,
   } = chat
   const error = sendError ?? chatLoadError
   const lastUserText = React.useMemo(
@@ -123,6 +124,17 @@ export function AssistantEmbed({
     }
     live?.selectLivePreset(code)
     onApply?.()
+  }
+
+  /**
+   * Local only: the chat stays on the account and in the /assistant history,
+   * which is the full record. What goes is this surface's hold on it — the
+   * conversation, the generated preview behind the pane, and the chat in the
+   * URL that would otherwise restore both on reload.
+   */
+  function clearChat() {
+    startNewChat()
+    live?.clearGeneratedPreview()
   }
 
   return (
@@ -245,6 +257,7 @@ export function AssistantEmbed({
           resetKey={composerResetKey}
           disabled={isChatHydrating}
           onPromptSubmit={onPromptSubmit}
+          onNewChat={clearChat}
           placeholder={
             hasInteracted ? "Reply to refine..." : "Refine this preset..."
           }
