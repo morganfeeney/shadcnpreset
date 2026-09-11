@@ -58,11 +58,11 @@ export function AssistantEmbed({
     onPreview: live?.showGeneratedPreview,
   })
   const {
-    activeChatQuery,
     chatLoadError,
     composerResetKey,
     error: sendError,
     hasInteracted,
+    isChatHydrating,
     lastTurn,
     messages,
     onPromptSubmit,
@@ -125,14 +125,9 @@ export function AssistantEmbed({
     onApply?.()
   }
 
-  // A linked-to chat arrives empty for a beat; show it loading rather than
-  // flashing the "describe your ideal preset" empty state first.
-  const loadingLinkedChat =
-    Boolean(initialChatId) && !hasInteracted && activeChatQuery.isLoading
-
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {loadingLinkedChat ? (
+      {isChatHydrating ? (
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
           <Skeleton className="h-4 w-2/3 self-end" />
           <Skeleton className="h-16 w-full" />
@@ -248,6 +243,7 @@ export function AssistantEmbed({
           hasInteracted={hasInteracted}
           pending={pending}
           resetKey={composerResetKey}
+          disabled={isChatHydrating}
           onPromptSubmit={onPromptSubmit}
           placeholder={
             hasInteracted ? "Reply to refine..." : "Refine this preset..."

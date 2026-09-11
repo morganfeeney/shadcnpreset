@@ -12,6 +12,7 @@ import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +44,7 @@ export function AssistantChat({
     composerResetKey,
     error,
     hasInteracted,
+    isChatHydrating,
     lastTurn,
     messages,
     onPromptSubmit,
@@ -51,6 +53,11 @@ export function AssistantChat({
     openChatFromRoute,
     sendContent,
   } = chat
+
+  // A chat named in the URL arrives empty for a beat. Give it the conversation
+  // layout straight away, so someone who followed a link to an existing chat
+  // sees it loading rather than the new-chat hero flashing up first.
+  const showsConversation = hasInteracted || isChatHydrating
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
@@ -135,19 +142,24 @@ export function AssistantChat({
           <div
             className={cn(
               "mx-auto grid h-full w-full content-center rounded-lg border",
-              hasInteracted ? "content-between pt-10" : "content-center"
+              showsConversation ? "content-between pt-10" : "content-center"
             )}
           >
             <div>
               <div
-                className={cn("text-center", hasInteracted ? "hidden" : "pt-0")}
+                className={cn(
+                  "text-center",
+                  showsConversation ? "hidden" : "pt-0"
+                )}
               >
                 <h1 className="text-[32px] font-semibold tracking-tight text-balance">
                   Describe your ideal shadcn preset
                 </h1>
               </div>
 
-              {hasInteracted ? (
+              {isChatHydrating ? <AssistantChatSkeleton /> : null}
+
+              {hasInteracted && !isChatHydrating ? (
                 <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
                   <AssistantConversation
                     messages={messages}
@@ -220,8 +232,9 @@ export function AssistantChat({
             </div>
 
             <AssistantPromptComposer
-              hasInteracted={hasInteracted}
+              hasInteracted={showsConversation}
               pending={pending}
+              disabled={isChatHydrating}
               resetKey={composerResetKey}
               onPromptSubmit={onPromptSubmit}
             />
@@ -229,5 +242,31 @@ export function AssistantChat({
         </div>
       </SidebarProvider>
     </AssistantChatProvider>
+  )
+}
+
+/**
+ * Stand-in turns for a chat that is still loading. Sized like the real thing —
+ * a short prompt, a reply, then preset cards — so the conversation does not
+ * jump when it lands.
+ */
+function AssistantChatSkeleton() {
+  return (
+    <div
+      className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-4"
+      role="status"
+      aria-label="Loading chat"
+    >
+      <Skeleton className="h-9 w-2/3 self-end rounded-lg sm:w-1/3" />
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton className="h-36 rounded-lg" />
+        <Skeleton className="h-36 rounded-lg" />
+      </div>
+    </div>
   )
 }
