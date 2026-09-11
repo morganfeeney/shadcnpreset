@@ -351,9 +351,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // The new turn only. The server reads the rest of the conversation
+        // from the chat itself, so this does not grow with it.
         body: JSON.stringify({
           chatId: args.chatId ?? undefined,
-          messages: args.nextMessages,
+          messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
           livePresetCode: args.livePresetCode,
         }),
@@ -533,19 +535,9 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     })
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }]
-    const previousPresetMessage = [...messages]
-      .reverse()
-      .find(
-        (
-          message
-        ): message is Extract<ChatMessage, { role: "assistant"; kind: "presets" }> =>
-          message.role === "assistant" &&
-          message.kind === "presets" &&
-          Boolean(message.presets?.length)
-      )
-    const fromChat = previousPresetMessage?.presets?.map((preset) => preset.code)
-    const previousPresetCodes =
-      fromChat && fromChat.length > 0 ? fromChat : seedPresetCodes
+    // Only the seed. What the chat last offered is in the stored history, and
+    // the server prefers that over anything sent here.
+    const previousPresetCodes = seedPresetCodes
 
     const result = await sendMutation.mutateAsync({
       trimmed,
