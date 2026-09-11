@@ -164,6 +164,7 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - **Only the header and footer of a sheet or drawer are padded.** Body content between them supplies its own: \`<div className="flex-1 overflow-y-auto p-4">\`, which also makes it the part that scrolls.
 - These identifiers are in scope, and **nothing else is** — never invent a component or subcomponent name (there is no \`DrawerBody\`; a drawer is \`Drawer\` + \`DrawerTrigger\` + \`DrawerContent\` + \`DrawerHeader\` + \`DrawerTitle\` + \`DrawerFooter\`):
 ${GENERATED_PREVIEW_COMPONENT_NAMES.join(", ")}.
+- **There is no \`primary\` variant, and no \`md\` size.** The filled button is \`variant="default"\`, and the default size is \`size="default"\`. These two are the most common wrong guesses; the lists below are exhaustive.
 - Variant and size props are closed enums. A value outside these lists matches nothing, so the prop is silently ignored and the component renders at its default — there is no \`size="md"\` or \`size="xl"\`. Use exactly these:
 ${variantLines}
 - When asked to show "every variant" or "all sizes", render one of **each listed value**, and label each with the value it demonstrates.
