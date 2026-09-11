@@ -9,6 +9,7 @@ export const PREVIEW_LAYOUTS = [
   "single",
   "form",
   "gallery",
+  "grid",
   "list",
   "page",
   "stack",
@@ -61,6 +62,8 @@ type RootScan = {
   childNames: string[]
   /** Whether a `.map(` sits directly inside the root rather than nested deeper. */
   mapsAtRoot: boolean
+  /** The root element's own attributes, for reading the layout it asked for. */
+  rootAttrs: string
 }
 
 /**
@@ -73,13 +76,14 @@ type RootScan = {
 function scanRoot(body: string): RootScan {
   const tag = /<\s*(\/)?\s*([A-Za-z][\w$.]*)([^>]*?)(\/)?>/g
   const childNames: string[] = []
+  let rootAttrs = ""
   let depth = -1
   let rootStart = -1
   let rootEnd = body.length
   let match: RegExpExecArray | null
 
   while ((match = tag.exec(body))) {
-    const [full, closing, name, , selfClosing] = match
+    const [full, closing, name, attrs, selfClosing] = match
     const isSelfClosing = Boolean(selfClosing) || full.endsWith("/>")
 
     if (closing) {
@@ -98,6 +102,7 @@ function scanRoot(body: string): RootScan {
     }
     if (depth === 0) {
       rootStart = tag.lastIndex
+      rootAttrs = attrs ?? ""
     }
     if (isSelfClosing) {
       depth -= 1
@@ -111,7 +116,7 @@ function scanRoot(body: string): RootScan {
   const nested = inner.replace(/<\s*([A-Z][\w$.]*)[\s\S]*?<\/\s*\1\s*>/g, "")
   const mapsAtRoot = /\.map\s*\(/.test(nested)
 
-  return { childNames, mapsAtRoot }
+  return { childNames, mapsAtRoot, rootAttrs }
 }
 
 /** How many times the most-repeated name appears. */
@@ -147,9 +152,18 @@ export function inferPreviewLayout(code: string): PreviewLayout {
 
   // Only the root's direct children count: repeats deeper down are the internals
   // of one component, not a set of many.
-  const { childNames, mapsAtRoot } = scanRoot(body)
+  const { childNames, mapsAtRoot, rootAttrs } = scanRoot(body)
   const repeated = largestRepeat(childNames)
   const rendersList = mapsAtRoot && childNames.length > 0
+
+  // A root that lays itself out in columns has to be given a width to divide.
+  // Centred as a self-sizing component it shrinks to fit, and the columns
+  // collapse onto whatever intrinsic width their contents have — which, for a
+  // grid of skeletons, is none. Honoured before the repeat count, so markup
+  // that asked for a grid is not reflowed into a wrapping row.
+  if (/\bgrid\b/.test(rootAttrs)) {
+    return "grid"
+  }
 
   if (repeated >= GALLERY_THRESHOLD || rendersList) {
     return /\bflex-col\b/.test(body) ? "stack" : "gallery"

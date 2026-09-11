@@ -131,3 +131,35 @@ describe("lists of rows", () => {
     ).toBe("page")
   })
 })
+
+describe("markup that lays itself out", () => {
+  it("gives a grid root a width to divide", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <div className="grid grid-cols-2 gap-4">
+          <Card><CardContent><Skeleton className="h-20" /></CardContent></Card>
+          <Card><CardContent><Skeleton className="h-20" /></CardContent></Card>
+          <Card><CardContent><Skeleton className="h-20" /></CardContent></Card>
+        </div>
+      </PreviewFrame>`)
+    ).toBe("grid")
+  })
+
+  it("keeps a grid root out of the wrapping row", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <div className="grid grid-cols-3 gap-3">
+          <Card>1</Card><Card>2</Card><Card>3</Card><Card>4</Card><Card>5</Card>
+        </div>
+      </PreviewFrame>`)
+    ).toBe("grid")
+  })
+
+  it("ignores a grid nested below the root", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <Card><CardContent><div className="grid grid-cols-2">a</div></CardContent></Card>
+      </PreviewFrame>`)
+    ).toBe("single")
+  })
+})

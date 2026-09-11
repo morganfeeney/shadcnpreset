@@ -308,6 +308,9 @@ const LAYOUT_CLASSES: Record<PreviewLayout, string> = {
   // A whole screen — sidebar layouts, dashboards, login pages. Fills the
   // canvas edge to edge, so no centring and no padding of our own.
   page: "block min-h-svh w-full",
+  // Markup that lays itself out in columns. Wide, because a grid divides the
+  // width it is given, and bounded so it does not run the full canvas.
+  grid: "flex min-h-svh items-center justify-center p-6 [&>*]:w-full [&>*]:max-w-3xl",
   // Rows that span their container — an `Item` list. Wants the same centred
   // column a form gets, with room for media, text and an action side by side.
   list: "flex min-h-svh items-center justify-center p-6 [&>*]:w-full [&>*]:max-w-md",
