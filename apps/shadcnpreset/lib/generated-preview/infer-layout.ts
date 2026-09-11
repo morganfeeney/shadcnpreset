@@ -9,10 +9,10 @@ export const PREVIEW_LAYOUTS = [
   "single",
   "form",
   "gallery",
-  "grid",
   "list",
   "page",
   "stack",
+  "wide",
 ] as const
 
 export type PreviewLayout = (typeof PREVIEW_LAYOUTS)[number]
@@ -22,6 +22,16 @@ const PAGE_COMPONENTS = /<\s*(SidebarProvider|Sidebar|SidebarInset)\b/
 
 /** Root sized to the viewport is also a whole screen. */
 const PAGE_SIZING = /className="[^"]*\b(min-h-screen|h-screen|min-h-svh|h-svh)\b/
+
+/**
+ * Root components that take their width from whatever contains them.
+ *
+ * A `Table` is `w-full` inside a `w-full` container, so centred as a
+ * self-sizing component it runs the width of the canvas and its columns
+ * sprawl. Same root cause as a grid, opposite symptom: one fills whatever it
+ * is given, the other divides it, and neither has any width of its own.
+ */
+const FULL_WIDTH_COMPONENTS = /^\s*<\s*Table\b/
 
 /**
  * Components that mean the preview is a list of rows.
@@ -156,13 +166,13 @@ export function inferPreviewLayout(code: string): PreviewLayout {
   const repeated = largestRepeat(childNames)
   const rendersList = mapsAtRoot && childNames.length > 0
 
-  // A root that lays itself out in columns has to be given a width to divide.
-  // Centred as a self-sizing component it shrinks to fit, and the columns
-  // collapse onto whatever intrinsic width their contents have — which, for a
-  // grid of skeletons, is none. Honoured before the repeat count, so markup
-  // that asked for a grid is not reflowed into a wrapping row.
-  if (/\bgrid\b/.test(rootAttrs)) {
-    return "grid"
+  // Markup with no width of its own. A grid root shrinks to fit and its
+  // columns collapse onto their contents — for skeletons, onto nothing; a
+  // table fills every pixel it is offered and spreads its columns across the
+  // canvas. Both want the same bounded column. Read before the repeat count,
+  // so markup that asked for a grid is not reflowed into a wrapping row.
+  if (/\bgrid\b/.test(rootAttrs) || FULL_WIDTH_COMPONENTS.test(body)) {
+    return "wide"
   }
 
   if (repeated >= GALLERY_THRESHOLD || rendersList) {

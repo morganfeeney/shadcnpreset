@@ -133,6 +133,25 @@ describe("lists of rows", () => {
 })
 
 describe("markup that lays itself out", () => {
+  it("gives a table a bounded column instead of the whole canvas", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <Table>
+          <TableHeader><TableRow><TableHead>Invoice</TableHead></TableRow></TableHeader>
+          <TableBody>{rows.map((r) => (<TableRow key={r.id}><TableCell>{r.id}</TableCell></TableRow>))}</TableBody>
+        </Table>
+      </PreviewFrame>`)
+    ).toBe("wide")
+  })
+
+  it("leaves a table nested inside a card alone", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <Card><CardContent><Table><TableBody /></Table></CardContent></Card>
+      </PreviewFrame>`)
+    ).toBe("single")
+  })
+
   it("gives a grid root a width to divide", () => {
     expect(
       inferPreviewLayout(`<PreviewFrame>
@@ -142,7 +161,7 @@ describe("markup that lays itself out", () => {
           <Card><CardContent><Skeleton className="h-20" /></CardContent></Card>
         </div>
       </PreviewFrame>`)
-    ).toBe("grid")
+    ).toBe("wide")
   })
 
   it("keeps a grid root out of the wrapping row", () => {
@@ -152,7 +171,7 @@ describe("markup that lays itself out", () => {
           <Card>1</Card><Card>2</Card><Card>3</Card><Card>4</Card><Card>5</Card>
         </div>
       </PreviewFrame>`)
-    ).toBe("grid")
+    ).toBe("wide")
   })
 
   it("ignores a grid nested below the root", () => {
