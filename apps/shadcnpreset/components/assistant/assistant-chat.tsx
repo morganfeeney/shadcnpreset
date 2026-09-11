@@ -42,6 +42,7 @@ export function AssistantChat({
     activeChatId,
     chatLoadError,
     composerResetKey,
+    deleteChat,
     error,
     hasInteracted,
     isChatHydrating,
@@ -73,13 +74,18 @@ export function AssistantChat({
     openChatFromRoute(routeChatId)
   }
 
-  // The other direction, for a chat id that appears without anyone navigating:
-  // the first send naming a new chat, or deleting the chat being read. It only
-  // corrects the URL, so it replaces rather than pushes. Skipped while signed
-  // out — sign-in returns to window.location.href, and the hook parks the chat
-  // id until the session resolves.
+  // The other direction: a chat id that appears without anyone navigating,
+  // which is the first send naming a new chat. It only corrects the URL, so it
+  // replaces rather than pushes. Skipped while signed out — sign-in returns to
+  // window.location.href, and the hook parks the chat id until the session
+  // resolves.
+  //
+  // Only ever puts an id *into* the URL. Taking one out is what navigating to
+  // /assistant already did, and this effect cannot tell that apart from a chat
+  // id that has yet to catch up — so it used to race the New chat button and
+  // put the old chat straight back in the address bar.
   React.useEffect(() => {
-    if (requiresAuth || activeChatId === routeChatId) return
+    if (requiresAuth || !activeChatId || activeChatId === routeChatId) return
     router.replace(assistantChatPath(activeChatId), { scroll: false })
   }, [activeChatId, requiresAuth, routeChatId, router])
 
@@ -91,6 +97,15 @@ export function AssistantChat({
     toast.error(chatLoadError, { id: "assistant-chat-load" })
     openChatFromRoute(null)
   }, [chatLoadError, openChatFromRoute])
+
+  // Deleting the chat being read leaves the URL pointing at nothing, so it
+  // says where to go rather than leaving the effect above to infer it.
+  async function removeChat(chatId: string) {
+    await deleteChat(chatId)
+    if (chatId === routeChatId) {
+      router.replace(assistantChatPath(null), { scroll: false })
+    }
+  }
 
   // Opening a chat is somewhere the user can come back to, so it pushes.
   function openChat(chatId: string) {
@@ -105,7 +120,7 @@ export function AssistantChat({
 
   return (
     <AssistantChatProvider
-      value={{ ...chat, setActiveChatId: openChat }}
+      value={{ ...chat, setActiveChatId: openChat, deleteChat: removeChat }}
     >
       <SidebarProvider className="min-h-0 flex-1">
         <Sidebar
