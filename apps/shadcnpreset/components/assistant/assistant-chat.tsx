@@ -50,6 +50,7 @@ export function AssistantChat({
     messages,
     onPromptSubmit,
     pending,
+    pendingKind,
     requiresAuth,
     openChatFromRoute,
     sendContent,
@@ -179,6 +180,7 @@ export function AssistantChat({
                   <AssistantConversation
                     messages={messages}
                     pending={pending}
+                    pendingKind={pendingKind}
                     scrollLatestIntoView
                     renderPreview={(m) =>
                       m.preview.presetCode ? (

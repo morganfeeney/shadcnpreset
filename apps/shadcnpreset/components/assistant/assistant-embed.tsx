@@ -4,10 +4,7 @@ import * as React from "react"
 import { useSearchParams } from "next/navigation"
 import { SparklesIcon } from "lucide-react"
 
-import {
-  AssistantConversation,
-  AssistantPendingCompact,
-} from "@/components/assistant/assistant-conversation"
+import { AssistantConversation } from "@/components/assistant/assistant-conversation"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
@@ -22,7 +19,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
 import { PRESET_CHAT_PARAM } from "@/lib/preset-preview"
 import { trackEvent } from "@/lib/analytics-events"
 import type { ResolvedPreset } from "@/lib/preset"
@@ -67,17 +63,11 @@ export function AssistantEmbed({
     messages,
     onPromptSubmit,
     pending,
+    pendingKind,
     sendContent,
     startNewChat,
   } = chat
   const error = sendError ?? chatLoadError
-  const lastUserText = React.useMemo(
-    () =>
-      [...messages].reverse().find((message) => message.role === "user")?.content,
-    [messages]
-  )
-  const pendingPreview =
-    pending && Boolean(lastUserText && looksLikePreviewRequest(lastUserText))
 
   /**
    * Restores the preview when landing on a `?view=generated&chat=…` link cold.
@@ -152,13 +142,8 @@ export function AssistantEmbed({
             messages={messages}
             pending={pending}
             conversationContentClassName="gap-4 p-3"
-            pendingContent={
-              <AssistantPendingCompact
-                label={
-                  pendingPreview ? "Generating preview..." : "Generating presets..."
-                }
-              />
-            }
+            pendingKind={pendingKind}
+            pendingVariant="compact"
             renderPresets={(message) => (
               <PresetRelatedList
                 items={message.presets.map((preset) => ({
