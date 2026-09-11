@@ -49,15 +49,15 @@ import {
   X as XIcon,
 } from "lucide-react"
 
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/cn-ui/alert"
 import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+} from "@/components/cn-ui/chart"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/cn-ui/collapsible"
 import {
   Command,
   CommandDialog,
@@ -68,7 +68,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command"
+} from "@/components/cn-ui/command"
 import {
   Dialog,
   DialogClose,
@@ -78,7 +78,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/cn-ui/dialog"
 import {
   Empty,
   EmptyContent,
@@ -86,9 +86,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+} from "@/components/cn-ui/empty"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/cn-ui/hover-card"
+import { ScrollArea, ScrollBar } from "@/components/cn-ui/scroll-area"
 import {
   Sheet,
   SheetClose,
@@ -98,10 +98,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Spinner } from "@/components/ui/spinner"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+} from "@/components/cn-ui/sheet"
+import { Skeleton } from "@/components/cn-ui/skeleton"
+import { Spinner } from "@/components/cn-ui/spinner"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/cn-ui/tooltip"
 import {
   AlertDialog,
   AlertDialogAction,
