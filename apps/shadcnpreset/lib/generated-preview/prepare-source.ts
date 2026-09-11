@@ -548,3 +548,106 @@ export function findEmptyComponents(code: string): string[] {
 
   return [...found].sort()
 }
+
+export type MissingProvider = {
+  component: string
+  root: string
+}
+
+/**
+ * Families whose parts read a context their root provides.
+ *
+ * Each of these throws on render — "useSidebar must be used within a
+ * SidebarProvider" — so a preview that omits the root is not merely misshapen,
+ * it is a red error box. They are the four in `components/cn-ui` that throw;
+ * families whose parts degrade quietly are left out, because a rule that fires
+ * on working markup costs more than it saves.
+ */
+const REQUIRED_ROOTS: ReadonlyArray<{ prefix: string; root: string }> = [
+  { prefix: "Carousel", root: "Carousel" },
+  { prefix: "Chart", root: "ChartContainer" },
+  { prefix: "Drawer", root: "Drawer" },
+  { prefix: "Sidebar", root: "SidebarProvider" },
+]
+
+/**
+ * Parts used without the root that gives them their context.
+ *
+ * Presence anywhere in the preview counts as satisfying it, rather than
+ * requiring the root to be an ancestor in the tree. A preview may pull its
+ * navigation out into a helper component, and that helper's `SidebarMenu` has
+ * no visible ancestor at all — flagging it would send working markup back for
+ * repair. What this catches is the root missing altogether, which is the
+ * failure that actually happens.
+ */
+export function findMissingProviders(code: string): MissingProvider[] {
+  const found = new Map<string, MissingProvider>()
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) continue
+
+    for (const { prefix, root } of REQUIRED_ROOTS) {
+      if (tag.name === root || !tag.name.startsWith(prefix)) continue
+      if (new RegExp(`<\\s*${root}\\b`).test(code)) continue
+      // The first part reached is the outermost, which is the one worth
+      // naming: the others are inside it and fixed by the same wrapper.
+      if (!found.has(root)) {
+        found.set(root, { component: tag.name, root })
+      }
+    }
+  }
+
+  return [...found.values()]
+}
+
+/**
+ * Wrappers that style nothing, and the child that does the work.
+ *
+ * A `SidebarMenuItem` is a bare `<li>` — the padding, the text size, the
+ * hover and active states all live on `SidebarMenuButton`. A label dropped
+ * straight into the item is unstyled body text sitting in a nav rail, which
+ * is the same failure as a raw `<input>` in a form: it renders, and it
+ * renders wrong.
+ */
+const REQUIRED_CHILDREN: Record<string, string> = {
+  SidebarMenuItem: "SidebarMenuButton",
+}
+
+export type MissingChild = {
+  parent: string
+  required: string
+}
+
+/**
+ * Wrappers holding nothing but text.
+ *
+ * Only when the wrapper contains no component at all. A preview may put its
+ * own `<NavItem />` in there, and that helper is free to render the button —
+ * requiring the name to appear literally inside would fail working markup.
+ */
+export function findMissingChildren(code: string): MissingChild[] {
+  const found = new Map<string, MissingChild>()
+  const stack: Array<{ name: string; hasComponentChild: boolean }> = []
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) {
+      const closed = stack.pop()
+      const required = closed && REQUIRED_CHILDREN[closed.name]
+      if (required && !closed.hasComponentChild) {
+        found.set(closed.name, { parent: closed.name, required })
+      }
+      continue
+    }
+
+    const parent = stack[stack.length - 1]
+    if (parent && /^[A-Z]/.test(tag.name)) {
+      parent.hasComponentChild = true
+    }
+
+    if (!tag.selfClosing) {
+      stack.push({ name: tag.name, hasComponentChild: false })
+    }
+  }
+
+  return [...found.values()]
+}

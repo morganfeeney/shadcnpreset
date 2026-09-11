@@ -3,6 +3,8 @@ import { transform } from "sucrase"
 import { GENERATED_PREVIEW_COMPONENT_VARIANTS } from "@/lib/generated-preview/catalog"
 import {
   findClosedOverlay,
+  findMissingChildren,
+  findMissingProviders,
   findMisusedAsChild,
   findEmptyComponents,
   findStretchedControls,
@@ -13,6 +15,8 @@ import {
   findUnknownComponents,
   prepareGeneratedPreviewSource,
   type InvalidComposition,
+  type MissingChild,
+  type MissingProvider,
   type InvalidVariantProp,
   type RawHtmlControl,
 } from "@/lib/generated-preview/prepare-source"
@@ -28,6 +32,8 @@ export type GeneratedPreviewIssue = {
   error: string
   /** Component names the preview used that the scope does not provide. */
   unknownComponents?: string[]
+  /** The real members of the families those invented names were reaching for. */
+  unknownFamilies?: Array<{ prefix: string; names: string[] }>
   /** Variant props set to a value the component does not define. */
   invalidProps?: InvalidVariantProp[]
   /** Raw HTML controls used where a scope component exists. */
@@ -44,11 +50,43 @@ export type GeneratedPreviewIssue = {
   ungroupedFields?: boolean
   /** Components written with no content, which render as empty boxes. */
   emptyComponents?: string[]
+  /** Parts used without the root that supplies their context. */
+  missingProviders?: MissingProvider[]
+  /** Wrappers holding only text, where the child does the styling. */
+  missingChildren?: MissingChild[]
 }
 
 export type ValidateGeneratedPreviewResult =
   | { ok: true; code: string }
   | ({ ok: false } & GeneratedPreviewIssue)
+
+/**
+ * The real components an invented name was reaching for.
+ *
+ * `SidebarMenuGroup` and `SidebarTitle` do not exist; `SidebarGroup` and
+ * `SidebarGroupLabel` do, and sit beside them in the same family. Told only
+ * that a name is unavailable, the model has 251 of them to choose from and
+ * invents a neighbour again. Told what the family actually contains, it has
+ * the answer in front of it.
+ *
+ * Keyed on the first word of the name, which is what the model got right.
+ */
+function familiesFor(
+  unknown: string[],
+  scopeNames: Iterable<string>
+): Array<{ prefix: string; names: string[] }> {
+  const all = [...scopeNames]
+  const byPrefix = new Map<string, string[]>()
+
+  for (const name of unknown) {
+    const prefix = /^[A-Z][a-z]+/.exec(name)?.[0]
+    if (!prefix || byPrefix.has(prefix)) continue
+    const names = all.filter((candidate) => candidate.startsWith(prefix))
+    if (names.length) byPrefix.set(prefix, names)
+  }
+
+  return [...byPrefix].map(([prefix, names]) => ({ prefix, names }))
+}
 
 /**
  * Checks a generated preview without running it.
@@ -73,6 +111,7 @@ export function validateGeneratedPreviewSource(
         unknownComponents.length === 1 ? "is" : "are"
       } not available here.`,
       unknownComponents,
+      unknownFamilies: familiesFor(unknownComponents, scopeNames),
     }
   }
 
@@ -128,6 +167,30 @@ export function validateGeneratedPreviewSource(
         stretchedControls.length === 1 ? "it" : "them"
       } to full width.`,
       stretchedControls,
+    }
+  }
+
+  const missingChildren = findMissingChildren(prepared.code)
+  if (missingChildren.length) {
+    const detail = missingChildren
+      .map(({ parent, required }) => `${parent} without a ${required}`)
+      .join("; ")
+    return {
+      ok: false,
+      error: `This preview leaves a wrapper to do a child's job: ${detail}.`,
+      missingChildren,
+    }
+  }
+
+  const missingProviders = findMissingProviders(prepared.code)
+  if (missingProviders.length) {
+    const detail = missingProviders
+      .map(({ component, root }) => `${component} without a ${root}`)
+      .join("; ")
+    return {
+      ok: false,
+      error: `This preview would throw on render: ${detail}.`,
+      missingProviders,
     }
   }
 
@@ -213,7 +276,13 @@ export function describeGeneratedPreviewIssue(
     lines.push(
       `${issue.unknownComponents.join(", ")} ${
         issue.unknownComponents.length === 1 ? "is" : "are"
-      } not in scope. Rebuild that part from the listed components, or drop it.`
+      } not in scope. Use the real ones, or drop that part.`
+    )
+    for (const { prefix, names } of issue.unknownFamilies ?? []) {
+      lines.push(`Everything named ${prefix}*: ${names.join(", ")}.`)
+    }
+    lines.push(
+      "That list is the whole family — if none of it does what you wanted, the component does not exist. Use the nearest one that does, or plain text in a `<div>`. Do not reach for another name."
     )
   }
 
@@ -242,6 +311,28 @@ export function describeGeneratedPreviewIssue(
       } stretched edge to edge. ${
         issue.stretchedControls.length === 1 ? "It sits" : "They sit"
       } beside the label instead: \`<Field orientation="horizontal"><FieldLabel htmlFor="x">…</FieldLabel><Switch id="x" /></Field>\`. Do not put the control inside a \`FieldContent\` — that is the text column, for a \`FieldTitle\` and \`FieldDescription\`; the control is its sibling.`
+    )
+  }
+
+  if (issue.missingChildren?.length) {
+    lines.push(
+      `${issue.missingChildren
+        .map(
+          ({ parent, required }) =>
+            `${parent} styles nothing on its own — its label belongs in a ${required}`
+        )
+        .join("; ")}. Left bare, the text renders at body size with no padding, no hover and no active state.`
+    )
+  }
+
+  if (issue.missingProviders?.length) {
+    lines.push(
+      `${issue.missingProviders
+        .map(
+          ({ component, root }) =>
+            `${component} reads context from ${root}, which this preview never renders`
+        )
+        .join("; ")}. Wrap the whole thing in the root — without it the preview throws rather than rendering.`
     )
   }
 

@@ -9,6 +9,19 @@ import {
 
 const scope = [
   "PreviewFrame",
+  "SidebarMenuItem",
+  "SidebarMenuButton",
+  "SidebarGroup",
+  "SidebarGroupLabel",
+  "Sidebar",
+  "SidebarProvider",
+  "SidebarContent",
+  "SidebarGroup",
+  "SidebarMenu",
+  "SidebarMenuButton",
+  "SidebarFooter",
+  "ChartContainer",
+  "ChartTooltip",
   "Toggle",
   "FieldTitle",
   "Sheet",
@@ -67,6 +80,31 @@ describe("validateGeneratedPreviewSource", () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.code).toContain("function Preview")
+  })
+
+  it("offers the real family behind an invented name", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar>
+                <SidebarMenuGroup><SidebarMenuButton>Home</SidebarMenuButton></SidebarMenuGroup>
+              </Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.unknownComponents).toEqual(["SidebarMenuGroup"])
+    const family = result.unknownFamilies?.[0]
+    expect(family?.prefix).toBe("Sidebar")
+    expect(family?.names).toContain("SidebarGroup")
+    expect(family?.names).not.toContain("SidebarMenuGroup")
   })
 
   it("names the components that are not in scope", () => {
@@ -578,6 +616,166 @@ describe("validateGeneratedPreviewSource", () => {
     expect(result.stretchedControls).toEqual(["Toggle"])
   })
 
+  it("catches a nav label that never reaches a button", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar>
+                <SidebarMenu>
+                  <SidebarMenuItem>Home</SidebarMenuItem>
+                  <SidebarMenuItem>Settings</SidebarMenuItem>
+                </SidebarMenu>
+              </Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.missingChildren).toEqual([
+      { parent: "SidebarMenuItem", required: "SidebarMenuButton" },
+    ])
+  })
+
+  it("accepts a label inside its button", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>Home</SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(true)
+  })
+
+  it("leaves an item that renders its own component alone", () => {
+    const result = validateGeneratedPreviewSource(
+      `function NavLink() {
+        return <SidebarMenuButton>Home</SidebarMenuButton>
+      }
+      function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar>
+                <SidebarMenu>
+                  <SidebarMenuItem><NavLink /></SidebarMenuItem>
+                </SidebarMenu>
+              </Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(true)
+  })
+
+  it("catches a sidebar with no provider around it", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <Sidebar>
+              <SidebarContent>
+                <SidebarGroup>
+                  <SidebarMenu>
+                    <SidebarMenuButton>Home</SidebarMenuButton>
+                  </SidebarMenu>
+                </SidebarGroup>
+              </SidebarContent>
+            </Sidebar>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.missingProviders).toEqual([
+      { component: "Sidebar", root: "SidebarProvider" },
+    ])
+  })
+
+  it("accepts the same sidebar once the provider is there", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar>
+                <SidebarContent>
+                  <SidebarMenu>
+                    <SidebarMenuButton>Home</SidebarMenuButton>
+                  </SidebarMenu>
+                </SidebarContent>
+              </Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(true)
+  })
+
+  it("accepts a part pulled out into a helper component", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Nav() {
+        return <SidebarMenu><SidebarMenuButton>Home</SidebarMenuButton></SidebarMenu>
+      }
+      function Preview() {
+        return (
+          <PreviewFrame>
+            <SidebarProvider>
+              <Sidebar><SidebarContent><Nav /></SidebarContent></Sidebar>
+            </SidebarProvider>
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(true)
+  })
+
+  it("catches a chart part with no container", () => {
+    const result = validateGeneratedPreviewSource(
+      `function Preview() {
+        return (
+          <PreviewFrame>
+            <ChartTooltip />
+          </PreviewFrame>
+        )
+      }`,
+      scope
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.missingProviders?.[0]?.root).toBe("ChartContainer")
+  })
+
   it("catches JSX that does not parse", () => {
     const result = validateGeneratedPreviewSource(
       `function Preview() {
@@ -612,14 +810,18 @@ describe("validateGeneratedPreviewSource", () => {
 })
 
 describe("describeGeneratedPreviewIssue", () => {
-  it("tells the model which names it invented", () => {
+  it("tells the model which names it invented, and the real ones", () => {
     const message = describeGeneratedPreviewIssue({
       error: "This preview uses DrawerBody, which is not available here.",
       unknownComponents: ["DrawerBody"],
+      unknownFamilies: [
+        { prefix: "Drawer", names: ["Drawer", "DrawerContent", "DrawerTitle"] },
+      ],
     })
 
     expect(message).toContain("DrawerBody")
     expect(message).toContain("not in scope")
+    expect(message).toContain("Drawer*: Drawer, DrawerContent, DrawerTitle")
   })
 
   it("spells out the replacement for a raw control", () => {
@@ -650,6 +852,16 @@ describe("describeGeneratedPreviewIssue", () => {
 
     expect(message).toContain('orientation="horizontal"')
     expect(message).toContain("Switch")
+  })
+
+  it("names the root a part is missing", () => {
+    const message = describeGeneratedPreviewIssue({
+      error: "This preview would throw on render.",
+      missingProviders: [{ component: "Sidebar", root: "SidebarProvider" }],
+    })
+
+    expect(message).toContain("SidebarProvider")
+    expect(message).toContain("throws")
   })
 
   it("points at the render prop instead of asChild", () => {

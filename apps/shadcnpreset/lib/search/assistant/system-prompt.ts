@@ -157,6 +157,7 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - A form is \`Card\` + \`FieldGroup\` + \`Field\` + \`FieldLabel\` + \`Input\` + \`Button\`.
 - \`InputGroup\` draws the border, background and radius for the whole field, so its control must be \`InputGroupInput\` (or \`InputGroupTextarea\`), which has no chrome of its own — a plain \`Input\` there renders as a second box inside the first. Affixes go in \`InputGroupAddon\`, and it is for something persistent like a unit, a prefix or an icon, never a repeat of the placeholder.
 - A \`Field\` is a vertical stack whose children are stretched to full width, which is right for a label above an input. A **checkbox, switch, radio or avatar keeps its own shape and sits beside its label**, so that row needs \`orientation="horizontal"\` — left vertical, the control is stretched edge to edge. Give the row a \`FieldContent\` when it has a title and a description.
+- **A sidebar is a whole screen, not a rail on its own.** Put it in a \`SidebarProvider\` beside a \`SidebarInset\` holding something to look at — a rail against an empty canvas reads as a mistake. Every nav label goes inside a \`SidebarMenuButton\`: \`SidebarMenuItem\` is a bare list item and styles nothing, so a label left in it renders as body text in a nav rail.
 - **A list of people, files or records is an \`ItemGroup\` of \`Item\`s**, never a hand-built row. The \`Item\` supplies the padding, the border and the gaps between its parts: \`ItemMedia\` for an avatar or icon, \`ItemContent\` wrapping \`ItemTitle\` and \`ItemDescription\`, \`ItemActions\` for a button. Built out of plain divs instead, a row has no spacing at all and the text runs into the avatar.
 - **An on/off setting is a \`Switch\`.** A \`Toggle\` is a pressable button whose content is the point — an icon or a word — so a \`Toggle\` with nothing inside is an empty box. The same goes for \`Button\` and \`Badge\`: never write one with no content.
 - **Several fields always go in a \`FieldGroup\`.** The gap between fields belongs to the group, not the field, so bare sibling \`Field\`s stack flush against each other. \`FieldContent\` is the text column of one row — a \`FieldTitle\` and \`FieldDescription\` — and never holds the control; the control is its sibling.
@@ -182,6 +183,71 @@ function Preview() {
   return (
     <PreviewFrame>
       <DatePicker />
+    </PreviewFrame>
+  )
+}
+
+Example \`previewCode\` for a dashboard shell:
+function Preview() {
+  return (
+    <PreviewFrame>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="px-2 py-1.5 text-sm font-semibold">Acme Inc</div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive>
+                      <HomeIcon />
+                      Home
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>
+                      <SettingsIcon />
+                      Settings
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="lg">
+                  <Avatar>
+                    <AvatarFallback>AL</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="truncate text-sm font-medium">Ada Lovelace</span>
+                    <span className="truncate text-xs text-muted-foreground">ada@acme.com</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-14 items-center gap-2 border-b px-4">
+            <SidebarTrigger />
+            <span className="text-sm font-medium">Home</span>
+          </header>
+          <div className="p-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+              </CardHeader>
+              <CardContent>Something to look at beside the rail.</CardContent>
+            </Card>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </PreviewFrame>
   )
 }
