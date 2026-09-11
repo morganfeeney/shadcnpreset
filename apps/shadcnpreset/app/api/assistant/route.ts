@@ -292,19 +292,14 @@ type NormalizedPreview = Extract<
  * fails is returned as-is: the renderer reports it exactly as it does today,
  * so the worst case is what used to be the only case.
  */
-async function repairPreviewIfNeeded(
-  preview: NormalizedPreview,
-  assistantMessage: string,
-  messages: TurnMessage[],
-  askModel: (messages: TurnMessage[]) => ReturnType<typeof generateText>
-): Promise<{ preview: NormalizedPreview; assistantMessage: string }> {
-  const issue = validateGeneratedPreviewSource(
-    preview.code,
-    GENERATED_PREVIEW_COMPONENT_NAMES
-  )
-  if (issue.ok) return { preview, assistantMessage }
+/** How many times a preview that fails its checks is handed back to be fixed. */
+const MAX_REPAIR_ATTEMPTS = 2
 
-  console.warn("[api/assistant] repairing preview", {
+function logPreviewIssue(
+  stage: string,
+  issue: Extract<ReturnType<typeof validateGeneratedPreviewSource>, { ok: false }>
+) {
+  console.warn(`[api/assistant] ${stage}`, {
     error: issue.error,
     unknownComponents: issue.unknownComponents,
     invalidProps: issue.invalidProps?.map(
@@ -319,37 +314,77 @@ async function repairPreviewIfNeeded(
     stretchedControls: issue.stretchedControls,
     ungroupedFields: issue.ungroupedFields,
     emptyComponents: issue.emptyComponents,
+    missingChildren: issue.missingChildren?.map(
+      ({ parent, required }) => `${parent} without ${required}`
+    ),
+    missingProviders: issue.missingProviders?.map(
+      ({ component, root }) => `${component} without ${root}`
+    ),
   })
+}
 
-  try {
-    const retry = await askModel([
-      ...messages,
-      { role: "assistant", content: preview.code },
-      { role: "user", content: describeGeneratedPreviewIssue(issue) },
-    ])
-    const repaired = retry.output ? normalizeAssistantTurn(retry.output) : null
-    if (repaired?.phase !== "preview") return { preview, assistantMessage }
+async function repairPreviewIfNeeded(
+  preview: NormalizedPreview,
+  assistantMessage: string,
+  messages: TurnMessage[],
+  askModel: (messages: TurnMessage[]) => ReturnType<typeof generateText>
+): Promise<{ preview: NormalizedPreview; assistantMessage: string }> {
+  let current = preview
+  let issue = validateGeneratedPreviewSource(
+    current.code,
+    GENERATED_PREVIEW_COMPONENT_NAMES
+  )
+  if (issue.ok) return { preview, assistantMessage }
 
-    // Only take the repair if it actually renders. A second broken preview is
-    // no better than the first, and the first at least matches what was asked.
-    const recheck = validateGeneratedPreviewSource(
-      repaired.preview.code,
+  // Each attempt sees its own last try and what was wrong with it. One pass
+  // was not enough in practice: a preview with two invented component names
+  // came back with one, which is progress the loop had no way to continue.
+  const transcript: TurnMessage[] = [...messages]
+
+  for (
+    let attempt = 1;
+    attempt <= MAX_REPAIR_ATTEMPTS && !issue.ok;
+    attempt += 1
+  ) {
+    logPreviewIssue(`repairing preview (attempt ${attempt})`, issue)
+
+    transcript.push(
+      { role: "assistant", content: current.code },
+      { role: "user", content: describeGeneratedPreviewIssue(issue) }
+    )
+
+    let repaired: NormalizedPreview | null = null
+    try {
+      const retry = await askModel(transcript)
+      const normalized = retry.output ? normalizeAssistantTurn(retry.output) : null
+      repaired = normalized?.phase === "preview" ? normalized.preview : null
+    } catch (error) {
+      console.warn("[api/assistant] preview repair errored", error)
+      break
+    }
+
+    // A turn that came back as anything but a preview has lost the thread;
+    // asking again from the same place will not find it.
+    if (!repaired) break
+
+    current = repaired
+    issue = validateGeneratedPreviewSource(
+      current.code,
       GENERATED_PREVIEW_COMPONENT_NAMES
     )
-    if (!recheck.ok) {
-      console.warn("[api/assistant] preview repair failed", {
-        error: recheck.error,
-      })
-      return { preview, assistantMessage }
-    }
+  }
 
-    return {
-      preview: { ...repaired.preview, title: preview.title },
-      assistantMessage,
-    }
-  } catch (error) {
-    console.warn("[api/assistant] preview repair errored", error)
+  if (!issue.ok) {
+    // Out of attempts. The original is what was actually asked for, and both
+    // versions render the same error, so hand back the one that is not the
+    // product of a failed correction.
+    logPreviewIssue("preview repair gave up", issue)
     return { preview, assistantMessage }
+  }
+
+  return {
+    preview: { ...current, title: preview.title },
+    assistantMessage,
   }
 }
 
