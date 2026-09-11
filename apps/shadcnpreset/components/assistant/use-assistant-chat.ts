@@ -461,6 +461,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
 
       const nextMessages = [...result.args.nextMessages, reply]
       setMessages(nextMessages)
+      // The reply is on screen, so the waiting state is done. `onSettled` is
+      // too late: it does not run until this handler resolves, and everything
+      // below it awaits, which left the placeholder sitting under the answer
+      // it was standing in for.
+      setPending(false)
       setLastTurn(data.phase === "gathering" ? data : null)
       if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
