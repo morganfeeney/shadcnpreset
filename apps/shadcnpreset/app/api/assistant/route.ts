@@ -8,7 +8,10 @@ import {
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { saveAssistantChatForUser } from "@/lib/assistant-chat-store"
+import {
+  getAssistantChatForUser,
+  saveAssistantChatForUser,
+} from "@/lib/assistant-chat-store"
 import { GENERATED_PREVIEW_COMPONENT_NAMES } from "@/lib/generated-preview/catalog"
 import {
   describeGeneratedPreviewIssue,
@@ -40,6 +43,16 @@ import {
 
 export const maxDuration = 60
 
+/**
+ * Messages a single chat may hold.
+ *
+ * The client posts the whole conversation back on every send, so this bounds
+ * the request, the prompt and the row count together. Reaching it ends the
+ * chat rather than silently dropping the oldest turns — a conversation that
+ * quietly forgets its own beginning is worse than one that says it is full.
+ */
+const MAX_CHAT_MESSAGES = 32
+
 const bodySchema = z.object({
   chatId: z.string().uuid().optional(),
   messages: z
@@ -69,7 +82,9 @@ const bodySchema = z.object({
       })
     )
     .min(1)
-    .max(32),
+    // The new turn only. History for an existing chat is read from the
+    // database, so the request carries a message rather than a transcript.
+    .max(4),
   previousPresetCodes: z.array(z.string().min(2).max(32)).max(4).optional(),
   livePresetCode: z.string().min(2).max(32).optional(),
 })
@@ -366,14 +381,58 @@ export async function POST(request: Request) {
 
   const parsed = bodySchema.safeParse(json)
   if (!parsed.success) {
+    // The rejection is almost always a message the client hydrated from a
+    // stored chat, so the offending field matters more than the fact of it.
+    // Without this the only record is the response body, which is gone by the
+    // time anyone asks why a chat stopped accepting replies.
+    console.error(
+      "[api/assistant] rejected request",
+      JSON.stringify(parsed.error.flatten().fieldErrors),
+      parsed.error.issues.slice(0, 5).map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code,
+        message: issue.message,
+      }))
+    )
     return NextResponse.json(
       { error: "Invalid request", details: parsed.error.flatten() },
       { status: 400 }
     )
   }
 
+  /**
+   * History comes from storage, not from the client.
+   *
+   * The client used to post the whole conversation back on every send and the
+   * server wrote that array down as the chat — so the request grew with the
+   * conversation, and a client working from a stale copy could shorten it.
+   * Reading it here makes the stored chat the only version there is.
+   */
+  const storedChat = parsed.data.chatId
+    ? await getAssistantChatForUser(user.id, parsed.data.chatId)
+    : null
+  if (parsed.data.chatId && !storedChat) {
+    return NextResponse.json(
+      { error: "That chat no longer exists.", code: "chat_missing" },
+      { status: 404 }
+    )
+  }
+  const history = storedChat?.messages ?? []
+
   const modelId = process.env.OPENAI_ASSISTANT_MODEL ?? "gpt-4o-mini"
-  const previousPresets = (parsed.data.previousPresetCodes ?? [])
+  // What was last offered in this chat, which the client used to work out and
+  // send. It is in the history now, so only the fallback has to come over the
+  // wire — the preset the sidebar is sitting on when a chat has no turns yet.
+  const lastOfferedCodes = [...history]
+    .reverse()
+    .find(
+      (message) =>
+        message.role === "assistant" &&
+        message.kind === "presets" &&
+        Boolean(message.presets?.length)
+    )
+    ?.presets?.map((preset) => preset.code)
+  const previousPresets = (lastOfferedCodes ?? parsed.data.previousPresetCodes ?? [])
     .map((code) => resolvePresetFromCode(code))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
   const previousPresetContext = buildPreviousPresetContext(previousPresets)
@@ -399,7 +458,20 @@ export async function POST(request: Request) {
     previewPresetCode
   )
 
-  const chatMessages = parsed.data.messages.filter((m, i) => {
+  // Counted against what is stored, plus the turn about to be added: the
+  // request no longer carries enough to judge this for itself.
+  if (history.length + parsed.data.messages.length + 1 > MAX_CHAT_MESSAGES) {
+    return NextResponse.json(
+      {
+        error:
+          "This chat is full. Start a new chat to keep going — this one stays in your history.",
+        code: "chat_full",
+      },
+      { status: 400 }
+    )
+  }
+
+  const chatMessages = [...history, ...parsed.data.messages].filter((m, i) => {
     if (i === 0 && m.role === "assistant") return false
     return true
   })
