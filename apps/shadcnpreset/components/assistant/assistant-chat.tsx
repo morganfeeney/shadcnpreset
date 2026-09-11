@@ -123,12 +123,14 @@ export function AssistantChat({
     <AssistantChatProvider
       value={{ ...chat, setActiveChatId: openChat, deleteChat: removeChat }}
     >
-      <SidebarProvider className="min-h-0 flex-1">
+      <SidebarProvider className="h-full min-h-0 overflow-hidden">
         <Sidebar
           collapsible="none"
-          className="hidden border-r border-border/70 md:sticky md:top-0 md:flex md:h-[calc(100svh-64px)]"
+          className="hidden h-full border-r border-border/70 md:flex"
         >
-          <SidebarContent>
+          {/* Its own scroller: reaching either end stops here rather than
+              handing the rest of the gesture to the conversation. */}
+          <SidebarContent className="overscroll-contain">
             <SidebarGroup className="sticky top-0 z-10 bg-background">
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -154,14 +156,21 @@ export function AssistantChat({
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 md:pr-2">
+        <div className="flex min-w-0 flex-1 flex-col md:pr-2">
           <div
             className={cn(
-              "mx-auto grid h-full w-full content-center rounded-lg border",
-              showsConversation ? "content-between pt-10" : "content-center"
+              "mx-auto flex h-full w-full min-h-0 flex-col rounded-lg border",
+              // Nothing to scroll before the first turn, so the empty state
+              // sits in the middle of the pane with the composer under it.
+              showsConversation || "justify-center"
             )}
           >
-            <div>
+            <div
+              className={cn(
+                showsConversation &&
+                  "min-h-0 flex-1 overflow-y-auto overscroll-contain pt-10"
+              )}
+            >
               <div
                 className={cn(
                   "text-center",

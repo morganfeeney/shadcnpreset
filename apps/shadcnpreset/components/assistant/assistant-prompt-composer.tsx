@@ -96,8 +96,10 @@ export function AssistantPromptComposer({
           ? "w-full p-3"
           : cn(
               "z-20 mx-auto w-full max-w-[690px] p-4 transition-all duration-300",
+              // The pane below the conversation's scroller, not a sticky
+              // overlay on it — it holds its place while the chat moves past.
               hasInteracted
-                ? "sticky bottom-0 mt-6 max-w-4xl rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
+                ? "mt-6 max-w-4xl shrink-0 rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
                 : ""
             ),
         className
