@@ -1,89 +1,32 @@
 import * as React from "react"
 
-import type {
-  InvalidVariantProp,
-  RawHtmlControl,
-} from "@/lib/generated-preview/prepare-source"
 import { transform } from "sucrase"
 
-import { GENERATED_PREVIEW_COMPONENT_VARIANTS } from "@/lib/generated-preview/catalog"
 import {
-  findInvalidVariantProps,
-  findRawHtmlControls,
-  findUnknownComponents,
-  prepareGeneratedPreviewSource,
-} from "@/lib/generated-preview/prepare-source"
+  validateGeneratedPreviewSource,
+  type GeneratedPreviewIssue,
+} from "@/lib/generated-preview/validate"
 
 export type CompileGeneratedPreviewResult =
   | {
       ok: true
       component: React.ComponentType
     }
-  | {
-      ok: false
-      error: string
-      /** Component names the preview used that the scope does not provide. */
-      unknownComponents?: string[]
-      /** Variant props set to a value the component does not define. */
-      invalidProps?: InvalidVariantProp[]
-      /** Raw HTML controls used where a scope component exists. */
-      rawControls?: RawHtmlControl[]
-    }
+  | ({ ok: false } & GeneratedPreviewIssue)
 
 export function compileGeneratedPreview(
   raw: string,
   scope: Record<string, unknown>
 ): CompileGeneratedPreviewResult {
-  const prepared = prepareGeneratedPreviewSource(raw)
-  if (!prepared.ok) return prepared
-
-  const unknownComponents = findUnknownComponents(
-    prepared.code,
-    Object.keys(scope)
-  )
-  if (unknownComponents.length) {
-    return {
-      ok: false,
-      error: `This preview uses ${unknownComponents.join(", ")}, which ${
-        unknownComponents.length === 1 ? "is" : "are"
-      } not available here.`,
-      unknownComponents,
-    }
-  }
-
-  const rawControls = findRawHtmlControls(prepared.code)
-  if (rawControls.length) {
-    const detail = rawControls
-      .map(({ element, use }) => `<${element}> (use ${use})`)
-      .join("; ")
-    return {
-      ok: false,
-      error: `This preview uses raw HTML controls, which the preset cannot style: ${detail}.`,
-      rawControls,
-    }
-  }
-
-  const invalidProps = findInvalidVariantProps(
-    prepared.code,
-    GENERATED_PREVIEW_COMPONENT_VARIANTS
-  )
-  if (invalidProps.length) {
-    const detail = invalidProps
-      .map(
-        ({ component, prop, value, allowed }) =>
-          `${component} ${prop}="${value}" (use ${allowed.join(", ")})`
-      )
-      .join("; ")
-    return {
-      ok: false,
-      error: `This preview sets a variant that does not exist: ${detail}.`,
-      invalidProps,
-    }
-  }
+  // The same checks the server ran before returning this preview. They repeat
+  // here because a preview can arrive from anywhere — a stored chat, a shared
+  // link, a turn that predates the server-side pass.
+  const validated = validateGeneratedPreviewSource(raw, Object.keys(scope))
+  if (!validated.ok) return validated
 
   let transformed: string
   try {
-    transformed = transform(prepared.code, {
+    transformed = transform(validated.code, {
       transforms: ["jsx", "typescript"],
       jsxRuntime: "classic",
       production: true,

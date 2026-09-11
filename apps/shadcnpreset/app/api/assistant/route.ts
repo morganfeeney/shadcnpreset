@@ -9,6 +9,11 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { saveAssistantChatForUser } from "@/lib/assistant-chat-store"
+import { GENERATED_PREVIEW_COMPONENT_NAMES } from "@/lib/generated-preview/catalog"
+import {
+  describeGeneratedPreviewIssue,
+  validateGeneratedPreviewSource,
+} from "@/lib/generated-preview/validate"
 import { getSessionUser } from "@/lib/auth"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
@@ -252,6 +257,87 @@ function encodeReadyPayload(
   }
 }
 
+type TurnMessage = { role: "user" | "assistant"; content: string }
+
+type NormalizedPreview = Extract<
+  ReturnType<typeof normalizeAssistantTurn>,
+  { phase: "preview" }
+>["preview"]
+
+/**
+ * Gives a preview that cannot render one chance to come back fixed.
+ *
+ * The renderer already caught these — an invented component, a variant that
+ * does not exist, a raw `<input>` — but only once the turn was on screen, so
+ * the user was the one who fed the problem back. The checks are pure string
+ * work, so running them here closes that loop while the model is still in a
+ * position to act on it.
+ *
+ * One attempt, and only for previews that fail a check. A repair that also
+ * fails is returned as-is: the renderer reports it exactly as it does today,
+ * so the worst case is what used to be the only case.
+ */
+async function repairPreviewIfNeeded(
+  preview: NormalizedPreview,
+  assistantMessage: string,
+  messages: TurnMessage[],
+  askModel: (messages: TurnMessage[]) => ReturnType<typeof generateText>
+): Promise<{ preview: NormalizedPreview; assistantMessage: string }> {
+  const issue = validateGeneratedPreviewSource(
+    preview.code,
+    GENERATED_PREVIEW_COMPONENT_NAMES
+  )
+  if (issue.ok) return { preview, assistantMessage }
+
+  console.warn("[api/assistant] repairing preview", {
+    error: issue.error,
+    unknownComponents: issue.unknownComponents,
+    invalidProps: issue.invalidProps?.map(
+      ({ component, prop, value }) => `${component} ${prop}="${value}"`
+    ),
+    rawControls: issue.rawControls?.map(({ element }) => element),
+    invalidCompositions: issue.invalidCompositions?.map(
+      ({ parent, child }) => `${child} in ${parent}`
+    ),
+    closedOverlay: issue.closedOverlay,
+    misusedAsChild: issue.misusedAsChild,
+    stretchedControls: issue.stretchedControls,
+    ungroupedFields: issue.ungroupedFields,
+    emptyComponents: issue.emptyComponents,
+  })
+
+  try {
+    const retry = await askModel([
+      ...messages,
+      { role: "assistant", content: preview.code },
+      { role: "user", content: describeGeneratedPreviewIssue(issue) },
+    ])
+    const repaired = retry.output ? normalizeAssistantTurn(retry.output) : null
+    if (repaired?.phase !== "preview") return { preview, assistantMessage }
+
+    // Only take the repair if it actually renders. A second broken preview is
+    // no better than the first, and the first at least matches what was asked.
+    const recheck = validateGeneratedPreviewSource(
+      repaired.preview.code,
+      GENERATED_PREVIEW_COMPONENT_NAMES
+    )
+    if (!recheck.ok) {
+      console.warn("[api/assistant] preview repair failed", {
+        error: recheck.error,
+      })
+      return { preview, assistantMessage }
+    }
+
+    return {
+      preview: { ...repaired.preview, title: preview.title },
+      assistantMessage,
+    }
+  } catch (error) {
+    console.warn("[api/assistant] preview repair errored", error)
+    return { preview, assistantMessage }
+  }
+}
+
 export async function POST(request: Request) {
   const user = await getSessionUser()
   if (!user) {
@@ -324,20 +410,24 @@ export async function POST(request: Request) {
     )
   }
 
-  try {
-    const result = await generateText({
+  const system = [
+    buildAssistantSystemPrompt(),
+    livePresetContext,
+    previousPresetContext,
+  ]
+    .filter((s) => s.trim().length > 0)
+    .join("\n\n")
+
+  const turnMessages = chatMessages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }))
+
+  const askModel = (messages: typeof turnMessages) =>
+    generateText({
       model: openai(modelId),
-      system: [
-        buildAssistantSystemPrompt(),
-        livePresetContext,
-        previousPresetContext,
-      ]
-        .filter((s) => s.trim().length > 0)
-        .join("\n\n"),
-      messages: chatMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
+      system,
+      messages,
       output: Output.object({
         schema: assistantTurnOutputSchema,
         name: "PresetAssistantTurn",
@@ -347,6 +437,9 @@ export async function POST(request: Request) {
       temperature: 0.35,
       maxRetries: 0,
     })
+
+  try {
+    const result = await askModel(turnMessages)
 
     const object = result.output
     if (!object) {
@@ -373,11 +466,17 @@ export async function POST(request: Request) {
     }
 
     if (normalized.phase === "preview") {
+      const preview = await repairPreviewIfNeeded(
+        normalized.preview,
+        normalized.assistantMessage,
+        turnMessages,
+        askModel
+      )
       const previewTurn: AssistantPreview = {
         phase: "preview",
-        assistantMessage: normalized.assistantMessage,
+        assistantMessage: preview.assistantMessage,
         preview: {
-          ...normalized.preview,
+          ...preview.preview,
           presetCode: previewPresetCode,
         },
       }

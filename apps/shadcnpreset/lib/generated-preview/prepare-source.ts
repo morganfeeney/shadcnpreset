@@ -218,3 +218,333 @@ export function findRawHtmlControls(code: string): RawHtmlControl[] {
 
   return [...found].map(([element, use]) => ({ element, use }))
 }
+
+export type InvalidComposition = {
+  parent: string
+  child: string
+  use: string
+}
+
+/**
+ * Child components that are wrong for their parent, with what to use instead.
+ *
+ * Only pairings that are always wrong, never matters of taste. `InputGroup`
+ * styles itself — border, background, radius, height — and its control is
+ * meant to dissolve into that: `InputGroupInput` exists solely to strip the
+ * input's own chrome. A plain `Input` keeps it, so the two stack and the field
+ * renders as a pill inside a pill. Every other check passes and the preview is
+ * visibly broken, which is exactly the kind of mistake worth catching here.
+ */
+const COMPOSITION_RULES: Record<string, Record<string, string>> = {
+  InputGroup: {
+    Input: "InputGroupInput",
+    Textarea: "InputGroupTextarea",
+    Button: "InputGroupButton, inside an InputGroupAddon",
+  },
+}
+
+type JsxTag = {
+  name: string
+  closing: boolean
+  selfClosing: boolean
+  /** Everything between the tag name and the closing angle bracket. */
+  attrs: string
+  /** Index of this tag's closing angle bracket. */
+  end: number
+}
+
+/**
+ * Walks JSX tags, tolerating `>` inside attribute values and expressions.
+ *
+ * The simpler `<([A-Z][\w$]*)[^>]*>` used above ends a tag at the first `>`,
+ * which an arrow function in a prop (`onClick={() => …}`) supplies early. That
+ * is harmless when scanning one tag's own props, but not when tracking
+ * nesting: one mis-parsed tag shifts the parent of everything below it.
+ *
+ * A `<` that is not a tag (`{count < 5}`) is skipped because a name has to
+ * follow immediately; `{count<5}` unspaced would fool it. The cost of that is
+ * one wasted repair round-trip, not a broken preview.
+ */
+function* scanJsxTags(code: string): Generator<JsxTag> {
+  for (let i = 0; i < code.length; i += 1) {
+    if (code[i] !== "<") continue
+
+    let cursor = i + 1
+    const closing = code[cursor] === "/"
+    if (closing) cursor += 1
+
+    const name = /^[A-Za-z][\w$.]*/.exec(code.slice(cursor))?.[0]
+    if (!name) continue
+    cursor += name.length
+
+    const attrsStart = cursor
+    let braceDepth = 0
+    let quote: string | null = null
+    let selfClosing = false
+
+    while (cursor < code.length) {
+      const char = code[cursor]!
+      if (quote) {
+        if (char === quote) quote = null
+      } else if (char === '"' || char === "'" || char === "`") {
+        quote = char
+      } else if (char === "{") {
+        braceDepth += 1
+      } else if (char === "}") {
+        braceDepth -= 1
+      } else if (char === ">" && braceDepth === 0) {
+        selfClosing = code[cursor - 1] === "/"
+        break
+      }
+      cursor += 1
+    }
+
+    yield {
+      name,
+      closing,
+      selfClosing,
+      attrs: code.slice(attrsStart, cursor),
+      end: cursor,
+    }
+    i = cursor
+  }
+}
+
+/**
+ * Direct children that their parent does not accept.
+ *
+ * Only direct children count. A control nested inside an addon or a wrapper is
+ * left alone: the pairing is no longer the one the rule is about, and a false
+ * positive here sends a working preview back for a pointless repair.
+ */
+export function findInvalidCompositions(code: string): InvalidComposition[] {
+  const found = new Map<string, InvalidComposition>()
+  const stack: string[] = []
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) {
+      stack.pop()
+      continue
+    }
+
+    const parent = stack[stack.length - 1]
+    const use = parent ? COMPOSITION_RULES[parent]?.[tag.name] : undefined
+    if (parent && use) {
+      found.set(`${parent}>${tag.name}`, { parent, child: tag.name, use })
+    }
+
+    if (!tag.selfClosing) {
+      stack.push(tag.name)
+    }
+  }
+
+  return [...found.values()]
+}
+
+/**
+ * Overlays that render nothing but a trigger until they are opened.
+ *
+ * `Collapsible` is left out on purpose: closed, it still shows its trigger and
+ * a collapsed section is a real thing to demonstrate. These others show the
+ * user a lone button and nothing else.
+ */
+const OVERLAY_COMPONENTS = new Set([
+  "AlertDialog",
+  "CommandDialog",
+  "Dialog",
+  "Drawer",
+  "DropdownMenu",
+  "HoverCard",
+  "Popover",
+  "Sheet",
+  "Tooltip",
+])
+
+/** Components whose presence means the preview is a whole screen, not one overlay. */
+const PAGE_LEVEL = new Set(["SidebarProvider", "Sidebar", "SidebarInset"])
+
+const OPEN_PROP = /(^|\s)(open|defaultOpen)([=\s/]|$)/
+
+/**
+ * The overlay a preview is about, left closed.
+ *
+ * "Show me a drawer" that renders a button and nothing else has not shown
+ * anybody a drawer. Asking for one is asking to see it open, so a preview
+ * whose subject is an overlay needs `defaultOpen`.
+ *
+ * Only when the overlay *is* the subject: exactly one in the whole preview,
+ * and no page-level layout around it. A dashboard with a dropdown in its
+ * header is a screen that happens to contain an overlay, and forcing that one
+ * open would be its own kind of wrong.
+ */
+export function findClosedOverlay(code: string): string | null {
+  const overlays: JsxTag[] = []
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) continue
+    if (PAGE_LEVEL.has(tag.name)) return null
+    if (OVERLAY_COMPONENTS.has(tag.name)) overlays.push(tag)
+  }
+
+  if (overlays.length !== 1) return null
+  const [overlay] = overlays
+  return OPEN_PROP.test(overlay!.attrs) ? null : overlay!.name
+}
+
+/**
+ * `asChild` on a component that does not accept it — which is all of them.
+ *
+ * Every component here is base-ui, which composes through a `render` prop.
+ * `asChild` is the Radix idiom, it is what the public shadcn docs show, and it
+ * is what the model reaches for — so the prop lands on a base-ui trigger, gets
+ * spread onto the DOM, and the trigger renders its own button around the
+ * Button it was supposed to become. Two nested buttons, a hydration error, and
+ * a React warning about an unknown attribute.
+ */
+const AS_CHILD_PROP = /(^|\s)asChild([=\s/]|$)/
+
+export function findMisusedAsChild(code: string): string[] {
+  const found = new Set<string>()
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) continue
+    if (AS_CHILD_PROP.test(tag.attrs)) found.add(tag.name)
+  }
+
+  return [...found].sort()
+}
+
+/**
+ * Controls that must not be stretched, and the parent that stretches them.
+ *
+ * A `Field` defaults to `orientation="vertical"`, which is `flex-col *:w-full`
+ * — right for a label above an input, wrong for anything whose shape is its
+ * own. A switch becomes a full-width pill, a checkbox a full-width box, an
+ * avatar a full-width circle with the glyph adrift in the middle.
+ *
+ * These belong beside their label: `<Field orientation="horizontal">`.
+ * Full-width is correct for `Input`, `Textarea`, `Select` and `Slider`, so
+ * none of them are listed.
+ */
+const INTRINSIC_WIDTH_CONTROLS = new Set([
+  "Avatar",
+  "AvatarGroup",
+  "Checkbox",
+  "RadioGroupItem",
+  "Switch",
+  "Toggle",
+  "ToggleGroup",
+])
+
+/** Orientations that lay a field out as a row, leaving children their own width. */
+const ROW_ORIENTATION = /orientation=["'](horizontal|responsive)["']/
+
+export function findStretchedControls(code: string): string[] {
+  const found = new Set<string>()
+  const stack: JsxTag[] = []
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) {
+      stack.pop()
+      continue
+    }
+
+    if (INTRINSIC_WIDTH_CONTROLS.has(tag.name)) {
+      // Walk out to the field this control belongs to. Checking only the
+      // immediate parent missed the common shape, where the control is put
+      // inside a `FieldContent` — which is the text column, not a slot for a
+      // control, and is a column, so the control is stretched there too.
+      let throughFieldContent = false
+      for (let i = stack.length - 1; i >= 0; i -= 1) {
+        const ancestor = stack[i]!
+        if (ancestor.name === "FieldContent") {
+          throughFieldContent = true
+          continue
+        }
+        if (ancestor.name !== "Field") continue
+        if (throughFieldContent || !ROW_ORIENTATION.test(ancestor.attrs)) {
+          found.add(tag.name)
+        }
+        // The nearest field decides; an outer one is a different row.
+        break
+      }
+    }
+
+    if (!tag.selfClosing) {
+      stack.push(tag)
+    }
+  }
+
+  return [...found].sort()
+}
+
+/** Parents that space their fields apart. */
+const FIELD_CONTAINERS = new Set(["FieldGroup", "FieldSet"])
+
+/**
+ * Sibling fields with nothing to space them.
+ *
+ * The gap between fields is not on the field — `.cn-field` is the gap *inside*
+ * one. It comes from the container: `.cn-field-group` is `gap-7`,
+ * `.cn-field-set` is `gap-6`. Several bare `Field`s in a plain `div` therefore
+ * stack flush against each other, each label sitting directly under the
+ * control above it.
+ */
+export function findUngroupedFields(code: string): boolean {
+  const stack: Array<{ name: string; fieldChildren: number }> = []
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing) {
+      const closed = stack.pop()
+      if (closed && !FIELD_CONTAINERS.has(closed.name) && closed.fieldChildren > 1) {
+        return true
+      }
+      continue
+    }
+
+    const parent = stack[stack.length - 1]
+    if (parent && tag.name === "Field") {
+      parent.fieldChildren += 1
+      if (!FIELD_CONTAINERS.has(parent.name) && parent.fieldChildren > 1) {
+        return true
+      }
+    }
+
+    if (!tag.selfClosing) {
+      stack.push({ name: tag.name, fieldChildren: 0 })
+    }
+  }
+
+  return false
+}
+
+/**
+ * Components that render nothing unless they are given something to render.
+ *
+ * A `Toggle` is a button whose content is the whole point — an icon, a word.
+ * Written self-closing it is a correctly styled empty box, which is what an
+ * on/off setting looks like when a `Switch` was meant.
+ */
+const CONTENT_REQUIRED = new Set(["Toggle", "Button", "Badge"])
+
+export function findEmptyComponents(code: string): string[] {
+  const found = new Set<string>()
+
+  for (const tag of scanJsxTags(code)) {
+    if (tag.closing || !CONTENT_REQUIRED.has(tag.name)) continue
+
+    if (tag.selfClosing) {
+      found.add(tag.name)
+      continue
+    }
+
+    // Anything at all between the tags counts — an icon, a word, an
+    // expression. Only a straight run to the closing tag is empty.
+    const rest = code.slice(tag.end + 1)
+    if (new RegExp(`^\\s*</\\s*${tag.name}\\s*>`).test(rest)) {
+      found.add(tag.name)
+    }
+  }
+
+  return [...found].sort()
+}
