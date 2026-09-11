@@ -95,3 +95,39 @@ describe("inferPreviewLayout", () => {
     ).toBe("single")
   })
 })
+
+describe("lists of rows", () => {
+  it("gives an Item list its own column", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <ItemGroup>
+          {members.map((m) => (
+            <Item key={m.name} variant="outline">
+              <ItemMedia><Avatar /></ItemMedia>
+              <ItemContent><ItemTitle>{m.name}</ItemTitle></ItemContent>
+              <ItemActions><Button size="sm">Remove</Button></ItemActions>
+            </Item>
+          ))}
+        </ItemGroup>
+      </PreviewFrame>`)
+    ).toBe("list")
+  })
+
+  it("does not mistake ItemMedia alone for a list", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <Card><CardContent>Just a card</CardContent></Card>
+      </PreviewFrame>`)
+    ).toBe("single")
+  })
+
+  it("still calls a whole screen a page", () => {
+    expect(
+      inferPreviewLayout(`<PreviewFrame>
+        <SidebarProvider>
+          <ItemGroup><Item>One</Item></ItemGroup>
+        </SidebarProvider>
+      </PreviewFrame>`)
+    ).toBe("page")
+  })
+})
