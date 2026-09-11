@@ -271,6 +271,24 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   const isLoadingRecentChats = recentChatsQuery.isLoading
   const chatLoadError = activeChatQuery.error?.message ?? null
 
+  /**
+   * True from the moment a chat becomes active until its stored messages are
+   * on screen — through the session bootstrap as well as the fetch, since the
+   * query cannot start while auth is still "unknown".
+   *
+   * Sends are blocked for the duration: a send posts the whole conversation
+   * and the server replaces the chat with it, so sending against a chat that
+   * has not arrived would truncate it to whatever was on screen.
+   *
+   * A chat that failed to load is no longer waiting on anything, so it drops
+   * out here and leaves the surface free to show the error.
+   */
+  const isChatHydrating =
+    Boolean(activeChatId) &&
+    !chatLoadError &&
+    (authStatus === "unknown" ||
+      (authStatus === "authenticated" && syncedChatData === undefined))
+
   // Adjust local chat state while rendering when auth/query inputs change.
   // https://react.dev/learn/you-might-not-need-an-effect
   if (authStatus !== syncedAuthStatus) {
@@ -502,7 +520,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
 
   async function sendContent(text: string) {
     const trimmed = text.trim()
-    if (!trimmed || pending) return
+    if (!trimmed || pending || isChatHydrating) return
     const hasPreviousUserMessage = messages.some((message) => message.role === "user")
     trackEvent("ai_assistant_prompt_submit", {
       page_path: pathname,
@@ -587,6 +605,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     error,
     chatLoadError,
     hasInteracted,
+    isChatHydrating,
     lastTurn,
     messages,
     pending,

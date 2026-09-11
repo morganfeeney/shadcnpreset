@@ -24,6 +24,11 @@ import { cn } from "@/lib/utils"
 type AssistantPromptComposerProps = {
   hasInteracted: boolean
   pending: boolean
+  /**
+   * Closes the composer without claiming a reply is on its way — for waiting
+   * on something other than the model, such as a chat still loading.
+   */
+  disabled?: boolean
   resetKey: number
   onPromptSubmit: (text: string) => Promise<void>
   variant?: "default" | "compact"
@@ -34,6 +39,7 @@ type AssistantPromptComposerProps = {
 export function AssistantPromptComposer({
   hasInteracted,
   pending,
+  disabled = false,
   resetKey,
   onPromptSubmit,
   variant = "default",
@@ -97,7 +103,7 @@ export function AssistantPromptComposer({
           placeholder={resolvedPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={pending}
+          disabled={pending || disabled}
           className={compact ? "min-h-14 resize-none" : "min-h-[88px] resize-y"}
         />
       </PromptInputBody>
@@ -118,7 +124,7 @@ export function AssistantPromptComposer({
         </PromptInputTools>
         <PromptInputSubmit
           status={pending ? "submitted" : "ready"}
-          disabled={pending || !input.trim()}
+          disabled={pending || disabled || !input.trim()}
         />
       </PromptInputFooter>
     </PromptInput>
