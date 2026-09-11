@@ -129,7 +129,7 @@ export function AssistantChat({
           className="hidden border-r border-border/70 md:sticky md:top-0 md:flex md:h-[calc(100svh-64px)]"
         >
           <SidebarContent>
-            <SidebarGroup>
+            <SidebarGroup className="sticky top-0 z-10 bg-background">
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
