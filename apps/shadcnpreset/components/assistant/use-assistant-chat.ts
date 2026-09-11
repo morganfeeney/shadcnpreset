@@ -577,6 +577,15 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     setActiveChatId(chatId)
   }, [])
 
+  /** Back to an empty conversation. Nothing stored is touched. */
+  const resetChat = React.useCallback(() => {
+    setActiveChatId(null)
+    setMessages([])
+    resetComposer()
+    setError(null)
+    setLastTurn(null)
+  }, [resetComposer])
+
   /**
    * Put the conversation where the URL says. The route is the source of truth,
    * so this follows it unconditionally — a send in flight is a reason to block
@@ -584,17 +593,28 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
    */
   const openChatFromRoute = React.useCallback(
     (chatId: string | null) => {
-      setActiveChatId(chatId)
       if (chatId) {
+        setActiveChatId(chatId)
         return
       }
-      setMessages([])
-      resetComposer()
-      setError(null)
-      setLastTurn(null)
+      resetChat()
     },
-    [resetComposer]
+    [resetChat]
   )
+
+  /**
+   * Let go of the open chat on a surface that has no route of its own. The
+   * chat itself is left alone — it stays on the account, listed on /assistant,
+   * and only this surface's copy goes.
+   *
+   * Dropping the id is what makes that safe: a send replaces the whole stored
+   * chat, so continuing to hold the id would have the next message overwrite
+   * the conversation just let go of, rather than starting a new one.
+   */
+  const startNewChat = React.useCallback(() => {
+    if (pending) return
+    resetChat()
+  }, [pending, resetChat])
 
   return {
     activeChatId,
@@ -616,5 +636,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     sendContent,
     onPromptSubmit,
     openChatFromRoute,
+    startNewChat,
   }
 }

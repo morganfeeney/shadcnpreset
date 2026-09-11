@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import * as React from "react"
-import { HomeIcon } from "lucide-react"
+import { HomeIcon, PlusIcon } from "lucide-react"
 
 import {
   PromptInput,
@@ -14,7 +14,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input"
 import { Shimmer } from "@/components/ai-elements/shimmer"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   clearPendingAssistantPrompt,
   readPendingAssistantPrompt,
@@ -31,6 +31,11 @@ type AssistantPromptComposerProps = {
   disabled?: boolean
   resetKey: number
   onPromptSubmit: (text: string) => Promise<void>
+  /**
+   * Adds a New chat control to the tools row. For surfaces that have no route
+   * of their own to carry the action, such as the preset page sidebar.
+   */
+  onNewChat?: () => void
   variant?: "default" | "compact"
   placeholder?: string
   className?: string
@@ -42,6 +47,7 @@ export function AssistantPromptComposer({
   disabled = false,
   resetKey,
   onPromptSubmit,
+  onNewChat,
   variant = "default",
   placeholder,
   className,
@@ -118,6 +124,18 @@ export function AssistantPromptComposer({
               Home
             </Link>
           )}
+          {onNewChat ? (
+            <Button
+              type="button"
+              variant="outline"
+              size={compact ? "xs" : "sm"}
+              onClick={onNewChat}
+              disabled={pending || disabled}
+            >
+              <PlusIcon />
+              New chat
+            </Button>
+          ) : null}
           {pending ? (
             <Shimmer className="text-xs">Thinking...</Shimmer>
           ) : null}
