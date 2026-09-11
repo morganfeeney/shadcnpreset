@@ -4,6 +4,7 @@ import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { usePathname } from "next/navigation"
 
+import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
 import { writePendingAssistantPrompt } from "@/lib/pending-assistant-prompt"
 import { trackEvent } from "@/lib/analytics-events"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
@@ -283,6 +284,23 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
    * A chat that failed to load is no longer waiting on anything, so it drops
    * out here and leaves the surface free to show the error.
    */
+  /**
+   * What the turn in flight is expected to produce, so the waiting state can
+   * be shaped like the thing that is coming rather than like presets always.
+   *
+   * A guess, from the wording of the request — the model decides the real
+   * phase. Wrong only costs a placeholder of the wrong shape for a few
+   * seconds, which is what showing preset cards for every request costs
+   * already.
+   */
+  const pendingKind: "preview" | "presets" | null = !pending
+    ? null
+    : looksLikePreviewRequest(
+          [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
+        )
+      ? "preview"
+      : "presets"
+
   const isChatHydrating =
     Boolean(activeChatId) &&
     !chatLoadError &&
@@ -621,6 +639,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     lastTurn,
     messages,
     pending,
+    pendingKind,
     requiresAuth,
     recentChats,
     isLoadingRecentChats,
