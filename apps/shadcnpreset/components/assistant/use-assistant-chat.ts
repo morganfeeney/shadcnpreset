@@ -4,6 +4,7 @@ import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { usePathname } from "next/navigation"
 
+import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
 import { writePendingAssistantPrompt } from "@/lib/pending-assistant-prompt"
 import { trackEvent } from "@/lib/analytics-events"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
@@ -26,6 +27,12 @@ export type ChatMessage =
       content: string
       presets: Extract<AssistantTurn, { phase: "ready" }>["presets"]
     }
+  | {
+      role: "assistant"
+      kind: "preview"
+      content: string
+      preview: Extract<AssistantTurn, { phase: "preview" }>["preview"]
+    }
 
 export type AssistantChatListItem = {
   id: string
@@ -39,9 +46,10 @@ type AssistantChatDetailResponse = {
     id: string
     messages: Array<{
       role: "user" | "assistant"
-      kind: "text" | "presets"
+      kind: "text" | "presets" | "preview"
       content: string
       presets?: Extract<ChatMessage, { role: "assistant"; kind: "presets" }>["presets"]
+      preview?: Extract<ChatMessage, { role: "assistant"; kind: "preview" }>["preview"]
       followUpQuestions?: string[]
     }>
   }
@@ -72,6 +80,16 @@ function hydrateMessages(
       continue
     }
 
+    if (message.kind === "preview" && message.preview) {
+      hydrated.push({
+        role: "assistant",
+        kind: "preview",
+        content: message.content,
+        preview: message.preview,
+      })
+      continue
+    }
+
     hydrated.push({
       role: "assistant",
       kind: "text",
@@ -84,6 +102,38 @@ function hydrateMessages(
   }
 
   return hydrated
+}
+
+function toPersistedMessages(
+  messages: ChatMessage[]
+): NonNullable<AssistantChatDetailResponse["chat"]>["messages"] {
+  return messages.map((message) => {
+    if (message.role === "user") {
+      return { role: "user", kind: "text", content: message.content }
+    }
+    if (message.kind === "presets") {
+      return {
+        role: "assistant",
+        kind: "presets",
+        content: message.content,
+        presets: message.presets,
+      }
+    }
+    if (message.kind === "preview") {
+      return {
+        role: "assistant",
+        kind: "preview",
+        content: message.content,
+        preview: message.preview,
+      }
+    }
+    return {
+      role: "assistant",
+      kind: "text",
+      content: message.content,
+      followUpQuestions: message.followUpQuestions,
+    }
+  })
 }
 
 function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null {
@@ -107,6 +157,13 @@ function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null 
   }
 }
 
+class AssistantChatMissingError extends Error {
+  constructor() {
+    super("That chat no longer exists.")
+    this.name = "AssistantChatMissingError"
+  }
+}
+
 class AssistantSendError extends Error {
   readonly errorType: string
 
@@ -117,18 +174,44 @@ class AssistantSendError extends Error {
   }
 }
 
+export type AssistantPreviewMessage = Extract<
+  ChatMessage,
+  { role: "assistant"; kind: "preview" }
+>
+
 type UseAssistantChatOptions = {
   seedPresetCodes?: string[]
+  livePresetCode?: string
+  /**
+   * Chat to open on mount, e.g. arriving from a link that carries one. Used as
+   * the initial state only, so later navigation dropping the param from the URL
+   * does not unload the conversation.
+   */
+  initialChatId?: string | null
+  /**
+   * Fired only when a preview arrives from a live send — never when an existing
+   * chat is hydrated, so opening an old conversation cannot hijack the surface
+   * the user is currently looking at.
+   */
+  onPreview?: (preview: AssistantPreviewMessage["preview"]) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
   const seedPresetCodes = options?.seedPresetCodes ?? []
+  const livePresetCode = options?.livePresetCode
+  const onPreview = options?.onPreview
+  const onPreviewRef = React.useRef(onPreview)
+  React.useEffect(() => {
+    onPreviewRef.current = onPreview
+  }, [onPreview])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
-  const [activeChatId, setActiveChatId] = React.useState<string | null>(null)
+  const [activeChatId, setActiveChatId] = React.useState<string | null>(
+    options?.initialChatId ?? null
+  )
   const [deletingChatId, setDeletingChatId] = React.useState<string | null>(null)
   const [composerResetKey, setComposerResetKey] = React.useState(0)
   const authStatus = useAuthStore((state) => state.status)
@@ -172,18 +255,57 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     queryFn: async (): Promise<AssistantChatDetailResponse["chat"]> => {
       const response = await fetch(`/api/assistant/chats/${activeChatId}`)
       const payload = (await response.json()) as AssistantChatDetailResponse
+      if (response.status === 404) {
+        throw new AssistantChatMissingError()
+      }
       if (!response.ok || !payload.chat) {
         throw new Error("Could not load this chat. Try again.")
       }
       return payload.chat
     },
+    // Retrying a chat that is not there only delays saying so.
+    retry: (failureCount, queryError) =>
+      !(queryError instanceof AssistantChatMissingError) && failureCount < 2,
   })
 
   const recentChats = recentChatsQuery.data ?? []
   const isLoadingRecentChats = recentChatsQuery.isLoading
-  const chatLoadError = activeChatQuery.isError
-    ? "Could not load this chat. Try again."
-    : null
+  const chatLoadError = activeChatQuery.error?.message ?? null
+
+  /**
+   * True from the moment a chat becomes active until its stored messages are
+   * on screen — through the session bootstrap as well as the fetch, since the
+   * query cannot start while auth is still "unknown".
+   *
+   * Sends are blocked for the duration: a send posts the whole conversation
+   * and the server replaces the chat with it, so sending against a chat that
+   * has not arrived would truncate it to whatever was on screen.
+   *
+   * A chat that failed to load is no longer waiting on anything, so it drops
+   * out here and leaves the surface free to show the error.
+   */
+  /**
+   * What the turn in flight is expected to produce, so the waiting state can
+   * be shaped like the thing that is coming rather than like presets always.
+   *
+   * A guess, from the wording of the request — the model decides the real
+   * phase. Wrong only costs a placeholder of the wrong shape for a few
+   * seconds, which is what showing preset cards for every request costs
+   * already.
+   */
+  const pendingKind: "preview" | "presets" | null = !pending
+    ? null
+    : looksLikePreviewRequest(
+          [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
+        )
+      ? "preview"
+      : "presets"
+
+  const isChatHydrating =
+    Boolean(activeChatId) &&
+    !chatLoadError &&
+    (authStatus === "unknown" ||
+      (authStatus === "authenticated" && syncedChatData === undefined))
 
   // Adjust local chat state while rendering when auth/query inputs change.
   // https://react.dev/learn/you-might-not-need-an-effect
@@ -222,6 +344,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     nextMessages: ChatMessage[]
     previousPresetCodes: string[]
     chatId: string | null
+    livePresetCode?: string
   }
 
   type SendData =
@@ -242,19 +365,17 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   }
 
   const sendMutation = useMutation<SendData, Error, SendVars, SendContext>({
-    mutationFn: async (args: {
-      trimmed: string
-      nextMessages: ChatMessage[]
-      previousPresetCodes: string[]
-      chatId: string | null
-    }) => {
+    mutationFn: async (args: SendVars) => {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // The new turn only. The server reads the rest of the conversation
+        // from the chat itself, so this does not grow with it.
         body: JSON.stringify({
           chatId: args.chatId ?? undefined,
-          messages: args.nextMessages,
+          messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
+          livePresetCode: args.livePresetCode,
         }),
       })
       const raw = await response.text()
@@ -316,33 +437,45 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         latency_ms: latencyMs,
       })
 
-      if (data.phase === "ready") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "presets",
-            content: data.assistantMessage,
-            presets: data.presets,
-          },
-        ])
-        setLastTurn(null)
-      } else {
-        setLastTurn(data)
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            kind: "text",
-            content: data.assistantMessage,
-            followUpQuestions: data.followUpQuestions,
-          },
-        ])
+      const reply: ChatMessage =
+        data.phase === "ready"
+          ? {
+              role: "assistant",
+              kind: "presets",
+              content: data.assistantMessage,
+              presets: data.presets,
+            }
+          : data.phase === "preview"
+            ? {
+                role: "assistant",
+                kind: "preview",
+                content: data.assistantMessage,
+                preview: data.preview,
+              }
+            : {
+                role: "assistant",
+                kind: "text",
+                content: data.assistantMessage,
+                followUpQuestions: data.followUpQuestions,
+              }
+
+      const nextMessages = [...result.args.nextMessages, reply]
+      setMessages(nextMessages)
+      setLastTurn(data.phase === "gathering" ? data : null)
+      if (data.phase === "preview") {
+        onPreviewRef.current?.(data.preview)
       }
 
       if (typeof data.chatId === "string") {
         setSkipNextChatHydrate(true)
         setActiveChatId(data.chatId)
+        // Naming the chat moves the page to its own URL, which remounts this
+        // surface. Seed the cache with what is already on screen so the
+        // conversation comes straight back instead of loading in from scratch.
+        queryClient.setQueryData(["assistantChat", data.chatId], {
+          id: data.chatId,
+          messages: toPersistedMessages(nextMessages),
+        })
         await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
         await queryClient.invalidateQueries({
           queryKey: ["assistantChat", data.chatId],
@@ -407,7 +540,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
 
   async function sendContent(text: string) {
     const trimmed = text.trim()
-    if (!trimmed || pending) return
+    if (!trimmed || pending || isChatHydrating) return
     const hasPreviousUserMessage = messages.some((message) => message.role === "user")
     trackEvent("ai_assistant_prompt_submit", {
       page_path: pathname,
@@ -420,25 +553,16 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     })
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }]
-    const previousPresetMessage = [...messages]
-      .reverse()
-      .find(
-        (
-          message
-        ): message is Extract<ChatMessage, { role: "assistant"; kind: "presets" }> =>
-          message.role === "assistant" &&
-          message.kind === "presets" &&
-          Boolean(message.presets?.length)
-      )
-    const fromChat = previousPresetMessage?.presets?.map((preset) => preset.code)
-    const previousPresetCodes =
-      fromChat && fromChat.length > 0 ? fromChat : seedPresetCodes
+    // Only the seed. What the chat last offered is in the stored history, and
+    // the server prefers that over anything sent here.
+    const previousPresetCodes = seedPresetCodes
 
     const result = await sendMutation.mutateAsync({
       trimmed,
       nextMessages,
       previousPresetCodes,
       chatId: activeChatId,
+      livePresetCode,
     })
 
     if (result.kind === "auth_required") {
@@ -458,16 +582,49 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     await sendContent(text)
   }
 
-  function startNewChat() {
-    if (pending) {
-      return
-    }
+  /** Open an existing chat; hydration is driven by the query above. */
+  const selectChat = React.useCallback((chatId: string) => {
+    setActiveChatId(chatId)
+  }, [])
+
+  /** Back to an empty conversation. Nothing stored is touched. */
+  const resetChat = React.useCallback(() => {
     setActiveChatId(null)
     setMessages([])
     resetComposer()
     setError(null)
     setLastTurn(null)
-  }
+  }, [resetComposer])
+
+  /**
+   * Put the conversation where the URL says. The route is the source of truth,
+   * so this follows it unconditionally — a send in flight is a reason to block
+   * the navigation, never a reason to leave the chat behind the address bar.
+   */
+  const openChatFromRoute = React.useCallback(
+    (chatId: string | null) => {
+      if (chatId) {
+        setActiveChatId(chatId)
+        return
+      }
+      resetChat()
+    },
+    [resetChat]
+  )
+
+  /**
+   * Let go of the open chat on a surface that has no route of its own. The
+   * chat itself is left alone — it stays on the account, listed on /assistant,
+   * and only this surface's copy goes.
+   *
+   * Dropping the id is what makes that safe: a send replaces the whole stored
+   * chat, so continuing to hold the id would have the next message overwrite
+   * the conversation just let go of, rather than starting a new one.
+   */
+  const startNewChat = React.useCallback(() => {
+    if (pending) return
+    resetChat()
+  }, [pending, resetChat])
 
   return {
     activeChatId,
@@ -475,17 +632,21 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     composerResetKey,
     deletingChatId,
     deleteChat,
-    error: error ?? chatLoadError,
+    error,
+    chatLoadError,
     hasInteracted,
+    isChatHydrating,
     lastTurn,
     messages,
     pending,
+    pendingKind,
     requiresAuth,
     recentChats,
     isLoadingRecentChats,
-    setActiveChatId,
+    setActiveChatId: selectChat,
     sendContent,
     onPromptSubmit,
+    openChatFromRoute,
     startNewChat,
   }
 }

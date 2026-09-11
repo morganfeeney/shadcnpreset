@@ -1,10 +1,14 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/select.tsx
+ */
 "use client"
 
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
-import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
-
 import { cn } from "@/lib/utils"
+
+import { IconPlaceholder } from "@/components/icon-placeholder"
 
 const Select = SelectPrimitive.Root
 
@@ -12,7 +16,7 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={cn("cn-select-group scroll-my-1 p-1", className)}
+      className={cn("cn-select-group", className)}
       {...props}
     />
   )
@@ -22,7 +26,7 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn("cn-select-value flex flex-1 text-left", className)}
+      className={cn("cn-select-value", className)}
       {...props}
     />
   )
@@ -49,7 +53,14 @@ function SelectTrigger({
       {children}
       <SelectPrimitive.Icon
         render={
-          <ChevronDownIcon className="cn-select-trigger-icon pointer-events-none size-4" />
+          <IconPlaceholder
+            lucide="ChevronDownIcon"
+            tabler="IconSelector"
+            hugeicons="UnfoldMoreIcon"
+            phosphor="CaretDownIcon"
+            remixicon="RiArrowDownSLine"
+            className="cn-select-trigger-icon pointer-events-none"
+          />
         }
       />
     </SelectPrimitive.Trigger>
@@ -131,7 +142,14 @@ function SelectItem({
       <SelectPrimitive.ItemIndicator
         render={<span className="cn-select-item-indicator" />}
       >
-        <CheckIcon className="cn-select-item-indicator-icon pointer-events-none" />
+        <IconPlaceholder
+          lucide="CheckIcon"
+          tabler="IconCheck"
+          hugeicons="Tick02Icon"
+          phosphor="CheckIcon"
+          remixicon="RiCheckLine"
+          className="cn-select-item-indicator-icon pointer-events-none"
+        />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )
@@ -160,7 +178,13 @@ function SelectScrollUpButton({
       className={cn("cn-select-scroll-up-button top-0 w-full", className)}
       {...props}
     >
-      <ChevronUpIcon />
+      <IconPlaceholder
+        lucide="ChevronUpIcon"
+        tabler="IconChevronUp"
+        hugeicons="ArrowUp01Icon"
+        phosphor="CaretUpIcon"
+        remixicon="RiArrowUpSLine"
+      />
     </SelectPrimitive.ScrollUpArrow>
   )
 }
@@ -175,7 +199,13 @@ function SelectScrollDownButton({
       className={cn("cn-select-scroll-down-button bottom-0 w-full", className)}
       {...props}
     >
-      <ChevronDownIcon />
+      <IconPlaceholder
+        lucide="ChevronDownIcon"
+        tabler="IconChevronDown"
+        hugeicons="ArrowDown01Icon"
+        phosphor="CaretDownIcon"
+        remixicon="RiArrowDownSLine"
+      />
     </SelectPrimitive.ScrollDownArrow>
   )
 }

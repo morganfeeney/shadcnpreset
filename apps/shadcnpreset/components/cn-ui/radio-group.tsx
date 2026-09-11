@@ -1,8 +1,11 @@
+/**
+ * Synced from the shadcn/ui fork by `pnpm sync:cn-ui` — do not edit by hand.
+ * Source: apps/v4/registry/bases/base/ui/radio-group.tsx
+ */
 "use client"
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
-
 import { cn } from "@/lib/utils"
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {

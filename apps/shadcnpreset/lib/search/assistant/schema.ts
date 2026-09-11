@@ -47,7 +47,7 @@ export type AssistantPresetVariantPayload = z.infer<
 >
 
 export const assistantTurnOutputSchema = z.object({
-  phase: z.enum(["gathering", "ready"]),
+  phase: z.enum(["gathering", "ready", "preview"]),
   assistantMessage: z.string().max(8000),
   followUpQuestions: z
     .array(
@@ -59,12 +59,24 @@ export const assistantTurnOutputSchema = z.object({
         )
     )
     .max(4)
-    .describe("Gathering: 1–4 quick replies. Ready: use []."),
+    .describe("Gathering: 1–4 quick replies. Ready/preview: use []."),
   presetVariants: z
     .array(assistantPresetVariantSchema)
     .max(4)
     .describe(
-      "Ready: 1–4 full facet tuples + captions. Gathering: use []."
+      "Ready: 1–4 full facet tuples + captions. Gathering/preview: use []."
+    ),
+  previewTitle: z
+    .string()
+    .max(60)
+    .describe(
+      "Preview: short tab label (e.g. Date picker). Gathering/ready: use \"\"."
+    ),
+  previewCode: z
+    .string()
+    .max(24000)
+    .describe(
+      "Preview: JSX for function Preview(). Gathering/ready: use \"\"."
     ),
 })
 
@@ -88,7 +100,24 @@ export type AssistantReady = {
   presets: AssistantReadyPreset[]
 }
 
-export type AssistantTurn = AssistantGathering | AssistantReady
+export type AssistantGeneratedPreview = {
+  title: string
+  code: string
+  /**
+   * Preset the preview was generated against, so a chat bubble can re-render it
+   * later on a surface that has no live preset of its own. Attached by the route
+   * (the model never sees or emits preset codes).
+   */
+  presetCode?: string
+}
+
+export type AssistantPreview = {
+  phase: "preview"
+  assistantMessage: string
+  preview: AssistantGeneratedPreview
+}
+
+export type AssistantTurn = AssistantGathering | AssistantReady | AssistantPreview
 
 /** Route encodes `presetVariants` → `AssistantReady.presets` (codes + copy). */
 export type NormalizedAssistant =
@@ -98,6 +127,7 @@ export type NormalizedAssistant =
       assistantMessage: string
       presetVariants: AssistantPresetVariantPayload[]
     }
+  | AssistantPreview
 
 export function normalizeAssistantTurn(raw: AssistantTurnOutput): NormalizedAssistant | null {
   if (raw.phase === "gathering") {
@@ -119,6 +149,20 @@ export function normalizeAssistantTurn(raw: AssistantTurnOutput): NormalizedAssi
       phase: "ready",
       assistantMessage: raw.assistantMessage,
       presetVariants: raw.presetVariants,
+    }
+  }
+
+  if (raw.phase === "preview") {
+    const title = raw.previewTitle.trim() || "Preview"
+    const code = raw.previewCode.trim()
+    if (!code) return null
+    return {
+      phase: "preview",
+      assistantMessage: raw.assistantMessage,
+      preview: {
+        title: title.slice(0, 60),
+        code,
+      },
     }
   }
 

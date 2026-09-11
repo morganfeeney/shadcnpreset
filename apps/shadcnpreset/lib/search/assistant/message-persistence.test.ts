@@ -66,4 +66,58 @@ describe("toPersistedAssistantMessage", () => {
     expect(result.kind).toBe("text")
     expect(result.presets).toBeUndefined()
   })
+
+  it("preserves generated preview payloads", () => {
+    const result = toPersistedAssistantMessage({
+      role: "assistant",
+      kind: "preview",
+      content: "Showing a date picker.",
+      preview: {
+        title: "Date picker",
+        code: "function Preview() { return <DatePicker /> }",
+        presetCode: "b5aFUJkSzC",
+      },
+    })
+
+    expect(result).toEqual({
+      role: "assistant",
+      kind: "preview",
+      content: "Showing a date picker.",
+      preview: {
+        title: "Date picker",
+        code: "function Preview() { return <DatePicker /> }",
+        presetCode: "b5aFUJkSzC",
+      },
+    })
+  })
+
+  it("omits an absent preset code rather than storing undefined", () => {
+    const result = toPersistedAssistantMessage({
+      role: "assistant",
+      kind: "preview",
+      content: "Showing a date picker.",
+      preview: {
+        title: "Date picker",
+        code: "function Preview() { return <DatePicker /> }",
+      },
+    })
+
+    expect(result.preview).toEqual({
+      title: "Date picker",
+      code: "function Preview() { return <DatePicker /> }",
+    })
+    expect(result.preview && "presetCode" in result.preview).toBe(false)
+  })
+
+  it("falls back to text when the preview payload is malformed", () => {
+    const result = toPersistedAssistantMessage({
+      role: "assistant",
+      kind: "preview",
+      content: "Showing a date picker.",
+      preview: { title: "Date picker", code: "   " },
+    })
+
+    expect(result.kind).toBe("text")
+    expect(result.preview).toBeUndefined()
+  })
 })

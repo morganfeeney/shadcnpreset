@@ -26,43 +26,41 @@ function isIconData(data: IconValue): data is IconSvgElement {
   return Array.isArray(data)
 }
 
+/**
+ * Imports the generated allowlist rather than the library barrel.
+ *
+ * `(await import("@tabler/icons-react"))[iconName]` is a dynamic property
+ * access on a barrel, which no bundler can tree-shake — it ships the entire
+ * icon library to satisfy one lookup. The allowlists are static named
+ * re-exports of just the icons this app uses; regenerate them with
+ * `pnpm generate:icon-allowlists`.
+ */
 async function loadIconFromLibrary(
   libraryName: LibraryName,
   iconName: string
 ): Promise<IconValue | null> {
+  const mod = await importAllowlist(libraryName)
+  if (!mod) {
+    return null
+  }
+  return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
+}
+
+/** Explicit imports so each allowlist gets its own chunk. */
+async function importAllowlist(
+  libraryName: LibraryName
+): Promise<Record<string, unknown> | null> {
   switch (libraryName) {
-    case "lucide": {
-      const mod = await import("lucide-react")
-      return (
-        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
-        null
-      )
-    }
-    case "tabler": {
-      const mod = await import("@tabler/icons-react")
-      return (
-        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
-        null
-      )
-    }
-    case "phosphor": {
-      const mod = await import("@phosphor-icons/react")
-      return (
-        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
-        null
-      )
-    }
-    case "remixicon": {
-      const mod = await import("@remixicon/react")
-      return (
-        (mod as unknown as Record<string, IconValue | undefined>)[iconName] ??
-        null
-      )
-    }
-    case "hugeicons": {
-      const mod = await import("@hugeicons/core-free-icons")
-      return (mod as Record<string, IconValue | undefined>)[iconName] ?? null
-    }
+    case "lucide":
+      return await import("./__lucide__")
+    case "tabler":
+      return await import("./__tabler__")
+    case "phosphor":
+      return await import("./__phosphor__")
+    case "remixicon":
+      return await import("./__remixicon__")
+    case "hugeicons":
+      return await import("./__hugeicons__")
     default:
       return null
   }

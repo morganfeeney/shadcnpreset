@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
-import * as AvatarPrimitive from "@radix-ui/react-avatar";
+import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
 const avatarVariants = cva(
   "inline-block overflow-hidden *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2",

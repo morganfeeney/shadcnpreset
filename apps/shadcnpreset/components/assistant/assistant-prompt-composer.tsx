@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import * as React from "react"
-import { HomeIcon } from "lucide-react"
+import { HomeIcon, PlusIcon } from "lucide-react"
 
 import {
   PromptInput,
@@ -14,7 +14,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input"
 import { Shimmer } from "@/components/ai-elements/shimmer"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   clearPendingAssistantPrompt,
   readPendingAssistantPrompt,
@@ -24,8 +24,18 @@ import { cn } from "@/lib/utils"
 type AssistantPromptComposerProps = {
   hasInteracted: boolean
   pending: boolean
+  /**
+   * Closes the composer without claiming a reply is on its way — for waiting
+   * on something other than the model, such as a chat still loading.
+   */
+  disabled?: boolean
   resetKey: number
   onPromptSubmit: (text: string) => Promise<void>
+  /**
+   * Adds a New chat control to the tools row. For surfaces that have no route
+   * of their own to carry the action, such as the preset page sidebar.
+   */
+  onNewChat?: () => void
   variant?: "default" | "compact"
   placeholder?: string
   className?: string
@@ -34,8 +44,10 @@ type AssistantPromptComposerProps = {
 export function AssistantPromptComposer({
   hasInteracted,
   pending,
+  disabled = false,
   resetKey,
   onPromptSubmit,
+  onNewChat,
   variant = "default",
   placeholder,
   className,
@@ -97,7 +109,7 @@ export function AssistantPromptComposer({
           placeholder={resolvedPlaceholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={pending}
+          disabled={pending || disabled}
           className={compact ? "min-h-14 resize-none" : "min-h-[88px] resize-y"}
         />
       </PromptInputBody>
@@ -112,13 +124,25 @@ export function AssistantPromptComposer({
               Home
             </Link>
           )}
+          {onNewChat ? (
+            <Button
+              type="button"
+              variant="outline"
+              size={compact ? "xs" : "sm"}
+              onClick={onNewChat}
+              disabled={pending || disabled}
+            >
+              <PlusIcon />
+              New chat
+            </Button>
+          ) : null}
           {pending ? (
             <Shimmer className="text-xs">Thinking...</Shimmer>
           ) : null}
         </PromptInputTools>
         <PromptInputSubmit
           status={pending ? "submitted" : "ready"}
-          disabled={pending || !input.trim()}
+          disabled={pending || disabled || !input.trim()}
         />
       </PromptInputFooter>
     </PromptInput>
