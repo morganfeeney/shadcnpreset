@@ -1,5 +1,5 @@
 /**
- * The four canvas layouts a generated preview can be rendered in.
+ * The canvas layouts a generated preview can be rendered in.
  *
  * Different kinds of output want genuinely different markup — a lone form and
  * a set of twenty buttons cannot share a container without one of them looking
@@ -9,6 +9,7 @@ export const PREVIEW_LAYOUTS = [
   "single",
   "form",
   "gallery",
+  "list",
   "page",
   "stack",
 ] as const
@@ -20,6 +21,16 @@ const PAGE_COMPONENTS = /<\s*(SidebarProvider|Sidebar|SidebarInset)\b/
 
 /** Root sized to the viewport is also a whole screen. */
 const PAGE_SIZING = /className="[^"]*\b(min-h-screen|h-screen|min-h-svh|h-svh)\b/
+
+/**
+ * Components that mean the preview is a list of rows.
+ *
+ * An `Item` is full-width by design — media, content and actions spread across
+ * the row — so a set of them wants a readable column rather than the wrapping
+ * row a repeated component otherwise gets. The `\b` keeps this off `ItemMedia`
+ * and the rest of the family, which say nothing about the shape on their own.
+ */
+const LIST_COMPONENTS = /<\s*(ItemGroup|Item)\b/
 
 /**
  * Components that mean the preview is a form.
@@ -126,6 +137,12 @@ export function inferPreviewLayout(code: string): PreviewLayout {
 
   if (PAGE_COMPONENTS.test(body) || PAGE_SIZING.test(body)) {
     return "page"
+  }
+
+  // Before the repeat count is looked at: a list is repeated by nature, and
+  // laying it out as a gallery puts full-width rows edge to edge.
+  if (LIST_COMPONENTS.test(body)) {
+    return "list"
   }
 
   // Only the root's direct children count: repeats deeper down are the internals

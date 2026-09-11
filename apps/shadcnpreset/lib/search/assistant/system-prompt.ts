@@ -157,6 +157,7 @@ Use when the user asks to **show / display / render / preview** a shadcn **compo
 - A form is \`Card\` + \`FieldGroup\` + \`Field\` + \`FieldLabel\` + \`Input\` + \`Button\`.
 - \`InputGroup\` draws the border, background and radius for the whole field, so its control must be \`InputGroupInput\` (or \`InputGroupTextarea\`), which has no chrome of its own — a plain \`Input\` there renders as a second box inside the first. Affixes go in \`InputGroupAddon\`, and it is for something persistent like a unit, a prefix or an icon, never a repeat of the placeholder.
 - A \`Field\` is a vertical stack whose children are stretched to full width, which is right for a label above an input. A **checkbox, switch, radio or avatar keeps its own shape and sits beside its label**, so that row needs \`orientation="horizontal"\` — left vertical, the control is stretched edge to edge. Give the row a \`FieldContent\` when it has a title and a description.
+- **A list of people, files or records is an \`ItemGroup\` of \`Item\`s**, never a hand-built row. The \`Item\` supplies the padding, the border and the gaps between its parts: \`ItemMedia\` for an avatar or icon, \`ItemContent\` wrapping \`ItemTitle\` and \`ItemDescription\`, \`ItemActions\` for a button. Built out of plain divs instead, a row has no spacing at all and the text runs into the avatar.
 - **An on/off setting is a \`Switch\`.** A \`Toggle\` is a pressable button whose content is the point — an icon or a word — so a \`Toggle\` with nothing inside is an empty box. The same goes for \`Button\` and \`Badge\`: never write one with no content.
 - **Several fields always go in a \`FieldGroup\`.** The gap between fields belongs to the group, not the field, so bare sibling \`Field\`s stack flush against each other. \`FieldContent\` is the text column of one row — a \`FieldTitle\` and \`FieldDescription\` — and never holds the control; the control is its sibling.
 - **Only the header and footer of a sheet or drawer are padded.** Body content between them supplies its own: \`<div className="flex-1 overflow-y-auto p-4">\`, which also makes it the part that scrolls.
@@ -181,6 +182,38 @@ function Preview() {
   return (
     <PreviewFrame>
       <DatePicker />
+    </PreviewFrame>
+  )
+}
+
+Example \`previewCode\` for a list of records — any "list of X with Y and an
+action" takes this shape:
+function Preview() {
+  const members = [
+    { name: "Ada Lovelace", role: "Engineering", initials: "AL" },
+    { name: "Grace Hopper", role: "Design", initials: "GH" },
+    { name: "Alan Turing", role: "Research", initials: "AT" },
+  ]
+  return (
+    <PreviewFrame>
+      <ItemGroup>
+        {members.map((member) => (
+          <Item key={member.name} variant="outline">
+            <ItemMedia>
+              <Avatar>
+                <AvatarFallback>{member.initials}</AvatarFallback>
+              </Avatar>
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>{member.name}</ItemTitle>
+              <ItemDescription>{member.role}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button variant="outline" size="sm">Remove</Button>
+            </ItemActions>
+          </Item>
+        ))}
+      </ItemGroup>
     </PreviewFrame>
   )
 }
