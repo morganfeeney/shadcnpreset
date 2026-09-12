@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const CHAT_ID = "11111111-2222-4333-8444-555555555555"
 const OTHER_CHAT_ID = "99999999-8888-4777-8666-555555555555"
-/** What the client mints for a new chat: an id no chat has yet. */
+/** What the server names a chat it has just created. */
 const NEW_CHAT_ID = "abcdabcd-1234-4abc-8def-abcdefabcdef"
 
 /**
@@ -86,10 +86,13 @@ const PRESETS = [
 ]
 
 let failSend = false
+/** Held, the answer has not arrived yet. */
+let releaseSend: (() => void) | null = null
 let failChatDetail = false
 /** Chats the fake server knows about, so an unknown id behaves like one. */
 const storedChatIds = new Set<string>()
 const chatDetailRequests: string[] = []
+const sendBodies: Array<{ chatId?: string }> = []
 
 function mockFetch() {
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -102,15 +105,15 @@ function mockFetch() {
           { status: 429 }
         )
       }
-      const body = JSON.parse(String(init.body)) as {
-        chatId?: string
-        newChat?: boolean
+      const body = JSON.parse(String(init.body)) as { chatId?: string }
+      sendBodies.push(body)
+      if (releaseSend === null) {
+        await new Promise<void>((resolve) => {
+          releaseSend = resolve
+        })
       }
-      // The real route refuses an id it cannot find unless the caller says it
-      // is starting that chat, so that a stale client cannot silently
-      // recreate a deleted conversation.
-      const known = storedChatIds.has(body.chatId ?? "")
-      if (body.chatId && !known && !body.newChat) {
+      // An id the server does not know is a chat that has been deleted.
+      if (body.chatId && !storedChatIds.has(body.chatId)) {
         return new Response(
           JSON.stringify({
             error: "That chat no longer exists.",
@@ -119,12 +122,14 @@ function mockFetch() {
           { status: 404 }
         )
       }
-      if (body.chatId) storedChatIds.add(body.chatId)
+      // A chat is named when its first answer is ready, not before.
+      const chatId = body.chatId ?? NEW_CHAT_ID
+      storedChatIds.add(chatId)
       return jsonResponse({
         phase: "ready",
         assistantMessage: "Four presets.",
         presets: PRESETS,
-        chatId: body.chatId ?? CHAT_ID,
+        chatId,
       })
     }
 
@@ -276,10 +281,11 @@ function clickLink(href: string) {
 }
 
 beforeEach(() => {
-  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(NEW_CHAT_ID)
   navigations.length = 0
   chatDetailRequests.length = 0
+  sendBodies.length = 0
   failSend = false
+  releaseSend = () => {}
   // Shared across tests, so a later assertion could otherwise pass on an
   // earlier test's toast.
   vi.mocked(toast.error).mockClear()
@@ -297,14 +303,45 @@ afterEach(() => {
 })
 
 describe("AssistantChat URLs", () => {
-  it("puts the chat in the URL as part of sending", async () => {
+  it("leaves the address bar alone until there is an answer to come back to", async () => {
+    // Hold the answer: this is the several seconds a person spends watching
+    // their question sit there.
+    releaseSend = null
     renderPage()
-    await sendPrompt("Orange presets")
+    const composer = screen.getByRole("textbox")
+    const form = composer.closest("form") as HTMLFormElement
+    const setValue = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set
+    await act(async () => {
+      setValue?.call(composer, "Orange presets")
+      composer.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    await act(async () => {
+      form.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true })
+      )
+    })
 
+    await waitFor(() => expect(sendBodies).toHaveLength(1))
+    // No id goes up, because there is no chat yet — and nothing moves.
+    expect(sendBodies[0]).not.toHaveProperty("chatId")
+    expect(navigations).toEqual([])
+    expect(window.location.pathname).toBe("/assistant")
+
+    await act(async () => {
+      ;(releaseSend as unknown as () => void)?.()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("preset-card")).toHaveLength(4)
+    })
+    // Now there is something to come back to.
     expect(navigations).toEqual([`/assistant/${NEW_CHAT_ID}`])
     await deliverNavigations()
     expect(window.location.pathname).toBe(`/assistant/${NEW_CHAT_ID}`)
-    expect(screen.getAllByTestId("preset-card")).toHaveLength(4)
   })
 
   it("opens the chat the URL names on a cold load", async () => {

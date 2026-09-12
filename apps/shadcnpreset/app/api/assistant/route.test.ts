@@ -23,7 +23,7 @@ vi.mock("ai", async (importOriginal) => ({
 const { POST } = await import("@/app/api/assistant/route")
 
 const USER = { id: "user-1", name: "Morgan" }
-/** A chat id the client minted, which the server has never seen. */
+/** An id for a chat that used to exist. */
 const CLIENT_CHAT_ID = "11111111-2222-4333-8444-555555555555"
 
 function post(body: Record<string, unknown>) {
@@ -65,17 +65,17 @@ beforeEach(() => {
 })
 
 describe("POST /api/assistant", () => {
-  it("creates the chat under the id the client minted", async () => {
-    // The client puts this id in the URL as it sends, so the chat has to end
-    // up under that id rather than one the server picks.
-    const response = await post({ chatId: CLIENT_CHAT_ID, newChat: true })
+  it("names a new chat when its first answer is ready", async () => {
+    // No id goes up with the first send: there is no chat until there is
+    // something in it.
+    const response = await post({})
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toMatchObject({
-      chatId: CLIENT_CHAT_ID,
+      chatId: "server-minted",
     })
     expect(saveAssistantChatForUser).toHaveBeenCalledWith(
-      expect.objectContaining({ chatId: CLIENT_CHAT_ID, user: USER })
+      expect.objectContaining({ chatId: undefined, user: USER })
     )
   })
 
@@ -108,7 +108,7 @@ describe("POST /api/assistant", () => {
   it("refuses a caller with no session", async () => {
     getSessionUser.mockResolvedValue(null)
 
-    const response = await post({ chatId: CLIENT_CHAT_ID, newChat: true })
+    const response = await post({})
 
     expect(response.status).toBe(401)
     expect(generateText).not.toHaveBeenCalled()
