@@ -481,10 +481,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           id: data.chatId,
           messages: toPersistedMessages(nextMessages),
         })
+        // The list only. The chat itself was just written from what is on
+        // screen and seeded above, so re-reading it can only return the same
+        // thing — or miss a write that has not landed yet, which reads as the
+        // chat being gone and throws the conversation away.
         await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
-        await queryClient.invalidateQueries({
-          queryKey: ["assistantChat", data.chatId],
-        })
       }
     },
     onError: (error, _vars, context) => {
