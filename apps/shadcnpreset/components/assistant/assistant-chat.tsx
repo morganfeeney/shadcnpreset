@@ -41,9 +41,11 @@ export function AssistantChat({
   const router = useRouter()
   const chat = useAssistantChat({
     initialChatId: routeChatId,
-    // A send names its own chat, so the URL moves with the click.
+    // The answer has made this page a conversation worth returning to, so it
+    // gains an address. Replace, not push: nobody navigated here, the page
+    // they were already on became the chat.
     onChatCreated: (chatId) =>
-      router.push(assistantChatPath(chatId), { scroll: false }),
+      router.replace(assistantChatPath(chatId), { scroll: false }),
   })
   const {
     activeChatId,

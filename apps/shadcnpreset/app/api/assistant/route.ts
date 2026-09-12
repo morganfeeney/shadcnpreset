@@ -55,12 +55,6 @@ const MAX_CHAT_MESSAGES = 32
 
 const bodySchema = z.object({
   chatId: z.string().uuid().optional(),
-  /**
-   * This send is the first turn of `chatId`, which the client minted, so the
-   * chat is expected not to exist yet. An id already taken by somebody else is
-   * refused by the store, which only writes a row whose `user_id` matches.
-   */
-  newChat: z.boolean().optional(),
   messages: z
     .array(
       z.object({
@@ -452,9 +446,9 @@ export async function POST(request: Request) {
   const storedChat = parsed.data.chatId
     ? await getAssistantChatForUser(user.id, parsed.data.chatId)
     : null
-  // An unknown id is only a chat being started. Otherwise it points at a
-  // deleted chat, which is worth saying rather than quietly recreating.
-  if (parsed.data.chatId && !storedChat && !parsed.data.newChat) {
+  // An id the caller supplies is always a chat that should already exist:
+  // chats are named by their first answer, never by the client.
+  if (parsed.data.chatId && !storedChat) {
     return NextResponse.json(
       { error: "That chat no longer exists.", code: "chat_missing" },
       { status: 404 }
