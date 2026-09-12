@@ -15,11 +15,3 @@ export function isAssistantChatId(
 export function assistantChatPath(chatId?: string | null): string {
   return isAssistantChatId(chatId) ? `/assistant/${chatId}` : "/assistant"
 }
-
-/** The chat a `/assistant/...` pathname points at, if it points at one. */
-export function assistantChatIdFromPath(pathname: string): string | null {
-  const chatId = pathname.startsWith("/assistant/")
-    ? pathname.slice("/assistant/".length)
-    : null
-  return isAssistantChatId(chatId) ? chatId : null
-}
