@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { SquarePen } from "lucide-react"
 import { toast } from "sonner"
 
@@ -26,11 +26,9 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
+import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { trackEvent } from "@/lib/analytics-events"
-import {
-  assistantChatIdFromPath,
-  assistantChatPath,
-} from "@/lib/assistant-chat-path"
+import { assistantChatPath } from "@/lib/assistant-chat-path"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
@@ -73,13 +71,7 @@ export function AssistantChat({
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
   }, [])
 
-  /**
-   * Which chat the URL names. Read from the address bar, not from this page's
-   * params: a client-side navigation back to the chat you just left moves the
-   * URL but re-renders this page with the params it already had. `routeChatId`
-   * is reliable on the first render only, which is what it seeds the hook for.
-   */
-  const urlChatId = assistantChatIdFromPath(usePathname())
+  const urlChatId = useUrlChatId()
 
   // A link, a sidebar click and the browser's back button all arrive the same
   // way: as a new URL. The page stays mounted across those, so the chat has

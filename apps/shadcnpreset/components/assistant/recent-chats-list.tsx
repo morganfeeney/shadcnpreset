@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { Loader2, X } from "lucide-react"
 
 import { useAssistantChatContext } from "@/components/assistant/assistant-chat-context"
+import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   SidebarMenu,
@@ -12,18 +12,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  assistantChatIdFromPath,
-  assistantChatPath,
-} from "@/lib/assistant-chat-path"
+import { assistantChatPath } from "@/lib/assistant-chat-path"
 import { cn } from "@/lib/utils"
 
 import type { AssistantChatListItem } from "./use-assistant-chat"
 
 export function RecentChatsList() {
-  // The route says which chat is open, so opening one by link or by
+  // The URL says which chat is open, so opening one by link or by
   // back/forward highlights the same row a click here does.
-  const routeChatId = assistantChatIdFromPath(usePathname())
+  const routeChatId = useUrlChatId()
   const {
     activeChatId,
     activeChatQuery,

@@ -28,8 +28,13 @@ const router = {
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
-  // Next keeps this in step with the native history methods.
   usePathname: () => window.location.pathname,
+  // Verified in the browser to track the URL through a navigation the page's
+  // own params miss, which is what the harness reproduces below.
+  useParams: () => {
+    const chatId = window.location.pathname.split("/")[2]
+    return chatId ? { chatId: [chatId] } : {}
+  },
 }))
 
 // A plain anchor: what matters here is the href and that a click on it can be
