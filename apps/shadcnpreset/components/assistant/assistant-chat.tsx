@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { SquarePen } from "lucide-react"
 import { toast } from "sonner"
 
@@ -24,16 +26,32 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
+import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { trackEvent } from "@/lib/analytics-events"
+import { assistantChatPath } from "@/lib/assistant-chat-path"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
-export function AssistantChat() {
-  const chat = useAssistantChat()
+export function AssistantChat({
+  /** The chat the URL names, or null on `/assistant`. */
+  routeChatId,
+}: {
+  routeChatId: string | null
+}) {
+  const router = useRouter()
+  const chat = useAssistantChat({
+    initialChatId: routeChatId,
+    // The answer has made this page a conversation worth returning to, so it
+    // gains an address. Replace, not push: nobody navigated here, the page
+    // they were already on became the chat.
+    onChatCreated: (chatId) =>
+      router.replace(assistantChatPath(chatId), { scroll: false }),
+  })
   const {
     activeChatId,
     chatLoadError,
     composerResetKey,
+    deleteChat,
     error,
     hasInteracted,
     isChatHydrating,
@@ -44,7 +62,6 @@ export function AssistantChat() {
     pendingKind,
     openChatFromRoute,
     sendContent,
-    startNewChat,
   } = chat
 
   // A chat named in the URL arrives empty for a beat. Give it the conversation
@@ -56,15 +73,50 @@ export function AssistantChat() {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
   }, [])
 
-  // A chat that will not load: say why, and hand back the new-chat view.
+  const urlChatId = useUrlChatId()
+
+  // A link, a sidebar click and the browser's back button all arrive the same
+  // way: as a new URL. The page stays mounted across those, so the chat has
+  // to follow it. https://react.dev/learn/you-might-not-need-an-effect
+  const [syncedChatId, setSyncedChatId] = React.useState(urlChatId)
+  if (urlChatId !== syncedChatId) {
+    setSyncedChatId(urlChatId)
+    openChatFromRoute(urlChatId)
+  }
+
+  // A send that failed says so over the conversation rather than as a line of
+  // text under it, which is easy to miss when the eye is on the composer.
+  React.useEffect(() => {
+    if (!error) return
+    toast.error(error, { id: "assistant-send" })
+  }, [error])
+
+  // A URL naming a chat that will not open: say why, and navigate back. The
+  // navigation is what clears the conversation.
   React.useEffect(() => {
     if (!chatLoadError) return
     toast.error(chatLoadError, { id: "assistant-chat-load" })
-    openChatFromRoute(null)
-  }, [chatLoadError, openChatFromRoute])
+    router.replace(assistantChatPath(null), { scroll: false })
+  }, [chatLoadError, router])
+
+  // Deleting the chat being read leaves the URL pointing at nothing.
+  async function removeChat(chatId: string) {
+    const wasOpen = chatId === activeChatId || chatId === urlChatId
+    await deleteChat(chatId)
+    if (wasOpen) {
+      router.replace(assistantChatPath(null), { scroll: false })
+    }
+  }
+
+  // New chat is a link; the URL sync clears the conversation. A send belongs
+  // to the chat on screen, so leaving mid-flight is refused rather than
+  // landing its reply in another conversation.
+  function onNewChatClick(event: React.MouseEvent<HTMLElement>) {
+    if (pending) event.preventDefault()
+  }
 
   return (
-    <AssistantChatProvider value={chat}>
+    <AssistantChatProvider value={{ ...chat, deleteChat: removeChat }}>
       <SidebarProvider className="h-full min-h-0 overflow-hidden">
         <Sidebar
           collapsible="none"
@@ -78,9 +130,10 @@ export function AssistantChat() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
+                      render={<Link href={assistantChatPath(null)} />}
                       isActive={!activeChatId}
-                      onClick={startNewChat}
-                      disabled={pending}
+                      onClick={onNewChatClick}
+                      aria-disabled={pending || undefined}
                     >
                       <SquarePen />
                       New chat
@@ -189,14 +242,6 @@ export function AssistantChat() {
                 </div>
               ) : null}
 
-              {error ? (
-                <p
-                  className="mx-auto w-full max-w-4xl text-sm text-destructive"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              ) : null}
             </div>
 
             <AssistantPromptComposer

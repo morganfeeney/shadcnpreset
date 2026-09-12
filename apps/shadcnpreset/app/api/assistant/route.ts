@@ -446,6 +446,8 @@ export async function POST(request: Request) {
   const storedChat = parsed.data.chatId
     ? await getAssistantChatForUser(user.id, parsed.data.chatId)
     : null
+  // An id the caller supplies is always a chat that should already exist:
+  // chats are named by their first answer, never by the client.
   if (parsed.data.chatId && !storedChat) {
     return NextResponse.json(
       { error: "That chat no longer exists.", code: "chat_missing" },

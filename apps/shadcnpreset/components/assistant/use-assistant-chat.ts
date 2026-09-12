@@ -194,6 +194,11 @@ type UseAssistantChatOptions = {
    * the user is currently looking at.
    */
   onPreview?: (preview: AssistantPreviewMessage["preview"]) => void
+  /**
+   * The first answer has named a chat, so there is now a conversation worth
+   * coming back to and the surface can give it an address.
+   */
+  onChatCreated?: (chatId: string) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -204,6 +209,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onPreviewRef.current = onPreview
   }, [onPreview])
+  const onChatCreated = options?.onChatCreated
+  const onChatCreatedRef = React.useRef(onChatCreated)
+  React.useEffect(() => {
+    onChatCreatedRef.current = onChatCreated
+  }, [onChatCreated])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -252,6 +262,9 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   >({
     queryKey: ["assistantChat", activeChatId],
     enabled: authStatus === "authenticated" && Boolean(activeChatId),
+    // A conversation already on screen is never re-read; only opening one the
+    // surface is not holding goes to the server.
+    staleTime: Infinity,
     queryFn: async (): Promise<AssistantChatDetailResponse["chat"]> => {
       const response = await fetch(`/api/assistant/chats/${activeChatId}`)
       const payload = (await response.json()) as AssistantChatDetailResponse
@@ -428,6 +441,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         return
       }
 
+
       const latencyMs = context
         ? Math.max(0, Date.now() - context.requestStartedAt)
         : 0
@@ -462,31 +476,30 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       const nextMessages = [...result.args.nextMessages, reply]
       setMessages(nextMessages)
       // The reply is on screen, so the waiting state is done. `onSettled` is
-      // too late: it does not run until this handler resolves, and everything
-      // below it awaits, which left the placeholder sitting under the answer
-      // it was standing in for.
+      // too late: it does not run until this handler and its awaits resolve.
       setPending(false)
       setLastTurn(data.phase === "gathering" ? data : null)
       if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
       }
 
-      if (typeof data.chatId === "string") {
+      // The answer names the chat: it exists now, it belongs in the history,
+      // and there is finally something worth addressing. The surface is told
+      // so it can put that address in the bar.
+      const chatId =
+        typeof data.chatId === "string" ? data.chatId : result.args.chatId
+      if (chatId) {
         setSkipNextChatHydrate(true)
-        setActiveChatId(data.chatId)
-        // Naming the chat moves the page to its own URL, which remounts this
-        // surface. Seed the cache with what is already on screen so the
-        // conversation comes straight back instead of loading in from scratch.
-        queryClient.setQueryData(["assistantChat", data.chatId], {
-          id: data.chatId,
+        queryClient.setQueryData(["assistantChat", chatId], {
+          id: chatId,
           messages: toPersistedMessages(nextMessages),
         })
-        // The list only. The chat itself was just written from what is on
-        // screen and seeded above, so re-reading it can only return the same
-        // thing — or miss a write that has not landed yet, which reads as the
-        // chat being gone and throws the conversation away.
-        await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
+        if (chatId !== result.args.chatId) {
+          setActiveChatId(chatId)
+          onChatCreatedRef.current?.(chatId)
+        }
       }
+      void queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
     },
     onError: (error, _vars, context) => {
       const latencyMs = context
