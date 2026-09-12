@@ -51,7 +51,7 @@ pnpm dev
 For live create/customizer iframes, also run the sibling fork:
 
 ```bash
-cd ../shadcnpreset   # create fork
+cd ../shadcn-ui-fork   # create fork
 pnpm v4:dev          # → http://localhost:4000
 ```
 
