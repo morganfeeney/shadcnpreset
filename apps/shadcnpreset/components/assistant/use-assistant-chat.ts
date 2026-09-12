@@ -194,6 +194,11 @@ type UseAssistantChatOptions = {
    * the user is currently looking at.
    */
   onPreview?: (preview: AssistantPreviewMessage["preview"]) => void
+  /**
+   * A send has started a new chat under this id. Fired before the request, so
+   * the surface can put the chat in the URL as part of sending.
+   */
+  onChatCreated?: (chatId: string) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -204,6 +209,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onPreviewRef.current = onPreview
   }, [onPreview])
+  const onChatCreated = options?.onChatCreated
+  const onChatCreatedRef = React.useRef(onChatCreated)
+  React.useEffect(() => {
+    onChatCreatedRef.current = onChatCreated
+  }, [onChatCreated])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -223,6 +233,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     AssistantChatDetailResponse["chat"] | undefined
   >(undefined)
   const [skipNextChatHydrate, setSkipNextChatHydrate] = React.useState(false)
+  /**
+   * The chat this surface is in the middle of creating. It has an id and a URL
+   * before it has a row, so reading it back has to wait for the send.
+   */
+  const [creatingChatId, setCreatingChatId] = React.useState<string | null>(null)
 
   const hasInteracted = messages.some((message) => message.role === "user")
   const requiresAuth = authStatus !== "authenticated"
@@ -251,7 +266,10 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     Error
   >({
     queryKey: ["assistantChat", activeChatId],
-    enabled: authStatus === "authenticated" && Boolean(activeChatId),
+    enabled:
+      authStatus === "authenticated" &&
+      Boolean(activeChatId) &&
+      activeChatId !== creatingChatId,
     queryFn: async (): Promise<AssistantChatDetailResponse["chat"]> => {
       const response = await fetch(`/api/assistant/chats/${activeChatId}`)
       const payload = (await response.json()) as AssistantChatDetailResponse
@@ -303,6 +321,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
 
   const isChatHydrating =
     Boolean(activeChatId) &&
+    activeChatId !== creatingChatId &&
     !chatLoadError &&
     (authStatus === "unknown" ||
       (authStatus === "authenticated" && syncedChatData === undefined))
@@ -314,6 +333,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     if (authStatus !== "authenticated") {
       setMessages([])
       setActiveChatId(null)
+      setCreatingChatId(null)
       setLastTurn(null)
       setSyncedActiveChatId(null)
       setSyncedChatData(undefined)
@@ -343,7 +363,8 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     trimmed: string
     nextMessages: ChatMessage[]
     previousPresetCodes: string[]
-    chatId: string | null
+    chatId: string
+    isNewChat: boolean
     livePresetCode?: string
   }
 
@@ -372,7 +393,8 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         // The new turn only. The server reads the rest of the conversation
         // from the chat itself, so this does not grow with it.
         body: JSON.stringify({
-          chatId: args.chatId ?? undefined,
+          chatId: args.chatId,
+          newChat: args.isNewChat || undefined,
           messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
           livePresetCode: args.livePresetCode,
@@ -428,6 +450,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         return
       }
 
+
       const latencyMs = context
         ? Math.max(0, Date.now() - context.requestStartedAt)
         : 0
@@ -462,30 +485,24 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       const nextMessages = [...result.args.nextMessages, reply]
       setMessages(nextMessages)
       // The reply is on screen, so the waiting state is done. `onSettled` is
-      // too late: it does not run until this handler resolves, and everything
-      // below it awaits, which left the placeholder sitting under the answer
-      // it was standing in for.
+      // too late: it does not run until this handler and its awaits resolve.
       setPending(false)
       setLastTurn(data.phase === "gathering" ? data : null)
       if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
       }
 
-      if (typeof data.chatId === "string") {
-        setSkipNextChatHydrate(true)
-        setActiveChatId(data.chatId)
-        // Naming the chat moves the page to its own URL, which remounts this
-        // surface. Seed the cache with what is already on screen so the
-        // conversation comes straight back instead of loading in from scratch.
-        queryClient.setQueryData(["assistantChat", data.chatId], {
-          id: data.chatId,
-          messages: toPersistedMessages(nextMessages),
-        })
-        await queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
-        await queryClient.invalidateQueries({
-          queryKey: ["assistantChat", data.chatId],
-        })
-      }
+      // The chat exists now, so it can be read back. Seeded with what is
+      // already on screen, so nothing reloads a conversation that has not
+      // moved.
+      const chatId = result.args.chatId
+      setSkipNextChatHydrate(true)
+      queryClient.setQueryData(["assistantChat", chatId], {
+        id: chatId,
+        messages: toPersistedMessages(nextMessages),
+      })
+      setCreatingChatId(null)
+      void queryClient.invalidateQueries({ queryKey: ["assistantChats"] })
     },
     onError: (error, _vars, context) => {
       const latencyMs = context
@@ -562,11 +579,22 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     // the server prefers that over anything sent here.
     const previousPresetCodes = seedPresetCodes
 
+    // The first send names the chat, so the id exists before the request
+    // does and the surface can navigate to it as part of sending.
+    const isNewChat = !activeChatId
+    const chatId = activeChatId ?? crypto.randomUUID()
+    if (isNewChat) {
+      setActiveChatId(chatId)
+      setCreatingChatId(chatId)
+      onChatCreatedRef.current?.(chatId)
+    }
+
     const result = await sendMutation.mutateAsync({
       trimmed,
       nextMessages,
       previousPresetCodes,
-      chatId: activeChatId,
+      chatId,
+      isNewChat,
       livePresetCode,
     })
 
@@ -595,6 +623,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   /** Back to an empty conversation. Nothing stored is touched. */
   const resetChat = React.useCallback(() => {
     setActiveChatId(null)
+    setCreatingChatId(null)
     setMessages([])
     resetComposer()
     setError(null)

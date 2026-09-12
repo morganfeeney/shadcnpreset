@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Loader2, X } from "lucide-react"
 
@@ -11,7 +12,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { assistantChatIdFromPath } from "@/lib/assistant-chat-path"
+import {
+  assistantChatIdFromPath,
+  assistantChatPath,
+} from "@/lib/assistant-chat-path"
 import { cn } from "@/lib/utils"
 
 import type { AssistantChatListItem } from "./use-assistant-chat"
@@ -28,7 +32,6 @@ export function RecentChatsList() {
     isLoadingRecentChats,
     pending,
     recentChats,
-    setActiveChatId,
   } = useAssistantChatContext()
 
   return (
@@ -46,7 +49,6 @@ export function RecentChatsList() {
             }
             pending={pending}
             isDeleting={deletingChatId === chat.id}
-            onSelectChat={setActiveChatId}
             onDeleteChat={(chatId) => void deleteChat(chatId)}
           />
         ))
@@ -71,7 +73,6 @@ function RecentChatRow({
   isActiveChatFetching,
   pending,
   isDeleting,
-  onSelectChat,
   onDeleteChat,
 }: {
   chat: AssistantChatListItem
@@ -79,16 +80,15 @@ function RecentChatRow({
   isActiveChatFetching: boolean
   pending: boolean
   isDeleting: boolean
-  onSelectChat: (chatId: string) => void
   onDeleteChat: (chatId: string) => void
 }) {
   return (
     <RecentChatItem>
       <RecentChatTrigger
         title={chat.title}
+        href={assistantChatPath(chat.id)}
         isActive={isActive}
         disabled={pending || isDeleting || (isActive && isActiveChatFetching)}
-        onClick={() => onSelectChat(chat.id)}
       />
       <RecentChatDeleteButton
         title={chat.title}
@@ -108,22 +108,30 @@ function RecentChatItem({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * A link, so a chat opens in a new tab or copies like any other address.
+ * `aria-disabled` because an anchor has nothing to disable: a send in flight
+ * belongs to the chat on screen, so following a link mid-send is refused.
+ */
 function RecentChatTrigger({
   title,
+  href,
   isActive,
   disabled,
-  onClick,
 }: {
   title: string
+  href: string
   isActive: boolean
   disabled: boolean
-  onClick: () => void
 }) {
   return (
     <SidebarMenuButton
+      render={<Link href={href} />}
       isActive={isActive}
-      onClick={onClick}
-      disabled={disabled}
+      onClick={(event: React.MouseEvent<HTMLElement>) => {
+        if (disabled) event.preventDefault()
+      }}
+      aria-disabled={disabled || undefined}
       className="w-full min-w-0 pr-8 group-focus-within/menu-item:bg-sidebar-accent group-focus-within/menu-item:text-sidebar-accent-foreground group-hover/menu-item:bg-sidebar-accent group-hover/menu-item:text-sidebar-accent-foreground"
     >
       {/* The title stays put while the chat loads: a skeleton in its place

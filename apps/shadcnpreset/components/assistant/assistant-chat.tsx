@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { SquarePen } from "lucide-react"
 import { toast } from "sonner"
 
@@ -26,7 +27,10 @@ import {
 } from "@/components/ui/sidebar"
 import { useAssistantChat } from "@/components/assistant/use-assistant-chat"
 import { trackEvent } from "@/lib/analytics-events"
-import { assistantChatPath } from "@/lib/assistant-chat-path"
+import {
+  assistantChatIdFromPath,
+  assistantChatPath,
+} from "@/lib/assistant-chat-path"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
@@ -37,7 +41,12 @@ export function AssistantChat({
   routeChatId: string | null
 }) {
   const router = useRouter()
-  const chat = useAssistantChat({ initialChatId: routeChatId })
+  const chat = useAssistantChat({
+    initialChatId: routeChatId,
+    // A send names its own chat, so the URL moves with the click.
+    onChatCreated: (chatId) =>
+      router.push(assistantChatPath(chatId), { scroll: false }),
+  })
   const {
     activeChatId,
     chatLoadError,
@@ -51,7 +60,6 @@ export function AssistantChat({
     onPromptSubmit,
     pending,
     pendingKind,
-    requiresAuth,
     openChatFromRoute,
     sendContent,
   } = chat
@@ -65,64 +73,49 @@ export function AssistantChat({
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
   }, [])
 
-  // The route decides which chat is open, and a link, a sidebar click and the
-  // browser's back button all arrive the same way: as a new `routeChatId`. The
-  // page stays mounted across those, so the chat has to follow the prop.
-  // https://react.dev/learn/you-might-not-need-an-effect
-  const [syncedChatId, setSyncedChatId] = React.useState(routeChatId)
-  if (routeChatId !== syncedChatId) {
-    setSyncedChatId(routeChatId)
-    openChatFromRoute(routeChatId)
+  /**
+   * Which chat the URL names. Read from the address bar, not from this page's
+   * params: a client-side navigation back to the chat you just left moves the
+   * URL but re-renders this page with the params it already had. `routeChatId`
+   * is reliable on the first render only, which is what it seeds the hook for.
+   */
+  const urlChatId = assistantChatIdFromPath(usePathname())
+
+  // A link, a sidebar click and the browser's back button all arrive the same
+  // way: as a new URL. The page stays mounted across those, so the chat has
+  // to follow it. https://react.dev/learn/you-might-not-need-an-effect
+  const [syncedChatId, setSyncedChatId] = React.useState(urlChatId)
+  if (urlChatId !== syncedChatId) {
+    setSyncedChatId(urlChatId)
+    openChatFromRoute(urlChatId)
   }
 
-  // The other direction: a chat id that appears without anyone navigating,
-  // which is the first send naming a new chat. It only corrects the URL, so it
-  // replaces rather than pushes. Skipped while signed out — sign-in returns to
-  // window.location.href, and the hook parks the chat id until the session
-  // resolves.
-  //
-  // Only ever puts an id *into* the URL. Taking one out is what navigating to
-  // /assistant already did, and this effect cannot tell that apart from a chat
-  // id that has yet to catch up — so it used to race the New chat button and
-  // put the old chat straight back in the address bar.
-  React.useEffect(() => {
-    if (requiresAuth || !activeChatId || activeChatId === routeChatId) return
-    router.replace(assistantChatPath(activeChatId), { scroll: false })
-  }, [activeChatId, requiresAuth, routeChatId, router])
-
-  // A URL that names no chat: say why in a toast and hand back the new-chat
-  // page, which drops the dead id from the address bar through the effect
-  // above rather than leaving it there to be reloaded.
+  // A URL naming a chat that will not open: say why, and navigate back. The
+  // navigation is what clears the conversation.
   React.useEffect(() => {
     if (!chatLoadError) return
     toast.error(chatLoadError, { id: "assistant-chat-load" })
-    openChatFromRoute(null)
-  }, [chatLoadError, openChatFromRoute])
+    router.replace(assistantChatPath(null), { scroll: false })
+  }, [chatLoadError, router])
 
-  // Deleting the chat being read leaves the URL pointing at nothing, so it
-  // says where to go rather than leaving the effect above to infer it.
+  // Deleting the chat being read leaves the URL pointing at nothing.
   async function removeChat(chatId: string) {
+    const wasOpen = chatId === activeChatId || chatId === urlChatId
     await deleteChat(chatId)
-    if (chatId === routeChatId) {
+    if (wasOpen) {
       router.replace(assistantChatPath(null), { scroll: false })
     }
   }
 
-  // Opening a chat is somewhere the user can come back to, so it pushes.
-  function openChat(chatId: string) {
-    if (pending || chatId === routeChatId) return
-    router.push(assistantChatPath(chatId), { scroll: false })
-  }
-
-  function openNewChat() {
-    if (pending || !routeChatId) return
-    router.push(assistantChatPath(null), { scroll: false })
+  // New chat is a link; the URL sync clears the conversation. A send belongs
+  // to the chat on screen, so leaving mid-flight is refused rather than
+  // landing its reply in another conversation.
+  function onNewChatClick(event: React.MouseEvent<HTMLElement>) {
+    if (pending) event.preventDefault()
   }
 
   return (
-    <AssistantChatProvider
-      value={{ ...chat, setActiveChatId: openChat, deleteChat: removeChat }}
-    >
+    <AssistantChatProvider value={{ ...chat, deleteChat: removeChat }}>
       <SidebarProvider className="h-full min-h-0 overflow-hidden">
         <Sidebar
           collapsible="none"
@@ -136,9 +129,10 @@ export function AssistantChat({
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
-                      isActive={!routeChatId}
-                      onClick={openNewChat}
-                      disabled={pending}
+                      render={<Link href={assistantChatPath(null)} />}
+                      isActive={!activeChatId}
+                      onClick={onNewChatClick}
+                      aria-disabled={pending || undefined}
                     >
                       <SquarePen />
                       New chat
