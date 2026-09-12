@@ -82,6 +82,13 @@ export function AssistantChat({
     openChatFromRoute(urlChatId)
   }
 
+  // A send that failed says so over the conversation rather than as a line of
+  // text under it, which is easy to miss when the eye is on the composer.
+  React.useEffect(() => {
+    if (!error) return
+    toast.error(error, { id: "assistant-send" })
+  }, [error])
+
   // A URL naming a chat that will not open: say why, and navigate back. The
   // navigation is what clears the conversation.
   React.useEffect(() => {
@@ -233,14 +240,6 @@ export function AssistantChat({
                 </div>
               ) : null}
 
-              {error ? (
-                <p
-                  className="mx-auto w-full max-w-4xl text-sm text-destructive"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              ) : null}
             </div>
 
             <AssistantPromptComposer

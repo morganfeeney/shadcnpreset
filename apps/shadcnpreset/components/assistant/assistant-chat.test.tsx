@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const CHAT_ID = "11111111-2222-4333-8444-555555555555"
 const OTHER_CHAT_ID = "99999999-8888-4777-8666-555555555555"
+/** What the client mints for a new chat: an id no chat has yet. */
+const NEW_CHAT_ID = "abcdabcd-1234-4abc-8def-abcdefabcdef"
 
 /**
  * App Router navigations are asynchronous: a link click returns straight away
@@ -83,7 +85,10 @@ const PRESETS = [
   { code: "ddd", description: "four" },
 ]
 
+let failSend = false
 let failChatDetail = false
+/** Chats the fake server knows about, so an unknown id behaves like one. */
+const storedChatIds = new Set<string>()
 const chatDetailRequests: string[] = []
 
 function mockFetch() {
@@ -91,7 +96,30 @@ function mockFetch() {
     const url = typeof input === "string" ? input : String(input)
 
     if (url === "/api/assistant" && init?.method === "POST") {
-      const body = JSON.parse(String(init.body)) as { chatId?: string }
+      if (failSend) {
+        return new Response(
+          JSON.stringify({ error: "The model is rate limiting." }),
+          { status: 429 }
+        )
+      }
+      const body = JSON.parse(String(init.body)) as {
+        chatId?: string
+        newChat?: boolean
+      }
+      // The real route refuses an id it cannot find unless the caller says it
+      // is starting that chat, so that a stale client cannot silently
+      // recreate a deleted conversation.
+      const known = storedChatIds.has(body.chatId ?? "")
+      if (body.chatId && !known && !body.newChat) {
+        return new Response(
+          JSON.stringify({
+            error: "That chat no longer exists.",
+            code: "chat_missing",
+          }),
+          { status: 404 }
+        )
+      }
+      if (body.chatId) storedChatIds.add(body.chatId)
       return jsonResponse({
         phase: "ready",
         assistantMessage: "Four presets.",
@@ -248,9 +276,16 @@ function clickLink(href: string) {
 }
 
 beforeEach(() => {
-  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(CHAT_ID)
+  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(NEW_CHAT_ID)
   navigations.length = 0
   chatDetailRequests.length = 0
+  failSend = false
+  // Shared across tests, so a later assertion could otherwise pass on an
+  // earlier test's toast.
+  vi.mocked(toast.error).mockClear()
+  storedChatIds.clear()
+  storedChatIds.add(CHAT_ID)
+  storedChatIds.add(OTHER_CHAT_ID)
   failChatDetail = false
   window.history.replaceState(null, "", "/assistant")
   vi.stubGlobal("fetch", mockFetch())
@@ -266,9 +301,9 @@ describe("AssistantChat URLs", () => {
     renderPage()
     await sendPrompt("Orange presets")
 
-    expect(navigations).toEqual([`/assistant/${CHAT_ID}`])
+    expect(navigations).toEqual([`/assistant/${NEW_CHAT_ID}`])
     await deliverNavigations()
-    expect(window.location.pathname).toBe(`/assistant/${CHAT_ID}`)
+    expect(window.location.pathname).toBe(`/assistant/${NEW_CHAT_ID}`)
     expect(screen.getAllByTestId("preset-card")).toHaveLength(4)
   })
 
@@ -354,7 +389,36 @@ describe("AssistantChat URLs", () => {
     // The conversation on screen is what was just persisted, so re-reading it
     // can only return the same thing — or miss a write that has not landed
     // and report the chat as gone.
-    expect(chatDetailRequests).not.toContain(CHAT_ID)
+    expect(chatDetailRequests).not.toContain(NEW_CHAT_ID)
+  })
+
+  it("reports a failed send as a toast", async () => {
+    failSend = true
+    renderPage()
+
+    const composer = screen.getByRole("textbox")
+    const form = composer.closest("form") as HTMLFormElement
+    const setValue = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set
+    await act(async () => {
+      setValue?.call(composer, "Orange presets")
+      composer.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    await act(async () => {
+      form.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true })
+      )
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "The model is rate limiting.",
+        expect.anything()
+      )
+    })
+    expect(screen.queryByRole("alert")).toBeNull()
   })
 
   it("hands back the new-chat page when a chat will not load", async () => {
