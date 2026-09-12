@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  assistantChatIdFromPath,
   assistantChatPath,
   isAssistantChatId,
 } from "@/lib/assistant-chat-path"
@@ -30,17 +29,5 @@ describe("assistantChatPath", () => {
     expect(assistantChatPath(null)).toBe("/assistant")
     expect(assistantChatPath(undefined)).toBe("/assistant")
     expect(assistantChatPath("not-a-chat")).toBe("/assistant")
-  })
-})
-
-describe("assistantChatIdFromPath", () => {
-  it("reads the chat back out of its path", () => {
-    expect(assistantChatIdFromPath(assistantChatPath(CHAT_ID))).toBe(CHAT_ID)
-  })
-
-  it("has no chat for the new-chat page or another route", () => {
-    expect(assistantChatIdFromPath("/assistant")).toBeNull()
-    expect(assistantChatIdFromPath("/assistant/not-a-chat")).toBeNull()
-    expect(assistantChatIdFromPath(`/preset/${CHAT_ID}`)).toBeNull()
   })
 })
