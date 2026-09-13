@@ -4,6 +4,10 @@ export type PresetPreviewPageName =
   | "dashboard"
   | "login-02"
   | "login-04"
+  | "marketing"
+  | "application"
+  | "store"
+  | "chat"
   | "generated"
 
 export type PresetSidebarTab = "community" | "yours" | "ask-ai"
@@ -63,6 +67,38 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
       example: "login-04",
     },
   },
+  {
+    page: "marketing",
+    label: "Marketing",
+    target: {
+      kind: "local",
+      example: "marketing",
+    },
+  },
+  {
+    page: "application",
+    label: "Application",
+    target: {
+      kind: "local",
+      example: "application",
+    },
+  },
+  {
+    page: "store",
+    label: "Store",
+    target: {
+      kind: "local",
+      example: "store",
+    },
+  },
+  {
+    page: "chat",
+    label: "Chat",
+    target: {
+      kind: "local",
+      example: "chat",
+    },
+  },
 ] as const
 
 export type LocalPresetPreviewExample =
@@ -72,6 +108,10 @@ export const LOCAL_PRESET_PREVIEW_EXAMPLES = [
   "dashboard",
   "login-02",
   "login-04",
+  "marketing",
+  "application",
+  "store",
+  "chat",
   "generated",
 ] as const
 
