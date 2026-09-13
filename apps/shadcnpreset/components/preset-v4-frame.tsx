@@ -15,6 +15,11 @@ const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 
 type ThemeMode = "light" | "dark"
 
+// Popups must escape the sandbox so outbound links (e.g. the shadcncraft
+// credit) open as normal tabs rather than inheriting these restrictions.
+const FRAME_SANDBOX =
+  "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+
 type PresetV4FrameProps = {
   src: string
   title: string
@@ -22,7 +27,7 @@ type PresetV4FrameProps = {
   generatedPreview?: GeneratedPreviewPayload | null
 } & Omit<
   React.ComponentPropsWithoutRef<"iframe">,
-  "src" | "title" | "className" | "onLoad"
+  "src" | "title" | "className" | "onLoad" | "sandbox"
 > & {
   onLoad?: React.ComponentPropsWithoutRef<"iframe">["onLoad"]
 }
@@ -170,6 +175,7 @@ export function PresetV4Frame({
       className={className}
       src={activeSrc}
       title={title}
+      sandbox={FRAME_SANDBOX}
       onLoad={(event) => {
         const loadedSrc = event.currentTarget.src
         if (!loadedSrc || loadedSrc === "about:blank") return

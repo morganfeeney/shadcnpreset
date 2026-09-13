@@ -72,7 +72,6 @@ export function PresetV4ScaledFrame({
           title={title}
           src={src}
           className={cn("h-full w-full border-0", frameClassName)}
-          sandbox="allow-scripts allow-same-origin"
           onLoad={() => setLoadedSrc(src)}
         />
       </div>
