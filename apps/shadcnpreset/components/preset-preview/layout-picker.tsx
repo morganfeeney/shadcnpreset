@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -28,6 +29,25 @@ type PresetPreviewLayoutPickerProps = {
   adHocView?: { page: "generated"; label: string; pending?: boolean }
   className?: string
 }
+
+type ViewOption = { page: PresetPreviewPageName; label: string }
+
+/** Shown as tabs. Only the first stays a tab on mobile; the rest join the menu. */
+const TAB_VIEWS: ViewOption[] = [
+  { page: "preview", label: "Cards 1" },
+  { page: "marketing", label: "Marketing" },
+  { page: "application", label: "Application" },
+  { page: "store", label: "Store" },
+  { page: "chat", label: "Chat" },
+]
+
+/** Older views, always behind the "More previews" menu, which marks the active one. */
+const MENU_VIEWS: ViewOption[] = [
+  { page: "preview-02", label: "Cards 2" },
+  { page: "dashboard", label: "Dashboard" },
+  { page: "login-02", label: "Login 02" },
+  { page: "login-04", label: "Login 04" },
+]
 
 const pillClassName = cn(
   "h-auto flex-none rounded-full px-3 py-1 text-sm font-medium shadow-none",
@@ -62,21 +82,19 @@ export function PresetPreviewLayoutPicker({
       className={cn("min-w-0", className)}
     >
       <TabsList className="inline-flex h-auto w-fit items-center justify-center rounded-full bg-transparent px-0 text-muted-foreground">
-        <TabsTrigger value="preview" className={pillClassName}>
-          Cards 1
-        </TabsTrigger>
-        <TabsTrigger value="preview-02" className={pillClassName}>
-          Cards 2
-        </TabsTrigger>
-        <TabsTrigger value="dashboard" className={cn(pillClassName, "hidden min-[400px]:flex")}>
-          Dashboard
-        </TabsTrigger>
-        <TabsTrigger value="login-02" className={cn(pillClassName, "hidden sm:flex")}>
-          Login 02
-        </TabsTrigger>
-        <TabsTrigger value="login-04" className={cn(pillClassName, "hidden sm:flex")}>
-          Login 04
-        </TabsTrigger>
+        {TAB_VIEWS.map(({ page, label }, index) => (
+          <TabsTrigger
+            key={page}
+            value={page}
+            className={cn(
+              pillClassName,
+              // Collapse into the menu on mobile.
+              index > 0 && "hidden sm:flex"
+            )}
+          >
+            {label}
+          </TabsTrigger>
+        ))}
         {adHocView ? (
           <TabsTrigger
             value={adHocView.page}
@@ -98,7 +116,6 @@ export function PresetPreviewLayoutPicker({
             <TooltipTrigger
               render={
                 <DropdownMenuTrigger
-                  className="hidden max-sm:flex"
                   render={
                     <Button
                       variant="ghost"
@@ -114,18 +131,29 @@ export function PresetPreviewLayoutPicker({
             <TooltipContent>More previews</TooltipContent>
           </Tooltip>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              className="md:hidden"
-              onClick={() => selectView("dashboard")}
+            {/* Radio items stay open on click by default; picking a view should close the menu. */}
+            <DropdownMenuRadioGroup
+              value={value}
+              onValueChange={(next) =>
+                selectView(next as PresetPreviewPageName)
+              }
             >
-              Dashboard
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => selectView("login-02")}>
-              Login 02
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => selectView("login-04")}>
-              Login 04
-            </DropdownMenuItem>
+              {TAB_VIEWS.slice(1).map(({ page, label }) => (
+                <DropdownMenuRadioItem
+                  key={page}
+                  value={page}
+                  closeOnClick
+                  className="sm:hidden"
+                >
+                  {label}
+                </DropdownMenuRadioItem>
+              ))}
+              {MENU_VIEWS.map(({ page, label }) => (
+                <DropdownMenuRadioItem key={page} value={page} closeOnClick>
+                  {label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </TabsList>

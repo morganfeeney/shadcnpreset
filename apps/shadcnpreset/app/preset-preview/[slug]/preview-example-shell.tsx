@@ -4,25 +4,71 @@ import * as React from "react"
 import dynamic from "next/dynamic"
 import { useTheme } from "next-themes"
 
-import DashboardDemo from "@/components/shadcn-examples/dashboard"
-import { Login02Demo } from "@/components/shadcn-examples/login-02"
-import { Login04Demo } from "@/components/shadcn-examples/login-04"
 import { Spinner } from "@/components/ui/spinner"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
+function ExampleLoading() {
+  return (
+    <div className="flex min-h-svh items-center justify-center bg-background">
+      <Spinner />
+    </div>
+  )
+}
+
+// Each frame renders one example, so each is its own chunk: a Login frame
+// should not download the Store, Marketing or chart code.
+const DashboardDemo = dynamic(
+  () => import("@/components/shadcn-examples/dashboard"),
+  { loading: ExampleLoading }
+)
+const Login02Demo = dynamic(
+  () =>
+    import("@/components/shadcn-examples/login-02").then(
+      (mod) => mod.Login02Demo
+    ),
+  { loading: ExampleLoading }
+)
+const Login04Demo = dynamic(
+  () =>
+    import("@/components/shadcn-examples/login-04").then(
+      (mod) => mod.Login04Demo
+    ),
+  { loading: ExampleLoading }
+)
+const MarketingDemo = dynamic(
+  () =>
+    import("@/components/shadcncraft-examples/marketing").then(
+      (mod) => mod.MarketingDemo
+    ),
+  { loading: ExampleLoading }
+)
+const ApplicationDemo = dynamic(
+  () =>
+    import("@/components/shadcncraft-examples/application").then(
+      (mod) => mod.ApplicationDemo
+    ),
+  { loading: ExampleLoading }
+)
+const StoreDemo = dynamic(
+  () =>
+    import("@/components/shadcncraft-examples/store").then(
+      (mod) => mod.StoreDemo
+    ),
+  { loading: ExampleLoading }
+)
+const ChatDemo = dynamic(
+  () =>
+    import("@/components/shadcncraft-examples/chat").then(
+      (mod) => mod.ChatDemo
+    ),
+  { loading: ExampleLoading }
+)
 const GeneratedPreviewExample = dynamic(
   () =>
     import("@/components/generated-preview/example").then(
       (mod) => mod.GeneratedPreviewExample
     ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-svh items-center justify-center bg-background">
-        <Spinner />
-      </div>
-    ),
-  }
+  { ssr: false, loading: ExampleLoading }
 )
 
 const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
@@ -75,6 +121,26 @@ function ExampleView({
           <Login04Demo />
         </div>
       )
+    case "marketing":
+      return (
+        <div className="min-h-svh bg-background text-foreground">
+          <MarketingDemo />
+        </div>
+      )
+    case "application":
+      return (
+        <div className="min-h-svh bg-background text-foreground">
+          <ApplicationDemo />
+        </div>
+      )
+    case "store":
+      return (
+        <div className="min-h-svh bg-background text-foreground">
+          <StoreDemo />
+        </div>
+      )
+    case "chat":
+      return <ChatDemo />
     case "generated":
       return <GeneratedPreviewExample />
     default:
@@ -149,11 +215,7 @@ export function PresetPreviewExampleShell({
   }, [setTheme])
 
   if (!contentReady) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background">
-        <Spinner />
-      </div>
-    )
+    return <ExampleLoading />
   }
 
   return <ExampleView slug={slug} presetCode={presetCode} />

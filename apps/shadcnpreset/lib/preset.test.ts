@@ -64,6 +64,38 @@ describe("getPresetPreviewUrl", () => {
     expect(url).toContain("preset=b5aFUJkSzC")
   })
 
+  it("points the marketing view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "marketing")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/marketing")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
+
+  it("points the application view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "application")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/application")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
+
+  it("points the store view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "store")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/store")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
+
+  it("points the chat view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "chat")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/chat")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
+
   it("points the generated view at the local preset-preview embed route", () => {
     const url = getPresetPreviewUrl("b5aFVCFRxi", "generated")
 
