@@ -28,6 +28,13 @@
         "Authorization": "Bearer ${REGISTRY_TOKEN}"
       }
     },
-    "@ai-elements": "https://ai-sdk.dev/elements/api/registry/{name}.json"
+    "@ai-elements": "https://ai-sdk.dev/elements/api/registry/{name}.json",
+    "@shadcncraft": {
+      "url": "https://shadcncraft.com/r/{style}/{name}",
+      "headers": {
+        "X-License-Key": "${SHADCNCRAFT_LICENSE_KEY}",
+        "X-Instance-Name": "${SHADCNCRAFT_INSTANCE_NAME}"
+      }
+    }
   }
 }
