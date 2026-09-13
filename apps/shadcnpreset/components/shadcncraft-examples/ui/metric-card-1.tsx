@@ -16,7 +16,8 @@ function MetricCard1({
       className={cn("relative", className)}
       {...props}
     >
-      <CardContent>{children}</CardContent>
+      {/* Passes the card radius down to MetricCard1Icon. */}
+      <CardContent className="rounded-[inherit]">{children}</CardContent>
     </Card>
   )
 }
@@ -113,8 +114,11 @@ function MetricCard1Icon({
   return (
     <div
       data-slot="metric-card-icon"
+      // The card's radius comes from the preset style (none → 4xl), so inherit
+      // it rather than a fixed `rounded-sm`: the tile sits in the card's corner
+      // and must follow its curve. Browsers clamp it to half the tile's size.
       className={cn(
-        "absolute top-2 right-2 flex size-10 items-center justify-center rounded-sm bg-muted/50 text-muted-foreground [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+        "absolute top-2 right-2 flex size-10 items-center justify-center rounded-[inherit] bg-muted/50 text-muted-foreground [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
         className
       )}
       {...props}
