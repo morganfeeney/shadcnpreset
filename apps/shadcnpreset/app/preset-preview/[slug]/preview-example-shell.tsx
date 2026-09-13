@@ -7,6 +7,7 @@ import { useTheme } from "next-themes"
 import DashboardDemo from "@/components/shadcn-examples/dashboard"
 import { Login02Demo } from "@/components/shadcn-examples/login-02"
 import { Login04Demo } from "@/components/shadcn-examples/login-04"
+import { MarketingDemo } from "@/components/shadcncraft-examples/marketing"
 import { Spinner } from "@/components/ui/spinner"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
@@ -73,6 +74,12 @@ function ExampleView({
       return (
         <div className="min-h-svh bg-background text-foreground">
           <Login04Demo />
+        </div>
+      )
+    case "marketing":
+      return (
+        <div className="min-h-svh bg-background text-foreground">
+          <MarketingDemo />
         </div>
       )
     case "generated":
