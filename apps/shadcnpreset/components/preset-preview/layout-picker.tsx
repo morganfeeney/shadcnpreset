@@ -77,6 +77,9 @@ export function PresetPreviewLayoutPicker({
         <TabsTrigger value="login-04" className={cn(pillClassName, "hidden sm:flex")}>
           Login 04
         </TabsTrigger>
+        <TabsTrigger value="marketing" className={cn(pillClassName, "hidden sm:flex")}>
+          Marketing
+        </TabsTrigger>
         {adHocView ? (
           <TabsTrigger
             value={adHocView.page}
@@ -125,6 +128,9 @@ export function PresetPreviewLayoutPicker({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => selectView("login-04")}>
               Login 04
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectView("marketing")}>
+              Marketing
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
