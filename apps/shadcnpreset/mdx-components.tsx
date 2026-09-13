@@ -65,8 +65,12 @@ export const mdxDocumentationComponents = {
           </Link>
         )
       }
+      // Affiliate links carry our `atp` tag; search engines expect them marked sponsored.
+      const rel = href?.includes("atp=shadcnpreset")
+        ? "sponsored noopener noreferrer"
+        : "noreferrer"
       return (
-        <a href={href} className={base} target="_blank" rel="noreferrer" {...props}>
+        <a href={href} className={base} target="_blank" rel={rel} {...props}>
           {children}
         </a>
       )
