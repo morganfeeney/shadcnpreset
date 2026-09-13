@@ -16,6 +16,7 @@
     "refresh:community-snapshot": "pnpm --filter=shadcnpreset refresh:community-snapshot"
   },
   "devDependencies": {
+    "shadcn": "^4.21.0",
     "tsx": "^4.20.5"
   }
 }
