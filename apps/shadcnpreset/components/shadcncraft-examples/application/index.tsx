@@ -4,6 +4,7 @@ import { IconPlaceholder } from "@/components/icon-placeholder"
 import { ActivityFeed1 } from "@/components/shadcncraft-examples/blocks/activity-feed-1"
 import { Header1 } from "@/components/shadcncraft-examples/blocks/header-1"
 import { Table4 } from "@/components/shadcncraft-examples/blocks/table-4"
+import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { Balance1 } from "@/components/shadcncraft-examples/ui/balance-1"
 import { Expenses1 } from "@/components/shadcncraft-examples/ui/expenses-1"
 import {
@@ -18,19 +19,10 @@ import { Transactions1 } from "@/components/shadcncraft-examples/ui/transactions
 export function ApplicationDemo() {
   return (
     <div className="bg-background text-foreground">
-      <div className="mx-auto w-full max-w-7xl px-5 py-2 lg:px-8">
-        <p className="text-xs text-muted-foreground">
-          Application blocks from{" "}
-          <a
-            href="https://shadcncraft.com?atp=shadcnpreset&amp;src=application-preview"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            shadcncraft Pro
-          </a>
-        </p>
-      </div>
+      <ShadcncraftCredit
+        label="Application blocks"
+        source="application-preview"
+      />
       <Header1 />
       <main className="mx-auto flex max-w-7xl flex-col">
         <div className="flex flex-col gap-4 px-4 lg:px-7">
