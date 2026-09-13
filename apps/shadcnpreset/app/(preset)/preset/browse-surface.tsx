@@ -182,7 +182,6 @@ export function PresetBrowsePreview({
           className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
           src={previewSrc}
           title={`Preset preview ${resolved.code} ${effectiveView}`}
-          sandbox="allow-scripts allow-same-origin"
           generatedPreview={
             effectiveView === "generated" ? generatedPreview : null
           }

@@ -52,7 +52,6 @@ function DialogPreviewIframe({ src, title }: { src: string; title: string }) {
         title={title}
         src={src}
         className="h-full w-full border-0"
-        sandbox="allow-scripts allow-same-origin"
         onLoad={() => setLoaded(true)}
       />
       {!loaded ? (

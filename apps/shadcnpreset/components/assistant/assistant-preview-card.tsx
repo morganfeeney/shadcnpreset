@@ -90,7 +90,6 @@ export function AssistantPreviewCard({
           )}
           src={previewSrc}
           title={`${preview.title} preview`}
-          sandbox="allow-scripts allow-same-origin"
           loading="lazy"
           generatedPreview={payload}
           onLoad={() => setLoaded(true)}
