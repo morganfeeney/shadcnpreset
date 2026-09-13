@@ -38,6 +38,7 @@ const TAB_VIEWS: ViewOption[] = [
   { page: "marketing", label: "Marketing" },
   { page: "application", label: "Application" },
   { page: "store", label: "Store" },
+  { page: "chat", label: "Chat" },
 ]
 
 /** Older views, always behind the "More previews" menu, which marks the active one. */

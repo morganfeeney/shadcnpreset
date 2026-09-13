@@ -11,7 +11,7 @@ import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 
 export function MarketingDemo() {
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background px-2 text-foreground">
       <ShadcncraftCredit label="Marketing blocks" source="marketing-preview" />
       <Hero1 />
       <main>

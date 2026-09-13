@@ -8,7 +8,7 @@ import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 /** A shopper's path through the store: browse, pick, review the cart, pay. */
 export function StoreDemo() {
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background px-2 text-foreground">
       <ShadcncraftCredit label="E-commerce blocks" source="store-preview" />
       <main>
         <ProductCategory3 />

@@ -18,14 +18,14 @@ import { Transactions1 } from "@/components/shadcncraft-examples/ui/transactions
 
 export function ApplicationDemo() {
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background px-2 text-foreground">
       <ShadcncraftCredit
         label="Application blocks"
         source="application-preview"
       />
       <Header1 />
       <main className="mx-auto flex max-w-7xl flex-col">
-        <div className="flex flex-col gap-4 px-4 lg:px-7">
+        <div className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {metrics.map((metric) => (
               <MetricCard1 key={metric.title}>

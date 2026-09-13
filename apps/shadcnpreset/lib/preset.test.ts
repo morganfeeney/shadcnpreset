@@ -88,6 +88,14 @@ describe("getPresetPreviewUrl", () => {
     expect(url).toContain("preset=b5aFUJkSzC")
   })
 
+  it("points the chat view at the local preset-preview embed route", () => {
+    const url = getPresetPreviewUrl("b5aFVCFRxi", "chat")
+
+    expect(url).not.toBeNull()
+    expect(url).toContain("/preset-preview/chat")
+    expect(url).toContain("preset=b5aFUJkSzC")
+  })
+
   it("points the generated view at the local preset-preview embed route", () => {
     const url = getPresetPreviewUrl("b5aFVCFRxi", "generated")
 

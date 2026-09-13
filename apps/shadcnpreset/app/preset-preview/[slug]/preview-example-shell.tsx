@@ -56,6 +56,13 @@ const StoreDemo = dynamic(
     ),
   { loading: ExampleLoading }
 )
+const ChatDemo = dynamic(
+  () =>
+    import("@/components/shadcncraft-examples/chat").then(
+      (mod) => mod.ChatDemo
+    ),
+  { loading: ExampleLoading }
+)
 const GeneratedPreviewExample = dynamic(
   () =>
     import("@/components/generated-preview/example").then(
@@ -132,6 +139,8 @@ function ExampleView({
           <StoreDemo />
         </div>
       )
+    case "chat":
+      return <ChatDemo />
     case "generated":
       return <GeneratedPreviewExample />
     default:
