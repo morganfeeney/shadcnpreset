@@ -21,7 +21,7 @@ export function Testimonials1({
 }: Testimonials1Props) {
   return (
     <section className="py-5 lg:py-16">
-      <div className="mx-auto max-w-5xl px-4 lg:px-6">
+      <div className="mx-auto max-w-5xl">
         {/* Testimonial Quote */}
         <div className="flex w-full flex-col">
           <div className="text-2xl font-medium text-muted-foreground lg:text-4xl">

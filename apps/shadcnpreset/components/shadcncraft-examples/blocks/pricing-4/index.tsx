@@ -18,7 +18,7 @@ export function Pricing4() {
 
   return (
     <section className="py-5 lg:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10">
         {/* Section Heading and Billing Period Tabs */}
         <div className="flex flex-col gap-4">
           <SectionHeading

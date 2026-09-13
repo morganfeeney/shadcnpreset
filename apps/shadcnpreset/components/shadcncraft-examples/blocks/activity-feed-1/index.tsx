@@ -59,7 +59,7 @@ export function ActivityFeed1() {
   }
 
   return (
-    <section className="flex flex-col gap-5 px-4 py-8 lg:gap-8 lg:px-7">
+    <section className="flex flex-col gap-5 py-8 lg:gap-8">
       {/* Header and Filters */}
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-medium tracking-tight">Activity</h2>

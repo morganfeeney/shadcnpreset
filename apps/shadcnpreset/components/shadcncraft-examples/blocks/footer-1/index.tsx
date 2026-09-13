@@ -11,7 +11,7 @@ export function Footer1() {
       role="contentinfo"
       aria-label="Website footer"
     >
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 lg:gap-7 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:gap-7">
         {/* Navigation */}
         <nav
           className="grid gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-7"

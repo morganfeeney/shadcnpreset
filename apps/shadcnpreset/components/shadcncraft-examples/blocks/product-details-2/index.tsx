@@ -71,7 +71,7 @@ export function ProductDetails2() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-5 md:py-16 lg:px-6">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 py-5 md:py-16">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

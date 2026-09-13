@@ -383,7 +383,7 @@ export function Table4() {
   const rowIds = table.getRowModel().rows.map((row) => row.id)
 
   return (
-    <section className="flex flex-col gap-4 px-4 py-8 lg:px-7">
+    <section className="flex flex-col gap-4 py-8">
       {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex gap-2">

@@ -52,7 +52,7 @@ export function TopNavigation4() {
       aria-label="Website top navigation"
       ref={navigationContainerRef}
     >
-      <div className="relative mx-auto flex max-w-7xl flex-col px-5 md:flex-row md:items-center md:justify-center lg:gap-6 lg:px-6">
+      <div className="relative mx-auto flex max-w-7xl flex-col md:flex-row md:items-center md:justify-center lg:gap-6">
         {/* Logo and Toggle Mobile Nav Button */}
         <div className="flex items-center justify-between">
           {/* Replace with actual logo */}

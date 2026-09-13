@@ -13,7 +13,7 @@ import {
 
 export function ProductCategory3() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-5 md:py-16 lg:px-6">
+    <div className="mx-auto w-full max-w-7xl py-5 md:py-16">
       <div className="flex flex-col gap-4 md:gap-7">
         <SectionHeading alignment="left" size="sm">
           <SectionHeadingTitle>Categories</SectionHeadingTitle>

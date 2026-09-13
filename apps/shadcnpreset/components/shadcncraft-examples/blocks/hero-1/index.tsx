@@ -17,7 +17,7 @@ export function Hero1() {
       </div>
 
       <section className="py-5 lg:py-16">
-        <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 lg:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-12">
           {/* Page Heading */}
           <PageHeading alignment="center" className="mx-auto w-full">
             <PageHeadingTagline>New features released</PageHeadingTagline>

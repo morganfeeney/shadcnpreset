@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 export function SocialProof1() {
   return (
     <section className="py-5 lg:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 lg:gap-7 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:gap-7">
         {/* Social Proof Logos */}
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-7">
           {/* Replace this with your real logos */}

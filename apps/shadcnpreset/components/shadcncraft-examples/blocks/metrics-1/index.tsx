@@ -7,7 +7,7 @@ import {
 export function Metrics1() {
   return (
     <section className="py-5 lg:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 lg:gap-7 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:gap-7">
         {/* Map Image */}
         <div className="pointer-events-auto relative aspect-21/9 h-auto w-full overflow-hidden mask-y-from-60%">
           <img

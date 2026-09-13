@@ -28,7 +28,7 @@ import { Separator } from "@/components/cn-ui/separator"
 export function Checkout1() {
   return (
     <form>
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-5 **:data-[slot=field]:gap-2 md:grid-cols-2 lg:gap-12 lg:px-6 lg:py-16">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 py-5 **:data-[slot=field]:gap-2 md:grid-cols-2 lg:gap-12 lg:py-16">
         {/* Left Column: Shipping Information & Payment */}
         <div className="flex flex-col gap-7">
           {/* Shipping Information */}

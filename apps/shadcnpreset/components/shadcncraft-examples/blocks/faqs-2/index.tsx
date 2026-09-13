@@ -14,7 +14,7 @@ import {
 export function FAQs2() {
   return (
     <section className="py-10 lg:py-16">
-      <div className="mx-auto flex flex-col gap-12 px-4 lg:px-0">
+      <div className="mx-auto flex flex-col gap-12">
         {/* Section Heading */}
         <SectionHeading alignment="center" className="mx-auto w-full max-w-2xl">
           <SectionHeadingTagline>FAQ</SectionHeadingTagline>

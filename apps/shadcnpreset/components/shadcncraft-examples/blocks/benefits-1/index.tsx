@@ -18,7 +18,7 @@ import { IconPlaceholder } from "@/components/icon-placeholder"
 export function Benefits1() {
   return (
     <section className="overflow-x-clip py-5 lg:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-12">
         {/* Section Heading */}
         <SectionHeading className="mx-auto w-full max-w-3xl md:items-center md:text-center">
           <SectionHeadingTagline>Benefits</SectionHeadingTagline>

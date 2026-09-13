@@ -14,7 +14,7 @@ import { IconPlaceholder } from "@/components/icon-placeholder"
 
 export function Header1() {
   return (
-    <header className="flex flex-col gap-4 p-4 lg:p-7">
+    <header className="flex flex-col gap-4 py-4 lg:py-7">
       {/* Navigation: Breadcrumbs / Back Button */}
       <div>
         {/* Desktop Breadcrumbs */}

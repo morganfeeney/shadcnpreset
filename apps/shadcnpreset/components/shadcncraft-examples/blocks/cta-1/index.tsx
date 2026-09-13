@@ -9,7 +9,7 @@ import {
 export function CTA1() {
   return (
     <section className="py-5 lg:py-16">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6">
+      <div className="mx-auto max-w-7xl">
         {/* Section Heading */}
         <SectionHeading alignment="center">
           <SectionHeadingTitle>
