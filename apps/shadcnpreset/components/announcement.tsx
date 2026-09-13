@@ -30,7 +30,7 @@ export function Announcement({
       <Badge
         render={
           <Link href="/changelog">
-            New get code from preset pages
+            Partnering with shadcncraft
             <ArrowRightIcon
               weight="bold"
               className="size-3.5 shrink-0"

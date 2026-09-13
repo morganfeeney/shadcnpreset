@@ -14,7 +14,7 @@ export function ShadcncraftCredit({
         <a
           href={`https://shadcncraft.com?atp=shadcnpreset&src=${source}`}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="sponsored noopener noreferrer"
           className="underline underline-offset-4 hover:text-foreground"
         >
           shadcncraft Pro
