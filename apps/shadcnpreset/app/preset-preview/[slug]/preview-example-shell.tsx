@@ -9,6 +9,7 @@ import { Login02Demo } from "@/components/shadcn-examples/login-02"
 import { Login04Demo } from "@/components/shadcn-examples/login-04"
 import { ApplicationDemo } from "@/components/shadcncraft-examples/application"
 import { MarketingDemo } from "@/components/shadcncraft-examples/marketing"
+import { StoreDemo } from "@/components/shadcncraft-examples/store"
 import { Spinner } from "@/components/ui/spinner"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
@@ -87,6 +88,12 @@ function ExampleView({
       return (
         <div className="min-h-svh bg-background text-foreground">
           <ApplicationDemo />
+        </div>
+      )
+    case "store":
+      return (
+        <div className="min-h-svh bg-background text-foreground">
+          <StoreDemo />
         </div>
       )
     case "generated":
