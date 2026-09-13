@@ -11,6 +11,19 @@ import { Testimonials1 } from "@/components/shadcncraft-examples/blocks/testimon
 export function MarketingDemo() {
   return (
     <div className="bg-background text-foreground">
+      <div className="mx-auto w-full max-w-7xl px-5 py-2 lg:px-8">
+        <p className="text-xs text-muted-foreground">
+          Marketing blocks from{" "}
+          <a
+            href="https://shadcncraft.com?atp=shadcnpreset&amp;src=marketing-preview"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            shadcncraft Pro
+          </a>
+        </p>
+      </div>
       <Hero1 />
       <main>
         <SocialProof1 />
