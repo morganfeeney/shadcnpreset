@@ -31,7 +31,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/cn-ui/tabs"
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { FilePart1 } from "@/components/shadcncraft-examples/ui/file-part-1"
 import { ReasoningPart1 } from "@/components/shadcncraft-examples/ui/reasoning-part-1"
 import {
@@ -49,8 +48,6 @@ import { WebSearchPart1 } from "@/components/shadcncraft-examples/ui/web-search-
 export function ChatDemo() {
   return (
     <div className="flex h-svh flex-col bg-background px-2 text-foreground">
-      <ShadcncraftCredit label="AI chat blocks" source="chat-preview" />
-
       {/* Scrolling clips like the frame edge, so the gutter goes inside it. */}
       <div className="-mx-2 min-h-0 flex-1 overflow-y-auto px-2">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 py-6">

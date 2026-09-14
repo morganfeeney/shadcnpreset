@@ -15,10 +15,7 @@ const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 
 type ThemeMode = "light" | "dark"
 
-// Popups must escape the sandbox so outbound links (e.g. the shadcncraft
-// credit) open as normal tabs rather than inheriting these restrictions.
-const FRAME_SANDBOX =
-  "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+const FRAME_SANDBOX = "allow-scripts allow-same-origin"
 
 type PresetV4FrameProps = {
   src: string

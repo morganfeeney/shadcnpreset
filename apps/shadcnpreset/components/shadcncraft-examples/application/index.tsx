@@ -4,7 +4,6 @@ import { IconPlaceholder } from "@/components/icon-placeholder"
 import { ActivityFeed1 } from "@/components/shadcncraft-examples/blocks/activity-feed-1"
 import { Header1 } from "@/components/shadcncraft-examples/blocks/header-1"
 import { Table4 } from "@/components/shadcncraft-examples/blocks/table-4"
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { Balance1 } from "@/components/shadcncraft-examples/ui/balance-1"
 import { Expenses1 } from "@/components/shadcncraft-examples/ui/expenses-1"
 import {
@@ -19,10 +18,6 @@ import { Transactions1 } from "@/components/shadcncraft-examples/ui/transactions
 export function ApplicationDemo() {
   return (
     <div className="bg-background px-2 text-foreground">
-      <ShadcncraftCredit
-        label="Application blocks"
-        source="application-preview"
-      />
       <Header1 />
       <main className="mx-auto flex max-w-7xl flex-col">
         <div className="flex flex-col gap-4">

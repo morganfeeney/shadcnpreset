@@ -6,6 +6,7 @@ import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
 import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
+import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { Spinner } from "@/components/ui/spinner"
 import { Container } from "@/components/zippystarter/container"
 import {
@@ -157,44 +158,50 @@ export function PresetBrowsePreview({
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const loaded = loadedKey === frameKey
   const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
-  const isLocalExample =
-    getPresetPreviewView(effectiveView)?.target.kind === "local"
+  const previewView = getPresetPreviewView(effectiveView)
+  const isLocalExample = previewView?.target.kind === "local"
+  const credit = previewView?.credit
 
   if (!previewSrc) {
     return null
   }
 
   return (
-    <div
-      className={cn(
-        "relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg",
-        // Rings and shadows paint outside a card's box, and an iframe cannot
-        // paint past its own edge. Local examples widen the frame into the
-        // container's gutter and pad it back (`px-2` inside), so content still
-        // lines up with the tab row but edge-hugging cards keep their outline.
-        isLocalExample && "-mx-2"
-      )}
-    >
-      {/* Holding the frame back while a linked preview is still being recovered
-          leaves `loaded` false, so the overlay below covers the wait. */}
-      {generatedPreviewPending ? null : (
-        <PresetV4Frame
-          className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
-          src={previewSrc}
-          title={`Preset preview ${resolved.code} ${effectiveView}`}
-          generatedPreview={
-            effectiveView === "generated" ? generatedPreview : null
-          }
-          onLoad={() => {
-            setLoadedKey(frameKey)
-          }}
-        />
-      )}
-      {!loaded ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-background">
-          <Spinner />
-        </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-2">
+      {credit ? (
+        <ShadcncraftCredit credit={credit} presetCode={resolved.code} />
       ) : null}
+      <div
+        className={cn(
+          "relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg",
+          // Rings and shadows paint outside a card's box, and an iframe cannot
+          // paint past its own edge. Local examples widen the frame into the
+          // container's gutter and pad it back (`px-2` inside), so content still
+          // lines up with the tab row but edge-hugging cards keep their outline.
+          isLocalExample && "-mx-2"
+        )}
+      >
+        {/* Holding the frame back while a linked preview is still being recovered
+            leaves `loaded` false, so the overlay below covers the wait. */}
+        {generatedPreviewPending ? null : (
+          <PresetV4Frame
+            className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
+            src={previewSrc}
+            title={`Preset preview ${resolved.code} ${effectiveView}`}
+            generatedPreview={
+              effectiveView === "generated" ? generatedPreview : null
+            }
+            onLoad={() => {
+              setLoadedKey(frameKey)
+            }}
+          />
+        )}
+        {!loaded ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-background">
+            <Spinner />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }

@@ -7,12 +7,10 @@ import { Metrics1 } from "@/components/shadcncraft-examples/blocks/metrics-1"
 import { Pricing4 } from "@/components/shadcncraft-examples/blocks/pricing-4"
 import { SocialProof1 } from "@/components/shadcncraft-examples/blocks/social-proof-1"
 import { Testimonials1 } from "@/components/shadcncraft-examples/blocks/testimonials-1"
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 
 export function MarketingDemo() {
   return (
     <div className="bg-background px-2 text-foreground">
-      <ShadcncraftCredit label="Marketing blocks" source="marketing-preview" />
       <Hero1 />
       <main>
         <SocialProof1 />
