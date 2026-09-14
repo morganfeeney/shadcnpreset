@@ -22,11 +22,21 @@ type PresetPreviewTarget =
       example: LocalPresetPreviewExample
     }
 
-export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
+/** Affiliate credit shown above a view built from a partner's blocks. */
+export type PresetPreviewCredit = {
+  label: string
+  /** Placement, sent as the link's `src` param and to analytics. */
+  source: string
+}
+
+type PresetPreviewView = {
   page: PresetPreviewPageName
   label: string
   target: PresetPreviewTarget
-}> = [
+  credit?: PresetPreviewCredit
+}
+
+export const PRESET_PREVIEW_VIEWS: ReadonlyArray<PresetPreviewView> = [
   {
     page: "preview",
     label: "View 1",
@@ -74,6 +84,7 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
       kind: "local",
       example: "marketing",
     },
+    credit: { label: "Marketing blocks", source: "marketing-preview" },
   },
   {
     page: "application",
@@ -82,6 +93,7 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
       kind: "local",
       example: "application",
     },
+    credit: { label: "Application blocks", source: "application-preview" },
   },
   {
     page: "store",
@@ -90,6 +102,7 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
       kind: "local",
       example: "store",
     },
+    credit: { label: "E-commerce blocks", source: "store-preview" },
   },
   {
     page: "chat",
@@ -98,6 +111,7 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<{
       kind: "local",
       example: "chat",
     },
+    credit: { label: "AI chat blocks", source: "chat-preview" },
   },
 ] as const
 
@@ -120,11 +134,7 @@ export const LOCAL_PRESET_PREVIEW_EXAMPLES = [
  * only reachable once the assistant has generated something, so it never shows
  * up in the default view picker.
  */
-export const GENERATED_PREVIEW_VIEW: {
-  page: PresetPreviewPageName
-  label: string
-  target: PresetPreviewTarget
-} = {
+export const GENERATED_PREVIEW_VIEW: PresetPreviewView = {
   page: "generated",
   label: "Generated",
   target: {
