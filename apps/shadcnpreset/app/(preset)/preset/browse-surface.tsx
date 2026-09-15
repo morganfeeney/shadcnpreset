@@ -6,7 +6,10 @@ import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
 import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
+import {
+  ShadcncraftCredit,
+  ShadcncraftCreditImpression,
+} from "@/components/shadcncraft-examples/credit"
 import { Spinner } from "@/components/ui/spinner"
 import { Container } from "@/components/zippystarter/container"
 import {
@@ -89,6 +92,23 @@ function PresetBrowseViewPicker() {
   )
 }
 
+/** Lives in the layout so switching presets does not count a new impression. */
+function PresetBrowseCreditImpression() {
+  const { view, generatedPreview, generatedPreviewPending } =
+    usePresetPageLive()
+  const effectiveView = resolveEffectiveView(
+    view,
+    Boolean(generatedPreview),
+    generatedPreviewPending
+  )
+
+  return (
+    <ShadcncraftCreditImpression
+      credit={getPresetPreviewView(effectiveView)?.credit}
+    />
+  )
+}
+
 function PresetBrowseCycleControls() {
   const { livePresetCode, selectLivePreset } = usePresetPageLive()
   const resolved = useMemo(
@@ -119,6 +139,7 @@ export function PresetBrowseSurface({
 }: PresetBrowseSurfaceProps) {
   return (
     <div className="w-full">
+      <PresetBrowseCreditImpression />
       <main className="grid gap-2">
         <PresetBrowseHero />
         <Container className="grid max-w-full gap-4">
