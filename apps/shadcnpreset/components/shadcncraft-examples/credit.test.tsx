@@ -2,7 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
+import {
+  ShadcncraftCredit,
+  ShadcncraftCreditImpression,
+} from "@/components/shadcncraft-examples/credit"
 import { trackEvent } from "@/lib/analytics-events"
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
@@ -25,15 +28,28 @@ describe("ShadcncraftCredit", () => {
     expect(link.getAttribute("rel")).toContain("sponsored")
   })
 
-  it("counts an impression per placement, not per preset cycled through", () => {
+  it("records a click with the placement and the preset being viewed", () => {
+    render(<ShadcncraftCredit credit={marketing} presetCode="b5aFUJkSzC" />)
+
+    fireEvent.click(screen.getByRole("link", { name: "shadcncraft Pro" }))
+
+    expect(trackEvent).toHaveBeenLastCalledWith("affiliate_click", {
+      partner: "shadcncraft",
+      placement: "marketing-preview",
+      preset_code: "b5aFUJkSzC",
+    })
+  })
+})
+
+describe("ShadcncraftCreditImpression", () => {
+  it("counts an impression when a credited view opens, and again when another does", () => {
     const { rerender } = render(
-      <ShadcncraftCredit credit={marketing} presetCode="b5aFUJkSzC" />
+      <ShadcncraftCreditImpression credit={undefined} />
     )
-    rerender(<ShadcncraftCredit credit={marketing} presetCode="aXyZ123" />)
+    rerender(<ShadcncraftCreditImpression credit={marketing} />)
     rerender(
-      <ShadcncraftCredit
+      <ShadcncraftCreditImpression
         credit={{ label: "E-commerce blocks", source: "store-preview" }}
-        presetCode="aXyZ123"
       />
     )
 
@@ -49,15 +65,12 @@ describe("ShadcncraftCredit", () => {
     ])
   })
 
-  it("records a click with the placement and the preset being viewed", () => {
-    render(<ShadcncraftCredit credit={marketing} presetCode="b5aFUJkSzC" />)
+  it("does not count again while the same view stays open", () => {
+    const { rerender } = render(
+      <ShadcncraftCreditImpression credit={marketing} />
+    )
+    rerender(<ShadcncraftCreditImpression credit={{ ...marketing }} />)
 
-    fireEvent.click(screen.getByRole("link", { name: "shadcncraft Pro" }))
-
-    expect(trackEvent).toHaveBeenLastCalledWith("affiliate_click", {
-      partner: "shadcncraft",
-      placement: "marketing-preview",
-      preset_code: "b5aFUJkSzC",
-    })
+    expect(trackEvent).toHaveBeenCalledTimes(1)
   })
 })
