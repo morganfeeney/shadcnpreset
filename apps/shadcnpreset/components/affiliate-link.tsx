@@ -2,40 +2,17 @@
 
 import type { AnchorHTMLAttributes } from "react"
 
+import { affiliateLinkParams } from "@/lib/affiliate-link"
 import { trackEvent } from "@/lib/analytics-events"
-
-/** Every affiliate link we hand out carries this tag. */
-const AFFILIATE_TAG = "atp=shadcnpreset"
-
-export function isAffiliateHref(href: string | undefined): boolean {
-  return Boolean(href?.includes(AFFILIATE_TAG))
-}
-
-/**
- * Partner and placement for an affiliate href, e.g.
- * `https://shadcncraft.com?atp=shadcnpreset&src=changelog` → shadcncraft,
- * changelog. A link without `src` is still worth counting, so it falls back to
- * the page it was written into rather than being dropped.
- */
-export function affiliateLinkParams(href: string): {
-  partner: string
-  placement: string
-} {
-  try {
-    const url = new URL(href)
-    return {
-      partner: url.hostname.replace(/^www\./, "").split(".")[0],
-      placement: url.searchParams.get("src") || "untagged",
-    }
-  } catch {
-    return { partner: "unknown", placement: "untagged" }
-  }
-}
 
 /**
  * Outbound affiliate link that reports its click. Prose links have no
  * impression of their own — use page views of the page they sit on as the
  * denominator.
+ *
+ * The href checks live in `@/lib/affiliate-link`, not here: this module is
+ * client-only, and the MDX component map that picks the link renders on the
+ * server.
  */
 export function AffiliateLink({
   href,
