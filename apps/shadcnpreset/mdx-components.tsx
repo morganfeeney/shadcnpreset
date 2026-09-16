@@ -1,7 +1,8 @@
 import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
-import { AffiliateLink, isAffiliateHref } from "@/components/affiliate-link"
+import { AffiliateLink } from "@/components/affiliate-link"
+import { isAffiliateHref } from "@/lib/affiliate-link"
 import { cn } from "@/lib/utils"
 
 /** Map used by `@next/mdx` and by Content Collections `<MDXContent />` on the server. */
