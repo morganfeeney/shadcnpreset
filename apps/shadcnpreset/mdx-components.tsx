@@ -1,6 +1,7 @@
 import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
+import { AffiliateLink, isAffiliateHref } from "@/components/affiliate-link"
 import { cn } from "@/lib/utils"
 
 /** Map used by `@next/mdx` and by Content Collections `<MDXContent />` on the server. */
@@ -65,12 +66,22 @@ export const mdxDocumentationComponents = {
           </Link>
         )
       }
-      // Affiliate links carry our `atp` tag; search engines expect them marked sponsored.
-      const rel = href?.includes("atp=shadcnpreset")
-        ? "sponsored noopener noreferrer"
-        : "noreferrer"
+      // Affiliate links are marked sponsored and report their clicks.
+      if (isAffiliateHref(href)) {
+        return (
+          <AffiliateLink href={href as string} className={base} {...props}>
+            {children}
+          </AffiliateLink>
+        )
+      }
       return (
-        <a href={href} className={base} target="_blank" rel={rel} {...props}>
+        <a
+          href={href}
+          className={base}
+          target="_blank"
+          rel="noreferrer"
+          {...props}
+        >
           {children}
         </a>
       )
