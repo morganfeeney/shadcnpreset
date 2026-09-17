@@ -47,7 +47,7 @@ const sortedEntries = [...allChangelogs]
         {c.description ? (
           <p className="text-muted-foreground">{c.description}</p>
         ) : null}
-        <div className="[&>p:first-of-type]:mt-0 [&>ul:first-child]:mt-0">
+        <div className="markdown">
           <MDXContent code={c.body} components={mdxDocumentationComponents} />
         </div>
       </div>

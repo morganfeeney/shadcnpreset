@@ -8,11 +8,18 @@ import {
   ToolCardHeader,
   ToolCardTitle,
 } from "@/components/tool-card"
+import { format, parseISO } from "date-fns"
 
 type ToolListItem = {
   href: string
   title: string
   description: string
+  date: string
+  updated: string
+}
+
+function formatDate(date: string) {
+  return format(parseISO(date), "dd MMM yyyy")
 }
 
 export function ToolsList({ tools }: { tools: readonly ToolListItem[] }) {
@@ -23,6 +30,17 @@ export function ToolsList({ tools }: { tools: readonly ToolListItem[] }) {
           <ToolCardHeader>
             <ToolCardTitle>{tool.title}</ToolCardTitle>
             <ToolCardDescription>{tool.description}</ToolCardDescription>
+            <p className="mt-2 font-mono text-xs font-medium text-muted-foreground uppercase">
+              <time dateTime={tool.date}>{formatDate(tool.date)}</time>
+              {tool.updated ? (
+                <>
+                  {" · Updated "}
+                  <time dateTime={tool.updated}>
+                    {formatDate(tool.updated)}
+                  </time>
+                </>
+              ) : null}
+            </p>
           </ToolCardHeader>
         </ToolCard>
       ))}
