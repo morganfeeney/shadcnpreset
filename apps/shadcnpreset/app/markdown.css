@@ -103,6 +103,9 @@
     &:where(pre) {
       margin-top: 1.5rem;
       overflow-x: auto;
+      /* Long lines scroll inside the block instead of widening every grid
+         ancestor (grid items default to min-width: auto). */
+      contain: inline-size;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       background-color: color-mix(in oklab, var(--color-muted) 40%, transparent);
@@ -141,6 +144,7 @@
       margin-block: 1.5rem;
       width: 100%;
       overflow-x: auto;
+      contain: inline-size;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
     }
