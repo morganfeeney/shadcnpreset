@@ -1,28 +1,30 @@
 ---
 date: "2026-09-15"
+updated: "2026-09-17"
+status: draft
 title: "What is a shadcn preset?"
-description: "A preset is a whole design system for shadcn/ui in one short code. A theme is just the colours. Here's what goes into a preset, and why the difference matters."
+description: "A preset is a short code that describes a whole shadcn/ui setup: style, colours, fonts, icons, radius, menus. A theme is only the colour variables. Here's the difference, and why it matters when you're looking for one."
 ---
 
-A shadcn preset is a short code, like `b4YtS7GakV`, that describes a complete design system for shadcn/ui: how components are shaped and spaced, the colours, fonts, icon library, corner radius and how menus look.
+Last week I asked Claude how to find shadcn presets. It sent me to Tweakcn.
 
-A theme is one part of that. It's the set of CSS variables that controls colour (and usually radius). You can get a theme out of a preset, but you can't get a preset out of a theme.
+Tweakcn is a good tool. It's a theme editor: you move sliders, it gives you CSS variables. But I hadn't asked for a theme editor. I wanted to browse presets other people had already put together and pick one. The answer came back wrong because "theme" and "preset" get used as if they mean the same thing, and they don't.
 
-## Where presets come from
+So here's the distinction as plainly as I can put it.
 
-Presets arrived with shadcn/ui v4 and [shadcn create](https://ui.shadcn.com/create). You pick options in the builder, and the current combination is encoded into a preset code. That code is the whole design system, so you can share it, bookmark it, or hand it to the CLI:
+## A preset is a code
+
+A shadcn preset is a short code like `b4YtS7GakV`. Presets arrived with shadcn/ui v4 and [shadcn create](https://ui.shadcn.com/create): you pick options in the builder, and the current combination gets encoded into that code. You can hand it straight to the CLI.
 
 ```bash
-# Start a new project with a preset
+# New project
 npx shadcn@latest init --preset b4YtS7GakV
 
-# Or apply one to an existing project
+# Existing project
 npx shadcn@latest apply --preset b4YtS7GakV
 ```
 
-## What's inside a preset
-
-You can see what a code contains with `shadcn preset decode`:
+To see what's in one, decode it:
 
 ```bash
 npx shadcn@latest preset decode b4YtS7GakV
@@ -43,109 +45,79 @@ Preset
   menuColor    inverted-translucent
 ```
 
-That's ten decisions. Here's what each one controls, and whether it's something a theme could express.
+Ten fields. About half of them are colour, and could live in a theme file. The other half can't.
 
-| Field | What it controls | Part of a theme? |
+| Field | What it controls | Could a theme do it? |
 | --- | --- | --- |
-| `style` | The shape of every component: padding, height, text size, border radius, focus rings. Vega, Nova, Maia, Lyra, Mira, Luma and others. | No |
-| `baseColor` | The neutral greys behind everything: background, card, border, muted text | Yes |
-| `theme` | The accent colour: primary, primary foreground, sidebar primary | Yes |
-| `chartColor` | The five chart colours, `--chart-1` to `--chart-5` | Yes |
-| `radius` | The `--radius` variable that corner sizes are calculated from | Yes |
-| `menuAccent` | Whether highlighted menu items use a subtle grey or the primary colour | Yes |
-| `menuColor` | Whether dropdowns and popovers are default or inverted, solid or translucent | No |
-| `font` | The body font, installed and wired up for you | No |
-| `fontHeading` | An optional separate font for headings | No |
+| `style` | Component shape: padding, height, type size, corners, focus rings. Vega, Nova, Maia, Lyra, Mira, Luma, Sera, Rhea. | No |
+| `baseColor` | The neutrals: background, card, border, muted text | Yes |
+| `theme` | The accent colour | Yes |
+| `chartColor` | `--chart-1` to `--chart-5` | Yes |
+| `radius` | The `--radius` variable | Yes |
+| `menuAccent` | Grey or primary-coloured highlight on menu items | Yes |
+| `menuColor` | Default or inverted, solid or translucent menus | No |
+| `font` / `fontHeading` | Body and heading fonts, installed for you | No |
 | `iconLibrary` | Lucide, Hugeicons, Tabler, Phosphor or Remix Icon | No |
 
-Roughly half of a preset is theme. The other half changes your component code, your dependencies, or both.
+One thing a preset doesn't decide: whether your components are built on Radix or Base UI. That's the separate `--base` flag on `init`, and the same code works with either.
 
-## What a theme is
+## A theme is CSS variables
 
-In shadcn/ui, theming is done with CSS variables. Components use utility classes like `bg-primary` and `border-border`, and those point at variables defined in your global CSS for light and dark mode:
+shadcn/ui components use classes like `bg-primary` and `border-border`. Those point at variables in your global CSS, with a light set and a dark set:
 
 ```css
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   /* ... */
 }
 
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
   /* ... */
 }
 ```
 
-Swap those values and every component recolours. That's all a theme is: a block of variables you can paste into a project. It's portable and low-risk, and it's what most theme generators give you.
+Change the values and everything recolours. That's the whole mechanism, and it's what theme generators produce, Tweakcn included. It's portable and low-risk, and if colour is all you want to change it's the right tool.
 
-The limit is that a theme only changes values the components already read from variables. Anything written directly into a component's classes is out of reach.
+The limit is that variables can only change things the components already read from variables.
 
-## Why style can't be a theme
+## Why the other half can't be CSS
 
-The biggest thing a preset carries is `style`, and it lives in the component source, not in CSS variables.
+`style` is the big one. It lives in the component classes. Lyra's base button has `rounded-none text-xs focus-visible:ring-1`. Maia's has `rounded-4xl text-sm focus-visible:ring-[3px]`. Same theme variables on both of these:
 
-Take the button. In the Lyra style, the base button classes include:
+<StyleShowcase
+  styles={["lyra", "maia"]}
+  controls={["button", "input", "switch"]}
+  baseColor="mist"
+  theme="lime"
+  radius="large"
+  caption="Mist and lime, radius large, on Lyra and Maia. The CSS variables are identical; the components aren't."
+/>
 
-```
-rounded-none text-xs focus-visible:ring-1
-```
+There is no variable you can set to turn one into the other; you need different component code. [I wrote up the styles separately](/learn/how-to-choose-a-shadcn-style) because it's the field that changes how a page feels the most, and the one a colour picker can't show you.
 
-In Maia they include:
+Fonts and icons are similar. Switching icon library changes the imports inside every component. Fonts get wired into your app with `next/font` or Fontsource. Menu colour changes the classes on dropdown and popover content.
 
-```
-rounded-4xl text-sm focus-visible:ring-[3px]
-```
+That's why the CLI treats a full preset as a bigger operation than a theme. When you apply one, it tells you it "will overwrite existing UI components, fonts, and CSS variables" and lists the components it's about to reinstall. Pasting a theme never touches a component file.
 
-Text size, focus ring width, padding and height are written into the component itself. No CSS variable in your theme can turn a Lyra button into a Maia button. You need a different `button.tsx`.
+## If you only want the colours
 
-The same is true of the other non-theme fields:
-
-- **Icon library** changes the imports inside your components and the package you depend on.
-- **Fonts** are wired into your app: `next/font` in Next.js, Fontsource packages elsewhere.
-- **Menu colour** changes the classes on dropdown, context menu and popover content.
-
-This is why the CLI treats the two very differently. Applying a full preset warns you that it "will overwrite existing UI components, fonts, and CSS variables", and lists the components it's about to re-install. A theme never needs to touch your components.
-
-## Preset vs theme at a glance
-
-| | Theme | Preset |
-| --- | --- | --- |
-| What it is | CSS variables for light and dark mode | A full design system configuration |
-| Shared as | A block of CSS | A short code, e.g. `b4YtS7GakV` |
-| Changes colours and radius | Yes | Yes |
-| Changes component structure | No | Yes, through `style` |
-| Changes fonts and icons | No | Yes |
-| Applied by | Pasting into your global CSS | `shadcn init --preset` or `shadcn apply --preset` |
-| Touches your component files | No | Yes |
-
-## Using just the theme from a preset
-
-If you already have a project and only like a preset's colours, you don't have to take the whole thing. The CLI can apply part of a preset:
+You can take part of a preset:
 
 ```bash
-# Only the CSS variables
 npx shadcn@latest apply --preset b4YtS7GakV --only theme
-
-# Only the fonts
 npx shadcn@latest apply --preset b4YtS7GakV --only font
 ```
 
-Or paste a code into the [Preset Theme CSS Generator](/tools/preset-theme-generator) to copy the light and dark CSS variables directly. It's worth running the same code through the [colour contrast checker](/tools/color-contrast-checker) too, since a preset's accent colour doesn't guarantee readable text.
+Or paste the code into the [Preset Theme CSS Generator](/tools/preset-theme-generator) and copy the light and dark variables. Worth running it through the [contrast checker](/tools/color-contrast-checker) too. A preset's accent looks fine on a swatch and can still fail as button text.
 
-## What a preset doesn't include
+## Where this leaves you
 
-A preset doesn't choose your component primitives. Whether your components are built on Radix UI or Base UI is picked separately, with `--base` when you run `init`. The same preset code works with either.
+If you want to build a preset from scratch, [shadcn create](https://ui.shadcn.com/create) is the official place to do it.
 
-It also doesn't include your framework, your layout or your content. It's the visual system, not the app.
+If you want to recolour what you already have, a theme editor or the CSS generator above is the right tool.
 
-## Choosing a preset
-
-The combinations run into the billions, and most of the difference between them only shows up once you see real components: a table, a form, a dashboard, a menu that opens. Colour swatches alone won't tell you how Lyra's sharp, compact components feel next to Luma's.
-
-That's what shadcnpreset is for. Browse what people are voting for in the [community](/community), or [describe what you're building](/assistant) and get presets that fit, previewed on real UI before you run a single command.
+If you want to look at presets that already exist and pick one, that's the gap I ran into, and it's what I built this site for. [Community](/community) is what people are voting for. [Ask AI](/assistant) takes a description of what you're building and shows matching presets on real components before you run anything.

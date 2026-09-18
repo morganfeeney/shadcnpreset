@@ -3,6 +3,12 @@ import type { Metadata } from "next"
 import { LEARN_ARTICLES } from "@/app/learn/articles"
 import { getLearnArticleHref, LEARN_PAGE } from "@/app/learn/learn"
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty"
+import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderHeading,
@@ -28,14 +34,28 @@ export default function LearnPage() {
         </PageHeaderDescription>
       </PageHeader>
       <main className="grid gap-4">
-        <ToolsList
-          tools={LEARN_ARTICLES.map((article) => ({
-            href: getLearnArticleHref(article.slug),
-            title: article.title,
-            description: article.description,
-            date: article.date,
-          }))}
-        />
+        {LEARN_ARTICLES.length > 0 ? (
+          <ToolsList
+            tools={LEARN_ARTICLES.map((article) => ({
+              href: getLearnArticleHref(article.slug),
+              title: article.title,
+              description: article.description,
+              date: article.date,
+              updated: article.updated,
+              badge: article.status === "draft" ? "Draft" : undefined,
+            }))}
+          />
+        ) : (
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyTitle>No guides published yet</EmptyTitle>
+              <EmptyDescription>
+                Learn articles stay hidden on the deployed site until their
+                frontmatter status is published.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
       </main>
     </div>
   )

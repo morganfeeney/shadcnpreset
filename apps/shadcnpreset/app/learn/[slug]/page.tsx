@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns"
 
 import { getLearnArticle, LEARN_ARTICLES } from "@/app/learn/articles"
 import { getLearnArticleHref } from "@/app/learn/learn"
+import { Badge } from "@/components/ui/badge"
 import { buildPageMetadata } from "@/lib/page-metadata"
 import { mdxDocumentationComponents } from "@/mdx-components"
 
@@ -31,9 +32,11 @@ export async function generateMetadata({
     description: article.description,
     path: getLearnArticleHref(article.slug),
   })
+  const isDraft = article.status === "draft"
 
   return {
     ...metadata,
+    robots: isDraft ? { index: false, follow: false } : metadata.robots,
     openGraph: {
       ...metadata.openGraph,
       type: "article",
@@ -57,12 +60,15 @@ export default async function LearnArticlePage({
     notFound()
   }
 
+  const isDraft = article.status === "draft"
+
   return (
     <main className="py-8 md:py-24">
       <article className="mx-auto max-w-[56ch] text-sm leading-6 md:max-w-[66ch] md:text-base md:leading-7">
         <div className="markdown text-foreground/70">
           <header className="grid">
-            <p className="mt-0 font-mono text-xs font-medium text-muted-foreground uppercase">
+            <p className="mt-0 flex flex-wrap items-center gap-2 font-mono text-xs font-medium text-muted-foreground uppercase">
+              {isDraft ? <Badge variant="default">Draft</Badge> : null}
               <time dateTime={article.date}>{formatDate(article.date)}</time>
               {article.updated ? (
                 <>
@@ -76,7 +82,6 @@ export default async function LearnArticlePage({
             <h1 className="text-3xl font-display text-balance text-foreground md:text-4xl">
               {article.title}
             </h1>
-            <p className="text-foreground/70">{article.description}</p>
           </header>
           <MDXContent
             code={article.body}

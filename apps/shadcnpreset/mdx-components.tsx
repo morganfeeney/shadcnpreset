@@ -2,6 +2,7 @@ import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
 import { AffiliateLink } from "@/components/affiliate-link"
+import { StyleShowcase } from "@/components/learn/style-showcase"
 import { isAffiliateHref } from "@/lib/affiliate-link"
 
 /**
@@ -38,6 +39,8 @@ export const mdxDocumentationComponents = {
       <table {...props} />
     </div>
   ),
+  // Interactive embeds for learn articles. Live cn-ui controls per style.
+  StyleShowcase,
 } satisfies MDXComponents
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {

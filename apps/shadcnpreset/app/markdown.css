@@ -11,12 +11,11 @@
 @layer components {
   .markdown *:not(:where(.not-markdown, .not-markdown *)) {
     /* Headings. */
-    &:where(h1, h2, h3, h4) {
-      @apply font-display;
+    &:where(h1, h2) {
+      @apply font-display text-foreground;
     }
-    &:where(h1, h2, h3) {
+    &:where(h1, h2, h3, h4) {
       scroll-margin-top: 5rem;
-      color: var(--color-foreground);
     }
     &:where(h1) {
       margin-top: 2.5rem;
@@ -37,10 +36,9 @@
       font-size: 1.5rem;
       line-height: calc(2 / 1.5);
     }
-    &:where(h3) {
+    &:where(h3, h4) {
+      @apply text-base font-semibold;
       margin-top: 2rem;
-      font-size: 1.25rem;
-      line-height: calc(1.75 / 1.25);
     }
 
     /* Text. */

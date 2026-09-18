@@ -49,6 +49,7 @@ const learnSchema = z.object({
   updated: z.string().optional(),
   title: z.string(),
   description: z.string(),
+  status: z.enum(["draft", "published"]).default("draft"),
   content: z.string(),
 })
 

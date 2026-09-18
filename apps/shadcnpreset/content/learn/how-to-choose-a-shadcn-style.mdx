@@ -1,0 +1,146 @@
+---
+date: "2026-09-17"
+status: draft
+title: "How to choose a shadcn style"
+description: "Learn about what makes each shadcn style different, how to find presets in a given style on shadcnpreset, and how to install one with the CLI."
+---
+
+Every shadcn [preset](/learn/what-is-a-shadcn-preset) has a `style` field.
+It exists to give your shadcn app more variation than you can get from a theme alone.
+
+Themes control visual tokens such as colours, fonts and radius.
+Styles go much further, changing component-level defaults like fonts, spacing, structure, icon sets, and even the libraries you use.
+
+Style is defined in the component classes rather than CSS variables, so switching styles means reinstalling the components. The shadcn CLI takes care of that for you.
+
+## The eight styles
+
+| Style | Description |
+| --- | --- |
+| Vega | The classic shadcn/ui look |
+| Nova | Reduced padding and margins for compact layouts |
+| Maia | Soft and rounded, with generous spacing |
+| Lyra | Boxy and sharp. Pairs well with mono fonts |
+| Mira | Compact. Made for dense interfaces |
+| Luma | Rounded geometry. Soft elevation. Breathable layouts. Inspired by macOS Tahoe, minus the glass |
+| Sera | Minimal. Editorial. Typographic. Underline Controls and Uppercase Headings. Shaped by Print Design Principles |
+| Rhea | A more compact Luma. Smaller spacing. Denser surfaces. Built for focused product interfaces |
+
+Here's what the eight styles look like with the same neutral palette, radius setting and font. The main difference between each is `style`.
+
+<StyleShowcase caption="Default and outline buttons in each of the eight styles." />
+
+Not sure which style to choose? Browse [community presets](/community) and preview different styles across real UI examples.
+## Things to know before choosing
+
+Styles can look surprisingly similar at first glance. The differences often show up in the less obvious components.
+
+### Nova and Mira are both compact, but Mira goes further
+Nova is the default style, while Mira reduces button height, text size and icon size further.
+
+<StyleShowcase
+    styles={["vega", "nova", "mira"]}
+    controls={["button", "input", "checkbox"]}
+    caption="Vega, Nova and Mira. Each step is a little tighter than the last."
+/>
+
+### Luma and Maia share a rounded appearance, but handle surfaces differently
+Maia uses `bg-input/30` on outline buttons and keeps borders on inputs.
+Luma uses the page background for outline buttons and gives inputs a `bg-input/50` fill without a border.
+As its inspired by macOS Tahoe, the switch component mimics what you get with a Mac OS.
+
+<StyleShowcase
+    styles={["maia", "luma"]}
+    controls={["button", "input", "switch"]}
+    caption="The primary buttons are similar. The input and outline button show the difference."
+/>
+
+### Lyra doesn't use your radius setting
+Its components use `rounded-none`, regardless of the radius value in the preset.
+
+<StyleShowcase
+    styles={["nova", "lyra"]}
+    controls={["button", "input", "badge"]}
+    radius="large"
+    caption="Both use a large radius setting. Lyra stays square."
+/>
+
+### Sera changes typography as well as component shape
+Buttons, labels, legends and headings use uppercase text with wider letter spacing.
+
+Rhea is closer to Luma, but more compact, with `rounded-2xl` and a smaller button height.
+
+<StyleShowcase
+    styles={["rhea", "sera"]}
+    controls={["button", "badge", "input"]}
+    caption="Rhea and Sera. Sera's typography makes it particularly easy to spot."
+/>
+
+## Find presets in a style
+
+Once you know which style you want, shadcnpreset gives you a few ways to find presets that use it.
+
+**Ask AI.** Include the style in your prompt and the assistant keeps it fixed while generating the rest of the preset:
+
+> Calm SaaS dashboard, muted neutrals, all in Mira
+
+You can also ask for a mix:
+
+> Make one of them Lyra and another Luma.
+
+Each result opens as a full preset preview.
+
+**Preview real interfaces.** On a preset page, switch between the views along the top: Dashboard, Login, Marketing, Application, Store and Chat.
+
+Dashboard and Application make it easier to compare compact styles on tables and dense controls. Marketing shows how a style behaves at larger sizes.
+
+Use the arrows in the footer to move through related presets, or use the shuffle button to generate a random one.
+
+**Check the config.** Open Details on a preset page to see every field in the preset, including style. Related presets appear underneath.
+
+**Browse the community.** Community lets you browse presets submitted and voted on by other users. Save presets you want to revisit under My presets.
+
+## Install a preset
+
+Every preset page has a **Code** button with the exact command for your package manager.
+
+**New project**
+
+```bash
+npx shadcn@latest init --preset b4YtS7GakV --template next
+```
+
+You can change the template for Vite, TanStack Start, React Router, Astro or Laravel. You can also choose a different component base with `--base base` or `--base aria`.
+
+**Existing project**
+
+```bash
+npx shadcn@latest apply --preset b4YtS7GakV
+```
+
+This applies the preset to your project, including its component styles, fonts and CSS variables. The CLI shows what it is going to overwrite before applying the changes, but it's still a good idea to run it on a branch if you've customised your components.
+
+If you want the preset's colours without changing style:
+
+```bash
+npx shadcn@latest apply --preset b4YtS7GakV --only theme
+```
+
+**Theme only, no CLI.** If you don't want to use the CLI, the Theme tab in the same Code dialog gives you the light and dark CSS variables to paste into your global CSS.
+
+The [Preset Theme CSS Generator](/tools/preset-theme-generator) can also generate these variables from any preset.
+
+## Switch style later
+
+You don't have to choose your style permanently.
+
+To switch an existing project to a different style, apply a preset that uses the style you want:
+
+```bash
+npx shadcn@latest preset decode b4YtS7GakV
+npx shadcn@latest apply --preset b4YtS7GakV
+```
+
+The first command lets you confirm the preset's style field before applying it.
+
+If you've customised your components, use the CLI's dry-run and diff options to inspect the changes before replacing your files.
