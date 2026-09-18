@@ -1,4 +1,4 @@
-import { LEARN_ARTICLES } from "@/app/learn/articles"
+import { PUBLISHED_LEARN_ARTICLES } from "@/app/learn/articles"
 import { getLearnArticleHref } from "@/app/learn/learn"
 import { siteConfig } from "@/lib/config"
 import { buildUrlSetXml } from "@/lib/sitemap"
@@ -14,7 +14,9 @@ const STATIC_PATHS = [
   "/tools/preset-theme-generator",
   "/tools/color-contrast-checker",
   "/learn",
-  ...LEARN_ARTICLES.map((article) => getLearnArticleHref(article.slug)),
+  ...PUBLISHED_LEARN_ARTICLES.map((article) =>
+    getLearnArticleHref(article.slug)
+  ),
 ]
 
 export function GET() {
