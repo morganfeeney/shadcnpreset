@@ -56,7 +56,7 @@ As its inspired by macOS Tahoe, the switch component mimics what you get with a 
 />
 
 ### Lyra doesn't use your radius setting
-Its components use `rounded-none`, regardless of the radius value in the preset.
+Its components use `rounded-none`, so regardless of the radius value in the preset you're using, it doesn't apply.
 
 <StyleShowcase
     styles={["nova", "lyra"]}
@@ -73,14 +73,15 @@ Rhea is closer to Luma, but more compact, with `rounded-2xl` and a smaller butto
 <StyleShowcase
     styles={["rhea", "sera"]}
     controls={["button", "badge", "input"]}
-    caption="Rhea and Sera. Sera's typography makes it particularly easy to spot."
+    caption="Rhea and Sera. Sera's typography makes it unique."
 />
 
 ## Find presets in a style
 
 Once you know which style you want, shadcnpreset gives you a few ways to find presets that use it.
 
-**Ask AI.** Include the style in your prompt and the assistant keeps it fixed while generating the rest of the preset:
+### Ask AI
+Include the style in your prompt and the [AI assistant](/assistant) keeps it fixed while generating the rest of the preset:
 
 > Calm SaaS dashboard, muted neutrals, all in Mira
 
@@ -90,21 +91,24 @@ You can also ask for a mix:
 
 Each result opens as a full preset preview.
 
-**Preview real interfaces.** On a preset page, switch between the views along the top: Dashboard, Login, Marketing, Application, Store and Chat.
+### Preview real interfaces
+On a preset page, switch between the views along the top: Dashboard, Login, Marketing, Application, Store and Chat.
 
 Dashboard and Application make it easier to compare compact styles on tables and dense controls. Marketing shows how a style behaves at larger sizes.
 
 Use the arrows in the footer to move through related presets, or use the shuffle button to generate a random one.
 
-**Check the config.** Open Details on a preset page to see every field in the preset, including style. Related presets appear underneath.
+### Check the config
+Open Details on a preset page to see every field in the preset, including style. Related presets appear underneath.
 
-**Browse the community.** Community lets you browse presets submitted and voted on by other users. Save presets you want to revisit under My presets.
+### Browse the community
+[Community](/community) lets you browse presets submitted and voted on by other users. Save presets you want to revisit under My presets.
 
 ## Install a preset
 
 Every preset page has a **Code** button with the exact command for your package manager.
 
-**New project**
+### New project
 
 ```bash
 npx shadcn@latest init --preset b4YtS7GakV --template next
@@ -112,7 +116,7 @@ npx shadcn@latest init --preset b4YtS7GakV --template next
 
 You can change the template for Vite, TanStack Start, React Router, Astro or Laravel. You can also choose a different component base with `--base base` or `--base aria`.
 
-**Existing project**
+### Existing project
 
 ```bash
 npx shadcn@latest apply --preset b4YtS7GakV
@@ -126,7 +130,8 @@ If you want the preset's colours without changing style:
 npx shadcn@latest apply --preset b4YtS7GakV --only theme
 ```
 
-**Theme only, no CLI.** If you don't want to use the CLI, the Theme tab in the same Code dialog gives you the light and dark CSS variables to paste into your global CSS.
+### Theme only, no CLI
+If you don't want to use the CLI, the Theme tab in the same Code dialog gives you the light and dark CSS variables to paste into your global CSS.
 
 The [Preset Theme CSS Generator](/tools/preset-theme-generator) can also generate these variables from any preset.
 
