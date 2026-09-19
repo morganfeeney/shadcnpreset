@@ -12,9 +12,10 @@
   .markdown * {
     /* Headings. */
     &:where(h1, h2) {
-      @apply font-display text-foreground;
+      @apply font-display;
     }
     &:where(h1, h2, h3, h4) {
+      @apply text-foreground;
       scroll-margin-top: 5rem;
     }
     &:where(h1) {
@@ -130,7 +131,7 @@
 
     /* Blockquote. */
     &:where(blockquote) {
-      margin-top: 1.5rem;
+      @apply mt-4;
       border-left: 2px solid
         color-mix(in oklab, var(--color-primary) 40%, transparent);
       padding-left: 1rem;
