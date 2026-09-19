@@ -9,7 +9,7 @@
  */
 
 @layer components {
-  .markdown *:not(:where(.not-markdown, .not-markdown *)) {
+  .markdown * {
     /* Headings. */
     &:where(h1, h2) {
       @apply font-display text-foreground;
@@ -73,9 +73,7 @@
 
     /* Links. */
     &:where(a) {
-      font-weight: 500;
-      color: var(--color-primary);
-      text-underline-offset: 4px;
+      @apply link-decoration;
     }
     &:where(a:hover) {
       text-decoration-line: underline;
@@ -99,7 +97,7 @@
 
     /* Code blocks. */
     &:where(pre) {
-      margin-top: 1.5rem;
+      @apply mt-6;
       overflow-x: auto;
       /* Long lines scroll inside the block instead of widening every grid
          ancestor (grid items default to min-width: auto). */
@@ -111,6 +109,12 @@
       font-size: 0.875rem;
       line-height: calc(1.25 / 0.875);
       color: var(--color-foreground);
+    }
+    &:where(h2,h3,h4) + figure > pre {
+      @apply mt-4;
+    }
+    &:where(p) + figure > pre {
+      @apply mt-3;
     }
     &:where(pre code) {
       font-family: var(--font-mono);

@@ -269,3 +269,6 @@
   }
 }
 
+@utility link-decoration {
+  @apply text-foreground underline hover:decoration-background decoration-1 decoration-foreground underline-offset-4 transition-all;
+}
