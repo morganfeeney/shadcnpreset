@@ -109,9 +109,16 @@ function MetricStrip({ children }: { children: React.ReactNode }) {
           {index > 0 ? (
             <Separator orientation="vertical" className="hidden lg:block" />
           ) : null}
-          {/* Its own card on a phone, a bare column once they share one. */}
-          <Card className="min-w-0 flex-1 lg:rounded-none lg:bg-transparent lg:py-0 lg:ring-0">
-            <CardContent className="lg:px-0">{column}</CardContent>
+          {/*
+           * Its own card on a phone, a bare column once they share one.
+           *
+           * The undo needs `!`: preset styles land on `.style-* .cn-card`, two
+           * classes, so plain `lg:ring-0`-style utilities lose to them and every
+           * metric keeps a full card. `shadow` is in the list because some
+           * styles (luma, vega) give cards one and upstream had none to undo.
+           */}
+          <Card className="min-w-0 flex-1 lg:rounded-none! lg:bg-transparent! lg:py-0! lg:shadow-none! lg:ring-0!">
+            <CardContent className="lg:px-0!">{column}</CardContent>
           </Card>
         </React.Fragment>
       ))}
