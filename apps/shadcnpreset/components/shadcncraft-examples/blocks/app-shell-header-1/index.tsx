@@ -17,7 +17,7 @@ import { Separator } from "@/components/cn-ui/separator"
 import { SidebarTrigger } from "@/components/cn-ui/sidebar"
 import { IconPlaceholder } from "@/components/icon-placeholder"
 
-const PAGES = ["Home", "Reports", "Audiences", "Automations"]
+const PAGES = ["Overview", "Analytics", "Campaigns", "Deals"]
 
 const FILTERS = [
   { id: "unread", label: "Unread only" },

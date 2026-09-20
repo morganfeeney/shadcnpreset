@@ -28,23 +28,34 @@ type LoadStatus = "error" | "pending" | "success"
 type Stage = {
   id: string
   label: string
-  count: number
+  /** Open pipeline value sitting in this stage. */
+  value: number
   /** The tooltip dot. The band itself is a slice of the shared ramp below. */
   color: string
 }
 
 /** Replace with your own stages, largest first. */
 const stagesData: Stage[] = [
-  { id: "leads", label: "Leads", count: 31480, color: "var(--chart-1)" },
-  { id: "engaged", label: "Engaged", count: 18902, color: "var(--chart-2)" },
+  { id: "lead", label: "Lead", value: 763000, color: "var(--chart-1)" },
   {
-    id: "subscribed",
-    label: "Subscribed",
-    count: 12640,
-    color: "var(--chart-3)",
+    id: "qualified",
+    label: "Qualified",
+    value: 482000,
+    color: "var(--chart-2)",
   },
-  { id: "qualified", label: "Qualified", count: 7610, color: "var(--chart-4)" },
-  { id: "converted", label: "Converted", count: 4395, color: "var(--chart-5)" },
+  { id: "proposal", label: "Proposal", value: 361000, color: "var(--chart-3)" },
+  {
+    id: "negotiation",
+    label: "Negotiation",
+    value: 241000,
+    color: "var(--chart-4)",
+  },
+  {
+    id: "closed-won",
+    label: "Closed won",
+    value: 161000,
+    color: "var(--chart-5)",
+  },
 ]
 
 /**
@@ -65,17 +76,22 @@ const GLOW_RINGS = [1.22, 1.11]
 
 const SAMPLES_PER_STAGE = 32
 
-const plainNumber = new Intl.NumberFormat("en-US")
+const compactCurrency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 0,
+})
 
 type Node = { center: number; half: number }
 
 function stageNodes(stages: Stage[]): Node[] {
-  const peak = Math.max(...stages.map((stage) => stage.count))
+  const peak = Math.max(...stages.map((stage) => stage.value))
   const span = VIEW_WIDTH / stages.length
 
   return stages.map((stage, index) => ({
     center: (index + 0.5) * span,
-    half: (stage.count / peak) * (VIEW_HEIGHT / 2) * PEAK_BAND,
+    half: (stage.value / peak) * (VIEW_HEIGHT / 2) * PEAK_BAND,
   }))
 }
 
@@ -160,10 +176,10 @@ function FunnelTooltip({
           className="size-2.5 shrink-0 rounded-full"
           style={{ backgroundColor: stage.color }}
         />
-        <span className="text-muted-foreground">Conversion</span>
+        <span className="text-muted-foreground">Pipeline</span>
         <span className="ml-auto flex items-baseline gap-1.5 pl-4">
           <span className="font-mono font-medium text-foreground tabular-nums">
-            {plainNumber.format(stage.count)}
+            {compactCurrency.format(stage.value)}
           </span>
           <span className="text-muted-foreground tabular-nums">{share}%</span>
         </span>
@@ -181,7 +197,7 @@ function FunnelPlot({ stages, total }: { stages: Stage[]; total: number }) {
 
     return {
       nodes: computed,
-      shares: stages.map((stage) => Math.round((stage.count / total) * 100)),
+      shares: stages.map((stage) => Math.round((stage.value / total) * 100)),
       bands: stages.map((_, index) => [
         ...GLOW_RINGS.map((ring) =>
           segmentPath(index, stages.length, computed, ring)
@@ -263,8 +279,8 @@ function FunnelPlot({ stages, total }: { stages: Stage[]; total: number }) {
       <ul className="sr-only">
         {stages.map((stage, index) => (
           <li key={stage.id}>
-            {stage.label}: {plainNumber.format(stage.count)} ({shares[index]}%
-            of total)
+            {stage.label}: {compactCurrency.format(stage.value)} (
+            {shares[index]}% of total)
           </li>
         ))}
       </ul>
@@ -286,12 +302,12 @@ function FunnelPlot({ stages, total }: { stages: Stage[]; total: number }) {
  * below are unchanged:
  *
  * ```tsx
- * const { data = [], status } = useQuery({ queryKey: ["funnel"], queryFn })
+ * const { data = [], status } = useQuery({ queryKey: ["pipeline"], queryFn })
  * ```
  *
  * Start at `"error"`, or resolve with `[]`, to see the other two states.
  */
-export function MarketingFunnel1() {
+export function PipelineByStage1() {
   const [status, setStatus] = React.useState<LoadStatus>("pending")
   const [stages, setStages] = React.useState<Stage[]>([])
 
@@ -311,16 +327,14 @@ export function MarketingFunnel1() {
   const handleRetry = React.useCallback(() => setStatus("pending"), [])
 
   const loaded = status === "success" && stages.length > 0
-  const total = stages.reduce((sum, stage) => sum + stage.count, 0)
+  const total = stages.reduce((sum, stage) => sum + stage.value, 0)
 
   return (
     <Card className="h-90">
       {loaded ? (
         <CardHeader>
-          <CardTitle>Marketing funnel</CardTitle>
-          <CardDescription>
-            Stage-by-stage conversion across your funnel
-          </CardDescription>
+          <CardTitle>Pipeline by stage</CardTitle>
+          <CardDescription>Open pipeline across all deals</CardDescription>
         </CardHeader>
       ) : null}
 
@@ -337,7 +351,7 @@ export function MarketingFunnel1() {
                   remixicon="RiErrorWarningLine"
                 />
               </EmptyMedia>
-              <EmptyTitle>Couldn&apos;t load funnel</EmptyTitle>
+              <EmptyTitle>Couldn&apos;t load pipeline</EmptyTitle>
               <EmptyDescription>
                 Something went wrong while fetching data.
               </EmptyDescription>
@@ -354,7 +368,7 @@ export function MarketingFunnel1() {
             aria-busy="true"
             className="flex min-h-0 flex-1 flex-col gap-4"
           >
-            <span className="sr-only">Loading marketing funnel</span>
+            <span className="sr-only">Loading pipeline by stage</span>
             <div className="flex flex-col gap-1">
               <div className="text-base">
                 <Skeleton className="h-lh w-30" />
@@ -393,9 +407,9 @@ export function MarketingFunnel1() {
                   remixicon="RiLineChartLine"
                 />
               </EmptyMedia>
-              <EmptyTitle>No funnel data yet</EmptyTitle>
+              <EmptyTitle>No open pipeline</EmptyTitle>
               <EmptyDescription>
-                Not enough activity to build the funnel.
+                Create deals to see the pipeline by stage.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

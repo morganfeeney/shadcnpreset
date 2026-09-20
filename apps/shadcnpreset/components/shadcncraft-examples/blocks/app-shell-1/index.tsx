@@ -17,7 +17,11 @@ export function AppShell1({ children }: { children?: React.ReactNode }) {
       <SidebarInset className="min-h-0 overflow-hidden">
         <AppShellHeader1 />
 
-        <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
+        {/* `*:shrink-0`, as shadcncraft ships this shell in their own dashboard:
+            cards are `overflow-hidden`, so as flex items their automatic minimum
+            height is 0 and they would shrink to fit the frame and clip instead
+            of scrolling. */}
+        <div className="flex flex-1 flex-col gap-4 overflow-auto p-4 *:shrink-0">
           {children ?? (
             <div className="flex flex-1 items-center justify-center">
               <p className="text-sm text-muted-foreground">
