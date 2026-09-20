@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { logoMarkDataUrl } from "@/components/zippystarter/logo"
 import { siteConfig } from "@/lib/config"
 import { isCommunityPresetCode } from "@/lib/community-presets"
+import { GEIST_MONO, loadGeistMono } from "@/lib/og/fonts"
 import { getPresetOgSwatchHexes } from "@/lib/oklch-swatch"
 import { resolvePresetFromCode } from "@/lib/preset"
 
@@ -13,22 +14,8 @@ export const alt = "shadcn preset preview"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-const GEIST_MONO = "Geist Mono"
-
 type ImageProps = {
   params: Promise<{ code: string }>
-}
-
-async function loadGeistMono() {
-  const mod = await import("@/lib/og/geistmono-regular-otf.json")
-  const data = (mod as { default?: { base64Font: string } }).default ?? mod
-  const base64Font = (data as { base64Font: string }).base64Font
-  return {
-    name: GEIST_MONO,
-    data: Buffer.from(base64Font, "base64"),
-    weight: 400 as const,
-    style: "normal" as const,
-  }
 }
 
 function codeFontSize(codeLength: number): number {
