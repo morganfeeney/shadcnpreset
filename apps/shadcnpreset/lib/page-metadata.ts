@@ -14,7 +14,12 @@ type BuildPageMetadataOptions = {
   description: string
   path: string
   socialTitle?: string
-  image?: SocialImageOptions
+  /**
+   * `"route"` when the route colocates an `opengraph-image` file. Explicit
+   * `images` entries beat Next's file convention, so the fallback card has to
+   * be left out entirely or the generated one never reaches the tags.
+   */
+  image?: SocialImageOptions | "route"
 }
 
 export function buildPageMetadata({
@@ -24,6 +29,25 @@ export function buildPageMetadata({
   socialTitle = title,
   image,
 }: BuildPageMetadataOptions): Metadata {
+  if (image === "route") {
+    return {
+      title,
+      description,
+      openGraph: {
+        title: socialTitle,
+        description,
+        url: path,
+        siteName: siteConfig.name,
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: socialTitle,
+        description,
+      },
+    }
+  }
+
   const openGraphImage = image
     ? {
         url: image.url,
