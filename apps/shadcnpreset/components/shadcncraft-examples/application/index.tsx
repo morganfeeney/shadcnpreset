@@ -1,118 +1,41 @@
-import type { ReactNode } from "react"
+import { AiInsights1 } from "@/components/shadcncraft-examples/blocks/ai-insights-1"
+import { AppShell1 } from "@/components/shadcncraft-examples/blocks/app-shell-1"
+import { DealsTable1 } from "@/components/shadcncraft-examples/blocks/deals-table-1"
+import { GoalProgress1 } from "@/components/shadcncraft-examples/blocks/goal-progress-1"
+import { HeroTimeSeries1 } from "@/components/shadcncraft-examples/blocks/hero-time-series-1"
+import { MarketingFunnel1 } from "@/components/shadcncraft-examples/blocks/marketing-funnel-1"
+import { MetricCards1 } from "@/components/shadcncraft-examples/blocks/metric-cards-1"
+import { RepLeaderboard1 } from "@/components/shadcncraft-examples/blocks/rep-leaderboard-1"
+import { RevenueVsTarget1 } from "@/components/shadcncraft-examples/blocks/revenue-vs-target-1"
+import { TrafficByChannel1 } from "@/components/shadcncraft-examples/blocks/traffic-by-channel-1"
+import { WinRate1 } from "@/components/shadcncraft-examples/blocks/win-rate-1"
 
-import { IconPlaceholder } from "@/components/icon-placeholder"
-import { ActivityFeed1 } from "@/components/shadcncraft-examples/blocks/activity-feed-1"
-import { Header1 } from "@/components/shadcncraft-examples/blocks/header-1"
-import { Table4 } from "@/components/shadcncraft-examples/blocks/table-4"
-import { Balance1 } from "@/components/shadcncraft-examples/ui/balance-1"
-import { Expenses1 } from "@/components/shadcncraft-examples/ui/expenses-1"
-import {
-  MetricCard1,
-  MetricCard1Delta,
-  MetricCard1Icon,
-  MetricCard1Title,
-  MetricCard1Value,
-} from "@/components/shadcncraft-examples/ui/metric-card-1"
-import { Transactions1 } from "@/components/shadcncraft-examples/ui/transactions-1"
-
+/**
+ * A sales and marketing dashboard inside shadcncraft's app shell. The shell
+ * sizes itself to the frame and scrolls its own content, so the root is
+ * `h-full` rather than a page that grows.
+ */
 export function ApplicationDemo() {
   return (
-    <div className="bg-background px-2 text-foreground">
-      <Header1 />
-      <main className="mx-auto flex max-w-7xl flex-col">
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {metrics.map((metric) => (
-              <MetricCard1 key={metric.title}>
-                <MetricCard1Icon>{metric.icon}</MetricCard1Icon>
-                <MetricCard1Title>{metric.title}</MetricCard1Title>
-                <MetricCard1Value value={metric.value} />
-                <MetricCard1Delta
-                  value={metric.delta}
-                  trend={metric.trend}
-                  description="vs last month"
-                />
-              </MetricCard1>
-            ))}
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3 [&>[data-slot=card]]:max-w-none">
-            <Balance1 />
-            <Expenses1 />
-            <Transactions1 />
-          </div>
+    <div className="h-full bg-background text-foreground">
+      <AppShell1>
+        <MetricCards1 />
+        <HeroTimeSeries1 />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TrafficByChannel1 />
+          <MarketingFunnel1 />
         </div>
-        <Table4 />
-        <ActivityFeed1 />
-      </main>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <RevenueVsTarget1 />
+          <GoalProgress1 />
+          <WinRate1 />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <RepLeaderboard1 />
+          <AiInsights1 />
+        </div>
+        <DealsTable1 />
+      </AppShell1>
     </div>
   )
 }
-
-const metrics: {
-  title: string
-  value: string
-  delta: string
-  trend: "up" | "down" | "neutral"
-  icon: ReactNode
-}[] = [
-  {
-    title: "Revenue",
-    value: "$48,210",
-    delta: "+12.4%",
-    trend: "up",
-    icon: (
-      <IconPlaceholder
-        lucide="CircleDollarSign"
-        tabler="IconCurrencyDollar"
-        hugeicons="DollarCircleIcon"
-        phosphor="CurrencyCircleDollarIcon"
-        remixicon="RiMoneyDollarCircleLine"
-      />
-    ),
-  },
-  {
-    title: "Active members",
-    value: "1,284",
-    delta: "+3.1%",
-    trend: "up",
-    icon: (
-      <IconPlaceholder
-        lucide="Users"
-        tabler="IconUsers"
-        hugeicons="UserGroupIcon"
-        phosphor="UsersIcon"
-        remixicon="RiGroupLine"
-      />
-    ),
-  },
-  {
-    title: "Open tasks",
-    value: "96",
-    delta: "0%",
-    trend: "neutral",
-    icon: (
-      <IconPlaceholder
-        lucide="FolderOpen"
-        tabler="IconFolderOpen"
-        hugeicons="FolderOpenIcon"
-        phosphor="FolderOpenIcon"
-        remixicon="RiFolderOpenLine"
-      />
-    ),
-  },
-  {
-    title: "Uptime",
-    value: "99.92%",
-    delta: "-0.05%",
-    trend: "down",
-    icon: (
-      <IconPlaceholder
-        lucide="Activity"
-        tabler="IconActivity"
-        hugeicons="Activity01Icon"
-        phosphor="ActivityIcon"
-        remixicon="RiPulseLine"
-      />
-    ),
-  },
-]
