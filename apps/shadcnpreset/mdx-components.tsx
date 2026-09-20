@@ -2,121 +2,45 @@ import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
 import { AffiliateLink } from "@/components/affiliate-link"
+import { StyleShowcase } from "@/components/learn/style-showcase"
 import { isAffiliateHref } from "@/lib/affiliate-link"
-import { cn } from "@/lib/utils"
 
-/** Map used by `@next/mdx` and by Content Collections `<MDXContent />` on the server. */
+/**
+ * Map used by `@next/mdx` and by Content Collections `<MDXContent />` on the server.
+ * Behaviour only: all styling lives in app/markdown.css, applied by wrapping the
+ * rendered content in `.markdown`.
+ */
 export const mdxDocumentationComponents = {
-    h1: ({ className, ...props }) => (
-      <h1
-        className={cn(
-          "mt-10 scroll-m-20 text-3xl font-semibold tracking-tight text-foreground first:mt-0 lg:text-4xl",
-          className
-        )}
-        {...props}
-      />
-    ),
-    h2: ({ className, ...props }) => (
-      <h2
-        className={cn(
-          "mt-10 scroll-m-20 border-b border-border pb-2 text-2xl font-semibold tracking-tight text-foreground first:mt-0",
-          className
-        )}
-        {...props}
-      />
-    ),
-    h3: ({ className, ...props }) => (
-      <h3
-        className={cn(
-          "mt-8 scroll-m-20 text-xl font-semibold tracking-tight text-foreground",
-          className
-        )}
-        {...props}
-      />
-    ),
-    p: ({ className, ...props }) => (
-      <p
-        className={cn("mt-4 leading-7 text-muted-foreground [&+p]:mt-3", className)}
-        {...props}
-      />
-    ),
-    ul: ({ className, ...props }) => (
-      <ul
-        className={cn("my-4 ml-6 list-disc text-muted-foreground marker:text-muted-foreground/80", className)}
-        {...props}
-      />
-    ),
-    ol: ({ className, ...props }) => (
-      <ol
-        className={cn("my-4 ml-6 list-decimal text-muted-foreground marker:text-muted-foreground/80", className)}
-        {...props}
-      />
-    ),
-    li: ({ className, ...props }) => (
-      <li className={cn("mt-2 pl-1", className)} {...props} />
-    ),
-    a: ({ href, className, children, ...props }) => {
-      const base = cn(
-        "font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        className
-      )
-      if (href?.startsWith("/") || href?.startsWith("#")) {
-        return (
-          <Link href={href} className={base} {...props}>
-            {children}
-          </Link>
-        )
-      }
-      // Affiliate links are marked sponsored and report their clicks.
-      if (isAffiliateHref(href)) {
-        return (
-          <AffiliateLink href={href as string} className={base} {...props}>
-            {children}
-          </AffiliateLink>
-        )
-      }
+  a: ({ href, children, ...props }) => {
+    if (href?.startsWith("/") || href?.startsWith("#")) {
       return (
-        <a
-          href={href}
-          className={base}
-          target="_blank"
-          rel="noreferrer"
-          {...props}
-        >
+        <Link href={href} {...props}>
           {children}
-        </a>
+        </Link>
       )
-    },
-    code: ({ className, ...props }) => (
-      <code
-        className={cn(
-          "relative rounded-md bg-muted px-[0.25rem] py-px font-mono text-[0.875em] text-foreground",
-          className
-        )}
-        {...props}
-      />
-    ),
-    pre: ({ className, ...props }) => (
-      <pre
-        className={cn(
-          "mt-6 overflow-x-auto rounded-lg border border-border bg-muted/40 p-4 text-sm text-foreground [&_code]:bg-transparent [&_code]:p-0",
-          className
-        )}
-        {...props}
-      />
-    ),
-    blockquote: ({ className, ...props }) => (
-      <blockquote
-        className={cn(
-          "mt-6 border-l-2 border-primary/40 pl-4 text-muted-foreground italic [&>p]:mt-0",
-          className
-        )}
-        {...props}
-      />
-    ),
-    hr: ({ className, ...props }) => (
-      <hr className={cn("my-10 border-border", className)} {...props} />
-    ),
+    }
+    // Affiliate links are marked sponsored and report their clicks.
+    if (isAffiliateHref(href)) {
+      return (
+        <AffiliateLink href={href as string} {...props}>
+          {children}
+        </AffiliateLink>
+      )
+    }
+    return (
+      <a href={href} target="_blank" rel="noreferrer" {...props}>
+        {children}
+      </a>
+    )
+  },
+  // Scroll container for wide tables; styled in app/markdown.css.
+  table: (props) => (
+    <div className="markdown-table">
+      <table {...props} />
+    </div>
+  ),
+  // Interactive embeds for learn articles. Live cn-ui controls per style.
+  StyleShowcase,
 } satisfies MDXComponents
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {

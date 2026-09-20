@@ -9,6 +9,7 @@ import { siteConfig } from "@/lib/config"
 import { OpenPresetDialog } from "@/components/open-preset-dialog"
 import { CurrentYear } from "@/components/current-year"
 import { TOOLS } from "@/app/tools/tools"
+import { LEARN_PAGE } from "@/app/learn/learn"
 
 const COLUMNS = [
   {
@@ -29,6 +30,7 @@ const COLUMNS = [
       { label: "Ask AI", href: "/assistant" },
       { label: "Community", href: "/community" },
       { type: "link", href: "/tools", label: "Tools" },
+      { label: LEARN_PAGE.title, href: LEARN_PAGE.href },
     ],
   },
   {

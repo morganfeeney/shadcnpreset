@@ -41,6 +41,7 @@ import {
   PRESET_THEME_GENERATOR_TOOL,
   TOOLS_PAGE,
 } from "@/app/tools/tools"
+import { LEARN_PAGE } from "@/app/learn/learn"
 
 import { Link } from "@/components/zippystarter/link"
 import { Container } from "@/components/zippystarter/container"
@@ -128,6 +129,7 @@ const HEADER_LINKS: ComponentLink[] = [
       },
     ],
   },
+  { href: LEARN_PAGE.href, label: LEARN_PAGE.title },
 ]
 
 interface NavItemProps extends PropsWithChildren {

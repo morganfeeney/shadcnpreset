@@ -1,0 +1,204 @@
+/*
+ * Markdown
+ * Styles rendered MDX (changelog, learn). Wrap the output in `.markdown`;
+ * everything inside is styled, everything outside is untouched.
+ *
+ * - Selectors use :where() so any utility class on an element still wins.
+ * - Opt an embedded component out with `.not-markdown`.
+ * - Code is highlighted at build time by rehype-pretty-code (content-collections.ts).
+ */
+
+@layer components {
+  .markdown {
+    @apply text-sm leading-6 text-muted-foreground md:text-base md:leading-7;
+
+    & * {
+      /* Headings. */
+      &:where(h1, h2) {
+        @apply font-display;
+      }
+      &:where(h1, h2, h3, h4) {
+        @apply text-foreground;
+        scroll-margin-top: 5rem;
+      }
+      &:where(h1) {
+        margin-top: 2.5rem;
+        font-size: 1.875rem;
+        line-height: calc(2.25 / 1.875);
+
+        & + p {
+          margin-top: 1rem;
+        }
+
+        @media (min-width: 64rem) {
+          font-size: 2.25rem;
+          line-height: calc(2.5 / 2.25);
+        }
+      }
+      &:where(h2) {
+        margin-top: 3rem;
+        font-size: 1.5rem;
+        line-height: calc(2 / 1.5);
+      }
+      &:where(h3, h4) {
+        @apply mt-8 text-base font-semibold;
+      }
+
+      /* Text. */
+      &:where(p) {
+        @apply mt-3;
+      }
+      &:where(p + p) {
+        margin-top: 0.75rem;
+      }
+
+      /* Lists. */
+      &:where(ul, ol) {
+        margin-block: 1rem;
+        margin-left: 1.5rem;
+        color: var(--color-muted-foreground);
+      }
+      &:where(ul) {
+        list-style-type: disc;
+      }
+      &:where(ol) {
+        list-style-type: decimal;
+      }
+      &:where(li) {
+        margin-top: 0.5rem;
+        padding-left: 0.25rem;
+      }
+      &:where(li)::marker {
+        color: color-mix(
+          in oklab,
+          var(--color-muted-foreground) 80%,
+          transparent
+        );
+      }
+
+      /* Links. */
+      &:where(a) {
+        @apply link-decoration;
+      }
+      &:where(a:hover) {
+        text-decoration-line: underline;
+      }
+      &:where(a:focus-visible) {
+        border-radius: var(--radius-sm);
+        outline: 2px solid var(--color-ring);
+        outline-offset: 2px;
+      }
+
+      /* Inline code. */
+      &:where(:not(pre) > code) {
+        position: relative;
+        border-radius: var(--radius-md);
+        background-color: var(--color-muted);
+        padding: 1px 0.25rem;
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+        color: var(--color-foreground);
+      }
+
+      /* Code blocks. */
+      &:where(pre) {
+        overflow-x: auto;
+        /* Long lines scroll inside the block instead of widening every grid
+             ancestor (grid items default to min-width: auto). */
+        contain: inline-size;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background-color: color-mix(
+          in oklab,
+          var(--color-muted) 40%,
+          transparent
+        );
+        padding: 1rem;
+        font-size: 0.875rem;
+        line-height: calc(1.25 / 0.875);
+        color: var(--color-foreground);
+      }
+      &:where(pre code) {
+        font-family: var(--font-mono);
+        font-variant-ligatures: none;
+      }
+      /* Shiki emits both themes as variables; pick one per colour scheme. */
+      &:where(pre [data-line] span) {
+        color: var(--shiki-light);
+      }
+      &:where(.dark pre [data-line] span) {
+        color: var(--shiki-dark);
+      }
+
+      /* Figures. rehype-pretty-code wraps every code block in one; embeds such
+           as StyleShowcase render their own. Spacing lives on the figure. */
+      &:where(figure) {
+        @apply my-6;
+      }
+      &:where(:is(h2, h3, h4, p) + figure) {
+        @apply my-4;
+      }
+      &:where(figcaption) {
+        @apply mt-2 pl-2 text-xs text-muted-foreground;
+      }
+
+      /* Blockquote. */
+      &:where(blockquote) {
+        @apply mt-4;
+        border-left: 2px solid
+          color-mix(in oklab, var(--color-primary) 40%, transparent);
+        padding-left: 1rem;
+        font-style: italic;
+        color: var(--color-muted-foreground);
+      }
+      &:where(blockquote > p) {
+        margin-top: 0;
+      }
+
+      /* Tables. The MDX map wraps each table in .markdown-table for scrolling. */
+      &:where(.markdown-table) {
+        margin-block: 1.5rem;
+        width: 100%;
+        overflow-x: auto;
+        contain: inline-size;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+      }
+      &:where(table) {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      &:where(thead) {
+        background-color: color-mix(
+          in oklab,
+          var(--color-muted) 40%,
+          transparent
+        );
+      }
+      &:where(tr) {
+        border-bottom: 1px solid var(--color-border);
+      }
+      &:where(tr:last-child) {
+        border-bottom-width: 0;
+      }
+      &:where(th, td) {
+        padding: 0.625rem 1rem;
+        vertical-align: top;
+      }
+      &:where(th) {
+        font-weight: 500;
+        color: var(--color-foreground);
+      }
+      &:where(td) {
+        color: var(--color-muted-foreground);
+      }
+
+      /* Dividers. */
+      &:where(hr) {
+        margin-block: 2.5rem;
+        border-color: var(--color-border);
+      }
+    }
+  }
+}
