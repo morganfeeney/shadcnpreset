@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./markdown.css";
 @import "../vendor/v4/registry/styles/style-vega.css" layer(base);
 @import "../vendor/v4/registry/styles/style-nova.css" layer(base);
 @import "../vendor/v4/registry/styles/style-lyra.css" layer(base);
@@ -268,3 +269,6 @@
   }
 }
 
+@utility link-decoration {
+  @apply text-foreground underline hover:decoration-background decoration-1 decoration-foreground underline-offset-4 transition-all;
+}

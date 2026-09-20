@@ -1,3 +1,5 @@
+import { PUBLISHED_LEARN_ARTICLES } from "@/app/learn/articles"
+import { getLearnArticleHref } from "@/app/learn/learn"
 import { siteConfig } from "@/lib/config"
 import { buildUrlSetXml } from "@/lib/sitemap"
 
@@ -11,7 +13,11 @@ const STATIC_PATHS = [
   "/tools",
   "/tools/preset-theme-generator",
   "/tools/color-contrast-checker",
-] as const
+  "/learn",
+  ...PUBLISHED_LEARN_ARTICLES.map((article) =>
+    getLearnArticleHref(article.slug)
+  ),
+]
 
 export function GET() {
   const nowIso = new Date().toISOString()

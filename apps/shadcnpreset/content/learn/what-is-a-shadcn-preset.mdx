@@ -1,0 +1,160 @@
+---
+date: "2026-09-15"
+status: published
+title: "What is a shadcn preset?"
+description: "A preset is a short code that describes a whole shadcn/ui setup: style, colours, fonts, icons, radius, menus. A theme is only the colour variables. Here's the difference, and why it matters when you're looking for one."
+---
+
+A shadcn preset is a short code that describes how you want a shadcn/ui project configured.
+
+```text caption="A preset code"
+b4YtS7GakV
+```
+
+The code represents a collection of choices including the style, colours, fonts, icons, radius and menu configuration.
+
+You can give it directly to the shadcn CLI:
+
+```bash
+# New project
+npx shadcn@latest init --preset b4YtS7GakV
+
+# Existing project
+npx shadcn@latest apply --preset b4YtS7GakV
+```
+
+You can also decode a preset to see exactly what's inside:
+
+```bash
+npx shadcn@latest preset decode b4YtS7GakV
+```
+
+```text
+Preset
+  code         b4YtS7GakV
+  style        luma
+  baseColor    mist
+  theme        lime
+  chartColor   indigo
+  iconLibrary  tabler
+  font         instrument-sans
+  fontHeading  merriweather
+  radius       large
+  menuAccent   subtle
+  menuColor    inverted-translucent
+```
+
+What's important to note here is when you unpack a preset it describes much more than the colours of your app.
+
+## What's in a preset?
+
+| Field                  | What it controls                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `style`                | Component-level defaults such as spacing, sizing, typography, shape and focus states |
+| `baseColor`            | Neutral colours such as backgrounds, cards, borders and muted text                   |
+| `theme`                | The primary accent colour                                                            |
+| `chartColor`           | The chart colour palette                                                             |
+| `radius`               | The base radius used by the components                                               |
+| `menuAccent`           | The appearance of menu item highlights                                               |
+| `menuColor`            | The appearance of dropdown and popover surfaces                                      |
+| `font` / `fontHeading` | Body and heading fonts                                                               |
+| `iconLibrary`          | The icon library used by components                                                  |
+
+Some of these choices are CSS variables. Others change the actual component code.
+
+That's what makes a preset different from a theme.
+
+The component base is a separate choice. The `--base` option lets you choose between Radix and Base UI when creating or applying your project.
+
+## A theme is only part of a preset
+
+shadcn/ui uses CSS variables for its theme.
+
+Components use semantic classes such as `bg-primary` and `border-border`, which point to variables in your global CSS:
+
+```css
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --primary: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  /* ... */
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  /* ... */
+}
+```
+
+Change those values and the components change color.
+
+That's useful, but CSS variables can only change things the components _already_ read from variables.
+
+## Styles change the components
+
+The `style` field goes further.
+
+It changes the component classes themselves. A Lyra button and a Maia button can use the same colours and radius while having different sizing, spacing, typography and shape.
+
+<StyleShowcase
+    styles={["lyra", "maia"]}
+    controls={["button", "input", "switch"]}
+    baseColor="mist"
+    theme="lime"
+    radius="large"
+    caption="The same theme and radius on Lyra and Maia. The component code is different."
+/>
+
+There isn't a CSS variable you can change to turn one style into another. You need different component code.
+
+I've [written about the eight styles separately](/learn/how-to-choose-a-shadcn-style), including what to look for when comparing them.
+
+## Fonts and icons are part of the configuration too
+
+Fonts and icons aren't just colour tokens.
+
+A font choice gets wired into your project. An icon library changes the imports used by your components. Menu settings can change the classes used by dropdowns and popovers.
+
+This is why applying a full preset can change more than applying a theme. The CLI can update your components, fonts, icons and CSS variables together.
+
+## You don't have to apply everything
+
+You can apply only part of a preset when that's what you need.
+
+For example, to use its theme without changing the component style:
+
+```bash
+npx shadcn@latest apply --preset b4YtS7GakV --only theme
+```
+
+You can also apply just the font:
+
+```bash
+npx shadcn@latest apply --preset b4YtS7GakV --only font
+```
+
+Or use the [Preset Theme CSS Generator](/tools/preset-theme-generator) to extract the light and dark theme variables without using the CLI.
+
+## Where presets come from and how to find them
+
+[shadcn/create](https://ui.shadcn.com/create) is the official preset builder.
+It gives you the available configuration options and generates a preset from the choices you make.
+
+[shadcnpreset](/) uses the exact same configuration options.
+
+The difference is what happens next.
+
+With shadcn/create, you choose the configuration you want and generate the preset yourself by manually clicking through the options.
+
+With shadcnpreset, you can use natural language to describe what you want and [let AI handle it](/assistant), or browse configurations that have already been created.
+You can see them on real interfaces, compare them before deciding which one to use.
+
+There are a lot of possible combinations. Even with a relatively small number of choices, manually working through them can take a while.
+
+That's why shadcnpreset has community voting. Instead of making you work through every possible combination, you can see which presets other people have submitted and voted for.
+
+You can browse [community presets](/community), preview them across real interfaces, or use Ask AI to describe what you're building and find matching configurations.
+
+The goal isn't to replace shadcn/create. It's to make the configuration space easier to explore.
+

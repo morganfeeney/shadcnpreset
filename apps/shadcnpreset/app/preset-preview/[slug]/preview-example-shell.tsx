@@ -128,8 +128,10 @@ function ExampleView({
         </div>
       )
     case "application":
+      // The app shell sizes itself to the frame and scrolls inside, so it gets
+      // the viewport height rather than a page that grows.
       return (
-        <div className="min-h-svh bg-background text-foreground">
+        <div className="h-svh bg-background text-foreground">
           <ApplicationDemo />
         </div>
       )

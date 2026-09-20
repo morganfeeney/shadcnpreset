@@ -18,7 +18,7 @@
     "generate:icon-allowlists": "tsx ./scripts/generate-icon-allowlists.ts",
     "eval:previews": "tsx ./scripts/eval-preview-prompts.ts",
     "generate:preview-catalog": "tsx ./scripts/generate-preview-catalog.ts",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,css}\"",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
@@ -100,6 +100,8 @@
     "postcss": "^8",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "rehype-pretty-code": "^0.14.5",
+    "remark-gfm": "^4.0.1",
     "shadcn": "4.14.0",
     "tailwindcss": "^4.2.1",
     "tsx": "^4.20.5",
