@@ -12,6 +12,7 @@ import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-c
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
+import { ShadcncraftAdCard } from "@/components/shadcncraft-ad-card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -68,6 +69,15 @@ export function AssistantChat({
   // layout straight away, so someone who followed a link to an existing chat
   // sees it loading rather than the new-chat hero flashing up first.
   const showsConversation = hasInteracted || isChatHydrating
+
+  // The sponsored card follows a finished answer, the way an ad sits under a
+  // reply rather than beside a question. It waits out the turn in flight so it
+  // does not sit below a loading placeholder.
+  const showsAd =
+    hasInteracted &&
+    !isChatHydrating &&
+    !pending &&
+    messages.some((m) => m.role === "assistant")
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
@@ -154,7 +164,7 @@ export function AssistantChat({
         <div className="flex min-w-0 flex-1 flex-col md:pr-2">
           <div
             className={cn(
-              "mx-auto flex h-full w-full min-h-0 flex-col rounded-lg border",
+              "mx-auto flex h-full min-h-0 w-full flex-col rounded-lg border",
               // Nothing to scroll before the first turn, so the empty state
               // sits in the middle of the pane with the composer under it.
               showsConversation || "justify-center"
@@ -220,7 +230,7 @@ export function AssistantChat({
 
               {lastTurn?.phase === "gathering" &&
               lastTurn.followUpQuestions.length ? (
-                <div className="mx-auto w-full max-w-4xl flex flex-col gap-2 p-4">
+                <div className="mx-auto flex w-full max-w-4xl flex-col gap-2 p-4">
                   <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Quick replies
                   </p>
@@ -242,6 +252,17 @@ export function AssistantChat({
                 </div>
               ) : null}
 
+              {showsAd ? (
+                <ShadcncraftAdCard
+                  placement="assistant-chat"
+                  impressionKey={activeChatId ?? undefined}
+                  // The conversation's own column, so the card starts on the
+                  // same left edge as the replies. Its width is capped by the
+                  // card itself, not by narrowing this wrapper — that would
+                  // re-centre it away from the messages on a wide screen.
+                  className="mx-auto w-full max-w-4xl px-4 pb-4"
+                />
+              ) : null}
             </div>
 
             <AssistantPromptComposer
