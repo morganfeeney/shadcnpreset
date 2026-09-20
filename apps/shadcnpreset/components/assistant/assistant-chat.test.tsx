@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { act, render, screen, waitFor } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const CHAT_ID = "11111111-2222-4333-8444-555555555555"
@@ -469,5 +469,43 @@ describe("AssistantChat URLs", () => {
 
     expect(window.location.pathname).toBe("/assistant")
     expect(screen.queryAllByTestId("preset-card")).toHaveLength(0)
+  })
+})
+
+describe("AssistantChat sponsored card", () => {
+  it("waits for an answer before showing the shadcncraft card", async () => {
+    // Held: the question is on screen and the reply is still coming.
+    releaseSend = null
+    renderPage()
+    expect(screen.queryByRole("complementary", { name: "Sponsored" })).toBeNull()
+
+    const composer = screen.getByRole("textbox")
+    const form = composer.closest("form") as HTMLFormElement
+    const setValue = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set
+    await act(async () => {
+      setValue?.call(composer, "Orange presets")
+      composer.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    await act(async () => {
+      form.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true })
+      )
+    })
+
+    await waitFor(() => expect(sendBodies).toHaveLength(1))
+    expect(screen.queryByRole("complementary", { name: "Sponsored" })).toBeNull()
+
+    await act(async () => {
+      ;(releaseSend as unknown as () => void)?.()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    const card = await screen.findByRole("complementary", { name: "Sponsored" })
+    expect(
+      within(card).getByRole("link").getAttribute("href")
+    ).toBe("https://shadcncraft.com?atp=shadcnpreset&src=assistant-chat")
   })
 })
