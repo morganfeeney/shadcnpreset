@@ -18,7 +18,7 @@
     "generate:icon-allowlists": "tsx ./scripts/generate-icon-allowlists.ts",
     "eval:previews": "tsx ./scripts/eval-preview-prompts.ts",
     "generate:preview-catalog": "tsx ./scripts/generate-preview-catalog.ts",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,css}\"",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

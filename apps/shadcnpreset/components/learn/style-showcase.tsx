@@ -100,7 +100,7 @@ export function StyleShowcase({
         : "grid-cols-2 sm:grid-cols-4"
 
   return (
-    <figure className={cn("not-markdown my-6", className)}>
+    <figure className={className}>
       <div
         className={cn(
           "grid gap-px overflow-hidden rounded-lg border bg-border",
@@ -173,7 +173,7 @@ export function StyleShowcase({
         ))}
       </div>
       {caption ? (
-        <figcaption className="mt-2 pl-2 text-xs text-muted-foreground">
+        <figcaption>
           {caption}
         </figcaption>
       ) : null}
