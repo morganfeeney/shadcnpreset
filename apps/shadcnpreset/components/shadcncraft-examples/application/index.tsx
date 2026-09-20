@@ -19,22 +19,39 @@ export function ApplicationDemo() {
   return (
     <div className="h-full bg-background text-foreground">
       <AppShell1>
-        <MetricCards1 />
-        <HeroTimeSeries1 />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TrafficByChannel1 />
-          <MarketingFunnel1 />
+        {/*
+         * One wrapper, not a row of siblings: the shell's content area is a
+         * flex column, and `.cn-card` is `overflow-hidden`, which zeroes a flex
+         * item's automatic minimum height. Cards as direct children shrink to
+         * fit the frame and clip their own content instead of scrolling. This
+         * div has visible overflow, so it keeps its content's height.
+         */}
+        <div className="flex flex-col gap-4">
+          <MetricCards1 />
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <HeroTimeSeries1 />
+            </div>
+            <div className="flex flex-col gap-4">
+              <RevenueVsTarget1 />
+              <GoalProgress1 />
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TrafficByChannel1 />
+            <MarketingFunnel1 />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <WinRate1 />
+            <RepLeaderboard1 />
+            <AiInsights1 />
+          </div>
+
+          <DealsTable1 />
         </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <RevenueVsTarget1 />
-          <GoalProgress1 />
-          <WinRate1 />
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <RepLeaderboard1 />
-          <AiInsights1 />
-        </div>
-        <DealsTable1 />
       </AppShell1>
     </div>
   )

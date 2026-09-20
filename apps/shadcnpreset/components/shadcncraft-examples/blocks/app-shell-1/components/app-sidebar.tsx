@@ -58,7 +58,7 @@ const TEAMS = [
 
 const NAV_MAIN = [
   {
-    title: "Playground",
+    title: "Overview",
     icon: (
       <IconPlaceholder
         lucide="SquareTerminal"
@@ -69,10 +69,10 @@ const NAV_MAIN = [
       />
     ),
     defaultOpen: true,
-    items: ["History", "Starred", "Settings"],
+    items: ["Today", "This week", "This quarter"],
   },
   {
-    title: "Models",
+    title: "Campaigns",
     icon: (
       <IconPlaceholder
         lucide="Bot"
@@ -82,10 +82,10 @@ const NAV_MAIN = [
         remixicon="RiRobot2Line"
       />
     ),
-    items: ["Genesis", "Explorer", "Quantum"],
+    items: ["Active", "Drafts", "Archived"],
   },
   {
-    title: "Documentation",
+    title: "Deals",
     icon: (
       <IconPlaceholder
         lucide="BookOpen"
@@ -95,7 +95,7 @@ const NAV_MAIN = [
         remixicon="RiBookOpenLine"
       />
     ),
-    items: ["Introduction", "Get Started", "Tutorials", "Changelog"],
+    items: ["Pipeline", "Forecast", "Closed won"],
   },
   {
     title: "Settings",
@@ -108,13 +108,13 @@ const NAV_MAIN = [
         remixicon="RiEqualizerLine"
       />
     ),
-    items: ["General", "Team", "Billing", "Limits"],
+    items: ["General", "Team", "Billing", "Integrations"],
   },
 ]
 
 const PROJECTS = [
   {
-    name: "Design Engineering",
+    name: "Demand gen",
     icon: (
       <IconPlaceholder
         lucide="Hash"
@@ -126,7 +126,7 @@ const PROJECTS = [
     ),
   },
   {
-    name: "Sales & Marketing",
+    name: "Pipeline reviews",
     icon: (
       <IconPlaceholder
         lucide="ChartPie"
@@ -138,7 +138,7 @@ const PROJECTS = [
     ),
   },
   {
-    name: "Travel",
+    name: "Lifecycle email",
     icon: (
       <IconPlaceholder
         lucide="Map"
