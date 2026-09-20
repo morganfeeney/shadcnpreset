@@ -31,6 +31,7 @@ export async function generateMetadata({
     title: article.title,
     description: article.description,
     path: getLearnArticleHref(article.slug),
+    image: "route",
   })
   const isDraft = article.status === "draft"
 
