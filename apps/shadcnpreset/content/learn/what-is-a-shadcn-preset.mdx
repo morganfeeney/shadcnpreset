@@ -1,14 +1,13 @@
 ---
 date: "2026-09-15"
-updated: "2026-09-17"
-status: draft
+status: published
 title: "What is a shadcn preset?"
 description: "A preset is a short code that describes a whole shadcn/ui setup: style, colours, fonts, icons, radius, menus. A theme is only the colour variables. Here's the difference, and why it matters when you're looking for one."
 ---
 
 A shadcn preset is a short code that describes how you want a shadcn/ui project configured.
 
-```text caption="A preset code, as copied from the builder."
+```text caption="A preset code"
 b4YtS7GakV
 ```
 
@@ -45,7 +44,7 @@ Preset
   menuColor    inverted-translucent
 ```
 
-That's the important distinction: **a preset describes much more than the colours of your app.**
+What's important to note here is when you unpack a preset it describes much more than the colours of your app.
 
 ## What's in a preset?
 
@@ -88,9 +87,9 @@ Components use semantic classes such as `bg-primary` and `border-border`, which 
 }
 ```
 
-Change those values and the components recolour.
+Change those values and the components change color.
 
-That's useful, but CSS variables can only change things the components already read from variables.
+That's useful, but CSS variables can only change things the components _already_ read from variables.
 
 ## Styles change the components
 
@@ -137,12 +136,25 @@ npx shadcn@latest apply --preset b4YtS7GakV --only font
 
 Or use the [Preset Theme CSS Generator](/tools/preset-theme-generator) to extract the light and dark theme variables without using the CLI.
 
-## Where to find presets
+## Where presets come from and how to find them
 
-If you want to create your own configuration, [shadcn/create](https://ui.shadcn.com/create) lets you choose the options and generate a preset.
+[shadcn/create](https://ui.shadcn.com/create) is the official preset builder.
+It gives you the available configuration options and generates a preset from the choices you make.
 
-If you want to browse presets that already exist, that's what [shadcnpreset](/) is for.
+[shadcnpreset](/) uses the exact same configuration options.
 
-You can browse [community presets](/community), preview them across real interfaces, or use [Ask AI](/assistant) to find presets based on what you're building.
+The difference is what happens next.
 
-The important thing is that you're choosing a **preset**, not just a colour palette. The preset determines how the whole shadcn/ui setup comes together.
+With shadcn/create, you choose the configuration you want and generate the preset yourself by manually clicking through the options.
+
+With shadcnpreset, you can use natural language to describe what you want and [let AI handle it](/assistant), or browse configurations that have already been created.
+You can see them on real interfaces, compare them before deciding which one to use.
+
+There are a lot of possible combinations. Even with a relatively small number of choices, manually working through them can take a while.
+
+That's why shadcnpreset has community voting. Instead of making you work through every possible combination, you can see which presets other people have submitted and voted for.
+
+You can browse [community presets](/community), preview them across real interfaces, or use Ask AI to describe what you're building and find matching configurations.
+
+The goal isn't to replace shadcn/create. It's to make the configuration space easier to explore.
+
