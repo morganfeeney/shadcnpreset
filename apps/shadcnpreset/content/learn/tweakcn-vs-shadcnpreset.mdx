@@ -1,0 +1,145 @@
+---
+date: "2026-09-21"
+status: draft
+title: "Tweakcn vs shadcnpreset"
+description: "Tweakcn is a theme editor. shadcnpreset is for discovering and working with shadcn presets. Here's the difference."
+---
+
+If you're looking for shadcn presets, you might come across Tweakcn.
+
+It's a popular tool, but it solves a different problem. It works with **themes**. shadcnpreset works with **presets**.
+
+## Themes vs presets
+
+A theme changes the visual tokens of a shadcn project — theme colour pairings like `primary` & `primary-foreground`, chart colors, sidebar colors and radius.
+
+A preset goes further. It also defines things like component styles, fonts, icons and menu configuration.
+
+This distinction matters because shadcn has evolved quite a bit. There are now a lot more ways to make a shadcn project your own, and changing the theme alone only gets you so far.
+
+If all you've changed are the colours and radius, it can still look very obviously like shadcn. The component code is still using the same defaults.
+
+That's where styles and the other preset options become useful. They change the actual components rather than just the variables underneath them.
+
+## Tweakcn only deals with themes
+
+Tweakcn is a visual editor for customising the **theme** of a shadcn/ui project.
+
+It adds a few things that you don't get OOTB with shadcn such as new custom properties that handle shadows and spacing, but unless you are a designer, you can easily end up with something that still feels like a developer created it.
+
+## A preset contains much more
+
+A shadcn preset is a configuration that can include:
+
+| Field                  | What it controls                                                       |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `style`                | Component-level defaults such as spacing, sizing, typography and shape |
+| `baseColor`            | Neutral colours                                                        |
+| `theme`                | Accent colour                                                          |
+| `chartColor`           | Chart colours                                                          |
+| `radius`               | Component radius                                                       |
+| `menuAccent`           | Menu item appearance                                                   |
+| `menuColor`            | Menu surface appearance                                                |
+| `font` / `fontHeading` | Fonts                                                                  |
+| `iconLibrary`          | Icon library                                                           |
+
+Some of these choices are theme values. Others change the actual component code or project configuration.
+
+For example, the `style` field changes the components themselves. Two presets can use the same colours, fonts and radius while producing very different interfaces.
+
+<StyleShowcase
+  styles={["lyra", "maia"]}
+  controls={["button", "input", "switch"]}
+  baseColor="mist"
+  theme="lime"
+  radius="large"
+  caption="The same theme and radius on Lyra and Maia. The component code is different."
+/>
+
+That's something a theme editor can't represent.
+
+## Tweakcn doesn't create presets
+
+This is the important distinction.
+
+Tweakcn can help you create and customise a **theme**. It doesn't create a complete shadcn preset.
+
+Changing a colour variable doesn't change your component style. It doesn't switch your icon library, change the fonts wired into your project, or change other preset configuration.
+
+Those things belong to the preset.
+
+## shadcn/create works with presets
+
+[shadcn/create](https://ui.shadcn.com/create) is the official preset builder.
+
+It gives you the available configuration options and lets you build a preset by choosing the options you want.
+
+Once you're done, you get a preset code that you can pass to the shadcn CLI.
+
+```bash
+npx shadcn@latest init --preset b4YtS7GakV
+```
+
+There are millions of possible combinations.
+
+shadcn/create lets you build any of them, but finding the one you want can take a long time.
+
+That's where shadcnpreset comes in.
+
+## shadcnpreset is for finding presets
+
+shadcnpreset uses the **exact same configuration options as shadcn/create**.
+
+It doesn't use a different preset format or create a separate type of configuration. The presets are built from the same possibilities.
+
+The difference is that you don't have to start from an empty configuration.
+
+You can browse presets that have already been created, see how they look across real interfaces and compare them before deciding which one to use.
+
+### Community presets
+
+There are a lot of possible combinations, so shadcnpreset uses community voting to help surface the ones people are interested in.
+
+You can [browse the community](/community), see which presets have been submitted and voted for, and save the ones you want to come back to.
+
+### Ask AI
+
+You can also describe what you're looking for instead of manually working through the configuration.
+
+For example:
+
+> Calm SaaS dashboard, muted neutrals, all in Mira
+
+[Ask AI](/assistant) uses that description to find matching presets and lets you preview them on real components.
+
+You can also ask for specific combinations:
+
+> Give me three options. One in Lyra, one in Luma and one in Mira.
+
+### Preview the whole thing
+
+A preset isn't just a colour palette, so looking at its variables doesn't tell you everything about how it will feel.
+
+shadcnpreset lets you preview presets across real interfaces, including dashboards, login pages, marketing pages, applications, stores and chat interfaces.
+
+This makes it easier to compare the things that a theme editor can't show you: component sizing, spacing, typography, shape and the overall feel of the interface.
+
+## So what's the difference?
+
+The easiest way to think about it is:
+
+**Tweakcn helps you create a theme.**
+
+**shadcn/create helps you create a preset.**
+
+**shadcnpreset helps you find a preset.**
+
+They're solving different problems.
+
+If you already know the colours and visual tokens you want to use, a theme editor makes sense.
+
+If you want to build a specific shadcn configuration yourself, use shadcn/create.
+
+If you want to explore the millions of possible configurations and find one that's already close to what you're looking for, use shadcnpreset.
+
+The goal of shadcnpreset isn't to replace shadcn/create. It's to make a huge configuration space easier to explore.
