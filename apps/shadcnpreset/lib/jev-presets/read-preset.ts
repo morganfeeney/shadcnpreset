@@ -30,6 +30,37 @@ export type JevPresetReading = {
 /** A field counts as asked for once Jev puts less than even odds on "unspecified". */
 const STATED_BELOW_UNSPECIFIED = 0.5
 
+/** Grey accents: "monochrome", rather than a colour of their own. */
+const MONOCHROME_ACCENTS = new Set(["neutral", "stone", "zinc", "gray"])
+
+function monochromeToNeutrals(
+  value: string,
+  baseColor: PresetConfig["baseColor"]
+): string {
+  return MONOCHROME_ACCENTS.has(value) ? baseColor : value
+}
+
+/**
+ * The corners some styles actually render.
+ *
+ * The v4 preview overrides these itself, so without the same rule here the
+ * reading panel promises corners the preview will not show.
+ */
+function withStyleRadius(config: PresetConfig): PresetConfig {
+  if (config.style === "lyra" || config.style === "sera") {
+    return { ...config, radius: "none" }
+  }
+  if (config.style === "rhea" && config.radius === "large") {
+    return { ...config, radius: "default" }
+  }
+  return config
+}
+
+/** Everything the preview will do to a config before it renders it. */
+function normalizeForPreview(config: PresetConfig): PresetConfig {
+  return clampPresetConfigForV4Preview(withStyleRadius(config))
+}
+
 /**
  * Turns one System One response into the single preset it describes.
  *
@@ -46,27 +77,46 @@ export function readPresetFromJev(
 
   for (const spec of JEV_PRESET_FIELDS) {
     const probabilities = answers[spec.field]?.probabilities
+    // Only a missing answer is a broken response. A field Jev has nothing to
+    // say about is ordinary, and keeps the preset default below.
     if (!probabilities) return null
 
     const ranked = Object.entries(probabilities)
       .filter(([value]) => value !== UNSPECIFIED && value in spec.options)
+      .map(([value, p]): [string, number] => [
+        // "Monochrome" only reads as a grey the neutrals allow: their own tone.
+        // Left alone it fails the check below and hands the accent to whatever
+        // colour happened to come next.
+        spec.field === "theme" || spec.field === "chartColor"
+          ? monochromeToNeutrals(value, config.baseColor)
+          : value,
+        p,
+      ])
       .sort((a, b) => b[1] - a[1])
     const total = ranked.reduce((sum, [, p]) => sum + p, 0)
-    if (!ranked.length || total <= 0) return null
 
     const accepted = ranked.find(([value]) => {
       const candidate = { ...config, [spec.field]: value } as PresetConfig
-      return clampPresetConfigForV4Preview(candidate)[spec.field] === value
+      return normalizeForPreview(candidate)[spec.field] === value
     })
-    if (!accepted) return null
 
-    const [value, p] = accepted
+    // Nothing Jev offered fits, or it had nothing to offer: fall back to the
+    // preset default, put through the same rules so the panel reports the
+    // value the preview will render (Lyra's corners are always sharp).
+    const [value, p] = accepted ?? [
+      normalizeForPreview({
+        ...config,
+        [spec.field]: DEFAULT_PRESET_CONFIG[spec.field],
+      })[spec.field],
+      0,
+    ]
+
     config = { ...config, [spec.field]: value } as PresetConfig
     fields.push({
       field: spec.field,
       label: spec.label,
-      value,
-      probability: p / total,
+      value: String(value),
+      probability: total > 0 ? p / total : 0,
       stated: (probabilities[UNSPECIFIED] ?? 0) < STATED_BELOW_UNSPECIFIED,
     })
   }
@@ -75,7 +125,7 @@ export function readPresetFromJev(
   if (config.fontHeading === config.font) {
     config = { ...config, fontHeading: "inherit" }
   }
-  config = clampPresetConfigForV4Preview(config)
+  config = normalizeForPreview(config)
 
   return { code: encodePreset(config), config, fields }
 }

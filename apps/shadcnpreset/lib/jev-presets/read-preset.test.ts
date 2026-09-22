@@ -1,4 +1,4 @@
-import { decodePreset } from "shadcn/preset"
+import { DEFAULT_PRESET_CONFIG, decodePreset } from "shadcn/preset"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -49,9 +49,9 @@ describe("readPresetFromJev", () => {
   })
 
   it("falls back to the next accent when the top one cannot pair with the neutrals", () => {
-    // A grey accent only pairs with the same grey neutrals.
+    // A tinted grey accent only pairs with the same neutrals.
     const reading = readPresetFromJev(
-      answers({ theme: { stone: 0.6, green: 0.4 } })
+      answers({ theme: { mauve: 0.6, green: 0.4 } })
     )
 
     expect(reading?.config.theme).toBe("green")
@@ -83,6 +83,44 @@ describe("readPresetFromJev", () => {
     )
 
     expect(reading?.config.fontHeading).toBe("inherit")
+  })
+
+  it("keeps the default for a field Jev has nothing to say about", () => {
+    // "modern newsletter" says nothing about the shell, and Jev answered with
+    // every real option at zero. That is not a broken preset.
+    const input = answers()
+    input.menuColor = { probabilities: { unspecified: 1, default: 0, inverted: 0 } }
+
+    const reading = readPresetFromJev(input)
+
+    expect(reading?.config.menuColor).toBe(DEFAULT_PRESET_CONFIG.menuColor)
+    expect(reading?.fields.find((f) => f.field === "menuColor")).toMatchObject({
+      stated: false,
+      probability: 0,
+    })
+  })
+
+  it("reads a grey accent as monochrome and matches it to the neutrals", () => {
+    const reading = readPresetFromJev(
+      answers({ theme: { neutral: 0.8, teal: 0.2 } })
+    )
+
+    // Not teal: a grey accent means no colour, and zinc is the neutral chosen.
+    expect(reading?.config.theme).toBe("zinc")
+  })
+
+  it("gives a style the corners the preview will actually render", () => {
+    const sharp = readPresetFromJev(
+      answers({ style: { lyra: 1 }, radius: { large: 1 } })
+    )
+    expect(sharp?.config.radius).toBe("none")
+    expect(sharp?.fields.find((f) => f.field === "radius")?.value).toBe("none")
+
+    // Rhea renders large as default, so the next corners Jev offered win.
+    const rhea = readPresetFromJev(
+      answers({ style: { rhea: 1 }, radius: { large: 0.9, medium: 0.1 } })
+    )
+    expect(rhea?.config.radius).toBe("medium")
   })
 
   it("gives up when a field has no answer", () => {
