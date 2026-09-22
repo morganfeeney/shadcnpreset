@@ -17,15 +17,21 @@ export const UNSPECIFIED = "unspecified"
 const UNSPECIFIED_DESCRIPTION =
   "The description says nothing, directly or by implication, that bears on this"
 
+/**
+ * Spacing is named here because no field controls it on its own: a word like
+ * "padded", "roomy" or "compact" can only reach the preset through the style.
+ * The descriptions follow the styles' real control sizes, from Sera at h-10
+ * px-6 down to Mira at h-7 px-2.
+ */
 const STYLES: Record<PresetConfig["style"], string> = {
-  nova: "Balanced, default product UI",
-  vega: "Classic product application shell",
-  maia: "Soft, rounded and editorial",
-  lyra: "Minimal and airy, square boxy edges",
-  mira: "Dense, compact, information-heavy",
-  luma: "Bold, big and marketing-led",
-  sera: "Sharp and formal, uppercase headings, square edges",
-  rhea: "Alternative experimental style",
+  nova: "Balanced, default product UI. Middling spacing, nothing exaggerated",
+  vega: "Classic product application shell. Comfortable, slightly roomy spacing",
+  maia: "Soft, rounded and editorial. Roomy controls with generous padding",
+  lyra: "Minimal and airy, square boxy edges. Small, understated controls — sparse and restrained rather than padded",
+  mira: "Dense, compact, information-heavy. The tightest padding and smallest text of any style",
+  luma: "Bold, big and marketing-led. Large, generously padded controls",
+  sera: "Sharp and formal, uppercase headings, square edges. The largest and most heavily padded controls of any style",
+  rhea: "Alternative experimental style. Moderate spacing with a little extra padding",
 }
 
 const BASE_COLORS: Record<PresetConfig["baseColor"], string> = {
@@ -113,11 +119,13 @@ const ICON_LIBRARIES: Record<PresetConfig["iconLibrary"], string> = {
 }
 
 const RADII: Record<PresetConfig["radius"], string> = {
-  none: "Sharp square corners",
+  // Spelling out the CSS meaning is what makes the shorthands land: "no
+  // corners" read as a pill (large 0.90) until "border-radius 0" was named.
+  none: 'Square corners, border-radius 0 — what people mean by "no corners", "no radius", "no rounding", sharp, boxy or brutalist',
   small: "Slightly rounded",
   default: "Moderately rounded",
   medium: "Noticeably rounded",
-  large: "Very rounded, pill-like",
+  large: "Very rounded, pill-shaped",
 }
 
 const MENU_COLORS: Record<PresetConfig["menuColor"], string> = {

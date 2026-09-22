@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       parsed.data.description,
       request.signal
     )
-    const reading = readPresetFromJev(jev.answers)
+    const reading = readPresetFromJev(jev.answers, parsed.data.description)
     if (!reading) {
       console.error("[api/jev/preset] unreadable answers", jev.answers)
       return NextResponse.json(

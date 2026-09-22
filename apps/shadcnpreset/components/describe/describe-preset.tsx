@@ -122,7 +122,7 @@ export function DescribePreset() {
           ) : (
             <div className="grid gap-1 py-6">
               <h1 className="text-2xl tracking-tight text-foreground">
-                Describe a preset
+                Describe a preset with Jev
               </h1>
               <p className="text-sm text-muted-foreground">
                 Say what you want it to feel like. The preset updates as you
@@ -262,8 +262,16 @@ function JevReading({ result }: { result: DescribeResult }) {
               <span className="text-muted-foreground">{field.label}</span>
               <span className="flex items-center gap-1.5">
                 <span className="font-medium">{field.value}</span>
-                <Badge variant={field.stated ? "secondary" : "outline"}>
-                  {field.stated ? "asked" : "inferred"}
+                <Badge
+                  variant={
+                    field.source === "typed"
+                      ? "default"
+                      : field.source === "asked"
+                        ? "secondary"
+                        : "outline"
+                  }
+                >
+                  {field.source}
                 </Badge>
               </span>
             </div>
