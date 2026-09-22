@@ -1,4 +1,4 @@
-import { decodePreset } from "shadcn/preset"
+import { DEFAULT_PRESET_CONFIG, decodePreset } from "shadcn/preset"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -48,14 +48,18 @@ describe("readPresetFromJev", () => {
     expect(decodePreset(reading!.code)).toMatchObject(reading!.config)
   })
 
-  it("falls back to the next accent when the top one cannot pair with the neutrals", () => {
-    // A grey accent only pairs with the same grey neutrals.
-    const reading = readPresetFromJev(
-      answers({ theme: { stone: 0.6, green: 0.4 } })
-    )
+  it.each(["neutral", "stone", "gray", "mauve", "olive", "mist", "taupe"])(
+    "matches a %s accent to the neutrals rather than picking a colour",
+    (tone) => {
+      // Every neutral tone works as an accent only when it is the tone the
+      // neutrals already use — otherwise the preview refuses it.
+      const reading = readPresetFromJev(
+        answers({ theme: { [tone]: 0.9, teal: 0.1 } })
+      )
 
-    expect(reading?.config.theme).toBe("green")
-  })
+      expect(reading?.config.theme).toBe("zinc")
+    }
+  )
 
   it("keeps a grey accent that matches the neutrals", () => {
     const reading = readPresetFromJev(
@@ -83,6 +87,44 @@ describe("readPresetFromJev", () => {
     )
 
     expect(reading?.config.fontHeading).toBe("inherit")
+  })
+
+  it("keeps the default for a field Jev has nothing to say about", () => {
+    // "modern newsletter" says nothing about the shell, and Jev answered with
+    // every real option at zero. That is not a broken preset.
+    const input = answers()
+    input.menuColor = { probabilities: { unspecified: 1, default: 0, inverted: 0 } }
+
+    const reading = readPresetFromJev(input)
+
+    expect(reading?.config.menuColor).toBe(DEFAULT_PRESET_CONFIG.menuColor)
+    expect(reading?.fields.find((f) => f.field === "menuColor")).toMatchObject({
+      stated: false,
+      probability: 0,
+    })
+  })
+
+  it("still falls back to the next accent when no tone is involved", () => {
+    // fuchsia is not offered on the v4 preview's mist neutrals.
+    const reading = readPresetFromJev(
+      answers({ baseColor: { mist: 0.9 }, theme: { zinc: 0.6, green: 0.4 } })
+    )
+
+    expect(reading?.config.theme).toBe("mist")
+  })
+
+  it("gives a style the corners the preview will actually render", () => {
+    const sharp = readPresetFromJev(
+      answers({ style: { lyra: 1 }, radius: { large: 1 } })
+    )
+    expect(sharp?.config.radius).toBe("none")
+    expect(sharp?.fields.find((f) => f.field === "radius")?.value).toBe("none")
+
+    // Rhea renders large as default, so the next corners Jev offered win.
+    const rhea = readPresetFromJev(
+      answers({ style: { rhea: 1 }, radius: { large: 0.9, medium: 0.1 } })
+    )
+    expect(rhea?.config.radius).toBe("medium")
   })
 
   it("gives up when a field has no answer", () => {

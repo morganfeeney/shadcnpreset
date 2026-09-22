@@ -127,6 +127,16 @@ const MENU_COLORS: Record<PresetConfig["menuColor"], string> = {
   "inverted-translucent": "Dark, frosted glass shell",
 }
 
+/**
+ * Each colour question answers for its own part of the preset only.
+ *
+ * Without this, one vivid word is read as the whole palette: "pink charts green
+ * theme" put pink on both the accent and the charts, and pushed the greys to
+ * olive to chase the word green.
+ */
+const ONE_PART_ONLY =
+  "Only the colour it names for this counts. A colour it names for anything else — charts, data, backgrounds, text, the shell — does not count here, however prominent it is."
+
 const MENU_ACCENTS: Record<PresetConfig["menuAccent"], string> = {
   subtle: "Subtle, understated highlight",
   bold: "Bold, strongly coloured highlight",
@@ -162,21 +172,25 @@ export const JEV_PRESET_FIELDS: readonly FieldSpec[] = [
     field: "baseColor",
     label: "Neutrals",
     instructions:
-      "Which grey tone should backgrounds, borders and text use for the look described in `description`?",
+      `Every option here is a shade of grey for backgrounds, borders and text. Which grey tone best suits the look described in \`description\`? ${ONE_PART_ONLY} A named accent or chart colour does not make the greys match it.`,
     options: only(BASE_COLORS, PRESET_FILTER_OPTIONS.baseColors),
   },
   {
     field: "theme",
     label: "Accent",
     instructions:
-      "Which accent colour should buttons and highlights use for the look described in `description`?",
+      // The closing sentence matters: without it an unnamed accent came back
+      // "unspecified" at 0.99 and every look without a named colour went grey.
+      `The accent colour is the one \`description\` calls the theme, accent, primary or brand colour, and it is used for buttons and highlights. Which accent colour does \`description\` ask for? ${ONE_PART_ONLY} If it names no accent colour, pick the colour that best suits the look it describes.`,
     options: only(COLOURS, PRESET_FILTER_OPTIONS.themes),
   },
   {
     field: "chartColor",
     label: "Charts",
     instructions:
-      "Which colour should charts and data visualisation use for the look described in `description`?",
+      // Keep this one phrased as a tie-break rather than in the ONE_PART_ONLY
+      // shape: the stricter wording read "pink charts green theme" as green.
+      "Which colour should charts and data visualisation use for the look described in `description`? A colour the description names for charts wins over any colour it names for the theme, accents or buttons.",
     options: only(COLOURS, PRESET_FILTER_OPTIONS.themes),
   },
   {
