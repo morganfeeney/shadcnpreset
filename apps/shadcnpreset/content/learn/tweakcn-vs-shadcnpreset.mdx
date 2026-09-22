@@ -1,6 +1,6 @@
 ---
-date: "2026-09-21"
-status: draft
+date: "2026-09-22"
+status: published
 title: "Tweakcn vs shadcnpreset"
 description: "Tweakcn is a theme editor. shadcnpreset is for discovering and working with shadcn presets. Here's the difference."
 ---
@@ -9,43 +9,68 @@ If you're looking for shadcn presets, you might come across Tweakcn.
 
 It's a popular tool, but it solves a different problem. It works with **themes**. shadcnpreset works with **presets**.
 
-## Themes vs presets
-
-A theme changes the visual tokens of a shadcn project — theme colour pairings like `primary` & `primary-foreground`, chart colors, sidebar colors and radius.
-
-A preset goes further. It also defines things like component styles, fonts, icons and menu configuration.
-
-This distinction matters because shadcn has evolved quite a bit. There are now a lot more ways to make a shadcn project your own, and changing the theme alone only gets you so far.
-
-If all you've changed are the colours and radius, it can still look very obviously like shadcn. The component code is still using the same defaults.
-
-That's where styles and the other preset options become useful. They change the actual components rather than just the variables underneath them.
+They are two things that are not interchangeable.
 
 ## Tweakcn only deals with themes
 
 Tweakcn is a visual editor for customising the **theme** of a shadcn/ui project.
 
-It adds a few things that you don't get OOTB with shadcn such as new custom properties that handle shadows and spacing, but unless you are a designer, you can easily end up with something that still feels like a developer created it.
+It adds a few things that you don't get with shadcn such as new custom properties that handle shadows and spacing.
+However, unless you are a designer, you can end up with something that still feels like a developer created it.
 
-## A preset contains much more
+But what exactly is the difference between a theme and a preset?
+
+## Themes vs presets
+
+A theme changes the visual tokens of a shadcn project, such as color pairings like `primary` & `primary-foreground`, chart and sidebar colors, and `radius`.
+
+A preset goes further than a theme. It includes everything you get with a theme, plus component styles, base color, heading and body fonts, icon libraries and menu configuration.
+
+This distinction matters because shadcn has evolved a lot. There are now a lot more ways to make a shadcn project your own, and changing the theme alone only gets you so far.
+
+If all you've changed are the colors and radius, it can still look very obviously like shadcn. The component code is still using the same defaults.
+
+That's where styles and the other preset options become useful. They change the actual components rather than just the variables underneath them.
+
+
+## What's actually in a preset?
 
 A shadcn preset is a configuration that can include:
 
-| Field                  | What it controls                                                       |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `style`                | Component-level defaults such as spacing, sizing, typography and shape |
-| `baseColor`            | Neutral colours                                                        |
-| `theme`                | Accent colour                                                          |
-| `chartColor`           | Chart colours                                                          |
-| `radius`               | Component radius                                                       |
-| `menuAccent`           | Menu item appearance                                                   |
-| `menuColor`            | Menu surface appearance                                                |
-| `font` / `fontHeading` | Fonts                                                                  |
-| `iconLibrary`          | Icon library                                                           |
+| Field         | What it controls                                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `style`       | The design of the components themselves — including their sizing, spacing, typography, borders, shapes and states |
+| `baseColor`   | The neutral colours used for things like backgrounds, cards, borders, inputs and muted text                       |
+| `theme`       | The accent colour system used for primary actions and other highlighted UI, including foreground colours          |
+| `chartColor`  | The colour palette assigned to charts and other data visualisations                                               |
+| `iconLibrary` | The icon set imported and used by components, such as Tabler, Lucide or Phosphor                                  |
+| `font`        | The main typeface used for body text throughout the project                                                       |
+| `fontHeading` | The typeface used for headings                                                                                    |
+| `radius`      | The default corner radius applied to components such as buttons, inputs, cards and dialogs                        |
+| `menuAccent`  | The styling of active and highlighted items within menus and navigation                                           |
+| `menuColor`   | The colour treatment of menus, dropdowns and popovers                                                             |
 
-Some of these choices are theme values. Others change the actual component code or project configuration.
+When I decode the preset `b4YtS7GakV`, this is what is I get back from the CLI:
 
-For example, the `style` field changes the components themselves. Two presets can use the same colours, fonts and radius while producing very different interfaces.
+```text
+code         b4YtS7GakV
+version      b
+style        luma
+baseColor    mist
+theme        lime
+chartColor   indigo
+iconLibrary  tabler
+font         instrument-sans
+fontHeading  merriweather
+radius       large
+menuAccent   subtle
+menuColor    inverted-translucent
+url          https://ui.shadcn.com/create?preset=b4YtS7GakV
+```
+
+Some of these fields are theme values. Others change the actual component code or project configuration.
+
+For example, the `style` field changes the components themselves. Two presets can use the same colors, fonts and radius while producing very different interfaces.
 
 <StyleShowcase
   styles={["lyra", "maia"]}
@@ -56,17 +81,7 @@ For example, the `style` field changes the components themselves. Two presets ca
   caption="The same theme and radius on Lyra and Maia. The component code is different."
 />
 
-That's something a theme editor can't represent.
-
-## Tweakcn doesn't create presets
-
-This is the important distinction.
-
-Tweakcn can help you create and customise a **theme**. It doesn't create a complete shadcn preset.
-
-Changing a colour variable doesn't change your component style. It doesn't switch your icon library, change the fonts wired into your project, or change other preset configuration.
-
-Those things belong to the preset.
+That's something Tweakcn can't deal with.
 
 ## shadcn/create works with presets
 
@@ -88,7 +103,7 @@ That's where shadcnpreset comes in.
 
 ## shadcnpreset is for finding presets
 
-shadcnpreset uses the **exact same configuration options as shadcn/create**.
+shadcnpreset uses the exact same configuration options as shadcn/create.
 
 It doesn't use a different preset format or create a separate type of configuration. The presets are built from the same possibilities.
 
@@ -98,7 +113,7 @@ You can browse presets that have already been created, see how they look across 
 
 ### Community presets
 
-There are a lot of possible combinations, so shadcnpreset uses community voting to help surface the ones people are interested in.
+There are a lot of possible combinations, so shadcnpreset uses community voting to help surface the ones people have found useful in real projects.
 
 You can [browse the community](/community), see which presets have been submitted and voted for, and save the ones you want to come back to.
 
@@ -118,7 +133,7 @@ You can also ask for specific combinations:
 
 ### Preview the whole thing
 
-A preset isn't just a colour palette, so looking at its variables doesn't tell you everything about how it will feel.
+A preset isn't just a color palette, so looking at its variables doesn't tell you everything about how it will feel.
 
 shadcnpreset lets you preview presets across real interfaces, including dashboards, login pages, marketing pages, applications, stores and chat interfaces.
 
@@ -132,7 +147,7 @@ The easiest way to think about it is:
 
 **shadcn/create helps you create a preset.**
 
-**shadcnpreset helps you find a preset.**
+**shadcnpreset helps you find one.**
 
 They're solving different problems.
 
