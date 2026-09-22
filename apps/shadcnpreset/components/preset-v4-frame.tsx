@@ -10,6 +10,7 @@ import {
   GENERATED_PREVIEW_MESSAGE_TYPE,
   isGeneratedPreviewReadyMessage,
 } from "@/lib/generated-preview/messages"
+import { V4_DESIGN_SYSTEM_PARAMS_MESSAGE_TYPE } from "@/lib/shadcnpreset-postmessage"
 
 const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 
@@ -22,6 +23,12 @@ type PresetV4FrameProps = {
   title: string
   className?: string
   generatedPreview?: GeneratedPreviewPayload | null
+  /**
+   * v4 create previews only. Re-themes the loaded frame to this preset by
+   * message instead of reloading `src`, so a changing preset costs nothing
+   * but the repaint.
+   */
+  livePreset?: string
 } & Omit<
   React.ComponentPropsWithoutRef<"iframe">,
   "src" | "title" | "className" | "onLoad" | "sandbox"
@@ -35,6 +42,7 @@ export function PresetV4Frame({
   className,
   onLoad,
   generatedPreview,
+  livePreset,
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
@@ -104,19 +112,43 @@ export function PresetV4Frame({
     )
   }, [generatedPreview, targetOrigin])
 
+  const postLivePreset = React.useCallback(() => {
+    const frameWindow = iframeRef.current?.contentWindow
+    if (!frameWindow || !livePreset) {
+      return
+    }
+
+    frameWindow.postMessage(
+      {
+        type: V4_DESIGN_SYSTEM_PARAMS_MESSAGE_TYPE,
+        // Keys left out are ignored by the frame; the custom colours are
+        // cleared so a previous preset's overrides cannot linger.
+        data: {
+          preset: livePreset,
+          baseCustomColor: "",
+          themeCustomColor: "",
+          chartCustomColor: "",
+        },
+      },
+      targetOrigin
+    )
+  }, [livePreset, targetOrigin])
+
   const postThemeModeWithRetry = React.useCallback(() => {
     clearRetryTimers()
     postThemeMode()
     postGeneratedPreview()
+    postLivePreset()
 
     // The iframe app can hydrate after load; resend for a short window to avoid races.
     retryTimersRef.current = [200, 800].map((delay) =>
       window.setTimeout(() => {
         postThemeMode()
         postGeneratedPreview()
+        postLivePreset()
       }, delay)
     )
-  }, [clearRetryTimers, postGeneratedPreview, postThemeMode])
+  }, [clearRetryTimers, postGeneratedPreview, postLivePreset, postThemeMode])
 
   React.useEffect(() => {
     hasLoadedRef.current = false
@@ -136,6 +168,13 @@ export function PresetV4Frame({
     }
     postGeneratedPreview()
   }, [postGeneratedPreview])
+
+  React.useEffect(() => {
+    if (!hasLoadedRef.current) {
+      return
+    }
+    postLivePreset()
+  }, [postLivePreset])
 
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {

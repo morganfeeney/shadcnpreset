@@ -58,9 +58,12 @@ export function PresetCodeTitle({
 export function PresetLiveHero({
   initialCode,
   initialDescription,
+  sharePath,
 }: {
   initialCode: string
   initialDescription: string
+  /** What Share copies, when the page URL is not the preset's own. */
+  sharePath?: string
 }) {
   const live = usePresetPageLiveOptional()
   const code = live?.livePresetCode ?? initialCode
@@ -73,13 +76,19 @@ export function PresetLiveHero({
     <div className="flex flex-wrap items-start justify-between gap-4 py-6">
       <PresetCodeTitle presetCode={code} description={description} />
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <PresetButtons preset={resolved?.code ?? code} />
+        <PresetButtons preset={resolved?.code ?? code} sharePath={sharePath} />
       </div>
     </div>
   )
 }
 
-export function PresetButtons({ preset }: { preset: string }) {
+export function PresetButtons({
+  preset,
+  sharePath,
+}: {
+  preset: string
+  sharePath?: string
+}) {
   const [hasCopied, setHasCopied] = React.useState(false)
   const [getCodeOpen, setGetCodeOpen] = React.useState(false)
 
@@ -91,13 +100,15 @@ export function PresetButtons({ preset }: { preset: string }) {
   }, [hasCopied])
 
   const handleShare = React.useCallback(() => {
-    const url = window.location.href
+    const url = sharePath
+      ? new URL(sharePath, window.location.origin).href
+      : window.location.href
     copyToClipboardWithMeta(url, {
       name: "copy_preset_share_url",
       properties: { url, preset },
     })
     setHasCopied(true)
-  }, [preset])
+  }, [preset, sharePath])
 
   return (
     <>
