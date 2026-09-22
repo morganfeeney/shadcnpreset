@@ -263,13 +263,7 @@ function JevReading({ result }: { result: DescribeResult }) {
               <span className="flex items-center gap-1.5">
                 <span className="font-medium">{field.value}</span>
                 <Badge
-                  variant={
-                    field.source === "typed"
-                      ? "default"
-                      : field.source === "asked"
-                        ? "secondary"
-                        : "outline"
-                  }
+                  variant={field.source === "typed" ? "default" : "outline"}
                 >
                   {field.source}
                 </Badge>

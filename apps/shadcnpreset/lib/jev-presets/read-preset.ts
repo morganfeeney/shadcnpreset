@@ -19,13 +19,13 @@ export type JevFieldReading = {
   value: string
   /** Share of the probability Jev gave the real options, so 0–1 among them. */
   probability: number
-  /** The description asked for this field, rather than Jev filling it in. */
-  stated: boolean
   /**
-   * Where the value came from: a catalog name in the description, a judgment
-   * about what the description asked for, or a reading of the look overall.
+   * Where the value came from. Only the words themselves prove what was asked
+   * for: Jev's "unspecified" option reads as certainty about the look rather
+   * than a report on the sentence, and put 0.00 on it for the font of "cosy
+   * coffee shop". So anything it decides is an inference, however sure it is.
    */
-  source: "typed" | "asked" | "inferred"
+  source: "typed" | "inferred"
 }
 
 export type JevPresetReading = {
@@ -33,9 +33,6 @@ export type JevPresetReading = {
   config: PresetConfig
   fields: JevFieldReading[]
 }
-
-/** A field counts as asked for once Jev puts less than even odds on "unspecified". */
-const STATED_BELOW_UNSPECIFIED = 0.5
 
 /**
  * The neutral tones, which double as accents: neutral, stone and zinc read as
@@ -101,7 +98,6 @@ export function readPresetFromJev(
         label: spec.label,
         value: typedValue,
         probability: 1,
-        stated: true,
         source: "typed",
       })
       continue
@@ -145,15 +141,13 @@ export function readPresetFromJev(
       0,
     ]
 
-    const stated = (probabilities[UNSPECIFIED] ?? 0) < STATED_BELOW_UNSPECIFIED
     config = { ...config, [spec.field]: value } as PresetConfig
     fields.push({
       field: spec.field,
       label: spec.label,
       value: String(value),
       probability: total > 0 ? p / total : 0,
-      stated,
-      source: stated ? "asked" : "inferred",
+      source: "inferred",
     })
   }
 
