@@ -69,16 +69,28 @@ describe("readPresetFromJev", () => {
     expect(reading?.config.theme).toBe("zinc")
   })
 
-  it("marks a field inferred when Jev thinks the description did not ask for it", () => {
+  it("calls every value Jev decides an inference, however sure it was", () => {
+    // Jev's "unspecified" reports certainty about the look, not what the
+    // sentence said: it put 0.00 on it for the font of "cosy coffee shop".
     const input = answers()
-    input.radius = { probabilities: { unspecified: 0.8, none: 0.15, small: 0.05 } }
+    input.radius = { probabilities: { unspecified: 0.0, none: 0.95, small: 0.05 } }
 
     const radius = readPresetFromJev(input)?.fields.find(
       (f) => f.field === "radius"
     )
 
-    expect(radius).toMatchObject({ value: "none", stated: false })
-    expect(radius?.probability).toBeCloseTo(0.75)
+    expect(radius).toMatchObject({ value: "none", source: "inferred" })
+    expect(radius?.probability).toBeCloseTo(0.95)
+  })
+
+  it("only calls a value typed when the description names it", () => {
+    const fields = readPresetFromJev(answers(), "sera tight")?.fields ?? []
+
+    expect(fields.find((f) => f.field === "style")).toMatchObject({
+      value: "sera",
+      source: "typed",
+    })
+    expect(fields.find((f) => f.field === "font")?.source).toBe("inferred")
   })
 
   it("encodes a heading font that matches the body as inherit", () => {
@@ -99,7 +111,7 @@ describe("readPresetFromJev", () => {
 
     expect(reading?.config.menuColor).toBe(DEFAULT_PRESET_CONFIG.menuColor)
     expect(reading?.fields.find((f) => f.field === "menuColor")).toMatchObject({
-      stated: false,
+      source: "inferred",
       probability: 0,
     })
   })

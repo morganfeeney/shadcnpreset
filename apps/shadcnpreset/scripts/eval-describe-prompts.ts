@@ -50,7 +50,8 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-type Expected = Partial<Record<keyof PresetConfig, string>>
+/** A field must come back as this value, or as one of these values. */
+type Expected = Partial<Record<keyof PresetConfig, string | string[]>>
 
 /** Descriptions that name something, and the field that naming must produce. */
 const CHECKS: Array<{ description: string; expect: Expected; note: string }> = [
@@ -101,8 +102,18 @@ const CHECKS: Array<{ description: string; expect: Expected; note: string }> = [
   },
   {
     description: "minimal docs site with serif headings",
-    expect: { fontHeading: "lora" },
-    note: "a named font family, not a mood",
+    expect: {
+      fontHeading: [
+        "lora",
+        "merriweather",
+        "noto-serif",
+        "eb-garamond",
+        "playfair-display",
+        "instrument-serif",
+        "roboto-slab",
+      ],
+    },
+    note: "a named family, so any serif passes — just not a sans",
   },
   {
     description: "dark dashboard",
@@ -138,6 +149,21 @@ const CHECKS: Array<{ description: string; expect: Expected; note: string }> = [
     description: "mira but roomy",
     expect: { style: "mira" },
     note: "the same clash the other way round",
+  },
+  {
+    description: "phosphor icons with jetbrains mono blue charts green theme",
+    expect: {
+      iconLibrary: "phosphor",
+      font: "jetbrains-mono",
+      chartColor: "blue",
+      theme: "green",
+    },
+    note: "words in front used to swap the two colours round",
+  },
+  {
+    description: "charts are green theme is blue",
+    expect: { chartColor: "green", theme: "blue" },
+    note: "the other word order, where 'green theme' also reads as a phrase",
   },
   {
     description: "lucide icons",
@@ -243,8 +269,8 @@ async function evaluate(
       got[field] = String(reading.config[field])
     }
 
-    const ok = Object.entries(expected ?? {}).every(
-      ([field, value]) => got[field] === value
+    const ok = Object.entries(expected ?? {}).every(([field, value]) =>
+      Array.isArray(value) ? value.includes(got[field]!) : got[field] === value
     )
 
     return {
@@ -269,8 +295,15 @@ async function evaluate(
 function describeMismatch(outcome: Outcome): string {
   if (outcome.error) return outcome.error
   return Object.entries(outcome.expected ?? {})
-    .filter(([field, value]) => outcome.got[field] !== value)
-    .map(([field, value]) => `${field}: wanted ${value}, got ${outcome.got[field]}`)
+    .filter(([field, value]) =>
+      Array.isArray(value)
+        ? !value.includes(outcome.got[field]!)
+        : outcome.got[field] !== value
+    )
+    .map(([field, value]) => {
+      const wanted = Array.isArray(value) ? `one of ${value.join(", ")}` : value
+      return `${field}: wanted ${wanted}, got ${outcome.got[field]}`
+    })
     .join("; ")
 }
 

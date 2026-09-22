@@ -2,6 +2,7 @@ import {
   PRESET_FONTS,
   PRESET_ICON_LIBRARIES,
   PRESET_STYLES,
+  PRESET_THEMES,
   type PresetConfig,
 } from "shadcn/preset"
 
@@ -17,7 +18,10 @@ import {
  * no list of names can match.
  */
 export type NamedTerms = Partial<
-  Pick<PresetConfig, "style" | "iconLibrary" | "font" | "fontHeading">
+  Pick<
+    PresetConfig,
+    "style" | "iconLibrary" | "font" | "fontHeading" | "theme" | "chartColor"
+  >
 >
 
 /** Font slugs read as ordinary words, so they only count near a typography word. */
@@ -68,6 +72,64 @@ function findFonts(description: string): Pick<NamedTerms, "font" | "fontHeading"
   return out
 }
 
+/** What a colour is being named for, in the words people actually use. */
+const COLOUR_TARGETS = {
+  chartColor: "charts?|graphs?|data|data ?vis(?:ualisation|ualization)?",
+  theme: "theme|accent|primary|brand|buttons?",
+} as const
+
+const COLOURS = PRESET_THEMES.join("|")
+
+/**
+ * Colours tied to the part of the preset they were named for.
+ *
+ * Jev reads these as one sentence, so a word in front can move the colour to
+ * the wrong field: "blue charts green theme" landed correctly, and "jetbrains
+ * mono blue charts green theme" came back swapped. Both word orders are
+ * matched — "blue charts" and "charts are blue".
+ */
+function findScopedColours(text: string): Pick<NamedTerms, "theme" | "chartColor"> {
+  type Candidate = { field: "theme" | "chartColor"; colour: string; at: number; from: number }
+  const candidates: Candidate[] = []
+
+  for (const [field, targets] of Object.entries(COLOUR_TARGETS)) {
+    const shapes = [
+      // "blue charts"
+      new RegExp(`\\b(${COLOURS})\\s+(?:${targets})\\b`, "g"),
+      // "charts are blue", "brand colour is teal", "theme: green"
+      new RegExp(
+        `\\b(?:${targets})\\s*(?:colou?rs?)?\\s*(?:are|is|in|of|use|using|should be|=|:)?\\s*(${COLOURS})\\b`,
+        "g"
+      ),
+    ]
+
+    for (const shape of shapes) {
+      for (const match of text.matchAll(shape)) {
+        candidates.push({
+          field: field as Candidate["field"],
+          colour: match[1]!,
+          at: match.index ?? 0,
+          from: (match.index ?? 0) + match[0].indexOf(match[1]!),
+        })
+      }
+    }
+  }
+
+  const out: Pick<NamedTerms, "theme" | "chartColor"> = {}
+  const claimed = new Set<number>()
+
+  // Earliest phrase first, and one colour word can only belong to one field:
+  // without that, "charts are green theme is blue" reads "green theme" as well
+  // and the accent takes the colour the charts already had.
+  for (const candidate of candidates.sort((a, b) => a.at - b.at)) {
+    if (out[candidate.field] || claimed.has(candidate.from)) continue
+    out[candidate.field] = candidate.colour as never
+    claimed.add(candidate.from)
+  }
+
+  return out
+}
+
 /** Every catalog name stated in a description, as preset values. */
 export function extractNamedTerms(description: string): NamedTerms {
   const text = description.toLowerCase()
@@ -76,5 +138,6 @@ export function extractNamedTerms(description: string): NamedTerms {
     style: matchFrom(text, PRESET_STYLES),
     iconLibrary: matchFrom(text, PRESET_ICON_LIBRARIES),
     ...findFonts(text),
+    ...findScopedColours(text),
   }
 }
