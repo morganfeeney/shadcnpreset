@@ -20,7 +20,13 @@ import {
 export type NamedTerms = Partial<
   Pick<
     PresetConfig,
-    "style" | "iconLibrary" | "font" | "fontHeading" | "theme" | "chartColor"
+    | "style"
+    | "iconLibrary"
+    | "font"
+    | "fontHeading"
+    | "theme"
+    | "chartColor"
+    | "radius"
   >
 >
 
@@ -70,6 +76,35 @@ function findFonts(description: string): Pick<NamedTerms, "font" | "fontHeading"
   }
 
   return out
+}
+
+/**
+ * Corner words with one obvious meaning.
+ *
+ * These are instructions, not moods: "tight corners" means no rounding, and
+ * asking a model to weigh that against the rest of the sentence produced
+ * "small" — visibly rounded — for a description that asked for tight.
+ * Anything vaguer ("soft", "friendly") is left to Jev.
+ */
+const RADIUS_TERMS: Array<[RegExp, PresetConfig["radius"]]> = [
+  [
+    /\b(?:tight|sharp|square|boxy|hard[- ]edged|no|zero|without)\s+(?:corners?|edges?|radius|rounding)\b/,
+    "none",
+  ],
+  [/\b(?:corners?|edges?|radius)\s+(?:are|is)?\s*(?:tight|sharp|square)\b/, "none"],
+  [/\b(?:brutalist|no-radius|border-radius\s*0)\b/, "none"],
+  [
+    /\b(?:pill|fully|very|super|extra)[- ]?(?:shaped|rounded|round)\b/,
+    "large",
+  ],
+  [/\bslightly\s+rounded\b/, "small"],
+]
+
+function findRadius(text: string): PresetConfig["radius"] | undefined {
+  for (const [pattern, radius] of RADIUS_TERMS) {
+    if (pattern.test(text)) return radius
+  }
+  return undefined
 }
 
 /** What a colour is being named for, in the words people actually use. */
@@ -139,5 +174,6 @@ export function extractNamedTerms(description: string): NamedTerms {
     iconLibrary: matchFrom(text, PRESET_ICON_LIBRARIES),
     ...findFonts(text),
     ...findScopedColours(text),
+    radius: findRadius(text),
   }
 }

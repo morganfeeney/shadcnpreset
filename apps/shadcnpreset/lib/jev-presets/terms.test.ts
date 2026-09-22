@@ -95,3 +95,29 @@ describe("extractNamedTerms: one colour word belongs to one field", () => {
     })
   })
 })
+
+describe("extractNamedTerms: corner words", () => {
+  it.each([
+    "tight corners",
+    "sharp corners",
+    "square corners",
+    "no corners",
+    "no rounding",
+    "zero radius",
+    "corners are tight",
+    "brutalist",
+  ])("reads %s as no rounding", (description) => {
+    expect(extractNamedTerms(description).radius).toBe("none")
+  })
+
+  it("reads the rounded end too", () => {
+    expect(extractNamedTerms("pill shaped buttons").radius).toBe("large")
+    expect(extractNamedTerms("very rounded cards").radius).toBe("large")
+    expect(extractNamedTerms("slightly rounded").radius).toBe("small")
+  })
+
+  it("leaves vaguer words to Jev", () => {
+    expect(extractNamedTerms("soft friendly cards").radius).toBeUndefined()
+    expect(extractNamedTerms("cosy coffee shop").radius).toBeUndefined()
+  })
+})
