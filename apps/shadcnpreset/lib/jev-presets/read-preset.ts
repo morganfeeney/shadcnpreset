@@ -7,6 +7,7 @@ import {
 
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { JEV_PRESET_FIELDS, UNSPECIFIED } from "@/lib/jev-presets/fields"
+import { extractNamedTerms, type NamedTerms } from "@/lib/jev-presets/terms"
 
 export type JevChoiceAnswer = {
   probabilities: Record<string, number>
@@ -20,6 +21,11 @@ export type JevFieldReading = {
   probability: number
   /** The description asked for this field, rather than Jev filling it in. */
   stated: boolean
+  /**
+   * Where the value came from: a catalog name in the description, a judgment
+   * about what the description asked for, or a reading of the look overall.
+   */
+  source: "typed" | "asked" | "inferred"
 }
 
 export type JevPresetReading = {
@@ -77,12 +83,30 @@ function normalizeForPreview(config: PresetConfig): PresetConfig {
  * wins, so the catalog's own clamp stays the one definition of "allowed".
  */
 export function readPresetFromJev(
-  answers: Record<string, JevChoiceAnswer | undefined>
+  answers: Record<string, JevChoiceAnswer | undefined>,
+  /** The words themselves, so catalog names they state win outright. */
+  description = ""
 ): JevPresetReading | null {
+  const typed: NamedTerms = extractNamedTerms(description)
   let config: PresetConfig = { ...DEFAULT_PRESET_CONFIG }
   const fields: JevFieldReading[] = []
 
   for (const spec of JEV_PRESET_FIELDS) {
+    // A name in the description is an instruction: no judgment to make.
+    const typedValue = typed[spec.field as keyof NamedTerms]
+    if (typedValue) {
+      config = { ...config, [spec.field]: typedValue } as PresetConfig
+      fields.push({
+        field: spec.field,
+        label: spec.label,
+        value: typedValue,
+        probability: 1,
+        stated: true,
+        source: "typed",
+      })
+      continue
+    }
+
     const probabilities = answers[spec.field]?.probabilities
     // Only a missing answer is a broken response. A field Jev has nothing to
     // say about is ordinary, and keeps the preset default below.
@@ -121,13 +145,15 @@ export function readPresetFromJev(
       0,
     ]
 
+    const stated = (probabilities[UNSPECIFIED] ?? 0) < STATED_BELOW_UNSPECIFIED
     config = { ...config, [spec.field]: value } as PresetConfig
     fields.push({
       field: spec.field,
       label: spec.label,
       value: String(value),
       probability: total > 0 ? p / total : 0,
-      stated: (probabilities[UNSPECIFIED] ?? 0) < STATED_BELOW_UNSPECIFIED,
+      stated,
+      source: stated ? "asked" : "inferred",
     })
   }
 
