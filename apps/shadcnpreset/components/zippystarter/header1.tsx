@@ -32,6 +32,7 @@ import {
   GaugeIcon,
   HeartIcon,
   PaintBrushIcon,
+  SparkleIcon,
   WrenchIcon,
   ListIcon,
 } from "@phosphor-icons/react"
@@ -85,6 +86,12 @@ const HEADER_LINKS: ComponentLink[] = [
     href: "presets",
     label: "Presets",
     children: [
+      {
+        label: "Describe a preset",
+        href: "/describe",
+        description: "Describe a look and Jev builds it as you type.",
+        icon: SparkleIcon,
+      },
       {
         label: "High contrast",
         href: "/high-contrast-presets",
