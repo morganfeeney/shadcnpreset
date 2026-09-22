@@ -122,7 +122,7 @@ export function DescribePreset() {
           ) : (
             <div className="grid gap-1 py-6">
               <h1 className="text-2xl tracking-tight text-foreground">
-                Describe a preset
+                Describe a preset with Jev
               </h1>
               <p className="text-sm text-muted-foreground">
                 Say what you want it to feel like. The preset updates as you

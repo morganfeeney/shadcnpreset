@@ -6,6 +6,7 @@ import { buildUrlSetXml } from "@/lib/sitemap"
 const STATIC_PATHS = [
   "/",
   "/community",
+  "/describe",
   "/high-contrast-presets",
   "/changelog",
   "/assistant",
