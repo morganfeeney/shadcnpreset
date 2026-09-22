@@ -1,5 +1,6 @@
 import {
   DEFAULT_PRESET_CONFIG,
+  PRESET_BASE_COLORS,
   encodePreset,
   type PresetConfig,
 } from "shadcn/preset"
@@ -30,14 +31,20 @@ export type JevPresetReading = {
 /** A field counts as asked for once Jev puts less than even odds on "unspecified". */
 const STATED_BELOW_UNSPECIFIED = 0.5
 
-/** Grey accents: "monochrome", rather than a colour of their own. */
-const MONOCHROME_ACCENTS = new Set(["neutral", "stone", "zinc", "gray"])
+/**
+ * The neutral tones, which double as accents: neutral, stone and zinc read as
+ * plain monochrome, mauve, olive, mist and taupe as muted tone-on-tone. Either
+ * way an accent named after a tone means "match the neutrals", and the preview
+ * only allows it when it does. Taken from the library so it cannot fall behind
+ * the tones the catalog offers.
+ */
+const TONE_ACCENTS = new Set<string>(PRESET_BASE_COLORS)
 
-function monochromeToNeutrals(
+function toneAccentToNeutrals(
   value: string,
   baseColor: PresetConfig["baseColor"]
 ): string {
-  return MONOCHROME_ACCENTS.has(value) ? baseColor : value
+  return TONE_ACCENTS.has(value) ? baseColor : value
 }
 
 /**
@@ -82,16 +89,19 @@ export function readPresetFromJev(
     if (!probabilities) return null
 
     const ranked = Object.entries(probabilities)
-      .filter(([value]) => value !== UNSPECIFIED && value in spec.options)
+      .filter(([value]) => value !== UNSPECIFIED)
+      // Map before filtering: a tone the preview does not list as an accent
+      // (gray) would otherwise be dropped before it could match the neutrals.
       .map(([value, p]): [string, number] => [
-        // "Monochrome" only reads as a grey the neutrals allow: their own tone.
-        // Left alone it fails the check below and hands the accent to whatever
-        // colour happened to come next.
+        // An accent named after a neutral tone only renders as the neutrals'
+        // own tone. Left alone it fails the check below and hands the accent to
+        // whatever colour happened to come next.
         spec.field === "theme" || spec.field === "chartColor"
-          ? monochromeToNeutrals(value, config.baseColor)
+          ? toneAccentToNeutrals(value, config.baseColor)
           : value,
         p,
       ])
+      .filter(([value]) => value in spec.options)
       .sort((a, b) => b[1] - a[1])
     const total = ranked.reduce((sum, [, p]) => sum + p, 0)
 

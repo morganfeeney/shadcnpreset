@@ -48,14 +48,18 @@ describe("readPresetFromJev", () => {
     expect(decodePreset(reading!.code)).toMatchObject(reading!.config)
   })
 
-  it("falls back to the next accent when the top one cannot pair with the neutrals", () => {
-    // A tinted grey accent only pairs with the same neutrals.
-    const reading = readPresetFromJev(
-      answers({ theme: { mauve: 0.6, green: 0.4 } })
-    )
+  it.each(["neutral", "stone", "gray", "mauve", "olive", "mist", "taupe"])(
+    "matches a %s accent to the neutrals rather than picking a colour",
+    (tone) => {
+      // Every neutral tone works as an accent only when it is the tone the
+      // neutrals already use — otherwise the preview refuses it.
+      const reading = readPresetFromJev(
+        answers({ theme: { [tone]: 0.9, teal: 0.1 } })
+      )
 
-    expect(reading?.config.theme).toBe("green")
-  })
+      expect(reading?.config.theme).toBe("zinc")
+    }
+  )
 
   it("keeps a grey accent that matches the neutrals", () => {
     const reading = readPresetFromJev(
@@ -100,13 +104,13 @@ describe("readPresetFromJev", () => {
     })
   })
 
-  it("reads a grey accent as monochrome and matches it to the neutrals", () => {
+  it("still falls back to the next accent when no tone is involved", () => {
+    // fuchsia is not offered on the v4 preview's mist neutrals.
     const reading = readPresetFromJev(
-      answers({ theme: { neutral: 0.8, teal: 0.2 } })
+      answers({ baseColor: { mist: 0.9 }, theme: { zinc: 0.6, green: 0.4 } })
     )
 
-    // Not teal: a grey accent means no colour, and zinc is the neutral chosen.
-    expect(reading?.config.theme).toBe("zinc")
+    expect(reading?.config.theme).toBe("mist")
   })
 
   it("gives a style the corners the preview will actually render", () => {
