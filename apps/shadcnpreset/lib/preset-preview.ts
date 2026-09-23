@@ -127,6 +127,7 @@ export const LOCAL_PRESET_PREVIEW_EXAMPLES = [
   "store",
   "chat",
   "generated",
+  "builder",
 ] as const
 
 /**

@@ -4,6 +4,7 @@ import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import { getPresetGoogleFontStylesheetHrefs } from "@/lib/preset-google-fonts"
 import { isLocalPresetPreviewExample } from "@/lib/preset-preview"
 import { effectiveHeadingFont } from "@/lib/preset"
+import { isPageKind, knownBlocks } from "@/lib/page-builder/blocks"
 import { cn } from "@/lib/utils"
 
 import { PresetPreviewExampleShell } from "./preview-example-shell"
@@ -15,9 +16,12 @@ export default async function PresetPreviewExamplePage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ preset?: string }>
+  searchParams: Promise<{ preset?: string; kind?: string; blocks?: string }>
 }) {
-  const [{ slug }, { preset: raw }] = await Promise.all([params, searchParams])
+  const [{ slug }, { preset: raw, kind, blocks }] = await Promise.all([
+    params,
+    searchParams,
+  ])
   if (!isLocalPresetPreviewExample(slug)) {
     notFound()
   }
@@ -65,6 +69,11 @@ export default async function PresetPreviewExamplePage({
         <PresetPreviewExampleShell
           slug={slug}
           presetCode={code}
+          builtPage={
+            kind && isPageKind(kind)
+              ? { kind, blocks: knownBlocks(kind, blocks?.split(",") ?? []) }
+              : undefined
+          }
           fontReadyGateKey={fontReadyGateKey}
           bodyStyleClass={styleClass}
           bodyBaseColorClass={baseColorClass}

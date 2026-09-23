@@ -20,7 +20,9 @@
     "eval:describe": "tsx ./scripts/eval-describe-prompts.ts",
     "generate:preview-catalog": "tsx ./scripts/generate-preview-catalog.ts",
     "format": "prettier --write \"**/*.{ts,tsx,css}\"",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "import:shadcncraft": "tsx ./scripts/import-shadcncraft.ts",
+    "generate:page-builder-catalog": "tsx ./scripts/generate-page-builder-catalog.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.52",
