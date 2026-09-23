@@ -112,7 +112,10 @@ export function DescribePreset() {
   return (
     <div className="w-full">
       <main className="grid gap-2">
-        <Container aria-label="Preset details and actions" className="max-w-full">
+        <Container
+          aria-label="Preset details and actions"
+          className="max-w-full"
+        >
           {data ? (
             <PresetLiveHero
               initialCode={data.code}
@@ -120,12 +123,12 @@ export function DescribePreset() {
               sharePath={`/preset/${data.code}`}
             />
           ) : (
-            <div className="grid gap-1 py-6">
+            <div className="grid py-6">
               <h1 className="text-2xl tracking-tight text-foreground">
-                Describe a preset with Jev
+                Describe your ideal preset
               </h1>
               <p className="text-sm text-muted-foreground">
-                Say what you want it to feel like. The preset updates as you
+                Describe the look you want and Jev builds a shadcn preset as you
                 type.
               </p>
             </div>
