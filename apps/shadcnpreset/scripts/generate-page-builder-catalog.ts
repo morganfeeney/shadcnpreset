@@ -2,8 +2,9 @@
  * Writes the page builder's catalog from the shadcncraft blocks we have
  * imported:
  *
- * - lib/page-builder/variants.ts — each section's variants, with shadcncraft's
- *   own title and description, which Jev reads to pick between them.
+ * - lib/page-builder/variants.ts — the variants of each section and layout
+ *   category, with shadcncraft's own title and description, which Jev reads
+ *   to pick between them.
  * - components/page-builder/block-loaders.ts — one lazy component per block,
  *   so a built page downloads only the blocks on it.
  *
@@ -16,7 +17,10 @@ import { execFileSync } from "node:child_process"
 import { readFileSync, readdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
-import { PAGE_SECTIONS } from "../lib/page-builder/sections"
+import {
+  LAYOUT_CATEGORIES,
+  PAGE_SECTIONS,
+} from "../lib/page-builder/sections"
 import { viewShadcncraftItems } from "./lib/shadcncraft-registry"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
@@ -25,21 +29,38 @@ const VARIANTS_OUT = path.join(ROOT, "lib/page-builder/variants.ts")
 const LOADERS_OUT = path.join(ROOT, "components/page-builder/block-loaders.ts")
 const BATCH = 25
 
+/**
+ * A layout slot takes part of a block, not all of it: an app shell is a
+ * sidebar and a header around its content, and the header is its own
+ * category, so the sidebar slot loads just the sidebar.
+ */
+const LOADER_OVERRIDES: Record<string, string> = {
+  "app-shell": "components/app-sidebar",
+}
+
 type Block = {
   id: string
   section: string
   n: number
+  /** Module under the block's folder, without extension. */
+  file: string
   exportName: string
   isDefault: boolean
 }
 
 function readBlocks(): Block[] {
-  const sections = new Set(PAGE_SECTIONS.map((section) => section.id))
+  const categories = new Set([
+    ...PAGE_SECTIONS.map((section) => section.id),
+    ...Object.values(LAYOUT_CATEGORIES).flatMap((slot) =>
+      slot.map((category) => category.id)
+    ),
+  ])
   return readdirSync(BLOCKS)
     .map((id) => {
       const match = id.match(/^(.+)-(\d+)$/)
-      if (!match || !sections.has(match[1])) return null
-      const source = readFileSync(path.join(BLOCKS, id, "index.tsx"), "utf8")
+      if (!match || !categories.has(match[1])) return null
+      const file = LOADER_OVERRIDES[match[1]] ?? "index"
+      const source = readFileSync(path.join(BLOCKS, id, `${file}.tsx`), "utf8")
       const named = source.match(/^export function ([A-Z]\w*)/m)
       const fallback = source.match(/^export default function ([A-Z]\w*)/m)
       const exportName = named?.[1] ?? fallback?.[1]
@@ -48,6 +69,7 @@ function readBlocks(): Block[] {
         id,
         section: match[1],
         n: Number(match[2]),
+        file,
         exportName,
         isDefault: !named,
       }
@@ -101,7 +123,7 @@ export const PAGE_BLOCK_VARIANTS: Record<string, PageBlockVariant[]> = ${JSON.st
     .map((block) => {
       const pick = block.isDefault ? "mod.default" : `mod.${block.exportName}`
       return `  "${block.id}": dynamic(() =>
-    import("@/components/shadcncraft-examples/blocks/${block.id}").then(
+    import("@/components/shadcncraft-examples/blocks/${block.id}${block.file === "index" ? "" : `/${block.file}`}").then(
       (mod) => ${pick}
     )
   ),`
@@ -126,7 +148,10 @@ ${loaders}
     stdio: "ignore",
   })
 
-  const missing = PAGE_SECTIONS.filter((section) => !variants[section.id])
+  const missing = [
+    ...PAGE_SECTIONS,
+    ...Object.values(LAYOUT_CATEGORIES).flat(),
+  ].filter((section) => !variants[section.id])
   console.log(
     `${blocks.length} blocks in ${Object.keys(variants).length} sections.` +
       (missing.length

@@ -1,5 +1,52 @@
-import { isPageKind } from "@/lib/page-builder/blocks"
-import type { PageKind } from "@/lib/page-builder/sections"
+import { isPageKind, knownBlocks, knownLayout } from "@/lib/page-builder/blocks"
+import {
+  LAYOUT_SLOTS,
+  type PageKind,
+  type PageLayout,
+} from "@/lib/page-builder/sections"
+
+/** Everything the preview frame renders: the page's kind, blocks and layout. */
+export type BuiltPageSpec = {
+  kind: PageKind
+  blocks: string[]
+  layout: PageLayout
+}
+
+/**
+ * Reads a spec from the frame's URL or a message, keeping only what the kind
+ * and slots allow. Null when there is no usable kind.
+ */
+export function readBuiltPageSpec(
+  input: Partial<Record<string, unknown>>
+): BuiltPageSpec | null {
+  const { kind } = input
+  if (typeof kind !== "string" || !isPageKind(kind)) return null
+  const blocks =
+    typeof input.blocks === "string"
+      ? input.blocks.split(",")
+      : Array.isArray(input.blocks)
+        ? input.blocks.filter((id): id is string => typeof id === "string")
+        : []
+  return {
+    kind,
+    blocks: knownBlocks(kind, blocks),
+    layout: knownLayout(input),
+  }
+}
+
+/** The frame's URL for a spec; the preset is the only thing that reloads it. */
+export function builtPageSrc(preset: string, spec: BuiltPageSpec): string {
+  const params = new URLSearchParams({
+    preset,
+    kind: spec.kind,
+    blocks: spec.blocks.join(","),
+  })
+  for (const slot of LAYOUT_SLOTS) {
+    const id = spec.layout[slot]
+    if (id) params.set(slot, id)
+  }
+  return `/preset-preview/builder?${params}`
+}
 
 /**
  * The builder re-lays out a loaded frame by message instead of reloading it,
@@ -9,24 +56,23 @@ import type { PageKind } from "@/lib/page-builder/sections"
 export const PAGE_BUILDER_BLOCKS_MESSAGE_TYPE =
   "shadcnpreset:page-builder-blocks"
 
-export type PageBuilderBlocksMessage = {
-  type: typeof PAGE_BUILDER_BLOCKS_MESSAGE_TYPE
-  kind: PageKind
-  blocks: string[]
+export function pageBuilderBlocksMessage(spec: BuiltPageSpec) {
+  return {
+    type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
+    kind: spec.kind,
+    blocks: spec.blocks,
+    ...spec.layout,
+  }
 }
 
-export function isPageBuilderBlocksMessage(
+/** The spec a layout message carries, or null for anything else. */
+export function readPageBuilderBlocksMessage(
   value: unknown
-): value is PageBuilderBlocksMessage {
-  if (!value || typeof value !== "object") return false
+): BuiltPageSpec | null {
+  if (!value || typeof value !== "object") return null
   const message = value as Record<string, unknown>
-  return (
-    message.type === PAGE_BUILDER_BLOCKS_MESSAGE_TYPE &&
-    typeof message.kind === "string" &&
-    isPageKind(message.kind) &&
-    Array.isArray(message.blocks) &&
-    message.blocks.every((id) => typeof id === "string")
-  )
+  if (message.type !== PAGE_BUILDER_BLOCKS_MESSAGE_TYPE) return null
+  return readBuiltPageSpec(message)
 }
 
 /**

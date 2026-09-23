@@ -1,8 +1,12 @@
 import { isPageKind, sectionsForKind } from "@/lib/page-builder/blocks"
 import {
+  KIND_LAYOUT,
+  LAYOUT_CATEGORIES,
+  LAYOUT_SLOTS,
   PAGE_KIND_DESCRIPTIONS,
   PAGE_SECTIONS,
   type PageKind,
+  type PageLayout,
 } from "@/lib/page-builder/sections"
 import { PAGE_BLOCK_VARIANTS } from "@/lib/page-builder/variants"
 
@@ -39,9 +43,9 @@ export type PageVariantReading = {
 export type PageSectionReading = {
   id: string
   label: string
-  /** Frames are on every page; only their variant is a judgment. */
-  frame: boolean
-  /** Jev's probability that the page includes this section; 1 for frames. */
+  /** In every draft; only its variant is a judgment. */
+  always: boolean
+  /** Jev's probability that the page includes this section; 1 if always. */
   probability: number
   included: boolean
   /** Likeliest first. A single-variant section has one, at 1. */
@@ -55,6 +59,20 @@ export type PageReading = {
   sections: PageSectionReading[]
   /** The block Jev put on the page for each included section, in page order. */
   chosen: string[]
+  /** The header, sidebar and footer around the blocks. */
+  layout: PageLayout
+}
+
+function variantQuestion(label: string, sectionId: string) {
+  return {
+    type: "choice",
+    instructions: {
+      section: label,
+      question:
+        "Which design of the `section` section best suits the page described by `description` — its purpose, audience, content and mood?",
+    },
+    criteria: variantCriteria(sectionId),
+  }
 }
 
 function variantCriteria(sectionId: string) {
@@ -70,7 +88,8 @@ function variantCriteria(sectionId: string) {
 
 /**
  * One Choice for the kind of page; for every section of every kind, a Noul
- * for whether the page has it and a Choice between its variants.
+ * for whether the page has it and a Choice between its variants; and a
+ * Choice between the variants of every header, sidebar and footer.
  *
  * All but the kind question are speculative: they run alongside it rather
  * than after it, and only the chosen kind's answers are read. That costs
@@ -90,7 +109,7 @@ export function buildPageQuestions() {
     const variants = PAGE_BLOCK_VARIANTS[section.id]
     if (!variants?.length) continue
 
-    if (!section.frame) {
+    if (!section.always) {
       questions[`${SECTION_QUESTION_PREFIX}${section.id}`] = {
         type: "noul",
         instructions: {
@@ -107,15 +126,19 @@ export function buildPageQuestions() {
     }
 
     if (variants.length > 1) {
-      questions[`${VARIANT_QUESTION_PREFIX}${section.id}`] = {
-        type: "choice",
-        instructions: {
-          section: section.label,
-          question:
-            "Which design of the `section` section best suits the page described by `description` — its purpose, audience, content and mood?",
-        },
-        criteria: variantCriteria(section.id),
-      }
+      questions[`${VARIANT_QUESTION_PREFIX}${section.id}`] = variantQuestion(
+        section.label,
+        section.id
+      )
+    }
+  }
+
+  for (const category of Object.values(LAYOUT_CATEGORIES).flat()) {
+    if ((PAGE_BLOCK_VARIANTS[category.id]?.length ?? 0) > 1) {
+      questions[`${VARIANT_QUESTION_PREFIX}${category.id}`] = variantQuestion(
+        category.label,
+        category.id
+      )
     }
   }
 
@@ -143,9 +166,10 @@ function readVariants(
 }
 
 /**
- * Turns one System One response into the page it describes: a kind, and
- * that kind's sections in page order with the variant each should use. Null
- * when the response is missing answers.
+ * Turns one System One response into the page it describes: a kind, that
+ * kind's sections in page order with the variant each should use, and the
+ * header, sidebar and footer around them. Null when the response is missing
+ * answers.
  */
 export function readPageFromJev(
   answers: PageBuilderAnswers
@@ -162,21 +186,21 @@ export function readPageFromJev(
   const sections: PageSectionReading[] = []
   for (const section of sectionsForKind(kind)) {
     const variants = readVariants(section.id, answers)
-    const probability = section.frame
+    const probability = section.always
       ? 1
       : answers[`${SECTION_QUESTION_PREFIX}${section.id}`]?.noul
     if (!variants || typeof probability !== "number") return null
     sections.push({
       id: section.id,
       label: section.label,
-      frame: Boolean(section.frame),
+      always: Boolean(section.always),
       probability,
-      included: section.frame || probability >= INCLUDE_AT,
+      included: section.always || probability >= INCLUDE_AT,
       variants,
     })
   }
 
-  const body = sections.filter((section) => !section.frame)
+  const body = sections.filter((section) => !section.always)
   const byLikelihood = [...body].sort((a, b) => b.probability - a.probability)
   const includedCount = body.filter((section) => section.included).length
   const max = MAX_SECTIONS[kind] ?? Infinity
@@ -189,10 +213,23 @@ export function readPageFromJev(
     for (const section of body) section.included = keep.has(section)
   }
 
+  const layout = {} as PageLayout
+  for (const slot of LAYOUT_SLOTS) {
+    const category = KIND_LAYOUT[kind][slot]
+    if (!category || !PAGE_BLOCK_VARIANTS[category]?.length) {
+      layout[slot] = null
+      continue
+    }
+    const variants = readVariants(category, answers)
+    if (!variants) return null
+    layout[slot] = variants[0].id
+  }
+
   return {
     kind,
     kindProbability,
     sections,
+    layout,
     chosen: sections
       .filter((section) => section.included)
       .map((section) => section.variants[0].id),

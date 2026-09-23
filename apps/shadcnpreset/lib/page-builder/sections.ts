@@ -6,7 +6,8 @@
  *
  * Blocks take no props — their content is baked in — so building a page is
  * choosing sections and a variant of each, never writing them. Jev decides
- * both; the order below and which sections frame a page stay in code.
+ * both; the order below stays in code. The header, sidebar and footer around
+ * the blocks are layout slots, chosen apart from them.
  */
 
 export const PAGE_KINDS = ["marketing", "store", "dashboard"] as const
@@ -38,8 +39,8 @@ export type PageSection = {
    */
   shows?: string
   kinds: readonly PageKind[]
-  /** A page always has its frame: the hero or nav above, the footer below. */
-  frame?: boolean
+  /** In every draft Jev lays out; the visitor can still remove it. */
+  always?: boolean
 }
 
 /**
@@ -48,14 +49,9 @@ export type PageSection = {
  * questions about.
  */
 export const PAGE_SECTIONS: readonly PageSection[] = [
-  // Frames. Every hero brings its own top navigation.
-  { id: "hero", label: "Hero", kinds: ["marketing"], frame: true },
-  {
-    id: "top-navigation",
-    label: "Navigation",
-    kinds: ["store"],
-    frame: true,
-  },
+  // The page's navigation is its header, chosen apart from the blocks, so a
+  // hero here renders without the nav shadcncraft ships it with.
+  { id: "hero", label: "Hero", kinds: ["marketing"], always: true },
 
   // Marketing
   {
@@ -314,10 +310,55 @@ export const PAGE_SECTIONS: readonly PageSection[] = [
     shows: "a closing banner asking the visitor to sign up or get started",
     kinds: ["marketing"],
   },
-  {
-    id: "footer",
-    label: "Footer",
-    kinds: ["marketing", "store"],
-    frame: true,
-  },
 ]
+
+/** The parts of a page around its blocks, each chosen on its own. */
+export const LAYOUT_SLOTS = ["header", "sidebar", "footer"] as const
+export type LayoutSlot = (typeof LAYOUT_SLOTS)[number]
+
+/** A block id per slot, or null for none. */
+export type PageLayout = Record<LayoutSlot, string | null>
+
+export const LAYOUT_SLOT_LABELS: Record<LayoutSlot, string> = {
+  header: "Header",
+  sidebar: "Sidebar",
+  footer: "Footer",
+}
+
+/**
+ * The shadcncraft categories that can fill each slot. Every app header has a
+ * sidebar trigger, so a page with one renders inside the sidebar's provider
+ * even without a sidebar.
+ */
+export const LAYOUT_CATEGORIES: Record<
+  LayoutSlot,
+  readonly { id: string; label: string }[]
+> = {
+  header: [
+    { id: "top-navigation", label: "Website navigation" },
+    { id: "app-shell-header", label: "App header" },
+  ],
+  sidebar: [{ id: "app-shell", label: "App sidebar" }],
+  footer: [{ id: "footer", label: "Footer" }],
+}
+
+/**
+ * Where Jev's layout comes from for each kind: which category fills each
+ * slot, if any. Jev picks the variant; whether a slot is filled is policy.
+ */
+export const KIND_LAYOUT: Record<
+  PageKind,
+  Record<LayoutSlot, string | null>
+> = {
+  marketing: {
+    header: "top-navigation",
+    sidebar: null,
+    footer: "footer",
+  },
+  store: { header: "top-navigation", sidebar: null, footer: "footer" },
+  dashboard: {
+    header: "app-shell-header",
+    sidebar: "app-shell",
+    footer: null,
+  },
+}

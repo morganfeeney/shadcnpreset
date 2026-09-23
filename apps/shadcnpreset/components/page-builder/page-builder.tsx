@@ -63,12 +63,21 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useMyPresets } from "@/hooks/use-my-presets"
 import type { JevPresetReading } from "@/lib/jev-presets/read-preset"
-import { blockChoicesForKind, knownBlocks } from "@/lib/page-builder/blocks"
+import {
+  blockChoicesForKind,
+  defaultLayout,
+  knownBlocks,
+  layoutChoices,
+} from "@/lib/page-builder/blocks"
 import type { PageReading } from "@/lib/page-builder/read-page"
 import {
+  LAYOUT_SLOTS,
+  LAYOUT_SLOT_LABELS,
   PAGE_KINDS,
   PAGE_KIND_LABELS,
+  type LayoutSlot,
   type PageKind,
+  type PageLayout,
 } from "@/lib/page-builder/sections"
 import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import { parsePresetInput } from "@/lib/parse-preset-input"
@@ -93,11 +102,16 @@ type Draft = {
   basedOn?: PageReading
   kind: PageKind
   rows: Row[]
+  layout: PageLayout
 }
 
 const MIN_LENGTH = 3
 const DEFAULT_PRESET = encodePreset(DEFAULT_PRESET_CONFIG)
-const EMPTY_DRAFT: Draft = { kind: "marketing", rows: [] }
+const EMPTY_DRAFT: Draft = {
+  kind: "marketing",
+  rows: [],
+  layout: defaultLayout("marketing"),
+}
 
 const IDEAS = [
   { label: "Coffee shop", description: "landing page for a cosy coffee shop" },
@@ -140,6 +154,7 @@ function draftFromReading(reading: PageReading): Draft {
       key: `jev-${index}-${block}`,
       block,
     })),
+    layout: reading.layout,
   }
 }
 
@@ -176,8 +191,8 @@ export function PageBuilder() {
     jev && draft.basedOn !== jev.page ? draftFromReading(jev.page) : draft
   const blocks = page.rows.map((row) => row.block)
 
-  function edit(next: Pick<Draft, "kind" | "rows">) {
-    setDraft({ ...next, basedOn: jev?.page })
+  function edit(next: Partial<Omit<Draft, "basedOn">>) {
+    setDraft({ ...page, ...next, basedOn: jev?.page })
   }
 
   function send(text: string) {
@@ -225,6 +240,9 @@ export function PageBuilder() {
                     rows: page.rows.filter(
                       (row) => knownBlocks(kind, [row.block]).length
                     ),
+                    // A dashboard is framed by an app shell, a website by its
+                    // navigation and footer: a new kind starts from its own.
+                    layout: defaultLayout(kind),
                   })
                 }
               />
@@ -236,7 +254,16 @@ export function PageBuilder() {
               <BlockList
                 kind={page.kind}
                 rows={page.rows}
-                onChange={(rows) => edit({ kind: page.kind, rows })}
+                onChange={(rows) => edit({ rows })}
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel>Layout</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <LayoutPicker
+                layout={page.layout}
+                onChange={(layout) => edit({ layout })}
               />
             </SidebarGroupContent>
           </SidebarGroup>
@@ -275,8 +302,7 @@ export function PageBuilder() {
             <>
               <BuiltPageFrame
                 preset={presetCode}
-                kind={page.kind}
-                blocks={blocks}
+                spec={{ kind: page.kind, blocks, layout: page.layout }}
                 dimmed={busy}
               />
               {/* Over the page, as the assistant's composer sits over its
@@ -349,6 +375,94 @@ function KindPicker({
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
+  )
+}
+
+/** "None" in a slot's menu; Base UI selects need a non-null item value. */
+const NO_BLOCK = "none"
+
+/**
+ * The header, sidebar and footer around the blocks, one menu each. Any
+ * choice goes with any other: an app header without a sidebar still works.
+ */
+function LayoutPicker({
+  layout,
+  onChange,
+}: {
+  layout: PageLayout
+  onChange: (layout: PageLayout) => void
+}) {
+  return (
+    <div className="grid gap-1.5">
+      {LAYOUT_SLOTS.map((slot) => (
+        <LayoutSlotPicker
+          key={slot}
+          slot={slot}
+          value={layout[slot]}
+          onChange={(id) => onChange({ ...layout, [slot]: id })}
+        />
+      ))}
+    </div>
+  )
+}
+
+function LayoutSlotPicker({
+  slot,
+  value,
+  onChange,
+}: {
+  slot: LayoutSlot
+  value: string | null
+  onChange: (id: string | null) => void
+}) {
+  const groups = layoutChoices(slot)
+  const label = LAYOUT_SLOT_LABELS[slot]
+  const items = [
+    { value: NO_BLOCK, label: `No ${label.toLowerCase()}` },
+    ...groups.flatMap(({ category, variants }) =>
+      variants.map((variant) => ({
+        value: variant.id,
+        label: `${category.label} · ${variant.title}`,
+      }))
+    ),
+  ]
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-14 shrink-0 text-xs text-muted-foreground">
+        {label}
+      </span>
+      <Select
+        items={items}
+        value={value ?? NO_BLOCK}
+        onValueChange={(id: string | null) => {
+          if (id) onChange(id === NO_BLOCK ? null : id)
+        }}
+      >
+        <SelectTrigger
+          size="sm"
+          aria-label={label}
+          className="min-w-0 flex-1 bg-background text-xs"
+        >
+          <SelectValue className="truncate" />
+        </SelectTrigger>
+        <SelectContent className="max-h-80">
+          <SelectGroup>
+            <SelectItem value={NO_BLOCK}>None</SelectItem>
+          </SelectGroup>
+          {groups.map(({ category, variants }) => (
+            <SelectGroup key={category.id}>
+              <SelectLabel>{category.label}</SelectLabel>
+              {variants.map((variant) => (
+                <SelectItem key={variant.id} value={variant.id}>
+                  {variant.title}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }
 

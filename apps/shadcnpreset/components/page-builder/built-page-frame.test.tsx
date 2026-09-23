@@ -5,8 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { BuiltPage } from "@/components/page-builder/built-page"
 import { BuiltPageFrame } from "@/components/page-builder/built-page-frame"
 import {
-  PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
   PAGE_BUILDER_READY_MESSAGE_TYPE,
+  pageBuilderBlocksMessage,
+  type BuiltPageSpec,
 } from "@/lib/page-builder/messages"
 
 vi.mock("@/components/preset-v4-frame", () => ({
@@ -23,11 +24,24 @@ vi.mock("@/components/page-builder/block-loaders", () => ({
   ),
 }))
 
-vi.mock("@/components/shadcncraft-examples/blocks/app-shell-1", () => ({
-  AppShell1: ({ children }: { children: React.ReactNode }) => (
+vi.mock("@/components/cn-ui/sidebar", () => ({
+  SidebarProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="app-shell">{children}</div>
   ),
+  SidebarInset: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }))
+
+const NO_LAYOUT = { header: null, sidebar: null, footer: null }
+
+function spec(
+  kind: "marketing" | "store" | "dashboard",
+  blocks: string[],
+  layout: BuiltPageSpec["layout"] = NO_LAYOUT
+): BuiltPageSpec {
+  return { kind, blocks, layout }
+}
 
 /** A message as it would arrive, from this origin unless told otherwise. */
 function receive(data: unknown, origin = window.location.origin) {
@@ -50,8 +64,7 @@ describe("BuiltPageFrame", () => {
     const { rerender } = render(
       <BuiltPageFrame
         preset="b0"
-        kind="dashboard"
-        blocks={["metric-cards-1"]}
+        spec={spec("dashboard", ["metric-cards-1"])}
         dimmed={false}
       />
     )
@@ -59,8 +72,7 @@ describe("BuiltPageFrame", () => {
     rerender(
       <BuiltPageFrame
         preset="b0"
-        kind="marketing"
-        blocks={["hero-1", "footer-1"]}
+        spec={spec("marketing", ["hero-1", "faqs-1"])}
         dimmed={false}
       />
     )
@@ -69,11 +81,7 @@ describe("BuiltPageFrame", () => {
     receive({ type: PAGE_BUILDER_READY_MESSAGE_TYPE })
 
     expect(posted).toHaveBeenLastCalledWith(
-      {
-        type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
-        kind: "marketing",
-        blocks: ["hero-1", "footer-1"],
-      },
+      pageBuilderBlocksMessage(spec("marketing", ["hero-1", "faqs-1"])),
       window.location.origin
     )
   })
@@ -83,8 +91,7 @@ describe("BuiltPageFrame", () => {
     const { rerender } = render(
       <BuiltPageFrame
         preset="b0"
-        kind="marketing"
-        blocks={["hero-1", "footer-1"]}
+        spec={spec("marketing", ["hero-1", "faqs-1"])}
         dimmed={false}
       />
     )
@@ -93,18 +100,13 @@ describe("BuiltPageFrame", () => {
     rerender(
       <BuiltPageFrame
         preset="b0"
-        kind="marketing"
-        blocks={["footer-1", "hero-1"]}
+        spec={spec("marketing", ["faqs-1", "hero-1"])}
         dimmed={false}
       />
     )
 
     expect(posted).toHaveBeenLastCalledWith(
-      {
-        type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
-        kind: "marketing",
-        blocks: ["footer-1", "hero-1"],
-      },
+      pageBuilderBlocksMessage(spec("marketing", ["faqs-1", "hero-1"])),
       window.location.origin
     )
   })
@@ -114,8 +116,7 @@ describe("BuiltPageFrame", () => {
     render(
       <BuiltPageFrame
         preset="b0"
-        kind="marketing"
-        blocks={["hero-1"]}
+        spec={spec("marketing", ["hero-1"])}
         dimmed={false}
       />
     )
@@ -125,41 +126,85 @@ describe("BuiltPageFrame", () => {
 })
 
 describe("BuiltPage", () => {
+  const rendered = () =>
+    screen.getAllByTestId("block").map((block) => block.textContent)
+
   it("says it is listening, then follows the builder's layout", () => {
     const posted = vi.spyOn(window, "postMessage")
-    render(<BuiltPage kind="dashboard" blocks={["metric-cards-1"]} />)
+    render(
+      <BuiltPage
+        {...spec("dashboard", ["metric-cards-1"], {
+          header: "app-shell-header-1",
+          sidebar: "app-shell-1",
+          footer: null,
+        })}
+      />
+    )
 
     expect(posted).toHaveBeenCalledWith(
       { type: PAGE_BUILDER_READY_MESSAGE_TYPE },
       window.location.origin
     )
 
-    receive({
-      type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
-      kind: "marketing",
-      blocks: ["hero-1", "pricing-4", "footer-1"],
-    })
+    receive(
+      pageBuilderBlocksMessage(
+        spec("marketing", ["hero-1", "pricing-4"], {
+          header: "top-navigation-2",
+          sidebar: null,
+          footer: "footer-3",
+        })
+      )
+    )
 
+    // A website: no app shell, the header above the blocks, the footer below.
     expect(screen.queryByTestId("app-shell")).toBeNull()
-    expect(screen.getAllByTestId("block").map((b) => b.textContent)).toEqual([
+    expect(rendered()).toEqual([
+      "top-navigation-2",
       "hero-1",
       "pricing-4",
+      "footer-3",
+    ])
+  })
+
+  it("puts a sidebar's page in the app shell, header first", () => {
+    render(
+      <BuiltPage
+        {...spec("marketing", ["hero-1"], {
+          header: "top-navigation-1",
+          sidebar: "app-shell-2",
+          footer: "footer-1",
+        })}
+      />
+    )
+    expect(screen.getByTestId("app-shell")).toBeTruthy()
+    expect(rendered()).toEqual([
+      "app-shell-2",
+      "top-navigation-1",
+      "hero-1",
       "footer-1",
     ])
   })
 
+  it("keeps an app header in the app shell even without a sidebar", () => {
+    render(
+      <BuiltPage
+        {...spec("dashboard", ["win-rate-1"], {
+          header: "app-shell-header-3",
+          sidebar: null,
+          footer: null,
+        })}
+      />
+    )
+    expect(screen.getByTestId("app-shell")).toBeTruthy()
+    expect(rendered()).toEqual(["app-shell-header-3", "win-rate-1"])
+  })
+
   it("ignores a layout from another origin", () => {
-    render(<BuiltPage kind="marketing" blocks={["hero-1"]} />)
+    render(<BuiltPage {...spec("marketing", ["hero-1"])} />)
     receive(
-      {
-        type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
-        kind: "marketing",
-        blocks: ["footer-1"],
-      },
+      pageBuilderBlocksMessage(spec("marketing", ["faqs-1"])),
       "https://elsewhere.test"
     )
-    expect(screen.getAllByTestId("block").map((b) => b.textContent)).toEqual([
-      "hero-1",
-    ])
+    expect(rendered()).toEqual(["hero-1"])
   })
 })

@@ -1,7 +1,12 @@
 import {
+  KIND_LAYOUT,
+  LAYOUT_CATEGORIES,
+  LAYOUT_SLOTS,
   PAGE_KINDS,
   PAGE_SECTIONS,
+  type LayoutSlot,
   type PageKind,
+  type PageLayout,
   type PageSection,
 } from "@/lib/page-builder/sections"
 import { PAGE_BLOCK_VARIANTS } from "@/lib/page-builder/variants"
@@ -41,4 +46,52 @@ export function knownBlocks(kind: PageKind, ids: Iterable<string>): string[] {
     )
   )
   return [...ids].filter((id) => allowed.has(id))
+}
+
+/** Every block that can fill a slot, grouped by category. */
+export function layoutChoices(slot: LayoutSlot) {
+  return LAYOUT_CATEGORIES[slot]
+    .map((category) => ({
+      category,
+      variants: PAGE_BLOCK_VARIANTS[category.id] ?? [],
+    }))
+    .filter(({ variants }) => variants.length)
+}
+
+/** A layout with every id checked against its slot; anything else is none. */
+export function knownLayout(
+  layout: Partial<Record<string, unknown>>
+): PageLayout {
+  return Object.fromEntries(
+    LAYOUT_SLOTS.map((slot) => {
+      const id = layout[slot]
+      const allowed =
+        typeof id === "string" &&
+        LAYOUT_CATEGORIES[slot].some((category) =>
+          PAGE_BLOCK_VARIANTS[category.id]?.some((variant) => variant.id === id)
+        )
+      return [slot, allowed ? id : null]
+    })
+  ) as PageLayout
+}
+
+/** App headers carry a sidebar trigger, so they need the sidebar's provider. */
+export function isAppHeader(blockId: string | null): boolean {
+  return blockId !== null && sectionOfBlock(blockId) === "app-shell-header"
+}
+
+/**
+ * A kind's layout before Jev has read anything: the first variant of each
+ * category the kind fills its slots from.
+ */
+export function defaultLayout(kind: PageKind): PageLayout {
+  return Object.fromEntries(
+    LAYOUT_SLOTS.map((slot) => {
+      const category = KIND_LAYOUT[kind][slot]
+      return [
+        slot,
+        category ? (PAGE_BLOCK_VARIANTS[category]?.[0]?.id ?? null) : null,
+      ]
+    })
+  ) as PageLayout
 }

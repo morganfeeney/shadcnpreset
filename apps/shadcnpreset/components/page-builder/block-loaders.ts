@@ -14,6 +14,46 @@ export const BLOCK_LOADERS: Record<string, React.ComponentType> = {
       (mod) => mod.AiInsights1
     )
   ),
+  "app-shell-1": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-1/components/app-sidebar").then(
+      (mod) => mod.AppSidebar
+    )
+  ),
+  "app-shell-2": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-2/components/app-sidebar").then(
+      (mod) => mod.AppSidebar
+    )
+  ),
+  "app-shell-3": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-3/components/app-sidebar").then(
+      (mod) => mod.AppSidebar
+    )
+  ),
+  "app-shell-header-1": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-header-1").then(
+      (mod) => mod.AppShellHeader1
+    )
+  ),
+  "app-shell-header-2": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-header-2").then(
+      (mod) => mod.AppShellHeader2
+    )
+  ),
+  "app-shell-header-3": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-header-3").then(
+      (mod) => mod.AppShellHeader3
+    )
+  ),
+  "app-shell-header-4": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-header-4").then(
+      (mod) => mod.AppShellHeader4
+    )
+  ),
+  "app-shell-header-5": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/app-shell-header-5").then(
+      (mod) => mod.AppShellHeader5
+    )
+  ),
   "attribution-breakdown-1": dynamic(() =>
     import("@/components/shadcncraft-examples/blocks/attribution-breakdown-1").then(
       (mod) => mod.AttributionBreakdown1
@@ -732,6 +772,11 @@ export const BLOCK_LOADERS: Record<string, React.ComponentType> = {
   "top-navigation-4": dynamic(() =>
     import("@/components/shadcncraft-examples/blocks/top-navigation-4").then(
       (mod) => mod.TopNavigation4
+    )
+  ),
+  "top-navigation-5": dynamic(() =>
+    import("@/components/shadcncraft-examples/blocks/top-navigation-5").then(
+      (mod) => mod.TopNavigation5
     )
   ),
   "traffic-by-channel-1": dynamic(() =>

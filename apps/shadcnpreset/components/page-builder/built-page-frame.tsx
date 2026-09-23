@@ -5,20 +5,13 @@ import { useEffect, useRef, useState } from "react"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Spinner } from "@/components/ui/spinner"
 import {
+  builtPageSrc,
   isPageBuilderReadyMessage,
-  PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
+  pageBuilderBlocksMessage,
+  type BuiltPageSpec,
 } from "@/lib/page-builder/messages"
-import { PAGE_KIND_LABELS, type PageKind } from "@/lib/page-builder/sections"
+import { LAYOUT_SLOTS, PAGE_KIND_LABELS } from "@/lib/page-builder/sections"
 import { cn } from "@/lib/utils"
-
-function frameSrc(preset: string, kind: PageKind, blocks: string[]) {
-  const params = new URLSearchParams({
-    preset,
-    kind,
-    blocks: blocks.join(","),
-  })
-  return `/preset-preview/builder?${params}`
-}
 
 /**
  * The page in its own frame. Only a new preset reloads it — the preset's CSS
@@ -32,38 +25,40 @@ function frameSrc(preset: string, kind: PageKind, blocks: string[]) {
  */
 export function BuiltPageFrame({
   preset,
-  kind,
-  blocks,
+  spec,
   dimmed,
 }: {
   preset: string
-  kind: PageKind
-  blocks: string[]
+  spec: BuiltPageSpec
   dimmed: boolean
 }) {
   const frameWindowRef = useRef<Window | null>(null)
-  const layoutRef = useRef({ kind, blocks })
+  const specRef = useRef(spec)
   const [ready, setReady] = useState(false)
   // The URL is fixed per preset; the frame starts from whatever layout it
   // carries and asks for the current one when it is listening.
   const [frame, setFrame] = useState({
     preset,
-    src: frameSrc(preset, kind, blocks),
+    src: builtPageSrc(preset, spec),
   })
   if (frame.preset !== preset) {
-    setFrame({ preset, src: frameSrc(preset, kind, blocks) })
+    setFrame({ preset, src: builtPageSrc(preset, spec) })
   }
 
-  const layoutKey = `${kind}|${blocks.join(",")}`
+  const specKey = [
+    spec.kind,
+    spec.blocks.join(","),
+    ...LAYOUT_SLOTS.map((slot) => spec.layout[slot]),
+  ].join("|")
   useEffect(() => {
-    layoutRef.current = { kind, blocks }
+    specRef.current = spec
     frameWindowRef.current?.postMessage(
-      { type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE, kind, blocks },
+      pageBuilderBlocksMessage(spec),
       window.location.origin
     )
-    // layoutKey stands in for `blocks`, a new array every render.
+    // specKey stands in for `spec`, a new object every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutKey])
+  }, [specKey])
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -73,7 +68,7 @@ export function BuiltPageFrame({
       if (!frameWindow) return
       frameWindowRef.current = frameWindow
       frameWindow.postMessage(
-        { type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE, ...layoutRef.current },
+        pageBuilderBlocksMessage(specRef.current),
         window.location.origin
       )
       setReady(true)
@@ -90,7 +85,7 @@ export function BuiltPageFrame({
           dimmed && "opacity-60"
         )}
         src={frame.src}
-        title={`${PAGE_KIND_LABELS[kind]} preview`}
+        title={`${PAGE_KIND_LABELS[spec.kind]} preview`}
       />
       {ready ? null : (
         <div className="absolute inset-0 flex items-center justify-center bg-background">

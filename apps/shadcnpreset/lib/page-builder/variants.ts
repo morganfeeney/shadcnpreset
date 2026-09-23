@@ -26,6 +26,58 @@ export const PAGE_BLOCK_VARIANTS: Record<string, PageBlockVariant[]> = {
         "Alerts and opportunities surfaced automatically across the funnel.",
     },
   ],
+  "app-shell": [
+    {
+      id: "app-shell-1",
+      title: "Sidebar",
+      description:
+        "App shell with a standard sidebar, header, and content slot. Collapsed variant included.",
+    },
+    {
+      id: "app-shell-2",
+      title: "Floating sidebar",
+      description:
+        "App shell with a floating sidebar, header, and content slot. Collapsed variant included.",
+    },
+    {
+      id: "app-shell-3",
+      title: "Inset sidebar",
+      description:
+        "App shell with an inset sidebar, header, and content slot. Collapsed variant included.",
+    },
+  ],
+  "app-shell-header": [
+    {
+      id: "app-shell-header-1",
+      title: "App Shell Header 1",
+      description:
+        "App shell header with a page selector, date range presets, filters, and search.",
+    },
+    {
+      id: "app-shell-header-2",
+      title: "App Shell Header 2",
+      description:
+        "App shell header with a breadcrumb, faceted filters, and a search field.",
+    },
+    {
+      id: "app-shell-header-3",
+      title: "App Shell Header 3",
+      description:
+        "App shell header with a page selector, applied filters as removable chips, and a search field.",
+    },
+    {
+      id: "app-shell-header-4",
+      title: "App Shell Header 4",
+      description:
+        "App shell header with a page selector, filters, and a primary action.",
+    },
+    {
+      id: "app-shell-header-5",
+      title: "App Shell Header 5",
+      description:
+        "App shell header with a page selector, a period select, and a date range stepper.",
+    },
+  ],
   "attribution-breakdown": [
     {
       id: "attribution-breakdown-1",
@@ -954,6 +1006,12 @@ export const PAGE_BLOCK_VARIANTS: Record<string, PageBlockVariant[]> = {
       title: "Centered pill navigation with dropdown menu",
       description:
         "A centered top navigation where primary links sit inside a pill-style container, creating a strong visual anchor across large screens. Dropdown menus open from the center group to reveal secondary links in a compact panel. On small screens, the layout collapses into a full-height drawer with stacked links and clear primary actions, maintaining the same information structure while prioritizing tap comfort and readability.",
+    },
+    {
+      id: "top-navigation-5",
+      title: "Minimal center-aligned links with inline auth",
+      description:
+        "A stripped-back, center-aligned top navigation that prioritizes clarity and whitespace. Primary links sit in a single horizontal row with the brand anchored to the left and a lightweight login action on the right. On small screens, the layout collapses into a simple slide-out menu with stacked links and a single secondary action, keeping the structure familiar while reducing visual noise.",
     },
   ],
   "traffic-by-channel": [

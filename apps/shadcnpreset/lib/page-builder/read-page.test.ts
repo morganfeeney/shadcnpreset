@@ -6,7 +6,7 @@ import {
   readPageFromJev,
   type PageBuilderAnswers,
 } from "@/lib/page-builder/read-page"
-import { PAGE_SECTIONS } from "@/lib/page-builder/sections"
+import { LAYOUT_CATEGORIES, PAGE_SECTIONS } from "@/lib/page-builder/sections"
 import { PAGE_BLOCK_VARIANTS } from "@/lib/page-builder/variants"
 
 /**
@@ -21,7 +21,10 @@ function answersFor(
   rest = 0.1
 ): PageBuilderAnswers {
   const answers: PageBuilderAnswers = { page_kind: { probabilities: kinds } }
-  for (const section of PAGE_SECTIONS) {
+  for (const section of [
+    ...PAGE_SECTIONS,
+    ...Object.values(LAYOUT_CATEGORIES).flat(),
+  ]) {
     const options = PAGE_BLOCK_VARIANTS[section.id] ?? []
     if (!options.length) continue
     answers[`section:${section.id}`] = { noul: sections[section.id] ?? rest }
@@ -42,11 +45,10 @@ const ids = (reading: ReturnType<typeof readPageFromJev>) =>
   reading?.chosen.map((id) => id.replace(/-\d+$/, ""))
 
 describe("buildPageQuestions", () => {
-  it("asks whether each section belongs, except frames, which always do", () => {
+  it("asks whether each section belongs, except those always drafted", () => {
     const questions = buildPageQuestions()
     expect(questions["section:benefits"]).toBeDefined()
     expect(questions["section:hero"]).toBeUndefined()
-    expect(questions["section:footer"]).toBeUndefined()
   })
 
   it("asks for a variant only where there is a choice", () => {
@@ -54,10 +56,23 @@ describe("buildPageQuestions", () => {
     expect(questions["variant:hero"]).toBeDefined()
     expect(questions["variant:win-rate"]).toBeUndefined()
   })
+
+  it("asks which header, sidebar and footer, never whether", () => {
+    const questions = buildPageQuestions()
+    for (const id of [
+      "top-navigation",
+      "app-shell-header",
+      "app-shell",
+      "footer",
+    ]) {
+      expect(questions[`variant:${id}`]).toBeDefined()
+      expect(questions[`section:${id}`]).toBeUndefined()
+    }
+  })
 })
 
 describe("readPageFromJev", () => {
-  it("frames the page and keeps only the chosen kind's sections", () => {
+  it("keeps only the chosen kind's sections", () => {
     const reading = readPageFromJev(
       answersFor(
         { marketing: 0.2, store: 0.7, dashboard: 0.1 },
@@ -67,12 +82,7 @@ describe("readPageFromJev", () => {
     expect(reading?.kind).toBe("store")
     expect(reading?.kindProbability).toBe(0.7)
     // Pricing is marketing-only, however sure Jev is about it.
-    expect(ids(reading)).toEqual([
-      "top-navigation",
-      "product-list",
-      "checkout",
-      "footer",
-    ])
+    expect(ids(reading)).toEqual(["product-list", "checkout"])
     expect(reading?.sections.map((s) => s.id)).toEqual(
       sectionsForKind("store").map((s) => s.id)
     )
@@ -86,12 +96,7 @@ describe("readPageFromJev", () => {
         { hero: "hero-7", benefits: "benefits-4" }
       )
     )
-    expect(reading?.chosen).toEqual([
-      "hero-7",
-      "benefits-4",
-      "cta-1",
-      "footer-1",
-    ])
+    expect(reading?.chosen).toEqual(["hero-7", "benefits-4", "cta-1"])
     expect(reading?.sections[0].variants[0]).toMatchObject({ id: "hero-7" })
   })
 
@@ -99,7 +104,7 @@ describe("readPageFromJev", () => {
     const reading = readPageFromJev(
       answersFor({ marketing: 1 }, { cta: 0.95, benefits: 0.6, faqs: 0.7 })
     )
-    expect(ids(reading)).toEqual(["hero", "benefits", "faqs", "cta", "footer"])
+    expect(ids(reading)).toEqual(["hero", "benefits", "faqs", "cta"])
   })
 
   it("falls back to the likeliest three when too few clear the bar", () => {
@@ -109,13 +114,7 @@ describe("readPageFromJev", () => {
         { pricing: 0.45, benefits: 0.4, cta: 0.3, faqs: 0.6 }
       )
     )
-    expect(ids(reading)).toEqual([
-      "hero",
-      "benefits",
-      "pricing",
-      "faqs",
-      "footer",
-    ])
+    expect(ids(reading)).toEqual(["hero", "benefits", "pricing", "faqs"])
   })
 
   it("keeps a dashboard to its likeliest eight widgets, in page order", () => {
@@ -128,6 +127,36 @@ describe("readPageFromJev", () => {
       )
     )
     expect(ids(reading)).toEqual(widgets.slice(-8))
+  })
+
+  it("frames a website with Jev's navigation and footer", () => {
+    const reading = readPageFromJev(
+      answersFor(
+        { marketing: 1 },
+        { benefits: 0.9 },
+        { "top-navigation": "top-navigation-3", footer: "footer-2" }
+      )
+    )
+    expect(reading?.layout).toEqual({
+      header: "top-navigation-3",
+      sidebar: null,
+      footer: "footer-2",
+    })
+  })
+
+  it("frames a dashboard with Jev's app shell and no footer", () => {
+    const reading = readPageFromJev(
+      answersFor(
+        { dashboard: 1 },
+        { "win-rate": 0.9 },
+        { "app-shell": "app-shell-3", "app-shell-header": "app-shell-header-2" }
+      )
+    )
+    expect(reading?.layout).toEqual({
+      header: "app-shell-header-2",
+      sidebar: "app-shell-3",
+      footer: null,
+    })
   })
 
   it("gives a single-variant section its only variant", () => {
@@ -151,22 +180,25 @@ describe("readPageFromJev", () => {
     delete missingVariant["variant:hero"]
     expect(readPageFromJev(missingVariant)).toBeNull()
 
+    const missingLayout = answersFor({ marketing: 1 })
+    delete missingLayout["variant:footer"]
+    expect(readPageFromJev(missingLayout)).toBeNull()
+
     expect(readPageFromJev({})).toBeNull()
   })
 })
 
 describe("knownBlocks", () => {
-  it("keeps the order given, dropping what the kind cannot show", () => {
+  it("keeps the order given, dropping what the kind cannot show and layout blocks", () => {
     expect(
       knownBlocks("store", [
-        "footer-2",
         "faqs-2",
         "pricing-4",
         "product-list-3",
-        "top-navigation-1",
+        "footer-2",
         "nope-1",
       ])
-    ).toEqual(["footer-2", "faqs-2", "product-list-3", "top-navigation-1"])
+    ).toEqual(["faqs-2", "product-list-3"])
   })
 
   it("drops blocks we have not imported and keeps repeats", () => {
