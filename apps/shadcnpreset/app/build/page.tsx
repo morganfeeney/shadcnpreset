@@ -13,8 +13,8 @@ export const metadata: Metadata = {
       "Describe a page and Jev assembles it from shadcncraft blocks, dressed in a shadcn preset you can swap.",
     path: "/build",
   }),
-  // A prototype: reachable by link, kept out of search until it earns a place.
-  robots: { index: false },
+  // Saved pages add their blocks to the query; they are all this one page.
+  alternates: { canonical: "/build" },
 }
 
 /**
