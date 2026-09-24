@@ -30,7 +30,7 @@ export function Announcement({
       <Badge
         render={
           <Link href="/changelog">
-            New: describe a preset with Jev
+            New: build a page with Jev
             <ArrowRightIcon
               weight="bold"
               className="size-3.5 shrink-0"
