@@ -28,7 +28,6 @@ import {
 import {
   CaretDownIcon,
   CircleHalfIcon,
-  FolderOpenIcon,
   GaugeIcon,
   HeartIcon,
   PaintBrushIcon,
@@ -52,23 +51,15 @@ import { Logo } from "@/components/zippystarter/logo"
 import { ModeSwitcher } from "@/components/mode-switcher"
 import { GitHubLink } from "@/components/github-link"
 import { UserMenu } from "@/components/user-menu"
-import { OpenPresetDialog } from "@/components/open-preset-dialog"
 import { Button } from "@/components/ui/button"
 
-export type NavChildLink =
-  | {
-      label: string
-      href: string
-      description?: string
-      icon: React.ElementType
-      openInNewTab?: boolean
-    }
-  | {
-      label: string
-      description?: string
-      icon: React.ElementType
-      action: "open-preset"
-    }
+export type NavChildLink = {
+  label: string
+  href: string
+  description?: string
+  icon: React.ElementType
+  openInNewTab?: boolean
+}
 
 /** Top-level entry: flat link, or parent with `children` mega-menu (parent `href` is for keys only). */
 export type ComponentLink = {
@@ -110,12 +101,6 @@ const HEADER_LINKS: ComponentLink[] = [
         href: "/my-presets",
         description: "Configurations you’ve saved.",
         icon: HeartIcon,
-      },
-      {
-        label: "Open Preset",
-        description: "Load a preset from its code.",
-        icon: FolderOpenIcon,
-        action: "open-preset",
       },
     ],
   },
@@ -178,45 +163,20 @@ function NavItemMobile({
   )
 }
 
-type NavItemMobileRow =
-  | {
-      kind: "link"
-      href: string
-      label: string
-      openInNewTab?: boolean
-    }
-  | { kind: "open-preset"; label: string }
-
-function isOpenPresetChild(
-  child: NavChildLink
-): child is Extract<NavChildLink, { action: "open-preset" }> {
-  return "action" in child && child.action === "open-preset"
+type NavItemMobileRow = {
+  href: string
+  label: string
+  openInNewTab?: boolean
 }
 
 function flattenMobileLinks(links: ComponentLink[]): NavItemMobileRow[] {
-  return links.flatMap((link): NavItemMobileRow[] => {
-    if (!link.children) {
-      return [
-        {
-          kind: "link",
-          href: link.href,
-          label: link.label,
-          openInNewTab: link.openInNewTab,
-        },
-      ]
-    }
-    return link.children.map((child): NavItemMobileRow => {
-      if (isOpenPresetChild(child)) {
-        return { kind: "open-preset", label: child.label }
-      }
-      return {
-        kind: "link",
-        href: child.href,
-        label: child.label,
-        openInNewTab: child.openInNewTab,
-      }
-    })
-  })
+  return links.flatMap((link): NavItemMobileRow[] =>
+    (link.children ?? [link]).map((item) => ({
+      href: item.href,
+      label: item.label,
+      openInNewTab: item.openInNewTab,
+    }))
+  )
 }
 
 interface DesktopNavProps {
@@ -224,25 +184,16 @@ interface DesktopNavProps {
   actions: ReactNode
   pathname: string
   className?: string
-  onOpenPreset: () => void
 }
 
 function submenuParentActive(
   pathname: string,
   children: NavChildLink[]
 ): boolean {
-  return children.some(
-    (child) => "href" in child && isPathActive(pathname, child.href)
-  )
+  return children.some((child) => isPathActive(pathname, child.href))
 }
 
-function DesktopNav({
-  links,
-  actions,
-  pathname,
-  className,
-  onOpenPreset,
-}: DesktopNavProps) {
+function DesktopNav({ links, actions, pathname, className }: DesktopNavProps) {
   const [openMenuHref, setOpenMenuHref] = React.useState<string | null>(null)
 
   return (
@@ -285,31 +236,18 @@ function DesktopNav({
                       sideOffset={8}
                     >
                       <ul className="grid gap-1 rounded-[1rem] border border-border/60 bg-popover p-2 shadow-md ring-1 ring-border/40">
-                        {children.map((component) =>
-                          isOpenPresetChild(component) ? (
-                            <MegaMenuPresetRow
-                              key={component.label}
-                              label={component.label}
-                              description={component.description}
-                              icon={component.icon}
-                              onOpen={() => {
-                                setOpenMenuHref(null)
-                                onOpenPreset()
-                              }}
-                            />
-                          ) : (
-                            <ListItem
-                              key={component.label}
-                              title={component.label}
-                              href={component.href}
-                              icon={component.icon}
-                              openInNewTab={component.openInNewTab}
-                              onClick={() => setOpenMenuHref(null)}
-                            >
-                              {component.description}
-                            </ListItem>
-                          )
-                        )}
+                        {children.map((component) => (
+                          <ListItem
+                            key={component.label}
+                            title={component.label}
+                            href={component.href}
+                            icon={component.icon}
+                            openInNewTab={component.openInNewTab}
+                            onClick={() => setOpenMenuHref(null)}
+                          >
+                            {component.description}
+                          </ListItem>
+                        ))}
                       </ul>
                     </PopoverContent>
                   </Popover>
@@ -348,58 +286,14 @@ function DesktopNav({
   )
 }
 
-function MegaMenuPresetRow({
-  label,
-  description,
-  icon: Icon,
-  onOpen,
-}: {
-  label: string
-  description?: string
-  icon: React.ElementType
-  onOpen: () => void
-}) {
-  return (
-    <li className="list-none">
-      <button
-        type="button"
-        className={cn(
-          "grid w-full grid-cols-[auto_1fr] items-start gap-2.5 rounded-3xl p-2 text-left transition-colors",
-          "hover:bg-accent hover:text-accent-foreground"
-        )}
-        onClick={onOpen}
-      >
-        <div className="grid size-9 place-items-center rounded-xl bg-accent/60 p-1">
-          <Icon className="size-4" aria-hidden />
-        </div>
-        <div className="mt-0.5 grid gap-1">
-          <div className="text-sm leading-none font-medium">{label}</div>
-          {description ? (
-            <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
-        </div>
-      </button>
-    </li>
-  )
-}
-
 interface MobileNavProps {
   links: ComponentLink[]
   actions: ReactNode
   pathname: string
   className?: string
-  onOpenPreset: () => void
 }
 
-function MobileNav({
-  links,
-  pathname,
-  className,
-  actions,
-  onOpenPreset,
-}: MobileNavProps) {
+function MobileNav({ links, pathname, className, actions }: MobileNavProps) {
   const [isOpen, setOpen] = React.useState(false)
   const flat = React.useMemo(() => flattenMobileLinks(links), [links])
 
@@ -423,30 +317,16 @@ function MobileNav({
             <SheetDescription>Choose your destination</SheetDescription>
           </SheetHeader>
           <nav className="grid py-1">
-            {flat.map((entry) =>
-              entry.kind === "open-preset" ? (
-                <button
-                  key={`open:${entry.label}`}
-                  type="button"
-                  className="inline-grid h-10 items-center px-4 py-2 text-left text-sm font-medium transition hover:text-header-foreground"
-                  onClick={() => {
-                    setOpen(false)
-                    onOpenPreset()
-                  }}
-                >
-                  {entry.label}
-                </button>
-              ) : (
-                <NavItemMobile
-                  key={entry.href}
-                  href={entry.href}
-                  isActive={isPathActive(pathname, entry.href)}
-                  openInNewTab={entry.openInNewTab}
-                >
-                  {entry.label}
-                </NavItemMobile>
-              )
-            )}
+            {flat.map((entry) => (
+              <NavItemMobile
+                key={entry.href}
+                href={entry.href}
+                isActive={isPathActive(pathname, entry.href)}
+                openInNewTab={entry.openInNewTab}
+              >
+                {entry.label}
+              </NavItemMobile>
+            ))}
 
             <div className="grid gap-2 px-4 pt-4">
               <hr className="-mx-4 my-2 border-border/60" />
@@ -548,8 +428,6 @@ export function Header1({
 }: Header1Props) {
   const pathnameFromRouter = usePathname()
   const pathname = pathnameProp ?? pathnameFromRouter ?? ""
-  const [presetDialogOpen, setPresetDialogOpen] = React.useState(false)
-  const onOpenPreset = React.useCallback(() => setPresetDialogOpen(true), [])
 
   const mobileActions = React.useMemo(
     () => (
@@ -561,46 +439,37 @@ export function Header1({
   )
 
   return (
-    <>
-      <div className={cn("bg-header", wrapperClassName)}>
-        <Container
-          component="header"
-          className={cn(
-            "grid max-w-[unset]! items-center gap-6 py-2 text-header-foreground",
-            className
-          )}
-          wrapperClassName="bg-transparent"
-        >
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-6 lg:gap-12">
-            {logo}
+    <div className={cn("bg-header", wrapperClassName)}>
+      <Container
+        component="header"
+        className={cn(
+          "grid max-w-[unset]! items-center gap-6 py-2 text-header-foreground",
+          className
+        )}
+        wrapperClassName="bg-transparent"
+      >
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-6 lg:gap-12">
+          {logo}
 
-            <div className="col-start-2 row-start-1 flex min-w-0 justify-end lg:justify-between">
-              <DesktopNav
-                // Force remount on navigation to avoid transient popover state flicker on history back/forward.
-                key={pathname}
-                links={links}
-                actions={actions}
-                pathname={pathname}
-                onOpenPreset={onOpenPreset}
-                className="hidden min-w-0 md:flex lg:justify-between"
-              />
+          <div className="col-start-2 row-start-1 flex min-w-0 justify-end lg:justify-between">
+            <DesktopNav
+              // Force remount on navigation to avoid transient popover state flicker on history back/forward.
+              key={pathname}
+              links={links}
+              actions={actions}
+              pathname={pathname}
+              className="hidden min-w-0 md:flex lg:justify-between"
+            />
 
-              <MobileNav
-                links={links}
-                actions={mobileActions}
-                pathname={pathname}
-                onOpenPreset={onOpenPreset}
-                className="md:hidden"
-              />
-            </div>
+            <MobileNav
+              links={links}
+              actions={mobileActions}
+              pathname={pathname}
+              className="md:hidden"
+            />
           </div>
-        </Container>
-      </div>
-
-      <OpenPresetDialog
-        open={presetDialogOpen}
-        onOpenChange={setPresetDialogOpen}
-      />
-    </>
+        </div>
+      </Container>
+    </div>
   )
 }
