@@ -24,13 +24,23 @@ export function readBuiltPageSpec(
   return { blocks: knownBlocks(blocks), layout: knownLayout(input) }
 }
 
-/** The frame's URL for a spec; the preset is the only thing that reloads it. */
-export function builtPageSrc(preset: string, spec: BuiltPageSpec): string {
-  const params = new URLSearchParams({ preset, blocks: spec.blocks.join(",") })
+/**
+ * A spec as URL parameters — the frame's, and the saved page's in the
+ * builder's own URL. An empty slot is left out, and reads back as none.
+ */
+export function builtPageParams(spec: BuiltPageSpec): URLSearchParams {
+  const params = new URLSearchParams({ blocks: spec.blocks.join(",") })
   for (const slot of LAYOUT_SLOTS) {
     const id = spec.layout[slot]
     if (id) params.set(slot, id)
   }
+  return params
+}
+
+/** The frame's URL for a spec; the preset is the only thing that reloads it. */
+export function builtPageSrc(preset: string, spec: BuiltPageSpec): string {
+  const params = builtPageParams(spec)
+  params.set("preset", preset)
   return `/preset-preview/builder?${params}`
 }
 

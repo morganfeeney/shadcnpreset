@@ -2,9 +2,9 @@
 
 import type * as React from "react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { ArrowRightIcon } from "@phosphor-icons/react"
+import { ArrowRightIcon, CheckIcon, LinkIcon } from "@phosphor-icons/react"
 
 import { BlockBrowser } from "@/components/page-builder/block-browser"
 import { BuilderComposer } from "@/components/page-builder/builder-composer"
@@ -13,6 +13,7 @@ import {
   DEFAULT_PRESET,
   PresetMenu,
 } from "@/components/page-builder/preset-menu"
+import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,10 +23,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import type { JevPresetReading } from "@/lib/jev-presets/read-preset"
-import { defaultLayout } from "@/lib/page-builder/blocks"
 import { applyPageEdit } from "@/lib/page-builder/edits"
 import type { PageEdit } from "@/lib/page-builder/messages"
 import type { PageReading } from "@/lib/page-builder/read-page"
+import { savedPageQuery, type SavedPage } from "@/lib/page-builder/saved-page"
 import type { LayoutSlot, PageLayout } from "@/lib/page-builder/sections"
 
 type BuildResult = {
@@ -46,8 +47,11 @@ type Draft = {
 }
 
 const MIN_LENGTH = 3
-/** A new page is a website, framed by a nav and a footer, until told otherwise. */
-const EMPTY_DRAFT: Draft = { rows: [], layout: defaultLayout("marketing") }
+/** A new page has nothing on it — no header, sidebar or footer — until chosen. */
+const EMPTY_DRAFT: Draft = {
+  rows: [],
+  layout: { header: null, sidebar: null, footer: null },
+}
 
 const IDEAS = [
   { label: "Coffee shop", description: "landing page for a cosy coffee shop" },
@@ -82,6 +86,16 @@ async function fetchBuiltPage(
   return (await response.json()) as BuildResult
 }
 
+function draftFromSaved(saved: SavedPage): Draft {
+  return {
+    rows: saved.spec.blocks.map((block, index) => ({
+      key: `saved-${index}-${block}`,
+      block,
+    })),
+    layout: saved.spec.layout,
+  }
+}
+
 function draftFromReading(reading: PageReading): Draft {
   return {
     basedOn: reading,
@@ -102,8 +116,11 @@ function draftFromReading(reading: PageReading): Draft {
  *
  * A preset picked here stays on top of every page built after it until it
  * is handed back to Jev.
+ *
+ * The page lives in the URL as it changes, so a reload or a shared link
+ * opens it as it was, without asking Jev again.
  */
-export function PageBuilder() {
+export function PageBuilder({ saved }: { saved: SavedPage | null }) {
   const [input, setInput] = useState("")
   // What was last sent; Jev reads a description once, when it is sent.
   const [description, setDescription] = useState("")
@@ -122,10 +139,16 @@ export function PageBuilder() {
   const busy = ready && result.isFetching
 
   // Jev's layout until the visitor edits it; a newer reading starts over.
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
+  const [draft, setDraft] = useState<Draft>(() =>
+    saved ? draftFromSaved(saved) : EMPTY_DRAFT
+  )
   const page =
     jev && draft.basedOn !== jev.page ? draftFromReading(jev.page) : draft
   const blocks = page.rows.map((row) => row.block)
+  // Anything chosen shows, a header on its own included: nothing on the page
+  // is ever active out of sight.
+  const hasPage =
+    blocks.length > 0 || Object.values(page.layout).some((id) => id !== null)
 
   function edit(next: Partial<Omit<Draft, "basedOn">>) {
     setDraft({ ...page, ...next, basedOn: jev?.page })
@@ -159,9 +182,23 @@ export function PageBuilder() {
     })
   }
 
-  const [presetOverride, setPresetOverride] = useState<string>()
+  // A saved page's preset was chosen for it, so it stays on top like a pick.
+  const [presetOverride, setPresetOverride] = useState(
+    saved?.preset ?? undefined
+  )
   const jevPreset = jev?.preset.code
   const presetCode = presetOverride ?? jevPreset ?? DEFAULT_PRESET
+
+  const query = savedPageQuery({ blocks, layout: page.layout }, presetCode)
+  useEffect(() => {
+    // Replaced, not pushed: every edit is not a place to go Back to.
+    const url = query
+      ? `${window.location.pathname}?${query}`
+      : window.location.pathname
+    if (url !== window.location.pathname + window.location.search) {
+      window.history.replaceState(window.history.state, "", url)
+    }
+  }, [query])
 
   const composer = (floating: boolean) => (
     <BuilderComposer
@@ -205,10 +242,7 @@ export function PageBuilder() {
             onOverride={setPresetOverride}
           />
           <div className="flex items-center justify-between gap-2">
-            <ShadcncraftCredit
-              credit={{ label: "Blocks", source: "page-builder" }}
-              presetCode={presetCode}
-            />
+            {hasPage ? <CopyLinkButton /> : <span />}
             <Button
               nativeButton={false}
               render={<Link href={`/preset/${presetCode}`} />}
@@ -219,12 +253,18 @@ export function PageBuilder() {
               <ArrowRightIcon data-icon="inline-end" />
             </Button>
           </div>
+          <div>
+            <ShadcncraftCredit
+              credit={{ label: "Blocks", source: "page-builder" }}
+              presetCode={presetCode}
+            />
+          </div>
         </SidebarFooter>
       </Sidebar>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2 md:pt-0 md:pl-0">
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border">
-          {blocks.length ? (
+          {hasPage ? (
             <>
               <BuiltPageFrame
                 preset={presetCode}
@@ -275,5 +315,33 @@ export function PageBuilder() {
         </div>
       </div>
     </SidebarProvider>
+  )
+}
+
+/** Copies the page's link: the URL already holds the page as it stands. */
+function CopyLinkButton() {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const id = window.setTimeout(() => setCopied(false), 2000)
+    return () => window.clearTimeout(id)
+  }, [copied])
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={async () => {
+        setCopied(await copyToClipboardWithMeta(window.location.href))
+      }}
+    >
+      {copied ? (
+        <CheckIcon data-icon="inline-start" />
+      ) : (
+        <LinkIcon data-icon="inline-start" />
+      )}
+      {copied ? "Copied" : "Copy link"}
+    </Button>
   )
 }

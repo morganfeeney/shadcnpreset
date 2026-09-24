@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { defaultLayout, knownLayout } from "@/lib/page-builder/blocks"
+import { knownLayout } from "@/lib/page-builder/blocks"
 import {
   PAGE_BUILDER_EDIT_MESSAGE_TYPE,
   builtPageSrc,
@@ -20,21 +20,6 @@ describe("knownLayout", () => {
         footer: "footer-9",
       })
     ).toEqual({ header: "app-shell-header-2", sidebar: null, footer: null })
-  })
-})
-
-describe("defaultLayout", () => {
-  it("frames each kind the way Jev would, with first variants", () => {
-    expect(defaultLayout("marketing")).toEqual({
-      header: "top-navigation-1",
-      sidebar: null,
-      footer: "footer-1",
-    })
-    expect(defaultLayout("dashboard")).toEqual({
-      header: "app-shell-header-1",
-      sidebar: "app-shell-1",
-      footer: null,
-    })
   })
 })
 

@@ -1,5 +1,4 @@
 import {
-  KIND_LAYOUT,
   LAYOUT_CATEGORIES,
   LAYOUT_SLOTS,
   PAGE_KINDS,
@@ -83,20 +82,4 @@ export function knownLayout(
 /** App headers carry a sidebar trigger, so they need the sidebar's provider. */
 export function isAppHeader(blockId: string | null): boolean {
   return blockId !== null && sectionOfBlock(blockId) === "app-shell-header"
-}
-
-/**
- * A kind's layout before Jev has read anything: the first variant of each
- * category the kind fills its slots from.
- */
-export function defaultLayout(kind: PageKind): PageLayout {
-  return Object.fromEntries(
-    LAYOUT_SLOTS.map((slot) => {
-      const category = KIND_LAYOUT[kind][slot]
-      return [
-        slot,
-        category ? (PAGE_BLOCK_VARIANTS[category]?.[0]?.id ?? null) : null,
-      ]
-    })
-  ) as PageLayout
 }

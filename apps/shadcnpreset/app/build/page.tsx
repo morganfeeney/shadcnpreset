@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { PageBuilder } from "@/components/page-builder/page-builder"
 import { WideLayoutNoFooter } from "@/components/wide-layout-no-footer"
+import { readSavedPage } from "@/lib/page-builder/saved-page"
 import { buildPageMetadata } from "@/lib/page-metadata"
 
 export const metadata: Metadata = {
@@ -15,11 +16,18 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-/** The assistant's shell: header on top, sidebar and page filling the rest. */
-export default function BuildPage() {
+/**
+ * The assistant's shell: header on top, sidebar and page filling the rest.
+ * A saved page in the URL is read here, so it renders in the first paint.
+ */
+export default async function BuildPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   return (
     <WideLayoutNoFooter>
-      <PageBuilder />
+      <PageBuilder saved={readSavedPage(await searchParams)} />
     </WideLayoutNoFooter>
   )
 }
