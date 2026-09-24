@@ -81,6 +81,7 @@ type ComponentLinkWithChildren = ComponentLink
 
 const HEADER_LINKS: ComponentLink[] = [
   { href: "/assistant", label: "Ask AI" },
+  { href: "/build", label: "Build" },
   { href: "/community", label: "Community" },
   {
     href: "presets",

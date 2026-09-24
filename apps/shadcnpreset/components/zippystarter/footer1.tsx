@@ -28,6 +28,7 @@ const COLUMNS = [
     header: "Navigation",
     links: [
       { label: "Ask AI", href: "/assistant" },
+      { label: "Build a page", href: "/build" },
       { label: "Community", href: "/community" },
       { type: "link", href: "/tools", label: "Tools" },
       { label: LEARN_PAGE.title, href: LEARN_PAGE.href },
