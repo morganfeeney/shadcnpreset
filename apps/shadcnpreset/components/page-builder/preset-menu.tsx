@@ -1,7 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import { ShuffleIcon } from "@phosphor-icons/react"
+import { HeartIcon, ShuffleIcon } from "@phosphor-icons/react"
 import { DEFAULT_PRESET_CONFIG, encodePreset } from "shadcn/preset"
 
 import { Button } from "@/components/ui/button"
@@ -15,11 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useMyPresets } from "@/hooks/use-my-presets"
+import useVote from "@/hooks/use-vote"
 import { getPresetSwatchPair } from "@/lib/oklch-swatch"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { formatPresetCardDescription } from "@/lib/preset-card-description"
 import { generateRandomCompatiblePreset } from "@/lib/random-preset"
-import { useAuthStore } from "@/stores/auth-store"
 
 export const DEFAULT_PRESET = encodePreset(DEFAULT_PRESET_CONFIG)
 
@@ -60,7 +60,10 @@ function PresetSwatch({ swatch }: { swatch: PresetOption["swatch"] }) {
 function PresetOptionItem({ option }: { option: PresetOption }) {
   return (
     <SelectItem value={option.value}>
-      <PresetSwatch swatch={option.swatch} />
+      {/* As tall as the title's line (text-sm), so the dot centres on the title. */}
+      <span className="flex h-5 shrink-0 items-center">
+        <PresetSwatch swatch={option.swatch} />
+      </span>
       <span className="grid min-w-0">
         <span className="truncate">{option.label}</span>
         <span className="truncate text-xs text-muted-foreground">
@@ -73,9 +76,10 @@ function PresetOptionItem({ option }: { option: PresetOption }) {
 
 /**
  * The page's preset in one menu — Jev's (or the default before Jev has read
- * anything), whatever was shuffled, and the visitor's saved presets — and a
- * shuffle. A preset picked here sticks across new descriptions: the page
- * changes, the theme does not. Picking Jev's own hands the choice back.
+ * anything), whatever was shuffled, and the visitor's saved presets — with a
+ * shuffle and a save beside it. A preset picked here sticks across new
+ * descriptions: the page changes, the theme does not. Picking Jev's own
+ * hands the choice back.
  */
 export function PresetMenu({
   jevCode,
@@ -86,8 +90,6 @@ export function PresetMenu({
   override: string | undefined
   onOverride: (code: string | undefined) => void
 }) {
-  const authStatus = useAuthStore((state) => state.status)
-  const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const myPresets = useMyPresets()
 
   const baseCode = jevCode ?? DEFAULT_PRESET
@@ -109,66 +111,77 @@ export function PresetMenu({
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-1.5">
-      <div className="flex min-w-0 gap-1.5">
-        <Select
-          items={options.map(({ value, label }) => ({ value, label }))}
-          value={current}
-          onValueChange={(code: string | null) => {
-            if (code) pick(code)
-          }}
+    <div className="flex min-w-0 gap-1.5">
+      <Select
+        items={options.map(({ value, label }) => ({ value, label }))}
+        value={current}
+        onValueChange={(code: string | null) => {
+          if (code) pick(code)
+        }}
+      >
+        <SelectTrigger
+          aria-label="Preset"
+          className="w-auto min-w-0 flex-1 bg-background"
         >
-          <SelectTrigger
-            aria-label="Preset"
-            className="w-auto min-w-0 flex-1 bg-background"
-          >
-            {currentOption ? (
-              <PresetSwatch swatch={currentOption.swatch} />
-            ) : null}
-            <SelectValue className="truncate" />
-          </SelectTrigger>
-          <SelectContent className="max-h-80">
-            {suggested.length ? (
-              <SelectGroup>
-                <SelectLabel>{jevCode ? "This page" : "Default"}</SelectLabel>
-                {suggested.map((option) => (
-                  <PresetOptionItem key={option.value} option={option} />
-                ))}
-              </SelectGroup>
-            ) : null}
-            {saved.length ? (
-              <SelectGroup>
-                <SelectLabel>Saved</SelectLabel>
-                {saved.map((option) => (
-                  <PresetOptionItem key={option.value} option={option} />
-                ))}
-              </SelectGroup>
-            ) : null}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Shuffle preset"
-          title="Shuffle preset"
-          onClick={() => pick(generateRandomCompatiblePreset())}
-        >
-          <ShuffleIcon />
-        </Button>
-      </div>
-      {authStatus === "anonymous" ? (
-        <p className="text-xs text-muted-foreground">
-          <button
-            type="button"
-            className="underline underline-offset-4 hover:text-foreground"
-            onClick={() => void ensureAuthenticated()}
-          >
-            Sign in
-          </button>{" "}
-          to use presets you have saved.
-        </p>
-      ) : null}
+          {currentOption ? (
+            <PresetSwatch swatch={currentOption.swatch} />
+          ) : null}
+          <SelectValue className="truncate" />
+        </SelectTrigger>
+        <SelectContent className="max-h-80">
+          {suggested.length ? (
+            <SelectGroup>
+              <SelectLabel>{jevCode ? "This page" : "Default"}</SelectLabel>
+              {suggested.map((option) => (
+                <PresetOptionItem key={option.value} option={option} />
+              ))}
+            </SelectGroup>
+          ) : null}
+          {saved.length ? (
+            <SelectGroup>
+              <SelectLabel>Saved</SelectLabel>
+              {saved.map((option) => (
+                <PresetOptionItem key={option.value} option={option} />
+              ))}
+            </SelectGroup>
+          ) : null}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        aria-label="Shuffle preset"
+        title="Shuffle preset"
+        onClick={() => pick(generateRandomCompatiblePreset())}
+      >
+        <ShuffleIcon />
+      </Button>
+      <SaveButton code={current} />
     </div>
+  )
+}
+
+/**
+ * Saves the preset on the page — a shuffle worth keeping, say — as a vote,
+ * which is what a saved preset is. Signed out, it asks the visitor to sign
+ * in and saves once they have. A saved preset joins the menu's Saved group.
+ */
+function SaveButton({ code }: { code: string }) {
+  const { toggleVote, hasVoted, isVoting } = useVote(code)
+  const label = hasVoted ? "Remove from saved presets" : "Save preset"
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      aria-label={label}
+      aria-pressed={hasVoted}
+      title={label}
+      disabled={isVoting}
+      onClick={() => void toggleVote()}
+    >
+      <HeartIcon weight={hasVoted ? "fill" : "regular"} />
+    </Button>
   )
 }

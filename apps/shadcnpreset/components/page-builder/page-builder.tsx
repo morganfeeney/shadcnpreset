@@ -1,10 +1,9 @@
 "use client"
 
 import type * as React from "react"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { ArrowRightIcon, CheckIcon, LinkIcon } from "@phosphor-icons/react"
+import { CheckIcon, LinkIcon } from "@phosphor-icons/react"
 
 import { BlockBrowser } from "@/components/page-builder/block-browser"
 import { BuilderComposer } from "@/components/page-builder/builder-composer"
@@ -225,17 +224,20 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
         className="max-h-[45dvh] w-full shrink-0 border-b border-border/70 md:h-full md:max-h-none md:w-(--sidebar-width) md:border-r md:border-b-0"
       >
         <h1 className="sr-only">Build a page</h1>
+        {/* The page-wide controls sit together at the top: the preset and
+            sharing here, then the browser's search and chips. */}
+        <SidebarHeader className="flex-row gap-1.5 px-3 pt-3 pb-0">
+          <div className="min-w-0 flex-1">
+            <PresetMenu
+              jevCode={jevPreset}
+              override={presetOverride}
+              onOverride={setPresetOverride}
+            />
+          </div>
+          <ShareButton disabled={!hasPage} />
+        </SidebarHeader>
         {/* Its own scroller: reaching either end stops here rather than
             handing the rest of the gesture to the page. */}
-        {/* The page-wide controls sit together at the top: the preset here,
-            then the browser's search and chips. */}
-        <SidebarHeader className="px-3 pt-3 pb-0">
-          <PresetMenu
-            jevCode={jevPreset}
-            override={presetOverride}
-            onOverride={setPresetOverride}
-          />
-        </SidebarHeader>
         <SidebarContent className="overscroll-contain px-3 pt-2">
           <BlockBrowser
             suggestedGroup={jev?.page.kind}
@@ -245,25 +247,11 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
           />
         </SidebarContent>
 
-        <SidebarFooter className="gap-2 border-t border-border/70">
-          <div className="flex items-center justify-between gap-2">
-            {hasPage ? <CopyLinkButton /> : <span />}
-            <Button
-              nativeButton={false}
-              render={<Link href={`/preset/${presetCode}`} />}
-              variant="ghost"
-              size="sm"
-            >
-              Open preset
-              <ArrowRightIcon data-icon="inline-end" />
-            </Button>
-          </div>
-          <div>
-            <ShadcncraftCredit
-              credit={{ label: "Blocks", source: "page-builder" }}
-              presetCode={presetCode}
-            />
-          </div>
+        <SidebarFooter className="border-t border-border/70">
+          <ShadcncraftCredit
+            credit={{ label: "Blocks", source: "page-builder" }}
+            presetCode={presetCode}
+          />
         </SidebarFooter>
       </Sidebar>
 
@@ -323,8 +311,11 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
   )
 }
 
-/** Copies the page's link: the URL already holds the page as it stands. */
-function CopyLinkButton() {
+/**
+ * Copies the page's link: the URL already holds the page as it stands.
+ * Disabled until there is something on the page to share.
+ */
+function ShareButton({ disabled }: { disabled: boolean }) {
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
@@ -332,21 +323,20 @@ function CopyLinkButton() {
     return () => window.clearTimeout(id)
   }, [copied])
 
+  const label = copied ? "Link copied" : "Copy link to this page"
   return (
     <Button
       type="button"
       variant="outline"
-      size="sm"
+      size="icon"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
       onClick={async () => {
         setCopied(await copyToClipboardWithMeta(window.location.href))
       }}
     >
-      {copied ? (
-        <CheckIcon data-icon="inline-start" />
-      ) : (
-        <LinkIcon data-icon="inline-start" />
-      )}
-      {copied ? "Copied" : "Copy link"}
+      {copied ? <CheckIcon /> : <LinkIcon />}
     </Button>
   )
 }
