@@ -1,12 +1,12 @@
-import { AiInsights1 } from "@/components/shadcncraft-examples/blocks/ai-insights-1"
-import { AppShell1 } from "@/components/shadcncraft-examples/blocks/app-shell-1"
-import { AttributionBreakdown1 } from "@/components/shadcncraft-examples/blocks/attribution-breakdown-1"
-import { GoalProgress1 } from "@/components/shadcncraft-examples/blocks/goal-progress-1"
-import { HeroTimeSeries1 } from "@/components/shadcncraft-examples/blocks/hero-time-series-1"
-import { MetricCards1 } from "@/components/shadcncraft-examples/blocks/metric-cards-1"
-import { PipelineByStage1 } from "@/components/shadcncraft-examples/blocks/pipeline-by-stage-1"
-import { RevenueVsTarget1 } from "@/components/shadcncraft-examples/blocks/revenue-vs-target-1"
-import { WinRate1 } from "@/components/shadcncraft-examples/blocks/win-rate-1"
+import { AiInsights1 } from "@/components/shadcncraft/blocks/ai-insights-1"
+import { AppShell1 } from "@/components/shadcncraft/blocks/app-shell-1"
+import { AttributionBreakdown1 } from "@/components/shadcncraft/blocks/attribution-breakdown-1"
+import { GoalProgress1 } from "@/components/shadcncraft/blocks/goal-progress-1"
+import { HeroTimeSeries1 } from "@/components/shadcncraft/blocks/hero-time-series-1"
+import { MetricCards1 } from "@/components/shadcncraft/blocks/metric-cards-1"
+import { PipelineByStage1 } from "@/components/shadcncraft/blocks/pipeline-by-stage-1"
+import { RevenueVsTarget1 } from "@/components/shadcncraft/blocks/revenue-vs-target-1"
+import { WinRate1 } from "@/components/shadcncraft/blocks/win-rate-1"
 
 /**
  * shadcncraft's sales and marketing dashboard, laid out as they ship it: a

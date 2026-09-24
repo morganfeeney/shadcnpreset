@@ -31,14 +31,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/cn-ui/tabs"
-import { FilePart1 } from "@/components/shadcncraft-examples/ui/file-part-1"
-import { ReasoningPart1 } from "@/components/shadcncraft-examples/ui/reasoning-part-1"
+import { FilePart1 } from "@/components/shadcncraft/ui/file-part-1"
+import { ReasoningPart1 } from "@/components/shadcncraft/ui/reasoning-part-1"
 import {
   SourcesPart1,
   type Citation,
-} from "@/components/shadcncraft-examples/ui/sources-part-1"
-import { ToolPart1 } from "@/components/shadcncraft-examples/ui/tool-part-1"
-import { WebSearchPart1 } from "@/components/shadcncraft-examples/ui/web-search-part-1"
+} from "@/components/shadcncraft/ui/sources-part-1"
+import { ToolPart1 } from "@/components/shadcncraft/ui/tool-part-1"
+import { WebSearchPart1 } from "@/components/shadcncraft/ui/web-search-part-1"
 
 /**
  * A finished conversation, drawn with shadcncraft's message parts. UI only:

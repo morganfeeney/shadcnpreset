@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 4010",
-    "build": "next build",
+    "build": "pnpm sync:shadcncraft && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -20,7 +20,8 @@
     "eval:describe": "tsx ./scripts/eval-describe-prompts.ts",
     "generate:preview-catalog": "tsx ./scripts/generate-preview-catalog.ts",
     "format": "prettier --write \"**/*.{ts,tsx,css}\"",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "sync:shadcncraft": "tsx ./scripts/sync-shadcncraft.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.52",
