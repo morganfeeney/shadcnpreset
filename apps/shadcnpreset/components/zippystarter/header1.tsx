@@ -79,10 +79,16 @@ const HEADER_LINKS: ComponentLink[] = [
     label: "Presets",
     children: [
       {
-        label: "Community",
+        label: "Community presets",
         href: "/community",
         description: "Presets voted for by the community.",
         icon: UsersThreeIcon,
+      },
+      {
+        label: "My presets",
+        href: "/my-presets",
+        description: "Configurations you’ve saved.",
+        icon: HeartIcon,
       },
       {
         label: "Describe a preset",
@@ -95,12 +101,6 @@ const HEADER_LINKS: ComponentLink[] = [
         href: "/high-contrast-presets",
         description: "Presets with a 100% color contrast score",
         icon: CircleHalfIcon,
-      },
-      {
-        label: "My presets",
-        href: "/my-presets",
-        description: "Configurations you’ve saved.",
-        icon: HeartIcon,
       },
     ],
   },
