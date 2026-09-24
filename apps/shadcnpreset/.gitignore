@@ -44,3 +44,7 @@ next-env.d.ts
 
 # generated semantic index (run `pnpm generate:preset-embeddings`)
 data/preset-embeddings.json
+
+# shadcncraft Pro blocks: licensed, so checked out from a private repo by
+# `pnpm sync:shadcncraft` at the commit in shadcncraft.lock.
+/components/shadcncraft/

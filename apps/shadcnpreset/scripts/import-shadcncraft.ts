@@ -1,7 +1,8 @@
 /**
- * Pulls shadcncraft registry items into components/shadcncraft-examples,
- * following the import recipe instead of `shadcn add` (which would write into
- * components/ui).
+ * Pulls shadcncraft registry items into components/shadcncraft — the
+ * checkout of the private repo that holds them (see `pnpm sync:shadcncraft`)
+ * — following the import recipe instead of `shadcn add` (which would write
+ * into components/ui). Commit and push new blocks there, then pin them.
  *
  *   pnpm import:shadcncraft hero-2 benefits-3 …
  *
@@ -22,7 +23,7 @@ import {
 } from "./lib/shadcncraft-registry"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
-const OUT = path.join(ROOT, "components/shadcncraft-examples")
+const OUT = path.join(ROOT, "components/shadcncraft")
 const BATCH = 20
 
 /** Upstream path → our folder layout, or null for files we do not keep. */
@@ -53,9 +54,9 @@ function shadcncraftImport(spec: string, uiNames: Set<string>): string {
     (parts.length === 2 &&
       (uiNames.has(name) || existsSync(path.join(OUT, "ui", `${name}.tsx`))))
   ) {
-    return `@/components/shadcncraft-examples/ui/${name}`
+    return `@/components/shadcncraft/ui/${name}`
   }
-  return `@/components/shadcncraft-examples/blocks/${parts.slice(1).join("/")}`
+  return `@/components/shadcncraft/blocks/${parts.slice(1).join("/")}`
 }
 
 const PAGE_GUTTER =
@@ -77,10 +78,7 @@ function rewrite(content: string, uiNames: Set<string>): string {
         /@\/registry\/icons\/icon-placeholder/g,
         "@/components/icon-placeholder"
       )
-      .replace(
-        /(["'])@\/hooks\//g,
-        "$1@/components/shadcncraft-examples/hooks/"
-      )
+      .replace(/(["'])@\/hooks\//g, "$1@/components/shadcncraft/hooks/")
       // The preview frame sits inside the preset page's own gutter.
       .replace(/className="([^"]*)"/g, (whole, classes: string) => {
         let next = classes

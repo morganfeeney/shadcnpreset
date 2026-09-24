@@ -32,11 +32,9 @@ function modulePath(id: string) {
 describe("every catalog block server-renders", () => {
   it.each(ids)("%s", async (id) => {
     const file = modulePath(id)
-    const mod = await import(
-      `@/components/shadcncraft-examples/blocks/${file}.tsx`
-    )
+    const mod = await import(`@/components/shadcncraft/blocks/${file}.tsx`)
     const src = readFileSync(
-      `components/shadcncraft-examples/blocks/${file}.tsx`,
+      `components/shadcncraft/blocks/${file}.tsx`,
       "utf8"
     )
     const name = src.match(/^export (?:default )?function ([A-Z]\w*)/m)![1]

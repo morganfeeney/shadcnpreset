@@ -24,7 +24,7 @@ import {
 import { viewShadcncraftItems } from "./lib/shadcncraft-registry"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
-const BLOCKS = path.join(ROOT, "components/shadcncraft-examples/blocks")
+const BLOCKS = path.join(ROOT, "components/shadcncraft/blocks")
 const VARIANTS_OUT = path.join(ROOT, "lib/page-builder/variants.ts")
 const LOADERS_OUT = path.join(ROOT, "components/page-builder/block-loaders.ts")
 const BATCH = 25
@@ -123,7 +123,7 @@ export const PAGE_BLOCK_VARIANTS: Record<string, PageBlockVariant[]> = ${JSON.st
     .map((block) => {
       const pick = block.isDefault ? "mod.default" : `mod.${block.exportName}`
       return `  "${block.id}": dynamic(() =>
-    import("@/components/shadcncraft-examples/blocks/${block.id}${block.file === "index" ? "" : `/${block.file}`}").then(
+    import("@/components/shadcncraft/blocks/${block.id}${block.file === "index" ? "" : `/${block.file}`}").then(
       (mod) => ${pick}
     )
   ),`
