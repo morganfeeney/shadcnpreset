@@ -12,6 +12,9 @@
 @import "../vendor/v4/registry/styles/style-rhea.css" layer(base);
 
 @source "../node_modules/streamdown/dist/*.js";
+/* The shadcncraft blocks are a gitignored checkout (pnpm sync:shadcncraft), and
+   Tailwind skips gitignored files unless they are named here. */
+@source "../components/shadcncraft";
 
 @custom-variant dark (&:is(.dark *));
 @custom-variant fixed (&:is(.layout-fixed *));
