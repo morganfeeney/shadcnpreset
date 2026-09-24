@@ -59,8 +59,9 @@ function shadcncraftImport(spec: string, uiNames: Set<string>): string {
   return `@/components/shadcncraft/blocks/${parts.slice(1).join("/")}`
 }
 
+// Matched inside the class list, without its quotes, so the gutter can end it.
 const PAGE_GUTTER =
-  /\s(?:px-4 (?:sm|md|lg):px-6(?: xl:px-8)?|px-6 lg:px-8|px-4 lg:px-8)(?=[\s"])/g
+  /\s(?:px-4 (?:sm|md|lg):px-6(?: xl:px-8)?|px-6 lg:px-8|px-4 lg:px-8)(?=\s|$)/g
 
 function rewrite(content: string, uiNames: Set<string>): string {
   return (
