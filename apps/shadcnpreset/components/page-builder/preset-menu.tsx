@@ -33,10 +33,11 @@ type PresetOption = {
 function presetOption(code: string): PresetOption | null {
   const config = resolvePresetFromCode(code)
   if (!config) return null
-  const style = config.style.charAt(0).toUpperCase() + config.style.slice(1)
+  // The code is the preset's name everywhere else on the site; what it
+  // looks like is the description beneath.
   return {
     value: config.code,
-    label: `${style} · ${config.baseColor} · ${config.theme}`,
+    label: config.code,
     description: formatPresetCardDescription(config),
     swatch: getPresetSwatchPair(config, "primary"),
   }

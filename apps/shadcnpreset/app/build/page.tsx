@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { PageBuilder } from "@/components/page-builder/page-builder"
+import { Toaster } from "@/components/ui/sonner"
 import { WideLayoutNoFooter } from "@/components/wide-layout-no-footer"
 import { readSavedPage } from "@/lib/page-builder/saved-page"
 import { buildPageMetadata } from "@/lib/page-metadata"
@@ -28,6 +29,7 @@ export default async function BuildPage({
   return (
     <WideLayoutNoFooter>
       <PageBuilder saved={readSavedPage(await searchParams)} />
+      <Toaster />
     </WideLayoutNoFooter>
   )
 }

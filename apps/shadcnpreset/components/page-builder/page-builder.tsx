@@ -3,7 +3,13 @@
 import type * as React from "react"
 import { useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { CheckIcon, LinkIcon } from "@phosphor-icons/react"
+import {
+  CheckIcon,
+  CodeIcon,
+  EraserIcon,
+  LinkIcon,
+} from "@phosphor-icons/react"
+import { toast } from "sonner"
 
 import { BlockBrowser } from "@/components/page-builder/block-browser"
 import { BuilderComposer } from "@/components/page-builder/builder-composer"
@@ -14,7 +20,7 @@ import {
 } from "@/components/page-builder/preset-menu"
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -22,12 +28,14 @@ import {
   SidebarHeader,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { trackEvent } from "@/lib/analytics-events"
 import type { JevPresetReading } from "@/lib/jev-presets/read-preset"
 import { applyPageEdit } from "@/lib/page-builder/edits"
 import type { PageEdit } from "@/lib/page-builder/messages"
 import type { PageReading } from "@/lib/page-builder/read-page"
 import { savedPageQuery, type SavedPage } from "@/lib/page-builder/saved-page"
 import type { LayoutSlot, PageLayout } from "@/lib/page-builder/sections"
+import { cn } from "@/lib/utils"
 
 type BuildResult = {
   page: PageReading
@@ -169,6 +177,26 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
     edit({ rows: next.items, layout: next.layout })
   }
 
+  /**
+   * Takes everything off the page and empties the prompt; the preset stays.
+   * Nothing keeps a cleared page, so the toast offers it back.
+   */
+  function clearPage() {
+    const before = { page, input }
+    // Marked as edited from Jev's reading, so the cached draft stays away.
+    setDraft({ ...EMPTY_DRAFT, basedOn: jev?.page })
+    setInput("")
+    toast("Page cleared", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setDraft({ ...before.page, basedOn: jev?.page })
+          setInput(before.input)
+        },
+      },
+    })
+  }
+
   function addBlock(block: string) {
     edit({ rows: [...page.rows, { key: crypto.randomUUID(), block }] })
   }
@@ -235,6 +263,17 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
             />
           </div>
           <ShareButton disabled={!hasPage} />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Clear page"
+            title="Clear page"
+            disabled={!hasPage}
+            onClick={clearPage}
+          >
+            <EraserIcon />
+          </Button>
         </SidebarHeader>
         {/* Its own scroller: reaching either end stops here rather than
             handing the rest of the gesture to the page. */}
@@ -247,7 +286,11 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
           />
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-border/70">
+        <SidebarFooter className="gap-2 border-t border-border/70">
+          {/* Only once there is something to get the code for. */}
+          {hasPage ? (
+            <GetCodeButton presetCode={presetCode} blockCount={blocks.length} />
+          ) : null}
           <ShadcncraftCredit
             credit={{ label: "Blocks", source: "page-builder" }}
             presetCode={presetCode}
@@ -308,6 +351,50 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
         </div>
       </div>
     </SidebarProvider>
+  )
+}
+
+const GET_CODE_PLACEMENT = "page-builder-get-code"
+
+/**
+ * The way from a built page to its source: every block here is shadcncraft
+ * Pro, so the code is theirs to sell. An affiliate link like the site's
+ * others, with its own placement so it reads apart in analytics — and the
+ * page's size, to tell a click after building from one before.
+ */
+function GetCodeButton({
+  presetCode,
+  blockCount,
+}: {
+  presetCode: string
+  blockCount: number
+}) {
+  // A link that looks like a button: it goes somewhere, so it is announced
+  // as a link.
+  return (
+    <a
+      href={`https://shadcncraft.com?atp=shadcnpreset&src=${GET_CODE_PLACEMENT}`}
+      target="_blank"
+      // Search engines expect paid links marked sponsored.
+      rel="sponsored noopener noreferrer"
+      className={cn(
+        buttonVariants(),
+        "w-full",
+        // Arrives with the first thing on the page; still, for reduced motion.
+        "animate-in duration-300 fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
+      )}
+      onClick={() =>
+        trackEvent("affiliate_click", {
+          partner: "shadcncraft",
+          placement: GET_CODE_PLACEMENT,
+          preset_code: presetCode,
+          block_count: blockCount,
+        })
+      }
+    >
+      <CodeIcon data-icon="inline-start" />
+      Get the code
+    </a>
   )
 }
 
