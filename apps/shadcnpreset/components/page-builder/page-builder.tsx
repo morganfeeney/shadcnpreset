@@ -20,6 +20,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import type { JevPresetReading } from "@/lib/jev-presets/read-preset"
@@ -226,7 +227,16 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
         <h1 className="sr-only">Build a page</h1>
         {/* Its own scroller: reaching either end stops here rather than
             handing the rest of the gesture to the page. */}
-        <SidebarContent className="overscroll-contain px-3 pt-3">
+        {/* The page-wide controls sit together at the top: the preset here,
+            then the browser's search and chips. */}
+        <SidebarHeader className="px-3 pt-3 pb-0">
+          <PresetMenu
+            jevCode={jevPreset}
+            override={presetOverride}
+            onOverride={setPresetOverride}
+          />
+        </SidebarHeader>
+        <SidebarContent className="overscroll-contain px-3 pt-2">
           <BlockBrowser
             suggestedGroup={jev?.page.kind}
             layout={page.layout}
@@ -236,11 +246,6 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
         </SidebarContent>
 
         <SidebarFooter className="gap-2 border-t border-border/70">
-          <PresetMenu
-            jevCode={jevPreset}
-            override={presetOverride}
-            onOverride={setPresetOverride}
-          />
           <div className="flex items-center justify-between gap-2">
             {hasPage ? <CopyLinkButton /> : <span />}
             <Button
