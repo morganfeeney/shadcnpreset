@@ -33,6 +33,7 @@ import {
   HeartIcon,
   PaintBrushIcon,
   SparkleIcon,
+  UsersThreeIcon,
   WrenchIcon,
   ListIcon,
 } from "@phosphor-icons/react"
@@ -82,11 +83,16 @@ type ComponentLinkWithChildren = ComponentLink
 const HEADER_LINKS: ComponentLink[] = [
   { href: "/assistant", label: "Ask AI" },
   { href: "/build", label: "Build" },
-  { href: "/community", label: "Community" },
   {
     href: "presets",
     label: "Presets",
     children: [
+      {
+        label: "Community",
+        href: "/community",
+        description: "Presets voted for by the community.",
+        icon: UsersThreeIcon,
+      },
       {
         label: "Describe a preset",
         href: "/describe",
