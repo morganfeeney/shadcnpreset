@@ -27,25 +27,30 @@ export function sectionOfBlock(blockId: string): string {
   return blockId.replace(/-\d+$/, "")
 }
 
-/** Every block the kind can show, grouped by section in page order. */
-export function blockChoicesForKind(kind: PageKind) {
-  return sectionsForKind(kind).map((section) => ({
-    section,
-    variants: PAGE_BLOCK_VARIANTS[section.id],
-  }))
-}
+const PAGE_BLOCK_IDS = new Set(
+  PAGE_SECTIONS.flatMap(
+    (section) => PAGE_BLOCK_VARIANTS[section.id]?.map((v) => v.id) ?? []
+  )
+)
 
 /**
- * The ids a kind can show, in the order given. The visitor owns the order,
- * so nothing is sorted; unknown ids and other kinds' blocks are dropped.
+ * The ids a page can stack, in the order given. The visitor owns the order,
+ * so nothing is sorted; unknown ids and layout blocks (headers, sidebars,
+ * footers, which fill slots) are dropped. Any kind's blocks can share a page.
  */
-export function knownBlocks(kind: PageKind, ids: Iterable<string>): string[] {
-  const allowed = new Set(
-    sectionsForKind(kind).flatMap((section) =>
-      PAGE_BLOCK_VARIANTS[section.id].map((variant) => variant.id)
-    )
-  )
-  return [...ids].filter((id) => allowed.has(id))
+export function knownBlocks(ids: Iterable<string>): string[] {
+  return [...ids].filter((id) => PAGE_BLOCK_IDS.has(id))
+}
+
+const DASHBOARD_ONLY = new Set(
+  PAGE_SECTIONS.filter(
+    (section) => section.kinds.length === 1 && section.kinds[0] === "dashboard"
+  ).map((section) => section.id)
+)
+
+/** Dashboard widgets are cards, laid out in a grid rather than stacked. */
+export function isDashboardWidget(blockId: string): boolean {
+  return DASHBOARD_ONLY.has(sectionOfBlock(blockId))
 }
 
 /** Every block that can fill a slot, grouped by category. */

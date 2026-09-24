@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest"
 
 import { defaultLayout, knownLayout } from "@/lib/page-builder/blocks"
 import {
+  PAGE_BUILDER_EDIT_MESSAGE_TYPE,
   builtPageSrc,
   pageBuilderBlocksMessage,
+  pageBuilderEditMessage,
   readBuiltPageSpec,
   readPageBuilderBlocksMessage,
+  readPageBuilderEditMessage,
 } from "@/lib/page-builder/messages"
 
 describe("knownLayout", () => {
@@ -37,8 +40,7 @@ describe("defaultLayout", () => {
 
 describe("the frame's spec", () => {
   const spec = {
-    kind: "marketing" as const,
-    blocks: ["hero-2", "faqs-1", "faqs-1"],
+    blocks: ["hero-2", "win-rate-1", "faqs-1", "faqs-1"],
     layout: {
       header: "top-navigation-5",
       sidebar: "app-shell-2",
@@ -64,18 +66,46 @@ describe("the frame's spec", () => {
   it("drops what it cannot render", () => {
     expect(
       readBuiltPageSpec({
-        kind: "store",
-        blocks: "hero-2,product-list-3,nope",
+        blocks: "hero-2,footer-1,nope",
         header: "hero-2",
       })
     ).toEqual({
-      kind: "store",
-      blocks: ["product-list-3"],
+      // Any kind's blocks can share a page, but a footer is a slot.
+      blocks: ["hero-2"],
       layout: { header: null, sidebar: null, footer: null },
     })
-    expect(readBuiltPageSpec({ kind: "blog" })).toBeNull()
     expect(
-      readPageBuilderBlocksMessage({ type: "other", kind: "store" })
+      readPageBuilderBlocksMessage({ type: "other", blocks: ["hero-2"] })
+    ).toBeNull()
+  })
+})
+
+describe("edit messages", () => {
+  it("carry the edits the frame's toolbars make", () => {
+    for (const edit of [
+      { action: "move", index: 2, by: -1 },
+      { action: "remove", index: 0 },
+      { action: "clear", slot: "header" },
+    ] as const) {
+      expect(readPageBuilderEditMessage(pageBuilderEditMessage(edit))).toEqual(
+        edit
+      )
+    }
+  })
+
+  it("refuse anything malformed", () => {
+    const type = PAGE_BUILDER_EDIT_MESSAGE_TYPE
+    expect(
+      readPageBuilderEditMessage({ type, action: "move", index: 1, by: 3 })
+    ).toBeNull()
+    expect(
+      readPageBuilderEditMessage({ type, action: "remove", index: "1" })
+    ).toBeNull()
+    expect(
+      readPageBuilderEditMessage({ type, action: "clear", slot: "hero" })
+    ).toBeNull()
+    expect(
+      readPageBuilderEditMessage({ type: "other", action: "remove", index: 0 })
     ).toBeNull()
   })
 })

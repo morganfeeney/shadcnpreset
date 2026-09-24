@@ -1,46 +1,32 @@
-import { isPageKind, knownBlocks, knownLayout } from "@/lib/page-builder/blocks"
+import { knownBlocks, knownLayout } from "@/lib/page-builder/blocks"
 import {
   LAYOUT_SLOTS,
-  type PageKind,
+  type LayoutSlot,
   type PageLayout,
 } from "@/lib/page-builder/sections"
 
-/** Everything the preview frame renders: the page's kind, blocks and layout. */
+/** Everything the preview frame renders: the page's blocks and layout. */
 export type BuiltPageSpec = {
-  kind: PageKind
   blocks: string[]
   layout: PageLayout
 }
 
-/**
- * Reads a spec from the frame's URL or a message, keeping only what the kind
- * and slots allow. Null when there is no usable kind.
- */
+/** Reads a spec from the frame's URL or a message, keeping what can render. */
 export function readBuiltPageSpec(
   input: Partial<Record<string, unknown>>
-): BuiltPageSpec | null {
-  const { kind } = input
-  if (typeof kind !== "string" || !isPageKind(kind)) return null
+): BuiltPageSpec {
   const blocks =
     typeof input.blocks === "string"
       ? input.blocks.split(",")
       : Array.isArray(input.blocks)
         ? input.blocks.filter((id): id is string => typeof id === "string")
         : []
-  return {
-    kind,
-    blocks: knownBlocks(kind, blocks),
-    layout: knownLayout(input),
-  }
+  return { blocks: knownBlocks(blocks), layout: knownLayout(input) }
 }
 
 /** The frame's URL for a spec; the preset is the only thing that reloads it. */
 export function builtPageSrc(preset: string, spec: BuiltPageSpec): string {
-  const params = new URLSearchParams({
-    preset,
-    kind: spec.kind,
-    blocks: spec.blocks.join(","),
-  })
+  const params = new URLSearchParams({ preset, blocks: spec.blocks.join(",") })
   for (const slot of LAYOUT_SLOTS) {
     const id = spec.layout[slot]
     if (id) params.set(slot, id)
@@ -50,8 +36,8 @@ export function builtPageSrc(preset: string, spec: BuiltPageSpec): string {
 
 /**
  * The builder re-lays out a loaded frame by message instead of reloading it,
- * so dragging a block costs a repaint. Only a preset change reloads, since
- * the preset's CSS is rendered on the server.
+ * so every edit costs a repaint. Only a preset change reloads, since the
+ * preset's CSS is rendered on the server.
  */
 export const PAGE_BUILDER_BLOCKS_MESSAGE_TYPE =
   "shadcnpreset:page-builder-blocks"
@@ -59,7 +45,6 @@ export const PAGE_BUILDER_BLOCKS_MESSAGE_TYPE =
 export function pageBuilderBlocksMessage(spec: BuiltPageSpec) {
   return {
     type: PAGE_BUILDER_BLOCKS_MESSAGE_TYPE,
-    kind: spec.kind,
     blocks: spec.blocks,
     ...spec.layout,
   }
@@ -89,4 +74,42 @@ export function isPageBuilderReadyMessage(value: unknown): boolean {
     typeof value === "object" &&
     (value as Record<string, unknown>).type === PAGE_BUILDER_READY_MESSAGE_TYPE
   )
+}
+
+/**
+ * Sent by the frame when the visitor edits the page in place, from the
+ * toolbar on each block. The builder owns the page, so the frame only asks;
+ * the change comes back as a layout message like any other.
+ */
+export const PAGE_BUILDER_EDIT_MESSAGE_TYPE = "shadcnpreset:page-builder-edit"
+
+export type PageEdit =
+  | { action: "move"; index: number; by: -1 | 1 }
+  | { action: "remove"; index: number }
+  | { action: "clear"; slot: LayoutSlot }
+
+export function pageBuilderEditMessage(edit: PageEdit) {
+  return { type: PAGE_BUILDER_EDIT_MESSAGE_TYPE, ...edit }
+}
+
+/** The edit a message asks for, or null for anything else. */
+export function readPageBuilderEditMessage(value: unknown): PageEdit | null {
+  if (!value || typeof value !== "object") return null
+  const m = value as Record<string, unknown>
+  if (m.type !== PAGE_BUILDER_EDIT_MESSAGE_TYPE) return null
+  const index = Number.isInteger(m.index) ? (m.index as number) : null
+  if (m.action === "move" && index !== null && (m.by === -1 || m.by === 1)) {
+    return { action: "move", index, by: m.by }
+  }
+  if (m.action === "remove" && index !== null) {
+    return { action: "remove", index }
+  }
+  if (
+    m.action === "clear" &&
+    typeof m.slot === "string" &&
+    (LAYOUT_SLOTS as readonly string[]).includes(m.slot)
+  ) {
+    return { action: "clear", slot: m.slot as LayoutSlot }
+  }
+  return null
 }

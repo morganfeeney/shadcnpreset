@@ -22,12 +22,6 @@ export const PAGE_KIND_DESCRIPTIONS: Record<PageKind, string> = {
     "A signed-in application screen of charts, metrics and reports for monitoring a business or team",
 }
 
-export const PAGE_KIND_LABELS: Record<PageKind, string> = {
-  marketing: "Landing page",
-  store: "Store",
-  dashboard: "Dashboard",
-}
-
 export type PageSection = {
   /** The shadcncraft category: every block `<id>-N` is a variant of it. */
   id: string

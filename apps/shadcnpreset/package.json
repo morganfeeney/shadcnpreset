@@ -22,7 +22,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,css}\"",
     "typecheck": "next typegen && tsc --noEmit",
     "import:shadcncraft": "tsx ./scripts/import-shadcncraft.ts",
-    "generate:page-builder-catalog": "tsx ./scripts/generate-page-builder-catalog.ts"
+    "generate:page-builder-catalog": "tsx ./scripts/generate-page-builder-catalog.ts",
+    "generate:page-builder-thumbnails": "tsx ./scripts/generate-page-builder-thumbnails.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.52",
@@ -100,6 +101,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.1.7",
     "jsdom": "^30.0.1",
+    "playwright-core": "1.63.0",
     "postcss": "^8",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",

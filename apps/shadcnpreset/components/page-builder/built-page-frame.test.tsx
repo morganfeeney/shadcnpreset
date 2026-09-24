@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { BuiltPage } from "@/components/page-builder/built-page"
@@ -7,8 +7,10 @@ import { BuiltPageFrame } from "@/components/page-builder/built-page-frame"
 import {
   PAGE_BUILDER_READY_MESSAGE_TYPE,
   pageBuilderBlocksMessage,
+  pageBuilderEditMessage,
   type BuiltPageSpec,
 } from "@/lib/page-builder/messages"
+import type { PageLayout } from "@/lib/page-builder/sections"
 
 vi.mock("@/components/preset-v4-frame", () => ({
   PresetV4Frame: ({ src, title }: { src: string; title: string }) => (
@@ -35,12 +37,8 @@ vi.mock("@/components/cn-ui/sidebar", () => ({
 
 const NO_LAYOUT = { header: null, sidebar: null, footer: null }
 
-function spec(
-  kind: "marketing" | "store" | "dashboard",
-  blocks: string[],
-  layout: BuiltPageSpec["layout"] = NO_LAYOUT
-): BuiltPageSpec {
-  return { kind, blocks, layout }
+function spec(blocks: string[], layout: PageLayout = NO_LAYOUT): BuiltPageSpec {
+  return { blocks, layout }
 }
 
 /** A message as it would arrive, from this origin unless told otherwise. */
@@ -57,69 +55,75 @@ afterEach(() => {
 })
 
 describe("BuiltPageFrame", () => {
-  const postMessage = () => vi.spyOn(window, "postMessage")
+  function renderFrame(initial: BuiltPageSpec) {
+    const onEdit = vi.fn()
+    const view = render(
+      <BuiltPageFrame
+        preset="b0"
+        spec={initial}
+        dimmed={false}
+        onEdit={onEdit}
+      />
+    )
+    const rerender = (next: BuiltPageSpec) =>
+      view.rerender(
+        <BuiltPageFrame
+          preset="b0"
+          spec={next}
+          dimmed={false}
+          onEdit={onEdit}
+        />
+      )
+    return { onEdit, rerender }
+  }
 
   it("answers the frame's ready with the latest layout, not the one in its URL", () => {
-    const posted = postMessage()
-    const { rerender } = render(
-      <BuiltPageFrame
-        preset="b0"
-        spec={spec("dashboard", ["metric-cards-1"])}
-        dimmed={false}
-      />
-    )
+    const posted = vi.spyOn(window, "postMessage")
+    const { rerender } = renderFrame(spec(["metric-cards-1"]))
     // A new draft lands while the frame is still loading its blocks.
-    rerender(
-      <BuiltPageFrame
-        preset="b0"
-        spec={spec("marketing", ["hero-1", "faqs-1"])}
-        dimmed={false}
-      />
-    )
+    rerender(spec(["hero-1", "faqs-1"]))
     expect(posted).not.toHaveBeenCalled()
 
     receive({ type: PAGE_BUILDER_READY_MESSAGE_TYPE })
 
     expect(posted).toHaveBeenLastCalledWith(
-      pageBuilderBlocksMessage(spec("marketing", ["hero-1", "faqs-1"])),
+      pageBuilderBlocksMessage(spec(["hero-1", "faqs-1"])),
       window.location.origin
     )
   })
 
-  it("posts each edit once the frame is listening", () => {
-    const posted = postMessage()
-    const { rerender } = render(
-      <BuiltPageFrame
-        preset="b0"
-        spec={spec("marketing", ["hero-1", "faqs-1"])}
-        dimmed={false}
-      />
-    )
+  it("posts each change once the frame is listening", () => {
+    const posted = vi.spyOn(window, "postMessage")
+    const { rerender } = renderFrame(spec(["hero-1", "faqs-1"]))
     receive({ type: PAGE_BUILDER_READY_MESSAGE_TYPE })
 
-    rerender(
-      <BuiltPageFrame
-        preset="b0"
-        spec={spec("marketing", ["faqs-1", "hero-1"])}
-        dimmed={false}
-      />
-    )
+    rerender(spec(["faqs-1", "hero-1"]))
 
     expect(posted).toHaveBeenLastCalledWith(
-      pageBuilderBlocksMessage(spec("marketing", ["faqs-1", "hero-1"])),
+      pageBuilderBlocksMessage(spec(["faqs-1", "hero-1"])),
       window.location.origin
     )
+  })
+
+  it("takes edits only from the frame that said it was ready", () => {
+    vi.spyOn(window, "postMessage")
+    const { onEdit } = renderFrame(spec(["hero-1", "faqs-1"]))
+    const edit = { action: "remove", index: 1 } as const
+
+    receive(pageBuilderEditMessage(edit))
+    expect(onEdit).not.toHaveBeenCalled()
+
+    receive({ type: PAGE_BUILDER_READY_MESSAGE_TYPE })
+    receive(pageBuilderEditMessage(edit))
+    expect(onEdit).toHaveBeenCalledWith(edit)
+
+    receive(pageBuilderEditMessage(edit), "https://elsewhere.test")
+    expect(onEdit).toHaveBeenCalledTimes(1)
   })
 
   it("ignores a ready from another origin", () => {
-    const posted = postMessage()
-    render(
-      <BuiltPageFrame
-        preset="b0"
-        spec={spec("marketing", ["hero-1"])}
-        dimmed={false}
-      />
-    )
+    const posted = vi.spyOn(window, "postMessage")
+    renderFrame(spec(["hero-1"]))
     receive({ type: PAGE_BUILDER_READY_MESSAGE_TYPE }, "https://elsewhere.test")
     expect(posted).not.toHaveBeenCalled()
   })
@@ -133,7 +137,7 @@ describe("BuiltPage", () => {
     const posted = vi.spyOn(window, "postMessage")
     render(
       <BuiltPage
-        {...spec("dashboard", ["metric-cards-1"], {
+        {...spec(["metric-cards-1"], {
           header: "app-shell-header-1",
           sidebar: "app-shell-1",
           footer: null,
@@ -148,7 +152,7 @@ describe("BuiltPage", () => {
 
     receive(
       pageBuilderBlocksMessage(
-        spec("marketing", ["hero-1", "pricing-4"], {
+        spec(["hero-1", "pricing-4"], {
           header: "top-navigation-2",
           sidebar: null,
           footer: "footer-3",
@@ -166,10 +170,67 @@ describe("BuiltPage", () => {
     ])
   })
 
+  it("asks the builder to move and remove blocks from their toolbars", () => {
+    const posted = vi.spyOn(window, "postMessage")
+    render(<BuiltPage {...spec(["hero-1", "pricing-4", "faqs-1"])} />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Move Pricing up" }))
+    expect(posted).toHaveBeenLastCalledWith(
+      pageBuilderEditMessage({ action: "move", index: 1, by: -1 }),
+      window.location.origin
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove FAQs" }))
+    expect(posted).toHaveBeenLastCalledWith(
+      pageBuilderEditMessage({ action: "remove", index: 2 }),
+      window.location.origin
+    )
+
+    // Nowhere to go past either end.
+    expect(screen.getByRole("button", { name: "Move Hero up" })).toHaveProperty(
+      "disabled",
+      true
+    )
+    expect(
+      screen.getByRole("button", { name: "Move FAQs down" })
+    ).toHaveProperty("disabled", true)
+  })
+
+  it("takes a header or footer off its slot", () => {
+    const posted = vi.spyOn(window, "postMessage")
+    render(
+      <BuiltPage
+        {...spec(["hero-1"], {
+          header: "top-navigation-1",
+          sidebar: null,
+          footer: "footer-1",
+        })}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Remove header" }))
+    expect(posted).toHaveBeenLastCalledWith(
+      pageBuilderEditMessage({ action: "clear", slot: "header" }),
+      window.location.origin
+    )
+  })
+
+  it("puts neighbouring dashboard widgets in one grid", () => {
+    render(
+      <BuiltPage
+        {...spec(["hero-1", "win-rate-1", "goal-progress-1", "faqs-1"])}
+      />
+    )
+    const grid = (id: string) =>
+      document.querySelector(`[data-block="${id}"]`)?.parentElement
+    expect(grid("win-rate-1")).toBe(grid("goal-progress-1"))
+    expect(grid("win-rate-1")?.className).toContain("grid-cols-2")
+    expect(grid("hero-1")).not.toBe(grid("win-rate-1"))
+  })
+
   it("puts a sidebar's page in the app shell, header first", () => {
     render(
       <BuiltPage
-        {...spec("marketing", ["hero-1"], {
+        {...spec(["hero-1"], {
           header: "top-navigation-1",
           sidebar: "app-shell-2",
           footer: "footer-1",
@@ -188,7 +249,7 @@ describe("BuiltPage", () => {
   it("keeps an app header in the app shell even without a sidebar", () => {
     render(
       <BuiltPage
-        {...spec("dashboard", ["win-rate-1"], {
+        {...spec(["win-rate-1"], {
           header: "app-shell-header-3",
           sidebar: null,
           footer: null,
@@ -200,9 +261,9 @@ describe("BuiltPage", () => {
   })
 
   it("ignores a layout from another origin", () => {
-    render(<BuiltPage {...spec("marketing", ["hero-1"])} />)
+    render(<BuiltPage {...spec(["hero-1"])} />)
     receive(
-      pageBuilderBlocksMessage(spec("marketing", ["faqs-1"])),
+      pageBuilderBlocksMessage(spec(["faqs-1"])),
       "https://elsewhere.test"
     )
     expect(rendered()).toEqual(["hero-1"])

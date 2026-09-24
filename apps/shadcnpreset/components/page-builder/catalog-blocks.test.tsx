@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { renderToString } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -52,5 +52,21 @@ describe("every catalog block server-renders", () => {
       </SidebarProvider>
     )
     expect(html.length).toBeGreaterThan(100)
+  })
+})
+
+/**
+ * The block browser shows each block as a screenshot, which only
+ * `pnpm generate:page-builder-thumbnails` makes. A block imported without
+ * them shows an empty card.
+ */
+describe("every catalog block has thumbnails", () => {
+  it.each(ids)("%s", (id) => {
+    for (const theme of ["light", "dark"]) {
+      expect(
+        existsSync(`public/page-builder/thumbnails/${theme}/${id}.jpg`),
+        `${theme} thumbnail`
+      ).toBe(true)
+    }
   })
 })

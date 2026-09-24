@@ -189,21 +189,16 @@ describe("readPageFromJev", () => {
 })
 
 describe("knownBlocks", () => {
-  it("keeps the order given, dropping what the kind cannot show and layout blocks", () => {
+  it("keeps the order given and repeats, across kinds, but no layout blocks", () => {
     expect(
-      knownBlocks("store", [
+      knownBlocks([
         "faqs-2",
-        "pricing-4",
+        "win-rate-1",
         "product-list-3",
         "footer-2",
-        "nope-1",
+        "hero-99",
+        "faqs-2",
       ])
-    ).toEqual(["faqs-2", "product-list-3"])
-  })
-
-  it("drops blocks we have not imported and keeps repeats", () => {
-    expect(
-      knownBlocks("marketing", ["hero-99", "hero-2", "faqs-1", "faqs-1"])
-    ).toEqual(["hero-2", "faqs-1", "faqs-1"])
+    ).toEqual(["faqs-2", "win-rate-1", "product-list-3", "faqs-2"])
   })
 })

@@ -8,9 +8,11 @@ import {
   builtPageSrc,
   isPageBuilderReadyMessage,
   pageBuilderBlocksMessage,
+  readPageBuilderEditMessage,
   type BuiltPageSpec,
+  type PageEdit,
 } from "@/lib/page-builder/messages"
-import { LAYOUT_SLOTS, PAGE_KIND_LABELS } from "@/lib/page-builder/sections"
+import { LAYOUT_SLOTS } from "@/lib/page-builder/sections"
 import { cn } from "@/lib/utils"
 
 /**
@@ -27,10 +29,13 @@ export function BuiltPageFrame({
   preset,
   spec,
   dimmed,
+  onEdit,
 }: {
   preset: string
   spec: BuiltPageSpec
   dimmed: boolean
+  /** An edit the visitor made on the page itself, from a block's toolbar. */
+  onEdit: (edit: PageEdit) => void
 }) {
   const frameWindowRef = useRef<Window | null>(null)
   const specRef = useRef(spec)
@@ -46,7 +51,6 @@ export function BuiltPageFrame({
   }
 
   const specKey = [
-    spec.kind,
     spec.blocks.join(","),
     ...LAYOUT_SLOTS.map((slot) => spec.layout[slot]),
   ].join("|")
@@ -60,9 +64,20 @@ export function BuiltPageFrame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [specKey])
 
+  const onEditRef = useRef(onEdit)
+  useEffect(() => {
+    onEditRef.current = onEdit
+  })
+
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
+      const edit = readPageBuilderEditMessage(event.data)
+      if (edit) {
+        // Only the frame that said it was ready can edit the page.
+        if (event.source === frameWindowRef.current) onEditRef.current(edit)
+        return
+      }
       if (!isPageBuilderReadyMessage(event.data)) return
       const frameWindow = event.source as Window | null
       if (!frameWindow) return
@@ -85,7 +100,7 @@ export function BuiltPageFrame({
           dimmed && "opacity-60"
         )}
         src={frame.src}
-        title={`${PAGE_KIND_LABELS[spec.kind]} preview`}
+        title="Page preview"
       />
       {ready ? null : (
         <div className="absolute inset-0 flex items-center justify-center bg-background">
