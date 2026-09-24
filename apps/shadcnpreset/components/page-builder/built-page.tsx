@@ -87,16 +87,24 @@ function ToolbarButton({
  */
 function Toolbar({
   label,
+  className,
   children,
 }: {
   label: string
+  /** Where it sits and when it shows; by default, over its block's corner. */
+  className?: string
   children: React.ReactNode
 }) {
   return (
     <div
       role="toolbar"
       aria-label={label}
-      className="absolute top-2 right-2 z-50 hidden items-center gap-0.5 rounded-lg bg-neutral-950/90 p-1 text-white shadow-lg ring-1 ring-white/10 backdrop-blur group-focus-within/block:flex group-hover/block:flex"
+      data-toolbar={label.toLowerCase()}
+      className={cn(
+        "z-50 hidden items-center gap-0.5 rounded-lg bg-neutral-950/90 p-1 text-white shadow-lg ring-1 ring-white/10 backdrop-blur",
+        className ??
+          "absolute top-2 right-2 group-focus-within/block:flex group-hover/block:flex"
+      )}
     >
       <span className="px-2 text-xs font-medium">{label}</span>
       {children}
@@ -181,6 +189,28 @@ function SlotBlock({
       </Toolbar>
       <Block id={id} />
     </div>
+  )
+}
+
+/**
+ * The sidebar's toolbar. The sidebar cannot be wrapped like other blocks —
+ * the inset sidebar styles the page beside it as its sibling — so the shell
+ * watches for the sidebar (or this toolbar) being hovered or focused, and
+ * the toolbar floats over the sidebar's top corner.
+ */
+function SidebarToolbar() {
+  return (
+    <Toolbar
+      label="Sidebar"
+      className="fixed top-2 left-2 group-has-[[data-slot=sidebar-container]:focus-within]/shell:flex group-has-[[data-slot=sidebar-container]:hover]/shell:flex group-has-[[data-toolbar=sidebar]:focus-within]/shell:flex group-has-[[data-toolbar=sidebar]:hover]/shell:flex"
+    >
+      <ToolbarButton
+        label="Remove sidebar"
+        onClick={() => requestEdit({ action: "clear", slot: "sidebar" })}
+      >
+        <XIcon />
+      </ToolbarButton>
+    </Toolbar>
   )
 }
 
@@ -279,8 +309,16 @@ export function BuiltPage(initial: BuiltPageSpec) {
   if (sidebar || isAppHeader(header)) {
     return (
       <div className="h-svh bg-background text-foreground">
-        <SidebarProvider className="h-full min-h-0">
+        <SidebarProvider
+          className={cn(
+            "group/shell h-full min-h-0",
+            // The outline the other blocks show, on the unwrapped sidebar.
+            "[&_[data-slot=sidebar-container]]:outline-2 [&_[data-slot=sidebar-container]]:-outline-offset-2 [&_[data-slot=sidebar-container]]:outline-transparent",
+            "has-[[data-toolbar=sidebar]:hover]:[&_[data-slot=sidebar-container]]:outline-sky-500/70 [&_[data-slot=sidebar-container]:focus-within]:outline-sky-500/70 [&_[data-slot=sidebar-container]:hover]:outline-sky-500/70"
+          )}
+        >
           {sidebar ? <Block id={sidebar} /> : null}
+          {sidebar ? <SidebarToolbar /> : null}
           <SidebarInset className="min-h-0 overflow-hidden">
             {header ? <SlotBlock id={header} slot="header" /> : null}
             {/* `*:shrink-0`, as shadcncraft ships its shells: cards are

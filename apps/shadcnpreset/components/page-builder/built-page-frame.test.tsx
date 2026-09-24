@@ -219,6 +219,24 @@ describe("BuiltPage", () => {
     )
   })
 
+  it("takes the sidebar off from its own toolbar", () => {
+    const posted = vi.spyOn(window, "postMessage")
+    render(
+      <BuiltPage
+        {...spec(["win-rate-1"], {
+          header: "app-shell-header-1",
+          sidebar: "app-shell-1",
+          footer: null,
+        })}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Remove sidebar" }))
+    expect(posted).toHaveBeenLastCalledWith(
+      pageBuilderEditMessage({ action: "clear", slot: "sidebar" }),
+      window.location.origin
+    )
+  })
+
   it("puts neighbouring dashboard widgets in one grid", () => {
     render(
       <BuiltPage
