@@ -131,20 +131,24 @@ function EditableBlock({
         <ToolbarButton
           label={`Move ${label} up`}
           disabled={index === 0}
-          onClick={() => requestEdit({ action: "move", index, by: -1 })}
+          onClick={() =>
+            requestEdit({ action: "move", index, block: id, by: -1 })
+          }
         >
           <ArrowUpIcon />
         </ToolbarButton>
         <ToolbarButton
           label={`Move ${label} down`}
           disabled={index === count - 1}
-          onClick={() => requestEdit({ action: "move", index, by: 1 })}
+          onClick={() =>
+            requestEdit({ action: "move", index, block: id, by: 1 })
+          }
         >
           <ArrowDownIcon />
         </ToolbarButton>
         <ToolbarButton
           label={`Remove ${label}`}
-          onClick={() => requestEdit({ action: "remove", index })}
+          onClick={() => requestEdit({ action: "remove", index, block: id })}
         >
           <XIcon />
         </ToolbarButton>

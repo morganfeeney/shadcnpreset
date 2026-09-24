@@ -83,8 +83,8 @@ describe("the frame's spec", () => {
 describe("edit messages", () => {
   it("carry the edits the frame's toolbars make", () => {
     for (const edit of [
-      { action: "move", index: 2, by: -1 },
-      { action: "remove", index: 0 },
+      { action: "move", index: 2, block: "faqs-1", by: -1 },
+      { action: "remove", index: 0, block: "hero-2" },
       { action: "clear", slot: "header" },
     ] as const) {
       expect(readPageBuilderEditMessage(pageBuilderEditMessage(edit))).toEqual(
@@ -96,10 +96,25 @@ describe("edit messages", () => {
   it("refuse anything malformed", () => {
     const type = PAGE_BUILDER_EDIT_MESSAGE_TYPE
     expect(
-      readPageBuilderEditMessage({ type, action: "move", index: 1, by: 3 })
+      readPageBuilderEditMessage({
+        type,
+        action: "move",
+        index: 1,
+        block: "faqs-1",
+        by: 3,
+      })
     ).toBeNull()
     expect(
-      readPageBuilderEditMessage({ type, action: "remove", index: "1" })
+      readPageBuilderEditMessage({
+        type,
+        action: "remove",
+        index: "1",
+        block: "faqs-1",
+      })
+    ).toBeNull()
+    // A move or removal that does not say which block it means.
+    expect(
+      readPageBuilderEditMessage({ type, action: "remove", index: 1 })
     ).toBeNull()
     expect(
       readPageBuilderEditMessage({ type, action: "clear", slot: "hero" })

@@ -108,7 +108,7 @@ describe("BuiltPageFrame", () => {
   it("takes edits only from the frame that said it was ready", () => {
     vi.spyOn(window, "postMessage")
     const { onEdit } = renderFrame(spec(["hero-1", "faqs-1"]))
-    const edit = { action: "remove", index: 1 } as const
+    const edit = { action: "remove", index: 1, block: "faqs-1" } as const
 
     receive(pageBuilderEditMessage(edit))
     expect(onEdit).not.toHaveBeenCalled()
@@ -176,13 +176,18 @@ describe("BuiltPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Move Pricing up" }))
     expect(posted).toHaveBeenLastCalledWith(
-      pageBuilderEditMessage({ action: "move", index: 1, by: -1 }),
+      pageBuilderEditMessage({
+        action: "move",
+        index: 1,
+        block: "pricing-4",
+        by: -1,
+      }),
       window.location.origin
     )
 
     fireEvent.click(screen.getByRole("button", { name: "Remove FAQs" }))
     expect(posted).toHaveBeenLastCalledWith(
-      pageBuilderEditMessage({ action: "remove", index: 2 }),
+      pageBuilderEditMessage({ action: "remove", index: 2, block: "faqs-1" }),
       window.location.origin
     )
 

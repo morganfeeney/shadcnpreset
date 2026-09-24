@@ -83,9 +83,14 @@ export function isPageBuilderReadyMessage(value: unknown): boolean {
  */
 export const PAGE_BUILDER_EDIT_MESSAGE_TYPE = "shadcnpreset:page-builder-edit"
 
+/**
+ * Moves and removals name the block as well as its position: the frame's
+ * view can be a step behind — a double-click lands before the first change
+ * comes back — and the block is how the builder tells.
+ */
 export type PageEdit =
-  | { action: "move"; index: number; by: -1 | 1 }
-  | { action: "remove"; index: number }
+  | { action: "move"; index: number; block: string; by: -1 | 1 }
+  | { action: "remove"; index: number; block: string }
   | { action: "clear"; slot: LayoutSlot }
 
 export function pageBuilderEditMessage(edit: PageEdit) {
@@ -98,11 +103,17 @@ export function readPageBuilderEditMessage(value: unknown): PageEdit | null {
   const m = value as Record<string, unknown>
   if (m.type !== PAGE_BUILDER_EDIT_MESSAGE_TYPE) return null
   const index = Number.isInteger(m.index) ? (m.index as number) : null
-  if (m.action === "move" && index !== null && (m.by === -1 || m.by === 1)) {
-    return { action: "move", index, by: m.by }
+  const block = typeof m.block === "string" ? m.block : null
+  if (
+    m.action === "move" &&
+    index !== null &&
+    block !== null &&
+    (m.by === -1 || m.by === 1)
+  ) {
+    return { action: "move", index, block, by: m.by }
   }
-  if (m.action === "remove" && index !== null) {
-    return { action: "remove", index }
+  if (m.action === "remove" && index !== null && block !== null) {
+    return { action: "remove", index, block }
   }
   if (
     m.action === "clear" &&
