@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { useTheme } from "next-themes"
 
 import { Spinner } from "@/components/ui/spinner"
+import type { BuiltPageSpec } from "@/lib/page-builder/messages"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
 function ExampleLoading() {
@@ -71,6 +72,12 @@ const GeneratedPreviewExample = dynamic(
   { ssr: false, loading: ExampleLoading }
 )
 
+const BuiltPage = dynamic(
+  () =>
+    import("@/components/page-builder/built-page").then((mod) => mod.BuiltPage),
+  { loading: ExampleLoading }
+)
+
 const THEME_SYNC_MESSAGE_TYPE = "shadcnpreset:theme-mode"
 const FONT_READY_FALLBACK_MS = 5000
 
@@ -98,9 +105,11 @@ function isThemeModeMessage(value: unknown): value is ThemeModeMessage {
 function ExampleView({
   slug,
   presetCode,
+  builtPage,
 }: {
   slug: LocalPresetPreviewExample
   presetCode: string
+  builtPage?: BuiltPageSpec
 }) {
   switch (slug) {
     case "dashboard":
@@ -145,6 +154,8 @@ function ExampleView({
       return <ChatDemo />
     case "generated":
       return <GeneratedPreviewExample />
+    case "builder":
+      return builtPage ? <BuiltPage {...builtPage} /> : null
     default:
       return null
   }
@@ -153,12 +164,15 @@ function ExampleView({
 export function PresetPreviewExampleShell({
   slug,
   presetCode,
+  builtPage,
   fontReadyGateKey,
   bodyStyleClass,
   bodyBaseColorClass,
 }: {
   slug: LocalPresetPreviewExample
   presetCode: string
+  /** The page builder's layout, read from the frame's URL. */
+  builtPage?: BuiltPageSpec
   /**
    * When non-empty, blocks the example until `document.fonts.ready` (or timeout),
    * matching v4 DesignSystemProvider + preset iframe behavior. Value should
@@ -220,5 +234,7 @@ export function PresetPreviewExampleShell({
     return <ExampleLoading />
   }
 
-  return <ExampleView slug={slug} presetCode={presetCode} />
+  return (
+    <ExampleView slug={slug} presetCode={presetCode} builtPage={builtPage} />
+  )
 }

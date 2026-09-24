@@ -7,6 +7,7 @@ const STATIC_PATHS = [
   "/",
   "/community",
   "/describe",
+  "/build",
   "/high-contrast-presets",
   "/changelog",
   "/assistant",

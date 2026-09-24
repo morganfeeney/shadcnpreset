@@ -5,8 +5,11 @@ const SYSTEM_ONE_URL = "https://api.typesafe.ai/v1/systemone"
 /** Jev usually answers in ~250 ms; anything this slow is not coming back. */
 const TIMEOUT_MS = 8_000
 
-/** Built once: the questions never change between requests. */
-const QUESTIONS = buildJevQuestions()
+/**
+ * Built once: the questions never change between requests. Exported for
+ * callers that ask Jev more in the same request.
+ */
+export const PRESET_QUESTIONS = buildJevQuestions()
 
 export class JevRequestError extends Error {
   constructor(
@@ -30,6 +33,18 @@ export async function askJevAboutDescription(
   description: string,
   signal?: AbortSignal
 ): Promise<JevResponse> {
+  return askJev({ description }, PRESET_QUESTIONS, signal)
+}
+
+/**
+ * One System One request: any state, any questions. Server only — the key
+ * must never reach the browser.
+ */
+export async function askJev<Answers = JevResponse["answers"]>(
+  state: unknown,
+  questions: Record<string, unknown>,
+  signal?: AbortSignal
+): Promise<{ model: string; answers: Answers }> {
   const apiKey = process.env.JEV_API_KEY?.trim()
   if (!apiKey) throw new JevRequestError("JEV_API_KEY is not configured.", 503)
 
@@ -41,8 +56,8 @@ export async function askJevAboutDescription(
     },
     body: JSON.stringify({
       model: "jev-latest",
-      state: { description },
-      questions: QUESTIONS,
+      state,
+      questions,
     }),
     // Drop the upstream call too when the visitor has already typed past it.
     signal: signal
@@ -59,5 +74,5 @@ export async function askJevAboutDescription(
     )
   }
 
-  return (await response.json()) as JevResponse
+  return (await response.json()) as { model: string; answers: Answers }
 }

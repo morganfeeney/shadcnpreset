@@ -6,7 +6,6 @@ import { Logo } from "@/components/zippystarter/logo"
 import { ICON_LINKS } from "@/data/icon-lists"
 import React from "react"
 import { siteConfig } from "@/lib/config"
-import { OpenPresetDialog } from "@/components/open-preset-dialog"
 import { CurrentYear } from "@/components/current-year"
 import { TOOLS } from "@/app/tools/tools"
 import { LEARN_PAGE } from "@/app/learn/learn"
@@ -28,6 +27,7 @@ const COLUMNS = [
     header: "Navigation",
     links: [
       { label: "Ask AI", href: "/assistant" },
+      { label: "Build a page", href: "/build" },
       { label: "Community", href: "/community" },
       { type: "link", href: "/tools", label: "Tools" },
       { label: LEARN_PAGE.title, href: LEARN_PAGE.href },
@@ -37,7 +37,6 @@ const COLUMNS = [
     header: "Presets",
     links: [
       { label: "High contrast presets", href: "/high-contrast-presets" },
-      { label: "Open Preset", action: "open-preset" as const },
       { label: "My presets", href: "/my-presets" },
     ],
   },
@@ -71,16 +70,7 @@ function LogoLink() {
 
 export interface FooterColumn {
   header: string
-  links: Array<
-    | {
-        label: string
-        href: string
-      }
-    | {
-        label: string
-        action: "open-preset"
-      }
-  >
+  links: Array<{ label: string; href: string }>
   className?: string
 }
 
@@ -91,18 +81,12 @@ function FooterColumn({ header, links, className }: FooterColumn) {
       <ul className="grid gap-4">
         {links.map((link, index) => (
           <li key={link.label + index}>
-            {"href" in link ? (
-              <Link
-                href={link.href}
-                className="text-footer-foreground/60 transition hover:text-footer-foreground hover:underline"
-              >
-                {link.label}
-              </Link>
-            ) : (
-              <OpenPresetDialog className="text-footer-foreground/60 transition hover:text-footer-foreground hover:underline">
-                {link.label}
-              </OpenPresetDialog>
-            )}
+            <Link
+              href={link.href}
+              className="text-footer-foreground/60 transition hover:text-footer-foreground hover:underline"
+            >
+              {link.label}
+            </Link>
           </li>
         ))}
       </ul>
