@@ -23,6 +23,10 @@ import SeraLight from "@/public/marketing/cta/seralight.png"
 import SeraDark from "@/public/marketing/cta/seradark.png"
 import WcagLight from "@/public/marketing/cta/wcaglight.png"
 import WcagDark from "@/public/marketing/cta/wcagdark.png"
+import BuildLight from "@/public/marketing/cta/buildlight.png"
+import BuildDark from "@/public/marketing/cta/builddark.png"
+import BuildPromptLight from "@/public/marketing/cta/buildpromptlight.png"
+import BuildPromptDark from "@/public/marketing/cta/buildpromptdark.png"
 import { HomeTestimonials } from "@/app/(home)/home-testimonials"
 import { HomeTools } from "@/app/(home)/home-tools"
 import { HomeAiChatPreview } from "@/app/(home)/home-ai-chat-preview"
@@ -127,6 +131,55 @@ export default async function HomePage() {
           </SplitMediaContent>
         </SplitMedia>
         <HomeTestimonials />
+        <SplitMedia>
+          <SplitMediaContent>
+            <SplitMediaHeader>
+              <SplitMediaHeading>Bring your presets to life</SplitMediaHeading>
+              <SplitMediaSubHeading>
+                Go from idea to page in minutes
+              </SplitMediaSubHeading>
+            </SplitMediaHeader>
+            <SplitMediaDescription>
+              Start with a prompt and let AI put it together — then switch
+              presets, or use the drag and drop interface to build style and
+              ship your vision.
+            </SplitMediaDescription>
+            <SplitMediaLink href="/build">Build your page</SplitMediaLink>
+          </SplitMediaContent>
+          <div className="relative aspect-square">
+            <Image
+              className="brightness-150 grayscale dark:brightness-75"
+              src="https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&w=1200&h=1200&q=80"
+              alt=""
+              fill
+            />
+            <div className="absolute inset-0 bg-orange-600 opacity-30 mix-blend-color" />
+            <div className="absolute right-0 bottom-0 h-[88%] w-[88%]">
+              <Image src={BuildLight} className="dark:hidden" alt="" fill />
+              <Image
+                src={BuildDark}
+                className="hidden dark:block"
+                alt=""
+                fill
+              />
+            </div>
+            <div className="absolute bottom-[8%] left-[5%] aspect-800/168 w-[50%] overflow-hidden rounded-md shadow-2xl">
+              <Image
+                src={BuildPromptLight}
+                className="dark:hidden"
+                alt=""
+                fill
+              />
+              <Image
+                src={BuildPromptDark}
+                className="hidden dark:block"
+                alt=""
+                fill
+              />
+            </div>
+          </div>
+        </SplitMedia>
+
         <SplitMedia>
           <div className="relative aspect-square">
             <Image

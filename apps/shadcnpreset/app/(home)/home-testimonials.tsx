@@ -15,6 +15,12 @@ const TESTIMONIALS = [
     src: "/avatars/francesco.png",
     subtitle: "UX/UI Designer",
   },
+  {
+    quote: "I love how easy this makes preset discovery and customization!",
+    name: "Amy Egan",
+    src: "/avatars/amy.jpeg",
+    subtitle: "Staff Community Engineer, Vercel",
+  },
 ] as const
 
 export function HomeTestimonials() {
