@@ -74,7 +74,7 @@ export function ShadcncraftAdCard({
           />
         </div>
         <div className="flex min-w-0 flex-col gap-1 py-1">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">shadcncraft</span>
             <Badge variant="outline" className="text-[10px]">
               Ad
