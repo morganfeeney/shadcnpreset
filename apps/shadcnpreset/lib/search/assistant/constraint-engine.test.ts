@@ -83,6 +83,26 @@ describe("palette/explicit precedence", () => {
     expect(explicit.chartColor).toBe("amber")
   })
 
+  it("locks the style only when one style is named", () => {
+    expect(
+      extractExplicitFacetConstraints([{ role: "user", content: "make it luma" }])
+        .style
+    ).toBe("luma")
+    expect(
+      extractExplicitFacetConstraints([
+        { role: "user", content: "a preset for each style, luma, nova etc." },
+      ]).style
+    ).toBeUndefined()
+  })
+
+  it("drops an earlier style lock when a later message names several", () => {
+    const explicit = extractExplicitFacetConstraints([
+      { role: "user", content: "make it luma" },
+      { role: "user", content: "now show me one in luma and one in nova" },
+    ])
+    expect(explicit.style).toBeUndefined()
+  })
+
   it("parses explicit taupe lock for charts, base and theme", () => {
     const explicit = extractExplicitFacetConstraints([
       { role: "user", content: "i want taupe charts, base and theme" },

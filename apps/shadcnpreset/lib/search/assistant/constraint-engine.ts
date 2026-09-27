@@ -231,9 +231,14 @@ export function extractExplicitFacetConstraints(
     if (msg.role !== "user") continue
     const t = msg.content.toLowerCase()
 
-    for (const style of styleNames) {
-      if (new RegExp(`\\b${style}\\b`).test(t)) out.style = style
-    }
+    // One named style is a lock on every card. Several ("one in luma, one in
+    // nova") ask for a spread across the cards, so none of them may win —
+    // forcing the last match made every card the same style.
+    const namedStyles = styleNames.filter((style) =>
+      new RegExp(`\\b${style}\\b`).test(t)
+    )
+    if (namedStyles.length === 1) out.style = namedStyles[0]
+    else if (namedStyles.length > 1) delete out.style
 
     if (
       /\b(dark|inverted)\b/.test(t) &&
