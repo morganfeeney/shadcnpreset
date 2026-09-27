@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { PageBuilder } from "@/components/page-builder/page-builder"
 import { Toaster } from "@/components/ui/sonner"
+import { trackEvent } from "@/lib/analytics-events"
 import type { SavedPage } from "@/lib/page-builder/saved-page"
 
 // The preview prints what it was asked to show.
@@ -29,6 +30,8 @@ vi.mock("@/components/page-builder/preset-menu", () => ({
   PresetMenu: () => null,
 }))
 
+vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
+
 vi.mock("next-themes", () => ({
   useTheme: () => ({ theme: "light", resolvedTheme: "light" }),
 }))
@@ -48,6 +51,17 @@ function renderBuilder(saved: SavedPage | null = SAVED) {
       <Toaster />
     </QueryClientProvider>
   )
+}
+
+afterEach(() => {
+  vi.mocked(trackEvent).mockClear()
+})
+
+function impressions() {
+  return vi
+    .mocked(trackEvent)
+    .mock.calls.filter(([name]) => name === "affiliate_impression")
+    .map(([, params]) => params)
 }
 
 describe("PageBuilder", () => {
@@ -114,5 +128,25 @@ describe("PageBuilder", () => {
       "disabled",
       true
     )
+  })
+
+  it("counts the blocks credit once on a new page, and no get-code button yet", () => {
+    renderBuilder(null)
+    expect(impressions()).toEqual([
+      { partner: "shadcncraft", placement: "page-builder" },
+    ])
+  })
+
+  it("counts the get-code button once a visit, though clearing and undoing brings it back", async () => {
+    renderBuilder()
+    fireEvent.click(screen.getByRole("button", { name: "Clear page" }))
+    const undo = await screen.findByRole("button", { name: "Undo" })
+    act(() => undo.click())
+
+    expect(screen.getByRole("link", { name: "Get the code" })).toBeTruthy()
+    expect(impressions()).toEqual([
+      { partner: "shadcncraft", placement: "page-builder" },
+      { partner: "shadcncraft", placement: "page-builder-get-code" },
+    ])
   })
 })
