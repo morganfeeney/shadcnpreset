@@ -1,7 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import {
   CheckIcon,
@@ -19,7 +19,10 @@ import {
   PresetMenu,
 } from "@/components/page-builder/preset-menu"
 import { copyToClipboardWithMeta } from "@/components/copy-button"
-import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
+import {
+  ShadcncraftCredit,
+  ShadcncraftCreditImpression,
+} from "@/components/shadcncraft-examples/credit"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Sidebar,
@@ -55,6 +58,7 @@ type Draft = {
 }
 
 const MIN_LENGTH = 3
+const BLOCKS_CREDIT = { label: "Blocks", source: "page-builder" }
 /** A new page has nothing on it — no header, sidebar or footer — until chosen. */
 const EMPTY_DRAFT: Draft = {
   rows: [],
@@ -228,6 +232,18 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
     }
   }, [query])
 
+  // Once a visit, the first time there is a page to get the code for:
+  // clearing it and building again is still the same visitor seeing it.
+  const getCodeSeen = useRef(false)
+  useEffect(() => {
+    if (!hasPage || getCodeSeen.current) return
+    getCodeSeen.current = true
+    trackEvent("affiliate_impression", {
+      partner: "shadcncraft",
+      placement: GET_CODE_PLACEMENT,
+    })
+  }, [hasPage])
+
   const composer = (floating: boolean) => (
     <BuilderComposer
       value={input}
@@ -291,10 +307,8 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
           {hasPage ? (
             <GetCodeButton presetCode={presetCode} blockCount={blocks.length} />
           ) : null}
-          <ShadcncraftCredit
-            credit={{ label: "Blocks", source: "page-builder" }}
-            presetCode={presetCode}
-          />
+          <ShadcncraftCreditImpression credit={BLOCKS_CREDIT} />
+          <ShadcncraftCredit credit={BLOCKS_CREDIT} presetCode={presetCode} />
         </SidebarFooter>
       </Sidebar>
 
