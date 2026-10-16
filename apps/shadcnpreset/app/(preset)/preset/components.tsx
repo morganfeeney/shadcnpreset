@@ -6,6 +6,8 @@ import * as React from "react"
 import { copyToClipboardWithMeta } from "@/components/copy-button"
 import { GetCodeDialog } from "@/components/get-code-dialog"
 import { PresetVoteButton } from "@/components/preset-vote-button"
+import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
+import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import {
@@ -91,6 +93,7 @@ export function PresetButtons({
 }) {
   const [hasCopied, setHasCopied] = React.useState(false)
   const [getCodeOpen, setGetCodeOpen] = React.useState(false)
+  const [pitchOpen, setPitchOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (hasCopied) {
@@ -113,6 +116,10 @@ export function PresetButtons({
   return (
     <>
       <PresetVoteButton size="lg" code={preset} />
+      <Button size="lg" variant="outline" onClick={() => setPitchOpen(true)}>
+        <ShadcncraftLogo className="size-4" />
+        Get the blocks
+      </Button>
       <Button size="lg" variant="outline" onClick={() => setGetCodeOpen(true)}>
         <CodeIcon className="size-4" />
         Code
@@ -131,6 +138,11 @@ export function PresetButtons({
       >
         Details <InfoIcon />
       </Link>
+      <ShadcncraftPitchDialog
+        open={pitchOpen}
+        onOpenChange={setPitchOpen}
+        presetCode={preset}
+      />
       <GetCodeDialog
         open={getCodeOpen}
         onOpenChange={setGetCodeOpen}
