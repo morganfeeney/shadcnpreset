@@ -32,11 +32,21 @@ export function savedPageQuery(spec: BuiltPageSpec, preset: string): string {
  * saved page, so its missing slots read as deliberately empty rather than
  * as the defaults a fresh page starts with.
  */
-export function readSavedPage(
-  query: Partial<Record<string, string | string[] | undefined>>
-): SavedPage | null {
-  const first = (value: string | string[] | undefined) =>
-    Array.isArray(value) ? value[0] : value
+type BuilderQuery = Partial<Record<string, string | string[] | undefined>>
+
+const first = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value
+
+/**
+ * The preset in the builder's URL, or null. A link in from a preset page
+ * carries only this, so the builder opens empty but already in that preset.
+ */
+export function readBuilderPreset(query: BuilderQuery): string | null {
+  const preset = first(query.preset)
+  return preset && isPresetCode(preset) ? preset : null
+}
+
+export function readSavedPage(query: BuilderQuery): SavedPage | null {
   const blocks = first(query.blocks)
   if (blocks === undefined) return null
   const spec = readBuiltPageSpec({
@@ -46,6 +56,5 @@ export function readSavedPage(
     footer: first(query.footer),
   })
   if (isEmpty(spec)) return null
-  const preset = first(query.preset)
-  return { spec, preset: preset && isPresetCode(preset) ? preset : null }
+  return { spec, preset: readBuilderPreset(query) }
 }

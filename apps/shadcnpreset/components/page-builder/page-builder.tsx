@@ -133,7 +133,14 @@ function draftFromReading(reading: PageReading): Draft {
  * The page lives in the URL as it changes, so a reload or a shared link
  * opens it as it was, without asking Jev again.
  */
-export function PageBuilder({ saved }: { saved: SavedPage | null }) {
+export function PageBuilder({
+  saved,
+  preset = null,
+}: {
+  saved: SavedPage | null
+  /** A preset to open in when the URL holds no page, e.g. from a preset page. */
+  preset?: string | null
+}) {
   const [input, setInput] = useState("")
   // What was last sent; Jev reads a description once, when it is sent.
   const [description, setDescription] = useState("")
@@ -215,9 +222,10 @@ export function PageBuilder({ saved }: { saved: SavedPage | null }) {
     })
   }
 
-  // A saved page's preset was chosen for it, so it stays on top like a pick.
+  // A saved page's preset was chosen for it, and so was one a link in brought
+  // along, so either stays on top like a pick.
   const [presetOverride, setPresetOverride] = useState(
-    saved?.preset ?? undefined
+    saved?.preset ?? preset ?? undefined
   )
   const jevPreset = jev?.preset.code
   const presetCode = presetOverride ?? jevPreset ?? DEFAULT_PRESET
