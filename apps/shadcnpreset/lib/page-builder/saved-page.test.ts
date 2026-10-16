@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { DEFAULT_PRESET_CONFIG, encodePreset } from "shadcn/preset"
 
-import { readSavedPage, savedPageQuery } from "@/lib/page-builder/saved-page"
+import {
+  readBuilderPreset,
+  readSavedPage,
+  savedPageQuery,
+} from "@/lib/page-builder/saved-page"
 
 const PRESET = encodePreset(DEFAULT_PRESET_CONFIG)
 const spec = {
@@ -65,5 +69,16 @@ describe("the builder's saved page", () => {
       },
       preset: null,
     })
+  })
+})
+
+describe("the builder's preset", () => {
+  it("comes from a link in on its own, with no page", () => {
+    expect(readBuilderPreset({ preset: PRESET })).toBe(PRESET)
+  })
+
+  it("ignores anything that is not a preset code", () => {
+    expect(readBuilderPreset({ preset: "not a preset" })).toBeNull()
+    expect(readBuilderPreset({})).toBeNull()
   })
 })

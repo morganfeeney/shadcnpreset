@@ -44,10 +44,10 @@ const SAVED: SavedPage = {
   preset: null,
 }
 
-function renderBuilder(saved: SavedPage | null = SAVED) {
+function renderBuilder(saved: SavedPage | null = SAVED, preset?: string) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <PageBuilder saved={saved} />
+      <PageBuilder saved={saved} preset={preset} />
       <Toaster />
     </QueryClientProvider>
   )
@@ -127,6 +127,15 @@ describe("PageBuilder", () => {
     expect(screen.getByRole("button", { name: "Clear page" })).toHaveProperty(
       "disabled",
       true
+    )
+  })
+
+  it("opens a new page in the preset a link brought", () => {
+    renderBuilder(null, "b0linked")
+    fireEvent.click(screen.getByRole("link", { name: "shadcncraft Pro" }))
+    expect(trackEvent).toHaveBeenCalledWith(
+      "affiliate_click",
+      expect.objectContaining({ preset_code: "b0linked" })
     )
   })
 

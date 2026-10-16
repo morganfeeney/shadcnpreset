@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 
+import { BuildWithPresetLink } from "@/components/page-builder/build-with-preset-link"
 import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
 import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
@@ -209,6 +210,14 @@ export function PresetBrowsePreview({
             }}
           />
         )}
+        {/* Over the blocks it builds with, once they are there to see. */}
+        {credit && loaded ? (
+          <BuildWithPresetLink
+            presetCode={resolved.code}
+            placement={credit.source}
+            className="absolute inset-x-0 bottom-6 mx-auto w-fit"
+          />
+        ) : null}
         {!loaded ? (
           <div className="absolute inset-0 flex items-center justify-center bg-background">
             <Spinner />

@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { PageBuilder } from "@/components/page-builder/page-builder"
 import { Toaster } from "@/components/ui/sonner"
 import { WideLayoutNoFooter } from "@/components/wide-layout-no-footer"
-import { readSavedPage } from "@/lib/page-builder/saved-page"
+import { readBuilderPreset, readSavedPage } from "@/lib/page-builder/saved-page"
 import { buildPageMetadata } from "@/lib/page-metadata"
 
 export const metadata: Metadata = {
@@ -26,9 +26,13 @@ export default async function BuildPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const query = await searchParams
   return (
     <WideLayoutNoFooter>
-      <PageBuilder saved={readSavedPage(await searchParams)} />
+      <PageBuilder
+        saved={readSavedPage(query)}
+        preset={readBuilderPreset(query)}
+      />
       <Toaster />
     </WideLayoutNoFooter>
   )
