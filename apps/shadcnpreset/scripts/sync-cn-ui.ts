@@ -1,10 +1,10 @@
 /**
- * Regenerates `components/cn-ui/*` from the shadcn/ui fork's preset-aware
- * component source (`apps/v4/registry/bases/base/ui`).
+ * Regenerates `components/cn-ui/*` from shadcn/ui's preset-aware component
+ * source (`apps/v4/registry/bases/base/ui` in a shadcn-ui/ui checkout).
  *
  * These components are NOT the ones `shadcn add` installs. The published
  * registry bakes a single style into utility classes at publish time, so those
- * copies cannot respond to preset switching. The fork's source keeps the
+ * copies cannot respond to preset switching. The registry source keeps the
  * `cn-*` semantic classes that `vendor/v4/registry/styles/style-*.css` targets,
  * which is what makes one component tree render every preset.
  *
@@ -17,20 +17,19 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 
 const APP_ROOT = path.resolve(import.meta.dirname, "..")
-const FORK =
-  process.env.SHADCNPRESET_FORK_PATH ??
-  path.resolve(APP_ROOT, "../../../shadcn-ui-fork")
-const SRC = path.join(FORK, "apps/v4/registry/bases/base/ui")
+// Set by scripts/with-shadcn-ui.sh, which `pnpm sync:cn-ui` runs through.
+const UPSTREAM = process.env.SHADCN_UI_PATH ?? ""
+const SRC = path.join(UPSTREAM, "apps/v4/registry/bases/base/ui")
 const DEST = path.join(APP_ROOT, "components/cn-ui")
 
 const HEADER = `/**
- * Synced from the shadcn/ui fork by \`pnpm sync:cn-ui\` — do not edit by hand.
+ * Synced from shadcn/ui by \`pnpm sync:cn-ui\` — do not edit by hand.
  * Source: apps/v4/registry/bases/base/ui/{file}
  */
 `
 
 /**
- * Components whose fork source needs a package this app does not install.
+ * Components whose upstream source needs a package this app does not install.
  * Add the dependency and remove the entry to pull the component in.
  */
 const SKIP_MISSING_DEPS: Record<string, string> = {
@@ -44,7 +43,7 @@ const SKIP_MISSING_DEPS: Record<string, string> = {
  */
 const KEEP_LOCAL: Record<string, string> = {}
 
-/** Rewrites fork-internal module paths onto this app's aliases. */
+/** Rewrites registry-internal module paths onto this app's aliases. */
 const REWRITES: Array<[RegExp, string]> = [
   [/from "cn"/g, 'from "@/lib/utils"'],
   [/@\/registry\/bases\/base\/ui\//g, "@/components/cn-ui/"],
@@ -66,10 +65,10 @@ function rewrite(source: string, file: string): string {
 async function main() {
   const check = process.argv.includes("--check")
 
-  if (!existsSync(SRC)) {
-    console.error(`sync-cn-ui: fork components not found at ${SRC}`)
+  if (!UPSTREAM || !existsSync(SRC)) {
+    console.error(`sync-cn-ui: shadcn/ui components not found at ${SRC}`)
     console.error(
-      "Set SHADCNPRESET_FORK_PATH to your shadcn/ui fork clone (default: ../shadcn-ui-fork)."
+      "Run via pnpm sync:cn-ui, or set SHADCN_UI_PATH to a shadcn-ui/ui checkout."
     )
     process.exit(1)
   }
@@ -113,9 +112,9 @@ async function main() {
     }
   }
 
-  const forkNames = new Set(files)
+  const upstreamNames = new Set(files)
   const localOnly = (await readdir(DEST))
-    .filter((f) => f.endsWith(".tsx") && !forkNames.has(f))
+    .filter((f) => f.endsWith(".tsx") && !upstreamNames.has(f))
     .sort()
 
   console.log(`source:  ${SRC}`)
@@ -130,7 +129,7 @@ async function main() {
     for (const s of skipped) console.log(`  - ${s}`)
   }
   if (localOnly.length) {
-    console.log("\nlocal-only (no fork equivalent, left untouched):")
+    console.log("\nlocal-only (no upstream equivalent, left untouched):")
     for (const f of localOnly) console.log(`  - ${f}`)
   }
   if (drifted.length) {
@@ -139,7 +138,7 @@ async function main() {
   }
 
   if (check && drifted.length) {
-    console.error("\nsync-cn-ui: components differ from the fork. Run `pnpm sync:cn-ui`.")
+    console.error("\nsync-cn-ui: components differ from shadcn/ui. Run `pnpm sync:cn-ui`.")
     process.exit(1)
   }
 }

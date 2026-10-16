@@ -12,7 +12,7 @@
     "test": "pnpm --filter=shadcnpreset test",
     "typecheck": "pnpm -r typecheck",
     "figma:build": "pnpm --filter=figma-preset-plugin build",
-    "sync:v4-vendor": "./scripts/sync-v4-vendor.sh",
+    "sync:v4-vendor": "./scripts/with-shadcn-ui.sh ./scripts/sync-v4-vendor.sh",
     "refresh:community-snapshot": "pnpm --filter=shadcnpreset refresh:community-snapshot"
   },
   "devDependencies": {

@@ -38,10 +38,13 @@ const DEBOUNCE_MS = 500
 const MIN_LENGTH = 3
 
 /**
- * The frame loads once, on the default preset, while the visitor is still
- * typing. Every result after that is posted into it, so none waits on a load.
+ * The frame first loads the default preset behind the empty state, while the
+ * visitor is still typing. Each result then reloads it on its own preset, with
+ * the preview's code already cached.
  */
-const FRAME_SRC = getPresetPreviewUrl(encodePreset(DEFAULT_PRESET_CONFIG))
+const DEFAULT_FRAME_SRC = getPresetPreviewUrl(
+  encodePreset(DEFAULT_PRESET_CONFIG)
+)
 
 /** Short to fit the sidebar; each fills in a fuller description for Jev. */
 const IDEAS = [
@@ -108,6 +111,9 @@ export function DescribePreset() {
   const data = ready ? result.data : undefined
   const busy = ready && result.isFetching
   const [frameLoaded, setFrameLoaded] = useState(false)
+  const frameSrc = data
+    ? (getPresetPreviewUrl(data.code) ?? DEFAULT_FRAME_SRC)
+    : DEFAULT_FRAME_SRC
 
   return (
     <div className="w-full">
@@ -212,17 +218,16 @@ export function DescribePreset() {
             </aside>
 
             <div className="relative h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-lg md:h-auto md:min-h-[calc(100dvh-14rem)]">
-              {FRAME_SRC ? (
+              {frameSrc ? (
                 <PresetV4Frame
                   className={cn(
                     "block h-full w-full border-0 transition-opacity md:min-h-[calc(100dvh-14rem)]",
                     busy && "opacity-60"
                   )}
-                  src={FRAME_SRC}
+                  src={frameSrc}
                   title={
                     data ? `Preset preview ${data.code}` : "Preset preview"
                   }
-                  livePreset={data?.code}
                   onLoad={() => setFrameLoaded(true)}
                 />
               ) : null}

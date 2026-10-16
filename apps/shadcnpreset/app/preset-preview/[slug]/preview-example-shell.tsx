@@ -4,6 +4,7 @@ import * as React from "react"
 import dynamic from "next/dynamic"
 import { useTheme } from "next-themes"
 
+import { PreviewPresetProvider } from "@/components/shadcn-examples/preview-preset"
 import { Spinner } from "@/components/ui/spinner"
 import type { BuiltPageSpec } from "@/lib/page-builder/messages"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
@@ -18,6 +19,14 @@ function ExampleLoading() {
 
 // Each frame renders one example, so each is its own chunk: a Login frame
 // should not download the Store, Marketing or chart code.
+const PreviewDemo = dynamic(
+  () => import("@/components/shadcn-examples/preview"),
+  { loading: ExampleLoading }
+)
+const Preview02Demo = dynamic(
+  () => import("@/components/shadcn-examples/preview-02"),
+  { loading: ExampleLoading }
+)
 const DashboardDemo = dynamic(
   () => import("@/components/shadcn-examples/dashboard"),
   { loading: ExampleLoading }
@@ -112,6 +121,22 @@ function ExampleView({
   builtPage?: BuiltPageSpec
 }) {
   switch (slug) {
+    case "preview":
+      return (
+        <PreviewPresetProvider code={presetCode}>
+          <div className="relative bg-background text-foreground">
+            <PreviewDemo />
+          </div>
+        </PreviewPresetProvider>
+      )
+    case "preview-02":
+      return (
+        <PreviewPresetProvider code={presetCode}>
+          <div className="relative bg-background text-foreground">
+            <Preview02Demo />
+          </div>
+        </PreviewPresetProvider>
+      )
     case "dashboard":
       return (
         <div className="min-h-svh bg-background text-foreground">

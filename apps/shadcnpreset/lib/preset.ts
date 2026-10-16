@@ -95,7 +95,7 @@ export function resolvePresetFromCode(code: string): ResolvedPreset | null {
 }
 
 /**
- * Preview iframe URL: v4 block previews, or same-origin shadcn example embeds.
+ * Preview iframe URL: a same-origin `/preset-preview/<example>` embed.
  */
 export function getPresetPreviewUrl(
   code: string,
@@ -107,19 +107,12 @@ export function getPresetPreviewUrl(
   const view = getPresetPreviewView(pageName)
   if (!view) return null
 
-  if (view.target.kind === "local") {
-    // Same-origin path only — avoids iframe loading a different host than the tab
-    // (siteConfig.url can be apex while the user is on www, or vice versa), which
-    // triggers Chrome security / cross-origin prompts for local demo embeds.
-    const path = `/preset-preview/${view.target.example}`
-    const params = new URLSearchParams({ preset: canonicalCode })
-    return `${path}?${params.toString()}`
-  }
-
-  const v4BaseUrl = process.env.NEXT_PUBLIC_V4_URL ?? "http://localhost:4000"
-  const previewUrl = new URL(`/preview/radix/${view.target.pageName}`, v4BaseUrl)
-  previewUrl.searchParams.set("preset", canonicalCode)
-  return previewUrl.toString()
+  // Same-origin path only — avoids iframe loading a different host than the tab
+  // (siteConfig.url can be apex while the user is on www, or vice versa), which
+  // triggers Chrome security / cross-origin prompts for local demo embeds.
+  const path = `/preset-preview/${view.target.example}`
+  const params = new URLSearchParams({ preset: canonicalCode })
+  return `${path}?${params.toString()}`
 }
 
 export function getFontFamily(font: string): string {

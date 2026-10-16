@@ -23,47 +23,51 @@
 
 ## Features
 
-- ✨ **AI-powered discovery** — Describe the look-and-feel or product type to get matching presets
-- 🖥️ **Preview presets on real UI** — Dashboards, auth screens, and more
-- ♿ **Accessibility-first** — Browse WCAG-compliant presets and check contrast
-- 🛠️ **Developer tools** — CSS generator, contrast checker, Figma variables, and more
-- ❤️ **Community-driven** — Vote, save favourites, and share preset URLs
-- 📦 **Built on shadcn/ui** — Presets and create/customizer stay aligned with upstream
+- ✨ **AI-powered discovery**: describe the look and feel or the product you're building, and get matching presets
+- 🖥️ **Preview presets on real UI**: dashboards, auth screens, marketing pages and more, rendered in every shadcn/ui style
+- 🧱 **Page builder**: describe a page and get it assembled from blocks, in a preset you can swap
+- ♿ **Accessibility-first**: browse high-contrast presets and check colour contrast
+- 🛠️ **Developer tools**: preset CSS generator, contrast checker, image filter generator and a Figma variables plugin
+- ❤️ **Community-driven**: vote, save favourites and share preset URLs
+- 📦 **Built on shadcn/ui**: presets use shadcn's own encoding, and previews use its styles and components
 
 ## Repository structure
 
 | Path | Description |
 |------|-------------|
-| `apps/shadcnpreset` | Next.js platform (discovery, tools, auth, voting) |
+| `apps/shadcnpreset` | The Next.js site: discovery, previews, tools, auth and voting |
 | `apps/figma-preset-plugin` | Figma variables plugin |
-
-The embedded _create_ customizer is hosted by a separate shadcn/ui fork and loaded via `NEXT_PUBLIC_V4_URL`.
 
 ## Development
 
-In order to utilise the shadcn/ui create customizer this repo is dependent upon a custom fork of shadcn/ui, it will run without it, but is required for preset previews and create functionality.
+You'll need Node.js 20.9+ and pnpm 10 (`corepack enable` picks up the version pinned in `package.json`).
 
 ```bash
 pnpm install
-
-# Product site (http://localhost:4010)
-pnpm dev
+cp apps/shadcnpreset/.env.example apps/shadcnpreset/.env.local
+pnpm dev   # http://localhost:4010
 ```
 
-shadcn/ui fork, for iframe previews:
+[`.env.example`](./apps/shadcnpreset/.env.example) documents every variable. Sign-in and voting need `DATABASE_URL` and the auth keys. Smart search needs `OPENAI_API_KEY`, and `/describe` and the page builder need `JEV_API_KEY`.
+
+Other useful commands, run from the repo root:
 
 ```bash
-cd ../shadcn-ui-fork
-pnpm v4:dev          # http://localhost:4000
+pnpm test        # Vitest
+pnpm lint
+pnpm typecheck
 ```
 
-shadcnpreset is also dependent upon shadcn/ui styles/themes, the following script can be run to sync them in this repo from the fork if they need updating:
+### Updating from shadcn/ui
+
+Previews render inside the app using shadcn/ui's style CSS, themes and components, which are copied into the repo. To update them from the latest [shadcn-ui/ui](https://github.com/shadcn-ui/ui) `main`:
 
 ```bash
-pnpm sync:v4-vendor
+pnpm sync:v4-vendor                          # style CSS and themes
+pnpm --filter=shadcnpreset sync:cn-ui        # components/cn-ui
 ```
 
-See [`apps/shadcnpreset/.env.example`](./apps/shadcnpreset/.env.example) for environment variables (including `SHADCNPRESET_FORK_PATH` for the sync script).
+Each command clones only the files it needs into a temp folder and prints the upstream commit it synced from, so you don't need a local checkout. To sync from your own checkout instead, set `SHADCN_UI_PATH`. Review the diff before committing.
 
 ## Contributing
 

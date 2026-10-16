@@ -32,12 +32,16 @@ describe("effectiveHeadingFont", () => {
 })
 
 describe("getPresetPreviewUrl", () => {
-  it("uses the normalized canonical preset code for preview URLs", () => {
-    const url = getPresetPreviewUrl("b5aFVCFRxi")
+  it("points the default view at the local preview embed, with the canonical preset code", () => {
+    expect(getPresetPreviewUrl("b5aFVCFRxi")).toBe(
+      "/preset-preview/preview?preset=b5aFUJkSzC"
+    )
+  })
 
-    expect(url).not.toBeNull()
-    expect(url).toContain("/preview/radix/preview")
-    expect(url).toContain("preset=b5aFUJkSzC")
+  it("points the preview-02 view at the local preset-preview embed route", () => {
+    expect(getPresetPreviewUrl("b5aFVCFRxi", "preview-02")).toBe(
+      "/preset-preview/preview-02?preset=b5aFUJkSzC"
+    )
   })
 
   it("points the dashboard view at the local preset-preview embed route", () => {

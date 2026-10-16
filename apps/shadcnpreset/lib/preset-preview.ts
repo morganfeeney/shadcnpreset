@@ -12,15 +12,10 @@ export type PresetPreviewPageName =
 
 export type PresetSidebarTab = "community" | "yours" | "ask-ai"
 
-type PresetPreviewTarget =
-  | {
-      kind: "v4"
-      pageName: "preview" | "preview-02"
-    }
-  | {
-      kind: "local"
-      example: LocalPresetPreviewExample
-    }
+type PresetPreviewTarget = {
+  kind: "local"
+  example: LocalPresetPreviewExample
+}
 
 /** Affiliate credit shown above a view built from a partner's blocks. */
 export type PresetPreviewCredit = {
@@ -41,16 +36,16 @@ export const PRESET_PREVIEW_VIEWS: ReadonlyArray<PresetPreviewView> = [
     page: "preview",
     label: "View 1",
     target: {
-      kind: "v4",
-      pageName: "preview",
+      kind: "local",
+      example: "preview",
     },
   },
   {
     page: "preview-02",
     label: "View 2",
     target: {
-      kind: "v4",
-      pageName: "preview-02",
+      kind: "local",
+      example: "preview-02",
     },
   },
   {
@@ -119,6 +114,8 @@ export type LocalPresetPreviewExample =
   (typeof LOCAL_PRESET_PREVIEW_EXAMPLES)[number]
 
 export const LOCAL_PRESET_PREVIEW_EXAMPLES = [
+  "preview",
+  "preview-02",
   "dashboard",
   "login-02",
   "login-04",

@@ -14,7 +14,7 @@
     "generate:preset-embeddings": "node --import tsx/esm ./scripts/generate-preset-embeddings.ts",
     "generate:high-contrast-dataset": "node --import tsx/esm ./scripts/find-perfect-contrast-presets.ts --random --target 8000 --max-tries 20000000 --out ./data/high-contrast-presets.json",
     "refresh:community-snapshot": "tsx ./scripts/refresh-community-snapshot.ts",
-    "sync:cn-ui": "tsx ./scripts/sync-cn-ui.ts",
+    "sync:cn-ui": "../../scripts/with-shadcn-ui.sh tsx ./scripts/sync-cn-ui.ts",
     "generate:icon-allowlists": "tsx ./scripts/generate-icon-allowlists.ts",
     "eval:previews": "tsx ./scripts/eval-preview-prompts.ts",
     "eval:describe": "tsx ./scripts/eval-describe-prompts.ts",

@@ -22,7 +22,6 @@ import {
   type PresetPreviewPageName,
 } from "@/lib/preset-preview"
 import type { PresetSidebarItem } from "@/lib/preset-sidebar-item"
-import { cn } from "@/lib/utils"
 
 import { PresetLiveHero } from "./components"
 import {
@@ -179,9 +178,7 @@ export function PresetBrowsePreview({
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const loaded = loadedKey === frameKey
   const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
-  const previewView = getPresetPreviewView(effectiveView)
-  const isLocalExample = previewView?.target.kind === "local"
-  const credit = previewView?.credit
+  const credit = getPresetPreviewView(effectiveView)?.credit
 
   if (!previewSrc) {
     return null
@@ -192,16 +189,11 @@ export function PresetBrowsePreview({
       {credit ? (
         <ShadcncraftCredit credit={credit} presetCode={resolved.code} />
       ) : null}
-      <div
-        className={cn(
-          "relative min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg",
-          // Rings and shadows paint outside a card's box, and an iframe cannot
-          // paint past its own edge. Local examples widen the frame into the
-          // container's gutter and pad it back (`px-2` inside), so content still
-          // lines up with the tab row but edge-hugging cards keep their outline.
-          isLocalExample && "-mx-2"
-        )}
-      >
+      {/* Rings and shadows paint outside a card's box, and an iframe cannot
+          paint past its own edge. The frame widens into the container's gutter
+          and examples pad it back (`px-2` inside), so content still lines up
+          with the tab row but edge-hugging cards keep their outline. */}
+      <div className="relative -mx-2 min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg">
         {/* Holding the frame back while a linked preview is still being recovered
             leaves `loaded` false, so the overlay below covers the wait. */}
         {generatedPreviewPending ? null : (

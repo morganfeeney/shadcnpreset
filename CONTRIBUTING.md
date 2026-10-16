@@ -14,9 +14,7 @@ This repository is a **pnpm monorepo** for the shadcnpreset product:
 |------|-------------|
 | `apps/shadcnpreset` | Theme discovery platform and developer tools |
 | `apps/figma-preset-plugin` | Figma variables plugin |
-| `apps/shadcnpreset/vendor/v4/registry` | Vendored create/v4 registry (themes, styles CSS, config) — sync via `pnpm sync:v4-vendor` |
-
-The create/customizer UI lives in a separate fork of [shadcn/ui](https://github.com/shadcn-ui/ui) and is embedded via iframe (`NEXT_PUBLIC_V4_URL`).
+| `apps/shadcnpreset/vendor/v4/registry` | Vendored shadcn/ui v4 registry (themes, styles CSS, config) — sync via `pnpm sync:v4-vendor` |
 
 ## Development
 
@@ -46,13 +44,6 @@ pnpm install
 
 ```bash
 pnpm dev
-```
-
-For live create/customizer iframes, also run the sibling fork:
-
-```bash
-cd ../shadcnpreset   # create fork
-pnpm v4:dev          # → http://localhost:4000
 ```
 
 Copy `apps/shadcnpreset/.env.example` to `apps/shadcnpreset/.env.local` and set secrets as needed.

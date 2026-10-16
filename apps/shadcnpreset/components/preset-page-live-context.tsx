@@ -33,7 +33,6 @@ type PresetPageLiveContextValue = {
    * window rather than falling back to the default view and snapping back.
    */
   generatedPreviewPending: boolean
-  onPresetFromIframe: (preset: string) => void
   selectLivePreset: (preset: string) => void
   setLiveView: (view: PresetPreviewPageName) => void
   setLiveTab: (tab: PresetSidebarTab) => void
@@ -115,14 +114,6 @@ export function PresetPageLiveProvider({
     [livePresetCode, router, tab, view]
   )
 
-  const onPresetFromIframe = React.useCallback(
-    (preset: string) => {
-      if (preset === livePresetCode) return
-      router.replace(presetBrowsePath(preset, view, tab), { scroll: false })
-    },
-    [livePresetCode, router, tab, view]
-  )
-
   const setLiveView = React.useCallback(
     (next: PresetPreviewPageName) => {
       if (next === view) return
@@ -197,7 +188,6 @@ export function PresetPageLiveProvider({
       tab,
       generatedPreview,
       generatedPreviewPending,
-      onPresetFromIframe,
       selectLivePreset,
       setLiveView,
       setLiveTab,
@@ -212,7 +202,6 @@ export function PresetPageLiveProvider({
       tab,
       generatedPreview,
       generatedPreviewPending,
-      onPresetFromIframe,
       selectLivePreset,
       setLiveView,
       setLiveTab,
