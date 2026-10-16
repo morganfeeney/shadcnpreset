@@ -23,7 +23,7 @@ describe("ShadcncraftCredit", () => {
 
     const link = screen.getByRole("link", { name: "shadcncraft Pro" })
     expect(link.getAttribute("href")).toBe(
-      "https://shadcncraft.com?atp=shadcnpreset&src=marketing-preview"
+      "https://shadcncraft.com?atp=shadcnpreset&sub1=marketing-preview"
     )
     expect(link.getAttribute("rel")).toContain("sponsored")
   })

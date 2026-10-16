@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { affiliateLinkParams, isAffiliateHref } from "@/lib/affiliate-link"
 
-const CHANGELOG_HREF = "https://shadcncraft.com?atp=shadcnpreset&src=changelog"
+const CHANGELOG_HREF = "https://shadcncraft.com?atp=shadcnpreset&sub1=changelog"
 
 describe("isAffiliateHref", () => {
   it("recognises our tag, and leaves plain outbound links alone", () => {
@@ -13,7 +13,7 @@ describe("isAffiliateHref", () => {
 })
 
 describe("affiliateLinkParams", () => {
-  it("reads the partner from the host and the placement from `src`", () => {
+  it("reads the partner from the host and the placement from `sub1`", () => {
     expect(affiliateLinkParams(CHANGELOG_HREF)).toEqual({
       partner: "shadcncraft",
       placement: "changelog",

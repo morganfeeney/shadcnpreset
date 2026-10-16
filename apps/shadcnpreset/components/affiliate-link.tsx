@@ -24,7 +24,7 @@ export function AffiliateLink({
       href={href}
       target="_blank"
       // Search engines expect paid links marked sponsored.
-      rel="sponsored noopener noreferrer"
+      rel="sponsored noopener"
       onClick={() => {
         trackEvent("affiliate_click", affiliateLinkParams(href))
       }}
