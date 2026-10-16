@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 
+import { shadcncraftHref } from "@/lib/affiliate-link"
 import { trackEvent } from "@/lib/analytics-events"
 import type { PresetPreviewCredit } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
@@ -49,9 +50,9 @@ export function ShadcncraftCredit({
     <p className={cn("text-xs text-muted-foreground", className)}>
       {label} from{" "}
       <a
-        href={`https://shadcncraft.com?atp=shadcnpreset&src=${source}`}
+        href={shadcncraftHref(source)}
         target="_blank"
-        rel="sponsored noopener noreferrer"
+        rel="sponsored noopener"
         className="underline underline-offset-4 hover:text-foreground"
         onClick={() => {
           trackEvent("affiliate_click", {

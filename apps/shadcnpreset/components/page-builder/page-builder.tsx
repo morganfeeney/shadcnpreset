@@ -31,6 +31,7 @@ import {
   SidebarHeader,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { shadcncraftHref } from "@/lib/affiliate-link"
 import { trackEvent } from "@/lib/analytics-events"
 import type { JevPresetReading } from "@/lib/jev-presets/read-preset"
 import { applyPageEdit } from "@/lib/page-builder/edits"
@@ -387,10 +388,10 @@ function GetCodeButton({
   // as a link.
   return (
     <a
-      href={`https://shadcncraft.com?atp=shadcnpreset&src=${GET_CODE_PLACEMENT}`}
+      href={shadcncraftHref(GET_CODE_PLACEMENT)}
       target="_blank"
       // Search engines expect paid links marked sponsored.
-      rel="sponsored noopener noreferrer"
+      rel="sponsored noopener"
       className={cn(
         buttonVariants(),
         "w-full",

@@ -506,6 +506,6 @@ describe("AssistantChat sponsored card", () => {
     const card = await screen.findByRole("complementary", { name: "Sponsored" })
     expect(
       within(card).getByRole("link").getAttribute("href")
-    ).toBe("https://shadcncraft.com?atp=shadcnpreset&src=assistant-chat")
+    ).toBe("https://shadcncraft.com?atp=shadcnpreset&sub1=assistant-chat")
   })
 })

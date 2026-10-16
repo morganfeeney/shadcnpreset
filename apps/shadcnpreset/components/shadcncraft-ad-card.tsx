@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { Badge } from "@/components/ui/badge"
+import { shadcncraftHref } from "@/lib/affiliate-link"
 import { trackEvent } from "@/lib/analytics-events"
 
 const PARTNER = "shadcncraft"
@@ -14,7 +15,7 @@ const PREVIEW_DARK =
   "https://assets.shadcncraft.com/registry/dashboard-block-dark.webp"
 
 type ShadcncraftAdCardProps = {
-  /** Sent as the link's `src` param and to analytics, e.g. `assistant-chat`. */
+  /** Sent as the link's placement and to analytics, e.g. `assistant-chat`. */
   placement: string
   /**
    * Counts a fresh impression when this changes. Pass the chat id: the card
@@ -38,7 +39,7 @@ export function ShadcncraftAdCard({
   impressionKey,
   className,
 }: ShadcncraftAdCardProps) {
-  const href = `https://shadcncraft.com?atp=shadcnpreset&src=${placement}`
+  const href = shadcncraftHref(placement)
 
   React.useEffect(() => {
     trackEvent("affiliate_impression", { partner: PARTNER, placement })
@@ -50,7 +51,7 @@ export function ShadcncraftAdCard({
         href={href}
         target="_blank"
         // Search engines expect paid links marked sponsored.
-        rel="sponsored noopener noreferrer"
+        rel="sponsored noopener"
         // Capped rather than filling the column: an ad that ran the width of
         // the conversation would read as part of the answer.
         className="flex max-w-sm gap-3 rounded-lg border p-2 transition-colors hover:bg-muted/50"

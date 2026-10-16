@@ -7,7 +7,7 @@ import { trackEvent } from "@/lib/analytics-events"
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
 
-const CHANGELOG_HREF = "https://shadcncraft.com?atp=shadcnpreset&src=changelog"
+const CHANGELOG_HREF = "https://shadcncraft.com?atp=shadcnpreset&sub1=changelog"
 
 afterEach(() => {
   cleanup()
@@ -20,6 +20,8 @@ describe("AffiliateLink", () => {
 
     const link = screen.getByRole("link", { name: "shadcncraft" })
     expect(link.getAttribute("rel")).toContain("sponsored")
+    // Affonso reports the referrer; noreferrer would make every click Direct.
+    expect(link.getAttribute("rel")).not.toContain("noreferrer")
 
     fireEvent.click(link)
 

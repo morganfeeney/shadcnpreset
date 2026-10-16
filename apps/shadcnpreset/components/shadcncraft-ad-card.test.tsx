@@ -18,7 +18,7 @@ describe("ShadcncraftAdCard", () => {
 
     const link = screen.getByRole("link")
     expect(link.getAttribute("href")).toBe(
-      "https://shadcncraft.com?atp=shadcnpreset&src=assistant-chat"
+      "https://shadcncraft.com?atp=shadcnpreset&sub1=assistant-chat"
     )
     expect(link.getAttribute("rel")).toContain("sponsored")
   })
