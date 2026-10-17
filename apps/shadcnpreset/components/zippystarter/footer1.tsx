@@ -19,7 +19,6 @@ const COLUMNS = [
         label: "shadcn theme generator",
         href: "https://zippystarter.com/tools/shadcn-ui-theme-generator",
       },
-      { label: "shadcn themes", href: "https://zippystarter.com/themes" },
       { label: "OG image debugger", href: "https://ogimage.info" },
     ],
   },
