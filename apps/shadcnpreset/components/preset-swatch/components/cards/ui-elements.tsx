@@ -10,6 +10,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/cn-ui/alert-dialog"
@@ -24,6 +25,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/cn-ui/dropdown-menu"
@@ -46,8 +48,11 @@ import { Slider } from "@/components/cn-ui/slider"
 import { Switch } from "@/components/cn-ui/switch"
 import { Textarea } from "@/components/cn-ui/textarea"
 import { IconPlaceholder } from "@/components/icon-placeholder"
+import { usePresetThemeSurfacePortal } from "@/components/preset-theme-surface"
 
 export function UIElements() {
+  // Keeps the dialog and menu inside the preset surface, so they stay styled.
+  const portalContainer = usePresetThemeSurfacePortal() ?? undefined
   const [sliderValue, setSliderValue] = React.useState<number[]>([500])
   const handleSliderValueChange = React.useCallback(
     (value: number | readonly number[]) => {
@@ -137,19 +142,23 @@ export function UIElements() {
               </span>
               <span className="flex md:hidden style-sera:md:flex">Dialog</span>
             </AlertDialogTrigger>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Allow accessory to connect?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Do you want to allow the USB accessory to connect to this
-                  device and your data?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Don&apos;t allow</AlertDialogCancel>
-                <AlertDialogAction>Allow</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
+            <AlertDialogPortal container={portalContainer}>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Allow accessory to connect?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Do you want to allow the USB accessory to connect to this
+                    device and your data?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Don&apos;t allow</AlertDialogCancel>
+                  <AlertDialogAction>Allow</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogPortal>
           </AlertDialog>
           <ButtonGroup>
             <Button variant="outline">
@@ -168,27 +177,29 @@ export function UIElements() {
                   remixicon="RiArrowUpSLine"
                 />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top" className="w-40">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                  <DropdownMenuItem>Mute Conversation</DropdownMenuItem>
-                  <DropdownMenuItem>Mark as Read</DropdownMenuItem>
-                  <DropdownMenuItem>Block User</DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Conversation</DropdownMenuLabel>
-                  <DropdownMenuItem>Share Conversation</DropdownMenuItem>
-                  <DropdownMenuItem>Copy Conversation</DropdownMenuItem>
-                  <DropdownMenuItem>Report Conversation</DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem variant="destructive">
-                    Delete Conversation
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
+              <DropdownMenuPortal container={portalContainer}>
+                <DropdownMenuContent align="end" side="top" className="w-40">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                    <DropdownMenuItem>Mute Conversation</DropdownMenuItem>
+                    <DropdownMenuItem>Mark as Read</DropdownMenuItem>
+                    <DropdownMenuItem>Block User</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Conversation</DropdownMenuLabel>
+                    <DropdownMenuItem>Share Conversation</DropdownMenuItem>
+                    <DropdownMenuItem>Copy Conversation</DropdownMenuItem>
+                    <DropdownMenuItem>Report Conversation</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem variant="destructive">
+                      Delete Conversation
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenuPortal>
             </DropdownMenu>
           </ButtonGroup>
           <Switch defaultChecked className="ml-auto" />

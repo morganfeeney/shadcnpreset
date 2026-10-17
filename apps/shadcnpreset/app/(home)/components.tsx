@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useMemo, useRef, type KeyboardEvent } from "react"
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react"
 import Link from "next/link"
 import {
   ArrowRightIcon,
@@ -53,7 +59,60 @@ export function HomePresetCarousel({
   items: HomePresetCarouselItem[]
   className?: string
 }) {
-  const multi = items.length > 1
+  const previewStepOrder = useMemo(() => buildPreviewStepOrder(items), [items])
+  const { votesByCode, hasVotedByCode } = usePresetVoteMapsForItems(items)
+
+  if (items.length === 0) {
+    return null
+  }
+
+  return (
+    <HomeRailCarousel
+      viewportId={FEATURED_PRESETS_VIEWPORT_ID}
+      itemCount={items.length}
+      prevLabel="Previous featured preset"
+      nextLabel="Next featured preset"
+      className={className}
+    >
+      {items.map((item) => (
+        <HomePresetRailItem key={item.code}>
+          <PresetStyleOverviewCard
+            code={item.code}
+            title={item.title}
+            description={item.description}
+            previewStepOrder={previewStepOrder}
+            initialVoteCount={votesByCode[item.code] ?? 0}
+            initialHasVoted={hasVotedByCode[item.code] ?? false}
+          />
+        </HomePresetRailItem>
+      ))}
+    </HomeRailCarousel>
+  )
+}
+
+/**
+ * Horizontal snap rail with keyboard arrows, and edge fades plus overlay
+ * prev/next buttons from `lg` up. Children are `HomePresetRailItem`s.
+ */
+export function HomeRailCarousel({
+  viewportId,
+  itemCount,
+  label,
+  prevLabel,
+  nextLabel,
+  className,
+  children,
+}: {
+  viewportId: string
+  itemCount: number
+  /** Accessible name for the rail; defaults to the viewport's own. */
+  label?: string
+  prevLabel: string
+  nextLabel: string
+  className?: string
+  children: ReactNode
+}) {
+  const multi = itemCount > 1
   const lg = useLgAndUp()
   const showOverlayNav = multi && lg
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -83,19 +142,13 @@ export function HomePresetCarousel({
     [scrollPrev, scrollNext]
   )
 
-  const previewStepOrder = useMemo(() => buildPreviewStepOrder(items), [items])
-  const { votesByCode, hasVotedByCode } = usePresetVoteMapsForItems(items)
-
-  if (items.length === 0) {
-    return null
-  }
-
   return (
     <div className={cn("relative isolate w-full max-w-full", className)}>
       <HomePresetRail className="relative z-1">
         <HomePresetRailViewport
           ref={viewportRef}
-          id={FEATURED_PRESETS_VIEWPORT_ID}
+          id={viewportId}
+          {...(label ? { "aria-label": label } : {})}
           onScroll={sync}
           aria-roledescription="carousel"
           tabIndex={multi ? 0 : undefined}
@@ -106,18 +159,7 @@ export function HomePresetCarousel({
               : undefined
           }
         >
-          {items.map((item) => (
-            <HomePresetRailItem key={item.code}>
-              <PresetStyleOverviewCard
-                code={item.code}
-                title={item.title}
-                description={item.description}
-                previewStepOrder={previewStepOrder}
-                initialVoteCount={votesByCode[item.code] ?? 0}
-                initialHasVoted={hasVotedByCode[item.code] ?? false}
-              />
-            </HomePresetRailItem>
-          ))}
+          {children}
         </HomePresetRailViewport>
       </HomePresetRail>
 
@@ -125,8 +167,8 @@ export function HomePresetCarousel({
         <>
           <RailEdgeFade side="leading" />
           <CarouselRailNavButton
-            label="Previous featured preset"
-            viewportId={FEATURED_PRESETS_VIEWPORT_ID}
+            label={prevLabel}
+            viewportId={viewportId}
             Icon={CaretLeftIcon}
             onPress={scrollPrev}
             className="absolute top-1/2 left-4 z-50 -translate-y-1/2"
@@ -137,8 +179,8 @@ export function HomePresetCarousel({
         <>
           <RailEdgeFade side="trailing" />
           <CarouselRailNavButton
-            label="Next featured preset"
-            viewportId={FEATURED_PRESETS_VIEWPORT_ID}
+            label={nextLabel}
+            viewportId={viewportId}
             Icon={CaretRightIcon}
             onPress={scrollNext}
             className="absolute top-1/2 right-4 z-50 -translate-y-1/2"

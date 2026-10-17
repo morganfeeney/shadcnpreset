@@ -3,17 +3,22 @@ import {
   getFontFamily,
   resolvePresetFromCode,
 } from "@/lib/preset"
+import type { RegistryThemeSurface } from "@/components/preset-theme-surface"
 import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
 
 type ThemeVars = Record<string, string>
 
 export type PresetThemeCssBundle = {
   resolved: ResolvedPreset
+  /** For `PresetThemeSurface`. */
+  registryTheme: RegistryThemeSurface
   lightVars: ThemeVars
   darkVars: ThemeVars
   lightCss: string
   darkCss: string
   combinedCss: string
+  /** Color layer only (what `shadcn apply --only theme` applies): no font variables. */
+  themeOnlyCss: string
 }
 
 function getFontVars(resolved: ResolvedPreset): ThemeVars {
@@ -57,21 +62,23 @@ export function getPresetThemeCssBundle(
       theme?: ThemeVars
     }
   ).theme
-  const lightVars = {
+  const colorLightVars = {
     ...(themeVars ?? {}),
     ...(registryTheme.cssVars.light as ThemeVars),
-    ...fontVars,
   }
+  const lightVars = { ...colorLightVars, ...fontVars }
   const darkVars = registryTheme.cssVars.dark as ThemeVars
   const lightCss = formatCssBlock(":root", lightVars)
   const darkCss = formatCssBlock(".dark", darkVars)
 
   return {
     resolved,
+    registryTheme,
     lightVars,
     darkVars,
     lightCss,
     darkCss,
     combinedCss: `${lightCss}\n\n${darkCss}`,
+    themeOnlyCss: `${formatCssBlock(":root", colorLightVars)}\n\n${darkCss}`,
   }
 }

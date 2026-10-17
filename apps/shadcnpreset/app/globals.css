@@ -88,6 +88,10 @@
 }
 
 :root {
+  /* Layout, not color: shared by light and dark (rail-edge-safe-padding). */
+  --container-width: var(--breakpoint-3xl);
+  --excess-width: calc(100vw - var(--container-width));
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --border: oklch(0.922 0 0);
@@ -171,9 +175,6 @@
   --warning: oklch(0.862 0.149 85.044);
   --warning-foreground: oklch(0.3 0.08 40.424);
   --border-subtle: oklch(1 0 0 / 10%);
-
-  --container-width: var(--breakpoint-3xl);
-  --excess-width: calc(100vw - var(--container-width));
 }
 
 @layer base {
