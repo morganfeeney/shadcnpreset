@@ -7,6 +7,7 @@ import {
   CaretRightIcon,
 } from "@phosphor-icons/react/ssr"
 
+import { ShadcncraftThemeCta } from "@/components/shadcncraft-pitch/theme-cta"
 import { ThemeCopyActions } from "@/components/themes/theme-copy-actions"
 import { ThemePicker, ThemeSidebar } from "@/components/themes/theme-nav"
 import { ThemePalette, ThemeShowcase } from "@/components/themes/theme-preview"
@@ -14,7 +15,11 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { siteConfig } from "@/lib/config"
 import { buildPageMetadata } from "@/lib/page-metadata"
-import { presetThemeCommand, type PresetTheme } from "@/lib/preset-themes"
+import {
+  presetThemeCommand,
+  presetThemeSummary,
+  type PresetTheme,
+} from "@/lib/preset-themes"
 import {
   getPresetThemePage,
   getPresetThemesFeed,
@@ -47,6 +52,7 @@ export async function generateMetadata({
       title: `${theme.name} shadcn theme${qualifiers}`,
       description: `${theme.description} Copy the CSS or apply it with the shadcn CLI.`,
       path,
+      image: "route",
     }),
     alternates: { canonical: path },
     // Valid themes outside the listing keep working but stay out of search.
@@ -97,13 +103,7 @@ export default async function ThemePage({ params }: ThemePageProps) {
   if (!page) notFound()
 
   const { theme, listed } = page
-  const items = feed.map((item) => ({
-    slug: item.slug,
-    name: item.name,
-    details: item.details,
-    baseColor: item.fields.baseColor,
-    code: item.code,
-  }))
+  const items = feed.map(presetThemeSummary)
   const index = feed.findIndex((item) => item.slug === theme.slug)
   const prev = listed ? feed.at(index - 1) : undefined
   const next = listed ? feed[(index + 1) % feed.length] : undefined
@@ -182,13 +182,10 @@ export default async function ThemePage({ params }: ThemePageProps) {
 
           <header className="flex flex-wrap items-end justify-between gap-8">
             <div className="grid max-w-3xl gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+              <div className="grid items-center justify-items-start gap-3">
+                <h1 className="text-4xl font-display tracking-tight md:text-5xl">
                   {theme.name}
                 </h1>
-                <code className="rounded-md border px-2 py-0.5 font-mono text-xs text-muted-foreground">
-                  {theme.code}
-                </code>
               </div>
               <p className="text-lg text-muted-foreground">
                 {theme.description}
@@ -208,10 +205,7 @@ export default async function ThemePage({ params }: ThemePageProps) {
             <ThemeCopyActions css={theme.css} command={command} />
           </header>
 
-          <ThemeShowcase
-            registryTheme={theme.registryTheme}
-            name={theme.name}
-          />
+          <ThemeShowcase registryTheme={theme.registryTheme} name={theme.name} />
 
           <section className="grid gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">Colors</h2>
@@ -255,6 +249,16 @@ export default async function ThemePage({ params }: ThemePageProps) {
           </section>
 
           <FullPresetCard theme={theme} />
+
+          <ShadcncraftThemeCta
+            theme={presetThemeSummary(theme)}
+            registryTheme={theme.registryTheme}
+            related={[
+              presetThemeSummary(theme),
+              ...items.filter((item) => item.slug !== theme.slug).slice(0, 3),
+            ]}
+            total={items.length}
+          />
 
           {prev && next ? (
             <nav

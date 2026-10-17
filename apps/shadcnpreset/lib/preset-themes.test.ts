@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { encodePreset } from "shadcn/preset"
 
+import { resolvePresetFromCode } from "@/lib/preset"
+import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import {
   presetThemeCommand,
   presetThemeFromSlug,
@@ -19,6 +21,15 @@ describe("toPresetThemes", () => {
 
     expect(themes.map((theme) => theme.code)).toEqual([nova, rose])
     expect(themes[0]!.source).toMatchObject({ code: nova, style: "Nova" })
+  })
+
+  it("treats presets that differ only in menu accent as one theme", () => {
+    const subtle = encodePreset({ ...blueOnZinc, menuAccent: "subtle" })
+    const bold = encodePreset({ ...blueOnZinc, menuAccent: "bold" })
+
+    expect(toPresetThemes([subtle, bold]).map((theme) => theme.code)).toEqual([
+      subtle,
+    ])
   })
 
   it("treats radii with the same css as one theme", () => {
@@ -41,6 +52,23 @@ describe("toPresetThemes", () => {
     expect(toPresetThemes(["not-a-preset"])).toEqual([])
   })
 
+  it("previews the theme on the default style with the same css", () => {
+    const code = encodePreset({
+      ...blueOnZinc,
+      style: "lyra",
+      font: "geist",
+      menuAccent: "bold",
+    })
+    const [theme] = toPresetThemes([code])
+    const preview = resolvePresetFromCode(theme!.previewCode)!
+
+    expect(preview.style).toBe("nova")
+    expect(preview.font).toBe("inter")
+    expect(getPresetThemeCssBundle(theme!.previewCode)!.themeOnlyCss).toBe(
+      theme!.css
+    )
+  })
+
   it("leaves fonts out of the theme css", () => {
     const [theme] = toPresetThemes([encodePreset(blueOnZinc)])
 
@@ -58,18 +86,22 @@ describe("theme slugs and names", () => {
         ...blueOnZinc,
         chartColor: "rose",
         radius: "large",
-        menuAccent: "bold",
       }),
       encodePreset({ baseColor: "mauve", theme: "mauve" }),
     ])
 
     expect(plain).toMatchObject({ slug: "blue-on-zinc", name: "Blue on Zinc" })
     expect(detailed).toMatchObject({
-      slug: "blue-on-zinc-rose-charts-large-corners-bold-menus",
+      slug: "blue-on-zinc-rose-charts-large-corners",
       name: "Blue on Zinc",
-      title: "Blue on Zinc (rose charts, large corners, bold menus)",
+      title: "Blue on Zinc (rose charts, large corners)",
     })
     expect(mono).toMatchObject({ slug: "mauve", name: "Mauve" })
+    expect(detailed!.meta).toEqual({
+      corners: "0.875rem",
+      charts: "Rose charts",
+    })
+    expect(plain!.meta.charts).toBe("Blue charts")
   })
 
   it("turns a slug back into the same theme", () => {

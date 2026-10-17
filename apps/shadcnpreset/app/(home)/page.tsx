@@ -30,6 +30,9 @@ import BuildPromptDark from "@/public/marketing/cta/buildpromptdark.png"
 import { HomeTestimonials } from "@/app/(home)/home-testimonials"
 import { HomeTools } from "@/app/(home)/home-tools"
 import { HomeAiChatPreview } from "@/app/(home)/home-ai-chat-preview"
+import { HomeThemeRail } from "@/components/themes/home-theme-rail"
+import { presetThemeSummary } from "@/lib/preset-themes"
+import { getPresetThemesFeed } from "@/lib/preset-themes-feed"
 
 const HOME_AI_PRESET_CODES = [
   "b3Qvr2po0",
@@ -42,7 +45,10 @@ export default async function HomePage() {
   "use cache"
   cacheLife({ stale: 300, revalidate: 300, expire: 86400 })
 
-  const featuredPresets = await getHomepageFeed(16)
+  const [featuredPresets, themes] = await Promise.all([
+    getHomepageFeed(16),
+    getPresetThemesFeed(),
+  ])
   const aiPreviewPresets = HOME_AI_PRESET_CODES.map((code) => {
     const resolved = resolvePresetFromCode(code)
     return {
@@ -130,6 +136,10 @@ export default async function HomePage() {
             <SplitMediaLink href="/community">Explore presets</SplitMediaLink>
           </SplitMediaContent>
         </SplitMedia>
+        <HomeThemeRail
+          themes={themes.slice(0, 12).map(presetThemeSummary)}
+          total={themes.length}
+        />
         <HomeTestimonials />
         <SplitMedia>
           <SplitMediaContent>

@@ -16,22 +16,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import type { PresetThemeSummary } from "@/lib/preset-themes"
 import { cn } from "@/lib/utils"
 
-export type ThemeNavItem = {
-  slug: string
-  name: string
-  details: string
-  baseColor: string
-  /** Preset the theme comes from; its colors are built on the client. */
-  code: string
-}
-
-const SWATCH_TOKENS = ["primary", "chart-1", "chart-3", "chart-5"] as const
+const SWATCH_TOKENS = ["primary", "secondary", "chart-1", "chart-3"] as const
 
 /**
- * Primary and chart colors in the site's current mode, cornered with the
- * theme's own radius so square and rounded themes read differently.
+ * A 2×2 palette (primary, secondary, two chart colors) in the site's current
+ * mode, cornered with the theme's own radius so square and rounded themes
+ * read differently.
  */
 export function ThemeSwatch({ code }: { code: string }) {
   const registryTheme = useRegistryTheme(code)
@@ -47,7 +40,7 @@ export function ThemeSwatch({ code }: { code: string }) {
   return (
     <span
       aria-hidden
-      className="flex h-6 w-11 shrink-0 overflow-hidden bg-muted ring-1 ring-foreground/10"
+      className="grid size-7 shrink-0 grid-cols-2 overflow-hidden bg-muted ring-1 ring-foreground/10"
       style={{
         // A bare `0` stays a number inside calc(), which is not a length.
         borderRadius:
@@ -56,11 +49,7 @@ export function ThemeSwatch({ code }: { code: string }) {
     >
       {vars
         ? SWATCH_TOKENS.map((token) => (
-            <span
-              key={token}
-              className="flex-1 first:flex-2"
-              style={{ background: vars[token] }}
-            />
+            <span key={token} style={{ background: vars[token] }} />
           ))
         : null}
     </span>
@@ -127,7 +116,7 @@ export function ThemeSidebar({
   currentSlug,
   onNavigate,
 }: {
-  items: ThemeNavItem[]
+  items: PresetThemeSummary[]
   currentSlug: string
   onNavigate?: () => void
 }) {
@@ -187,7 +176,7 @@ export function ThemePicker({
   currentSlug,
   className,
 }: {
-  items: ThemeNavItem[]
+  items: PresetThemeSummary[]
   currentSlug: string
   className?: string
 }) {

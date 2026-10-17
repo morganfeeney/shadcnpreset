@@ -159,7 +159,7 @@ export function getPresetSwatchPair(
   return { light, dark }
 }
 
-function oklchCssToHex(oklchCss: string): string {
+export function oklchCssToHex(oklchCss: string): string {
   const color = parse(oklchCss.trim())
   if (!color) return "#737373"
   try {
@@ -210,21 +210,21 @@ export function getPresetOgSwatchHexes(
 
   // Theme picker: base-palette names → muted-foreground; accent themes → primary.
   const themeOklch = isBaseColorName(safeTheme)
-    ? getThemeDarkCssValue(safeTheme, "muted-foreground") ??
+    ? (getThemeDarkCssValue(safeTheme, "muted-foreground") ??
       getThemeDarkCssValue(safeTheme, "primary") ??
-      FALLBACK_DARK
-    : getThemeDarkCssValue(safeTheme, "primary") ??
+      FALLBACK_DARK)
+    : (getThemeDarkCssValue(safeTheme, "primary") ??
       getThemeDarkCssValue(safeTheme, "muted-foreground") ??
-      FALLBACK_DARK
+      FALLBACK_DARK)
 
   // Chart Color picker: same rule as theme.
   const chartOklch = isBaseColorName(safeChartColor)
-    ? getThemeDarkCssValue(safeChartColor, "muted-foreground") ??
+    ? (getThemeDarkCssValue(safeChartColor, "muted-foreground") ??
       getThemeDarkCssValue(safeChartColor, "primary") ??
-      FALLBACK_DARK
-    : getThemeDarkCssValue(safeChartColor, "primary") ??
+      FALLBACK_DARK)
+    : (getThemeDarkCssValue(safeChartColor, "primary") ??
       getThemeDarkCssValue(safeChartColor, "muted-foreground") ??
-      FALLBACK_DARK
+      FALLBACK_DARK)
 
   return [
     oklchCssToHex(baseOklch),

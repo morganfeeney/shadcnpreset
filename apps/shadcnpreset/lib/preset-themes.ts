@@ -9,13 +9,16 @@ import { THEMES } from "@/registry/themes"
 
 export type ThemeCorners = "square" | "small" | "medium" | "large"
 
-/** Everything that changes a preset's theme CSS, and nothing else. */
+/**
+ * What tells one theme apart from another. The menu accent also changes the
+ * CSS (it swaps `--accent` for the primary color) but is not worth a separate
+ * theme, so presets that differ only there share one.
+ */
 export type PresetThemeFields = {
   baseColor: string
   theme: string
   chartColor: string
   corners: ThemeCorners
-  boldMenus: boolean
 }
 
 /** A preset's color layer: the part `shadcn apply --only theme` applies. */
@@ -29,9 +32,13 @@ export type PresetTheme = {
   description: string
   details: string
   chips: { label: string; value: string }[]
+  /** Short labels for theme cards, e.g. "0.875rem" or "Square", "Indigo charts". */
+  meta: { corners: string; charts: string }
   fields: PresetThemeFields
   /** Preset to apply `--only theme` from. */
   code: string
+  /** The theme on the default style and fonts, for the live preview. */
+  previewCode: string
   /** The community preset the theme was taken from, when there is one. */
   source: { code: string; style: string; font: string; icons: string } | null
   /** For `PresetThemeSurface`. */
@@ -79,7 +86,6 @@ export function presetThemeFields(preset: ResolvedPreset): PresetThemeFields {
     theme: preset.theme,
     chartColor: preset.effectiveChartColor,
     corners: CORNERS_BY_RADIUS[preset.effectiveRadius] ?? "medium",
-    boldMenus: preset.menuAccent === "bold",
   }
 }
 
@@ -98,20 +104,26 @@ export function presetThemeSlug(fields: PresetThemeFields): string {
     parts.push(`${fields.chartColor}-charts`)
   }
   if (fields.corners !== "medium") parts.push(`${fields.corners}-corners`)
-  if (fields.boldMenus) parts.push("bold-menus")
   return parts.join("-")
 }
 
 const SLUG_PATTERN =
-  /^([a-z]+)(?:-on-([a-z]+))?(?:-([a-z]+)-charts)?(?:-(square|small|large)-corners)?(-bold-menus)?$/
+  /^([a-z]+)(?:-on-([a-z]+))?(?:-([a-z]+)-charts)?(?:-(square|small|large)-corners)?$/
 
-function presetCodeForFields(fields: PresetThemeFields): string {
+/**
+ * A preset with just these colors on the default style and fonts. Pass the
+ * menu accent to match a theme's CSS exactly (it only changes `--accent`).
+ */
+function presetCodeForFields(
+  fields: PresetThemeFields,
+  menuAccent: string = "subtle"
+): string {
   return encodePreset({
     baseColor: fields.baseColor,
     theme: fields.theme,
     chartColor: fields.chartColor,
     radius: RADIUS_BY_CORNERS[fields.corners],
-    menuAccent: fields.boldMenus ? "bold" : "subtle",
+    menuAccent,
   } as Parameters<typeof encodePreset>[0])
 }
 
@@ -135,7 +147,6 @@ function buildPresetTheme(
   const qualifiers = [
     chart && `${chart.toLowerCase()} charts`,
     fields.corners !== "medium" && corners.toLowerCase(),
-    fields.boldMenus && "bold menus",
   ].filter((part): part is string => Boolean(part))
 
   const highlights = accent
@@ -150,22 +161,24 @@ function buildPresetTheme(
     name,
     title: qualifiers.length ? `${name} (${qualifiers.join(", ")})` : name,
     qualifiers,
-    description: `${highlights} on the ${BASE_TONE[fields.baseColor] ?? fields.baseColor} ${base} base, with ${charts} and ${corners.toLowerCase()}.${fields.boldMenus ? " Menus use a bold accent." : ""}`,
-    details: [
-      corners,
-      chart && `${chart} charts`,
-      fields.boldMenus && "Bold menus",
-    ]
-      .filter(Boolean)
-      .join(" · "),
+    description: `${highlights} on the ${BASE_TONE[fields.baseColor] ?? fields.baseColor} ${base} base, with ${charts} and ${corners.toLowerCase()}.`,
+    details: [corners, chart && `${chart} charts`].filter(Boolean).join(" · "),
+    meta: {
+      corners:
+        fields.corners === "square"
+          ? "Square"
+          : (bundle.registryTheme.cssVars.light as Record<string, string>)
+              .radius,
+      charts: `${chart ?? accent ?? base} charts`,
+    },
     chips: [
       { label: "Base", value: base },
       { label: "Corners", value: titleCase(fields.corners) },
       { label: "Charts", value: chart ?? accent ?? base },
-      ...(fields.boldMenus ? [{ label: "Menus", value: "Bold" }] : []),
     ],
     fields,
     code: resolved.code,
+    previewCode: presetCodeForFields(fields, resolved.menuAccent),
     source: fromCommunity
       ? {
           code: resolved.code,
@@ -191,18 +204,36 @@ function buildPresetTheme(
 export function presetThemeFromSlug(slug: string): PresetTheme | null {
   const match = SLUG_PATTERN.exec(slug)
   if (!match) return null
-  const [, first, base, chart, corners, bold] = match
+  const [, first, base, chart, corners] = match
   const theme = buildPresetTheme(
     presetCodeForFields({
       baseColor: base ?? first!,
       theme: first!,
       chartColor: chart ?? first!,
       corners: (corners as ThemeCorners | undefined) ?? "medium",
-      boldMenus: Boolean(bold),
     }),
     false
   )
   return theme?.slug === slug ? theme : null
+}
+
+/** What theme lists need from a theme; small enough to send to the client. */
+export type PresetThemeSummary = Pick<
+  PresetTheme,
+  "slug" | "name" | "details" | "code" | "meta"
+> & {
+  baseColor: string
+}
+
+export function presetThemeSummary(theme: PresetTheme): PresetThemeSummary {
+  return {
+    slug: theme.slug,
+    name: theme.name,
+    details: theme.details,
+    code: theme.code,
+    meta: theme.meta,
+    baseColor: theme.fields.baseColor,
+  }
 }
 
 export function presetThemeCommand(code: string): string {

@@ -2,56 +2,42 @@
 
 import Link from "next/link"
 
+import { BezierCurveIcon, ChartDonutIcon } from "@phosphor-icons/react/ssr"
+
 import {
   ThemeFilters,
+  ThemeSwatch,
   useThemeFilter,
-  type ThemeNavItem,
 } from "@/components/themes/theme-nav"
-import {
-  ThemeSurface,
-  useRegistryTheme,
-  useSurfaceMode,
-} from "@/components/themes/theme-surface"
+import type { PresetThemeSummary } from "@/lib/preset-themes"
 
-function ThemeTilePreview({ code }: { code: string }) {
-  const registryTheme = useRegistryTheme(code)
-  const mode = useSurfaceMode()
-
-  if (!mode || !registryTheme) {
-    return <div aria-hidden className="h-[7.5rem] animate-pulse bg-muted" />
-  }
-
+/** A theme's swatch, name, corners and charts, linking to its page. */
+export function ThemeTile({ theme }: { theme: PresetThemeSummary }) {
   return (
-    <ThemeSurface
-      registryTheme={registryTheme}
-      mode={mode}
-      className="grid gap-3 bg-background p-4 text-foreground"
+    <Link
+      href={`/themes/${theme.slug}`}
+      className="grid h-full content-start gap-3 rounded-none bg-muted px-4.5 py-4 transition-colors hover:bg-muted/70 dark:bg-card dark:hover:bg-muted"
     >
-      <span
-        aria-hidden
-        className="flex h-11 overflow-hidden rounded-lg ring-1 ring-border"
-      >
-        <span className="flex-2 bg-primary" />
-        <span className="flex-1 bg-secondary" />
-        <span className="flex-1 bg-muted" />
-        <span className="flex-1 bg-chart-2" />
-        <span className="flex-1 bg-chart-4" />
+      <span className="flex items-center gap-3">
+        <ThemeSwatch code={theme.code} />
+        <span className="truncate font-display">{theme.name}</span>
       </span>
-      <span aria-hidden className="flex gap-1.5 text-xs font-medium">
-        <span className="rounded-md bg-primary px-2.5 py-1 text-primary-foreground">
-          Button
+      <span className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <BezierCurveIcon aria-hidden className="size-3.5" />
+          {theme.meta.corners}
         </span>
-        <span className="rounded-md bg-secondary px-2.5 py-1 text-secondary-foreground">
-          Secondary
+        <span className="inline-flex items-center gap-1.5">
+          <ChartDonutIcon aria-hidden className="size-3.5" />
+          {theme.meta.charts}
         </span>
-        <span className="rounded-md border px-2.5 py-1">Outline</span>
       </span>
-    </ThemeSurface>
+    </Link>
   )
 }
 
 /** Filterable grid of theme tiles for /themes. */
-export function ThemesGrid({ items }: { items: ThemeNavItem[] }) {
+export function ThemesGrid({ items }: { items: PresetThemeSummary[] }) {
   const filter = useThemeFilter(items)
 
   return (
@@ -62,21 +48,10 @@ export function ThemesGrid({ items }: { items: ThemeNavItem[] }) {
           {filter.filtered.length} of {items.length} themes
         </span>
       </div>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3">
         {filter.filtered.map((item) => (
           <li key={item.slug}>
-            <Link
-              href={`/themes/${item.slug}`}
-              className="grid overflow-hidden rounded-xl border transition-colors hover:border-foreground/30"
-            >
-              <ThemeTilePreview code={item.code} />
-              <span className="grid gap-0.5 border-t px-4 py-3">
-                <span className="font-semibold">{item.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {item.details}
-                </span>
-              </span>
-            </Link>
+            <ThemeTile theme={item} />
           </li>
         ))}
       </ul>

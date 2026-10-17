@@ -27,9 +27,9 @@ const ASSETS = "https://assets.shadcncraft.com/images/site"
 // site when they change their tiers.
 export const SHADCNCRAFT_PITCH_HEADING =
   "Apply your preset to a premium shadcn/ui design system"
-const SOCIAL_PROOF = "Trusted by 16,000+ creators and teams"
-const STARTING_PRICE = "$119"
-const FEATURES = [
+export const SHADCNCRAFT_SOCIAL_PROOF = "Trusted by 16,000+ creators and teams"
+export const SHADCNCRAFT_STARTING_PRICE = "$119"
+export const SHADCNCRAFT_FEATURES = [
   "Production-ready shadcn/ui blocks and components",
   "The official shadcn/ui Figma kit, in all 8 styles",
   "A Figma plugin for styles, themes and presets",
@@ -58,9 +58,7 @@ export function ShadcncraftPitch({
   /** `h1` on its own page; a dialog titles itself. */
   headingLevel?: "h1" | "h2"
 }) {
-  useEffect(() => {
-    trackEvent("affiliate_impression", { partner: PARTNER, placement })
-  }, [placement])
+  useShadcncraftImpression(placement)
 
   const buy = (label: string, className?: string) => (
     <BuyLink
@@ -105,7 +103,9 @@ export function ShadcncraftPitch({
                   />
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground">{SOCIAL_PROOF}</p>
+              <p className="text-sm text-muted-foreground">
+                {SHADCNCRAFT_SOCIAL_PROOF}
+              </p>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ export function ShadcncraftPitch({
             What you get with shadcncraft
           </h3>
           <ul className="grid gap-3">
-            {FEATURES.map((feature) => (
+            {SHADCNCRAFT_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2.5 text-sm">
                 <CheckCircleIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 {feature}
@@ -193,7 +193,7 @@ export function ShadcncraftPitch({
               Lifetime access, starting at
             </p>
             <p className="text-5xl font-medium tracking-tight">
-              {STARTING_PRICE}
+              {SHADCNCRAFT_STARTING_PRICE}
             </p>
           </div>
           {buy("Buy now", "w-full")}
@@ -206,7 +206,15 @@ export function ShadcncraftPitch({
   )
 }
 
-function BuyLink({
+/** Counts one shadcncraft impression for a placement, when it is shown. */
+export function useShadcncraftImpression(placement: string) {
+  useEffect(() => {
+    trackEvent("affiliate_impression", { partner: PARTNER, placement })
+  }, [placement])
+}
+
+/** Tagged, sponsored link to shadcncraft that reports its click. */
+export function BuyLink({
   presetCode,
   placement,
   className,

@@ -5,11 +5,13 @@ import { cacheLife } from "next/cache"
 import { getLearnArticleHref } from "@/app/learn/learn"
 import { PRESET_THEME_GENERATOR_TOOL } from "@/app/tools/tools"
 import {
+  PageActions,
   PageHeader,
   PageHeaderDescription,
   PageHeaderHeading,
 } from "@/components/page-header"
 import { ThemesGrid } from "@/components/themes/themes-grid"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -19,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { buildPageMetadata } from "@/lib/page-metadata"
+import { presetThemeSummary } from "@/lib/preset-themes"
 import { getPresetThemesFeed } from "@/lib/preset-themes-feed"
 
 const description =
@@ -29,6 +32,7 @@ export const metadata: Metadata = {
     title: "shadcn themes: free color themes for shadcn/ui",
     description,
     path: "/themes",
+    image: "route",
   }),
   alternates: { canonical: "/themes" },
 }
@@ -54,35 +58,21 @@ export default async function ThemesPage() {
   return (
     <main className="px-safe pb-20">
       <div className="mx-auto grid max-w-7xl gap-10">
-        <PageHeader>
+        <PageHeader className="[&_.container]:pb-6 lg:[&_.container]:pb-12">
           <PageHeaderHeading className="max-w-4xl">
-            shadcn themes
+            {themes.length} free shadcn themes{" "}
+            <span className="block text-muted-foreground">
+              from community presets
+            </span>
           </PageHeaderHeading>
-          <PageHeaderDescription className="max-w-3xl text-muted-foreground">
-            {description}{" "}
-            <Link href="#theme-or-preset" className={inlineLink}>
-              Theme or preset?
-            </Link>{" "}
-            Have a preset code? Use the{" "}
-            <Link
-              href={PRESET_THEME_GENERATOR_TOOL.href}
-              className={inlineLink}
-            >
-              {PRESET_THEME_GENERATOR_TOOL.title}
-            </Link>
-            .
+          <PageHeaderDescription className="max-w-2xl text-muted-foreground">
+            The color layer of the most voted presets. Preview a theme, copy its
+            CSS variables for light and dark mode, or apply it with one shadcn
+            command.
           </PageHeaderDescription>
         </PageHeader>
 
-        <ThemesGrid
-          items={themes.map((theme) => ({
-            slug: theme.slug,
-            name: theme.name,
-            details: theme.details,
-            baseColor: theme.fields.baseColor,
-            code: theme.code,
-          }))}
-        />
+        <ThemesGrid items={themes.map(presetThemeSummary)} />
 
         <section
           id="theme-or-preset"

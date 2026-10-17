@@ -83,20 +83,20 @@ export function ThemePalette({
   return (
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-4">
       {PALETTE.map(([token, label]) => (
-        <li key={token} className="grid gap-2">
+        <li key={token} className="grid content-start gap-1">
           <span
             aria-hidden
             className={cn(
-              "block h-16 rounded-lg ring-1 ring-foreground/10 ring-inset",
+              "block h-16 rounded-sm ring-1 ring-foreground/10 ring-inset",
               !vars && "animate-pulse bg-muted"
             )}
             style={vars ? { background: vars[token] } : undefined}
           />
-          <span className="grid gap-0.5">
-            <span className="text-sm font-medium">{label}</span>
-            <code className="min-h-4 font-mono text-[11px] text-muted-foreground">
-              {vars?.[token]}
-            </code>
+          <span className="grid">
+            <span className="indent-0.5 text-xs font-medium">{label}</span>
+            {/*<code className="min-h-4 font-mono text-[11px] text-muted-foreground">*/}
+            {/*  {vars?.[token]}*/}
+            {/*</code>*/}
           </span>
         </li>
       ))}
