@@ -86,10 +86,10 @@ export function ShadcncraftThemeCta({
         <span className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
           shadcncraft Pro
         </span>
-        <h2 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">
-          Take {theme.name} beyond colors.{" "}
-          <span className="text-muted-foreground">
-            Ship it with shadcncraft.
+        <h2 className="text-3xl leading-[1.1] font-semibold tracking-tight text-balance sm:text-4xl">
+          <span className="block">Every block, your theme.</span>
+          <span className="block text-muted-foreground">
+            Ship faster with Pro.
           </span>
         </h2>
         <p className="max-w-[52ch] text-muted-foreground">

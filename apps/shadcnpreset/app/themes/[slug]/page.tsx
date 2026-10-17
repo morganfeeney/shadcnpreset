@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react/ssr"
 
 import { ShadcncraftThemeCta } from "@/components/shadcncraft-pitch/theme-cta"
+import { ThemeBlocks } from "@/components/themes/theme-blocks"
 import { ThemeCopyActions } from "@/components/themes/theme-copy-actions"
 import { ThemePicker, ThemeSidebar } from "@/components/themes/theme-nav"
 import { ThemePalette, ThemeShowcase } from "@/components/themes/theme-preview"
@@ -128,13 +129,13 @@ export default async function ThemePage({ params }: ThemePageProps) {
   }
 
   return (
-    <div className="flex items-start">
+    <div className="flex min-w-0 items-start">
       <aside className="sticky top-0 hidden max-h-svh w-72 shrink-0 overflow-y-auto border-r p-3 lg:block">
         <ThemeSidebar items={items} currentSlug={theme.slug} />
       </aside>
 
       <main className="min-w-0 flex-1 pt-6 px-safe pb-20 lg:px-10">
-        <div className="mx-auto grid max-w-6xl gap-12">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12">
           <div className="grid gap-4">
             <ThemePicker
               items={items}
@@ -162,7 +163,9 @@ export default async function ThemePage({ params }: ThemePageProps) {
                     size="icon"
                     aria-label={`Previous theme: ${prev.name}`}
                     nativeButton={false}
-                    render={<Link href={`/themes/${prev.slug}`} />}
+                    render={
+                      <Link href={`/themes/${prev.slug}`} scroll={false} />
+                    }
                   >
                     <CaretLeftIcon aria-hidden />
                   </Button>
@@ -171,7 +174,9 @@ export default async function ThemePage({ params }: ThemePageProps) {
                     size="icon"
                     aria-label={`Next theme: ${next.name}`}
                     nativeButton={false}
-                    render={<Link href={`/themes/${next.slug}`} />}
+                    render={
+                      <Link href={`/themes/${next.slug}`} scroll={false} />
+                    }
                   >
                     <CaretRightIcon aria-hidden />
                   </Button>
@@ -205,7 +210,10 @@ export default async function ThemePage({ params }: ThemePageProps) {
             <ThemeCopyActions css={theme.css} command={command} />
           </header>
 
-          <ThemeShowcase registryTheme={theme.registryTheme} name={theme.name} />
+          <ThemeShowcase
+            registryTheme={theme.registryTheme}
+            name={theme.name}
+          />
 
           <section className="grid gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">Colors</h2>
@@ -250,6 +258,12 @@ export default async function ThemePage({ params }: ThemePageProps) {
 
           <FullPresetCard theme={theme} />
 
+          <ThemeBlocks
+            name={theme.name}
+            code={theme.code}
+            registryTheme={theme.registryTheme}
+          />
+
           <ShadcncraftThemeCta
             theme={presetThemeSummary(theme)}
             registryTheme={theme.registryTheme}
@@ -265,12 +279,17 @@ export default async function ThemePage({ params }: ThemePageProps) {
               aria-label="More themes"
               className="flex justify-between gap-4 border-t pt-6 text-sm"
             >
-              <Link href={`/themes/${prev.slug}`} className="grid gap-1">
+              <Link
+                href={`/themes/${prev.slug}`}
+                scroll={false}
+                className="grid gap-1"
+              >
                 <span className="text-xs text-muted-foreground">Previous</span>
                 <span className="font-medium">{prev.name}</span>
               </Link>
               <Link
                 href={`/themes/${next.slug}`}
+                scroll={false}
                 className="grid gap-1 text-right"
               >
                 <span className="text-xs text-muted-foreground">Next</span>

@@ -140,6 +140,8 @@ export function ThemeSidebar({
             <li key={item.slug}>
               <Link
                 href={`/themes/${item.slug}`}
+                // Switching theme keeps your place on the page.
+                scroll={false}
                 aria-current={current ? "page" : undefined}
                 onClick={onNavigate}
                 className={cn(
