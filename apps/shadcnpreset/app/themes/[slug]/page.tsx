@@ -10,21 +10,20 @@ import {
 import { ShadcncraftThemeCta } from "@/components/shadcncraft-pitch/theme-cta"
 import { ThemeBlocks } from "@/components/themes/theme-blocks"
 import { ThemeCopyActions } from "@/components/themes/theme-copy-actions"
+import { ThemeFontsPicker } from "@/components/themes/theme-fonts-picker"
+import { ThemeInstall } from "@/components/themes/theme-install"
 import { ThemePicker, ThemeSidebar } from "@/components/themes/theme-nav"
 import { ThemePalette, ThemeShowcase } from "@/components/themes/theme-preview"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { siteConfig } from "@/lib/config"
 import { buildPageMetadata } from "@/lib/page-metadata"
+import { presetThemeSummary, type PresetTheme } from "@/lib/preset-themes"
 import {
-  presetThemeCommand,
-  presetThemeSummary,
-  type PresetTheme,
-} from "@/lib/preset-themes"
-import {
+  getFontPairingsFeed,
   getPresetThemePage,
   getPresetThemesFeed,
 } from "@/lib/preset-themes-feed"
+import { suggestedFontPairings } from "@/lib/theme-fonts"
 
 type ThemePageProps = {
   params: Promise<{ slug: string }>
@@ -97,9 +96,10 @@ function FullPresetCard({ theme }: { theme: PresetTheme }) {
 
 export default async function ThemePage({ params }: ThemePageProps) {
   const { slug } = await params
-  const [page, feed] = await Promise.all([
+  const [page, feed, pairings] = await Promise.all([
     getPresetThemePage(slug),
     getPresetThemesFeed(),
+    getFontPairingsFeed(),
   ])
   if (!page) notFound()
 
@@ -108,7 +108,7 @@ export default async function ThemePage({ params }: ThemePageProps) {
   const index = feed.findIndex((item) => item.slug === theme.slug)
   const prev = listed ? feed.at(index - 1) : undefined
   const next = listed ? feed[(index + 1) % feed.length] : undefined
-  const command = presetThemeCommand(theme.code)
+  const fontSuggestions = suggestedFontPairings(pairings, theme.slug, 4)
   const breadcrumbs = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -185,7 +185,7 @@ export default async function ThemePage({ params }: ThemePageProps) {
             </div>
           </div>
 
-          <header className="flex flex-wrap items-end justify-between gap-8">
+          <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-6 md:flex-nowrap">
             <div className="grid max-w-3xl gap-4">
               <div className="grid items-center justify-items-start gap-3">
                 <h1 className="text-4xl font-display tracking-tight md:text-5xl">
@@ -207,7 +207,13 @@ export default async function ThemePage({ params }: ThemePageProps) {
                 ))}
               </ul>
             </div>
-            <ThemeCopyActions css={theme.css} command={command} />
+            <div className="flex max-w-full min-w-0 gap-2 md:shrink-0">
+              <ThemeFontsPicker
+                themeSlug={theme.slug}
+                suggestions={fontSuggestions}
+              />
+              <ThemeCopyActions code={theme.code} css={theme.css} />
+            </div>
           </header>
 
           <ThemeShowcase
@@ -220,41 +226,7 @@ export default async function ThemePage({ params }: ThemePageProps) {
             <ThemePalette registryTheme={theme.registryTheme} />
           </section>
 
-          <section className="grid gap-4">
-            <div className="grid gap-1.5">
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Use this theme
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Changes colors and radius only. Your components, fonts and icons
-                stay as they are.
-              </p>
-            </div>
-            <Tabs defaultValue="css">
-              <TabsList>
-                <TabsTrigger value="css">CSS</TabsTrigger>
-                <TabsTrigger value="cli">shadcn CLI</TabsTrigger>
-              </TabsList>
-              <TabsContent value="css" className="grid gap-2">
-                <p className="text-sm text-muted-foreground">
-                  Replace the <code>:root</code> and <code>.dark</code> blocks
-                  in your <code>globals.css</code>.
-                </p>
-                <pre className="max-h-96 overflow-auto rounded-xl border bg-muted/40 p-4 font-mono text-xs leading-relaxed">
-                  {theme.css}
-                </pre>
-              </TabsContent>
-              <TabsContent value="cli" className="grid gap-2">
-                <p className="text-sm text-muted-foreground">
-                  Run this in your project. <code>--only theme</code> applies
-                  the colors and nothing else from the preset.
-                </p>
-                <pre className="overflow-x-auto rounded-xl border bg-muted/40 p-4 font-mono text-sm">
-                  {command}
-                </pre>
-              </TabsContent>
-            </Tabs>
-          </section>
+          <ThemeInstall code={theme.code} css={theme.css} />
 
           <FullPresetCard theme={theme} />
 

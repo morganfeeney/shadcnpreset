@@ -129,4 +129,10 @@ describe("presetThemeCommand", () => {
       "npx shadcn@latest apply --preset b1FQfDVOC --only theme"
     )
   })
+
+  it("adds fonts when the theme comes with them", () => {
+    expect(presetThemeCommand("b1FQfDVOC", { fonts: true })).toBe(
+      "npx shadcn@latest apply --preset b1FQfDVOC --only theme,font"
+    )
+  })
 })

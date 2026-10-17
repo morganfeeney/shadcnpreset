@@ -236,8 +236,11 @@ export function presetThemeSummary(theme: PresetTheme): PresetThemeSummary {
   }
 }
 
-export function presetThemeCommand(code: string): string {
-  return `npx shadcn@latest apply --preset ${code} --only theme`
+export function presetThemeCommand(
+  code: string,
+  { fonts = false }: { fonts?: boolean } = {}
+): string {
+  return `npx shadcn@latest apply --preset ${code} --only ${fonts ? "theme,font" : "theme"}`
 }
 
 /**
