@@ -35,6 +35,7 @@ import {
   UsersThreeIcon,
   WrenchIcon,
   ListIcon,
+  PaletteIcon,
 } from "@phosphor-icons/react"
 
 import {
@@ -78,6 +79,12 @@ const HEADER_LINKS: ComponentLink[] = [
     href: "presets",
     label: "Presets",
     children: [
+      {
+        label: "shadcn themes",
+        href: "/themes",
+        description: "Color themes to copy or apply with one command.",
+        icon: PaletteIcon,
+      },
       {
         label: "Community presets",
         href: "/community",

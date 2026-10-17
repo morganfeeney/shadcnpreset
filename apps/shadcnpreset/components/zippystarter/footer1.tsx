@@ -36,6 +36,7 @@ const COLUMNS = [
   {
     header: "Presets",
     links: [
+      { label: "shadcn themes", href: "/themes" },
       { label: "High contrast presets", href: "/high-contrast-presets" },
       { label: "My presets", href: "/my-presets" },
     ],

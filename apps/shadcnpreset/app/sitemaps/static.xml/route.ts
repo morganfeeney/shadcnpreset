@@ -1,11 +1,13 @@
 import { PUBLISHED_LEARN_ARTICLES } from "@/app/learn/articles"
 import { getLearnArticleHref } from "@/app/learn/learn"
 import { siteConfig } from "@/lib/config"
+import { getPresetThemesFeed } from "@/lib/preset-themes-feed"
 import { buildUrlSetXml } from "@/lib/sitemap"
 
 const STATIC_PATHS = [
   "/",
   "/community",
+  "/themes",
   "/describe",
   "/build",
   "/shadcncraft",
@@ -22,10 +24,15 @@ const STATIC_PATHS = [
   ),
 ]
 
-export function GET() {
+export async function GET() {
   const nowIso = new Date().toISOString()
+  const themes = await getPresetThemesFeed()
+  const paths = [
+    ...STATIC_PATHS,
+    ...themes.map((theme) => `/themes/${theme.slug}`),
+  ]
 
-  const entries = STATIC_PATHS.map((path) => ({
+  const entries = paths.map((path) => ({
     loc: `${siteConfig.url}${path}`,
     lastmod: nowIso,
   }))

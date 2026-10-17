@@ -3,7 +3,10 @@ import { notFound } from "next/navigation"
 
 import { ContainerInner } from "@/components/zippystarter/container"
 import { isCommunityPresetCode } from "@/lib/community-presets"
-import { presetDnaMetaDescription } from "@/lib/data/metadata/preset-meta"
+import {
+  presetDetailsPageTitle,
+  presetDnaMetaDescription,
+} from "@/lib/data/metadata/preset-meta"
 import { buildPageMetadata, getPresetOgImageUrl } from "@/lib/page-metadata"
 import { effectiveHeadingFont, resolvePresetFromCode } from "@/lib/preset"
 import { getPresetGoogleFontStylesheetHrefs } from "@/lib/preset-google-fonts"
@@ -29,7 +32,7 @@ export async function generateMetadata({
     notFound()
   }
 
-  const title = `Preset details for ${resolved.code}`
+  const title = presetDetailsPageTitle(resolved)
   const description = presetDnaMetaDescription(resolved)
   const pagePath = `/pdp/${resolved.code}`
   const useDynamicOg = await isCommunityPresetCode(resolved.code, code)

@@ -3,7 +3,10 @@ import { notFound } from "next/navigation"
 
 import { siteConfig } from "@/lib/config"
 import { isCommunityPresetCode } from "@/lib/community-presets"
-import { presetMetaDescription } from "@/lib/data/metadata/preset-meta"
+import {
+  presetMetaDescription,
+  presetPageTitle,
+} from "@/lib/data/metadata/preset-meta"
 import { buildPageMetadata, getPresetOgImageUrl } from "@/lib/page-metadata"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { parsePresetPreviewPageName } from "@/lib/preset-preview"
@@ -29,7 +32,7 @@ export async function generateMetadata({
     notFound()
   }
 
-  const title = `shadcn preset: ${preset.code}`
+  const title = presetPageTitle(preset)
   const description = presetMetaDescription(preset)
   const pagePath = `/preset/${preset.code}`
   const useDynamicOg = await isCommunityPresetCode(preset.code, code)
