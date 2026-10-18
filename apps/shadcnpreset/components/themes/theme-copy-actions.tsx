@@ -11,19 +11,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { trackEvent } from "@/lib/analytics-events"
 
 function CopyAction({
   label,
   value,
   icon,
   variant,
+  onCopy,
 }: {
   label: string
   value: string
   icon: React.ReactNode
   variant: "default" | "outline"
+  onCopy: () => void
 }) {
-  const { isCopied, copyToClipboard } = useCopyToClipboard()
+  // Reported only once the copy succeeds.
+  const { isCopied, copyToClipboard } = useCopyToClipboard({ onCopy })
 
   return (
     <Tooltip>
@@ -46,8 +50,22 @@ function CopyAction({
 }
 
 /** Copies the theme's CSS and command, with the picked fonts when there are any. */
-export function ThemeCopyActions({ code, css }: { code: string; css: string }) {
+export function ThemeCopyActions({
+  themeSlug,
+  code,
+  css,
+}: {
+  themeSlug: string
+  code: string
+  css: string
+}) {
   const install = useThemeInstall({ code, css })
+  const track = (kind: "css" | "command") =>
+    trackEvent("theme_copy", {
+      theme_slug: themeSlug,
+      kind,
+      with_fonts: install.fonts ? "yes" : "no",
+    })
 
   return (
     <div className="flex gap-2">
@@ -56,6 +74,7 @@ export function ThemeCopyActions({ code, css }: { code: string; css: string }) {
         value={install.css}
         icon={<CopyIcon aria-hidden />}
         variant="default"
+        onCopy={() => track("css")}
       />
       <CopyAction
         label={
@@ -64,6 +83,7 @@ export function ThemeCopyActions({ code, css }: { code: string; css: string }) {
         value={install.command}
         icon={<TerminalIcon aria-hidden />}
         variant="outline"
+        onCopy={() => track("command")}
       />
     </div>
   )

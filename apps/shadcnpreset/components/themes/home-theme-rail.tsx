@@ -39,7 +39,7 @@ export function HomeThemeRail({
                 key={theme.slug}
                 className="w-80 md:max-w-none lg:max-w-none"
               >
-                <ThemeTile theme={theme} />
+                <ThemeTile theme={theme} placement="home_rail" />
               </HomePresetRailItem>
             ))}
           </HomeRailCarousel>

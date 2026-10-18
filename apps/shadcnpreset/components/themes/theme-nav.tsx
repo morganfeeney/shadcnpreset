@@ -16,6 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { trackEvent } from "@/lib/analytics-events"
 import type { PresetThemeSummary } from "@/lib/preset-themes"
 import { cn } from "@/lib/utils"
 
@@ -56,9 +57,16 @@ export function ThemeSwatch({ code }: { code: string }) {
   )
 }
 
-/** Search and base-color filter state shared by the theme lists. */
+/** How long typing pauses before a search counts as one search. */
+const SEARCH_TRACK_DELAY = 1000
+
+/**
+ * Search and base-color filter state shared by the theme lists. A search is
+ * reported once typing pauses, and again only when the search changes.
+ */
 export function useThemeFilter<T extends { name: string; baseColor: string }>(
-  items: T[]
+  items: T[],
+  placement: "listing" | "sidebar"
 ) {
   const [query, setQuery] = React.useState("")
   const [baseColor, setBaseColor] = React.useState("all")
@@ -72,6 +80,28 @@ export function useThemeFilter<T extends { name: string; baseColor: string }>(
       (baseColor === "all" || item.baseColor === baseColor) &&
       (!needle || item.name.toLowerCase().includes(needle))
   )
+
+  const resultCount = filtered.length
+  const lastTracked = React.useRef("")
+  React.useEffect(() => {
+    // Clearing the search means the same search typed again is a new one.
+    if (!needle && baseColor === "all") {
+      lastTracked.current = ""
+      return
+    }
+    const search = `${needle}|${baseColor}`
+    if (search === lastTracked.current) return
+    const timeout = setTimeout(() => {
+      lastTracked.current = search
+      trackEvent("theme_search", {
+        placement,
+        search_term: needle || undefined,
+        base_color: baseColor === "all" ? undefined : baseColor,
+        result_count: resultCount,
+      })
+    }, SEARCH_TRACK_DELAY)
+    return () => clearTimeout(timeout)
+  }, [needle, baseColor, placement, resultCount])
 
   return { query, setQuery, baseColor, setBaseColor, baseColors, filtered }
 }
@@ -120,7 +150,7 @@ export function ThemeSidebar({
   currentSlug: string
   onNavigate?: () => void
 }) {
-  const filter = useThemeFilter(items)
+  const filter = useThemeFilter(items, "sidebar")
 
   return (
     <div className="flex min-h-0 flex-col gap-3">
@@ -143,7 +173,13 @@ export function ThemeSidebar({
                 // Switching theme keeps your place on the page.
                 scroll={false}
                 aria-current={current ? "page" : undefined}
-                onClick={onNavigate}
+                onClick={() => {
+                  trackEvent("theme_card_click", {
+                    theme_slug: item.slug,
+                    placement: "sidebar",
+                  })
+                  onNavigate?.()
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-md border border-transparent p-2 transition-colors hover:bg-muted/60",
                   current && "border-border bg-muted"
