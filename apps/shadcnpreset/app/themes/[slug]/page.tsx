@@ -1,17 +1,14 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import {
-  ArrowUpRightIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
-} from "@phosphor-icons/react/ssr"
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/ssr"
 
 import { ShadcncraftThemeCta } from "@/components/shadcncraft-pitch/theme-cta"
 import { ThemeBlocks } from "@/components/themes/theme-blocks"
 import { ThemeCopyActions } from "@/components/themes/theme-copy-actions"
 import { ThemeFontsPicker } from "@/components/themes/theme-fonts-picker"
 import { ThemeInstall } from "@/components/themes/theme-install"
+import { ThemeOpenPresetButton } from "@/components/themes/theme-open-preset"
 import { ThemePicker, ThemeSidebar } from "@/components/themes/theme-nav"
 import { ThemePalette, ThemeShowcase } from "@/components/themes/theme-preview"
 import { Button } from "@/components/ui/button"
@@ -81,15 +78,7 @@ function FullPresetCard({ theme }: { theme: PresetTheme }) {
           )}
         </p>
       </div>
-      <Button
-        variant="outline"
-        size="lg"
-        nativeButton={false}
-        render={<Link href={`/preset/${theme.code}`} />}
-      >
-        Open the preset
-        <ArrowUpRightIcon aria-hidden />
-      </Button>
+      <ThemeOpenPresetButton themeSlug={theme.slug} presetCode={theme.code} />
     </section>
   )
 }
@@ -212,7 +201,11 @@ export default async function ThemePage({ params }: ThemePageProps) {
                 themeSlug={theme.slug}
                 suggestions={fontSuggestions}
               />
-              <ThemeCopyActions code={theme.code} css={theme.css} />
+              <ThemeCopyActions
+                themeSlug={theme.slug}
+                code={theme.code}
+                css={theme.css}
+              />
             </div>
           </header>
 

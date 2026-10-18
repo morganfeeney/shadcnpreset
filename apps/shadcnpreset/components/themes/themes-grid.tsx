@@ -9,13 +9,23 @@ import {
   ThemeSwatch,
   useThemeFilter,
 } from "@/components/themes/theme-nav"
+import { trackEvent } from "@/lib/analytics-events"
 import type { PresetThemeSummary } from "@/lib/preset-themes"
 
 /** A theme's swatch, name, corners and charts, linking to its page. */
-export function ThemeTile({ theme }: { theme: PresetThemeSummary }) {
+export function ThemeTile({
+  theme,
+  placement,
+}: {
+  theme: PresetThemeSummary
+  placement: "listing" | "home_rail"
+}) {
   return (
     <Link
       href={`/themes/${theme.slug}`}
+      onClick={() =>
+        trackEvent("theme_card_click", { theme_slug: theme.slug, placement })
+      }
       className="grid h-full content-start gap-3 rounded-none bg-muted px-4.5 py-4 transition-colors hover:bg-muted/70 dark:bg-card dark:hover:bg-muted"
     >
       <span className="flex items-center gap-3">
@@ -38,7 +48,7 @@ export function ThemeTile({ theme }: { theme: PresetThemeSummary }) {
 
 /** Filterable grid of theme tiles for /themes. */
 export function ThemesGrid({ items }: { items: PresetThemeSummary[] }) {
-  const filter = useThemeFilter(items)
+  const filter = useThemeFilter(items, "listing")
 
   return (
     <div className="grid gap-4">
@@ -51,7 +61,7 @@ export function ThemesGrid({ items }: { items: PresetThemeSummary[] }) {
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3">
         {filter.filtered.map((item) => (
           <li key={item.slug}>
-            <ThemeTile theme={item} />
+            <ThemeTile theme={item} placement="listing" />
           </li>
         ))}
       </ul>

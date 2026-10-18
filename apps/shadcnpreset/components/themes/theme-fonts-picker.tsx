@@ -20,6 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { trackEvent } from "@/lib/analytics-events"
 import { FONT_DEFINITIONS, getFontDefinition } from "@/lib/font-definitions"
 import {
   DEFAULT_THEME_FONTS,
@@ -139,8 +140,21 @@ export function ThemeFontsPicker({
   const active = fonts ?? DEFAULT_THEME_FONTS
   useThemeFontsUrl(usePathname())
 
-  const pick = (next: ThemeFonts | null) => {
+  const choose = (
+    next: ThemeFonts | null,
+    source: "default" | "suggested" | "custom"
+  ) => {
     setThemeFonts(next)
+    const chosen = next ?? DEFAULT_THEME_FONTS
+    trackEvent("theme_fonts_select", {
+      theme_slug: themeSlug,
+      heading_font: chosen.heading,
+      body_font: chosen.body,
+      source,
+    })
+  }
+  const pick = (next: ThemeFonts | null) => {
+    choose(next, next ? "suggested" : "default")
     setOpen(false)
   }
   const isActive = (pairing: ThemeFonts) =>
@@ -210,13 +224,16 @@ export function ThemeFontsPicker({
             label="Heading"
             value={active.heading === active.body ? "inherit" : active.heading}
             onChange={(event) =>
-              setThemeFonts({
-                heading:
-                  event.target.value === "inherit"
-                    ? active.body
-                    : (event.target.value as ThemeFonts["heading"]),
-                body: active.body,
-              })
+              choose(
+                {
+                  heading:
+                    event.target.value === "inherit"
+                      ? active.body
+                      : (event.target.value as ThemeFonts["heading"]),
+                  body: active.body,
+                },
+                "custom"
+              )
             }
           >
             <option value="inherit">Same as body</option>
@@ -231,10 +248,14 @@ export function ThemeFontsPicker({
             value={active.body}
             onChange={(event) => {
               const body = event.target.value as ThemeFonts["body"]
-              setThemeFonts({
-                heading: active.heading === active.body ? body : active.heading,
-                body,
-              })
+              choose(
+                {
+                  heading:
+                    active.heading === active.body ? body : active.heading,
+                  body,
+                },
+                "custom"
+              )
             }}
           >
             {FONT_DEFINITIONS.map((font) => (
