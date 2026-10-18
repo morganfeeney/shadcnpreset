@@ -150,7 +150,7 @@ export function ThemeFontsPicker({
       theme_slug: themeSlug,
       heading_font: chosen.heading,
       body_font: chosen.body,
-      source,
+      font_source: source,
     })
   }
   const pick = (next: ThemeFonts | null) => {
