@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { looksLikePreviewRequest } from "@/lib/generated-preview/intent"
 import { writePendingAssistantPrompt } from "@/lib/pending-assistant-prompt"
 import { trackEvent } from "@/lib/analytics-events"
+import type { CustomColours } from "@/lib/custom-colours"
 import type { AssistantTurn } from "@/lib/search/assistant/schema"
 import { useAuthStore } from "@/stores/auth-store"
 
@@ -55,8 +56,23 @@ type AssistantChatDetailResponse = {
   }
 }
 
+/** A custom preset as an edit to it left it, for the panel showing it. */
+export type EditedCustomPreset = {
+  id: string
+  presetCode: string
+  colours: CustomColours
+}
+
+/** The answer while a custom preset is open: an edit to it, not presets. */
+type CustomPresetTurn = {
+  phase: "custom"
+  assistantMessage: string
+  changed: string[]
+  customPreset: EditedCustomPreset
+}
+
 type AssistantSendResponse =
-  | (AssistantTurn & { chatId?: string })
+  | ((AssistantTurn | CustomPresetTurn) & { chatId?: string })
   | { error?: string; code?: string; chatId?: string }
 
 function hydrateMessages(
@@ -199,6 +215,10 @@ type UseAssistantChatOptions = {
    * coming back to and the surface can give it an address.
    */
   onChatCreated?: (chatId: string) => void
+  /** A custom preset open beside the chat: sends edit it instead. */
+  customPresetId?: string | null
+  /** An edit to that custom preset has been saved. */
+  onCustomPresetEdited?: (preset: EditedCustomPreset) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -214,10 +234,17 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onChatCreatedRef.current = onChatCreated
   }, [onChatCreated])
+  const customPresetId = options?.customPresetId ?? null
+  const onCustomPresetEdited = options?.onCustomPresetEdited
+  const onCustomPresetEditedRef = React.useRef(onCustomPresetEdited)
+  React.useEffect(() => {
+    onCustomPresetEditedRef.current = onCustomPresetEdited
+  }, [onCustomPresetEdited])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [proRequired, setProRequired] = React.useState(false)
   const [lastTurn, setLastTurn] = React.useState<AssistantTurn | null>(null)
   const [activeChatId, setActiveChatId] = React.useState<string | null>(
     options?.initialChatId ?? null
@@ -358,6 +385,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     previousPresetCodes: string[]
     chatId: string | null
     livePresetCode?: string
+    customPresetId: string | null
   }
 
   type SendData =
@@ -369,6 +397,10 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       }
     | {
         kind: "auth_required"
+        args: SendVars
+      }
+    | {
+        kind: "pro_required"
         args: SendVars
       }
 
@@ -389,6 +421,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
           livePresetCode: args.livePresetCode,
+          customPresetId: args.customPresetId ?? undefined,
         }),
       })
       const raw = await response.text()
@@ -406,6 +439,14 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         data.code === "auth_required"
       ) {
         return { kind: "auth_required", args }
+      }
+
+      if (
+        response.status === 402 &&
+        "code" in data &&
+        data.code === "pro_required"
+      ) {
+        return { kind: "pro_required", args }
       }
 
       if (!response.ok) {
@@ -440,6 +481,14 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         await ensureAuthenticated()
         return
       }
+      // Out of free answers: the question goes back, and the chat says why
+      // instead of answering.
+      if (result.kind === "pro_required") {
+        setMessages(context?.previousMessages ?? [])
+        setProRequired(true)
+        trackEvent("pro_wall_view", { page_path: pathname })
+        return
+      }
 
 
       const latencyMs = context
@@ -466,12 +515,14 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
                 content: data.assistantMessage,
                 preview: data.preview,
               }
-            : {
-                role: "assistant",
-                kind: "text",
-                content: data.assistantMessage,
-                followUpQuestions: data.followUpQuestions,
-              }
+            : data.phase === "custom"
+              ? { role: "assistant", kind: "text", content: data.assistantMessage }
+              : {
+                  role: "assistant",
+                  kind: "text",
+                  content: data.assistantMessage,
+                  followUpQuestions: data.followUpQuestions,
+                }
 
       const nextMessages = [...result.args.nextMessages, reply]
       setMessages(nextMessages)
@@ -481,6 +532,9 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       setLastTurn(data.phase === "gathering" ? data : null)
       if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
+      }
+      if (data.phase === "custom") {
+        onCustomPresetEditedRef.current?.(data.customPreset)
       }
 
       // The answer names the chat: it exists now, it belongs in the history,
@@ -582,6 +636,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       previousPresetCodes,
       chatId: activeChatId,
       livePresetCode,
+      customPresetId,
     })
 
     if (result.kind === "auth_required") {
@@ -659,6 +714,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     messages,
     pending,
     pendingKind,
+    proRequired,
     requiresAuth,
     recentChats,
     isLoadingRecentChats,

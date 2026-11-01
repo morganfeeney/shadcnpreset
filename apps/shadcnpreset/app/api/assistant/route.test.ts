@@ -14,6 +14,27 @@ vi.mock("@/lib/assistant-chat-store", () => ({
     saveAssistantChatForUser(...args),
 }))
 
+// The usage count is the only thing here that reaches the database.
+const query = vi.fn()
+vi.mock("@/lib/db", () => ({
+  query: (...args: unknown[]) => query(...args),
+}))
+
+/** Answers the user has already had. */
+function usedGenerations(generations: number) {
+  query.mockImplementation(async (sql: string) =>
+    sql.includes("SELECT generations")
+      ? { rows: [{ generations }] }
+      : { rows: [] }
+  )
+}
+
+function countedGenerations() {
+  return query.mock.calls.filter(([sql]) =>
+    String(sql).includes("INSERT INTO assistant_usage")
+  )
+}
+
 const generateText = vi.fn()
 vi.mock("ai", async (importOriginal) => ({
   ...(await importOriginal<typeof import("ai")>()),
@@ -43,6 +64,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   process.env.OPENAI_API_KEY = "test-key"
   getSessionUser.mockResolvedValue(USER)
+  delete process.env.ASSISTANT_FREE_GENERATIONS
+  usedGenerations(0)
   getAssistantChatForUser.mockResolvedValue(null)
   saveAssistantChatForUser.mockImplementation(
     async ({ chatId }: { chatId?: string }) => ({
@@ -111,6 +134,131 @@ describe("POST /api/assistant", () => {
     const response = await post({})
 
     expect(response.status).toBe(401)
+    expect(generateText).not.toHaveBeenCalled()
+  })
+})
+
+describe("POST /api/assistant free generations", () => {
+  it("counts each answer someone gets", async () => {
+    const response = await post({})
+
+    expect(response.status).toBe(200)
+    expect(countedGenerations()).toEqual([[expect.any(String), [USER.id]]])
+  })
+
+  it("has no limit until one is set", async () => {
+    usedGenerations(500)
+
+    const response = await post({})
+
+    expect(response.status).toBe(200)
+    expect(generateText).toHaveBeenCalled()
+  })
+
+  it("asks for Pro past the free answers, without asking the model", async () => {
+    process.env.ASSISTANT_FREE_GENERATIONS = "3"
+    usedGenerations(3)
+
+    const response = await post({})
+
+    expect(response.status).toBe(402)
+    expect(await response.json()).toMatchObject({ code: "pro_required" })
+    expect(generateText).not.toHaveBeenCalled()
+    expect(countedGenerations()).toEqual([])
+  })
+
+  it("answers while free generations remain", async () => {
+    process.env.ASSISTANT_FREE_GENERATIONS = "3"
+    usedGenerations(2)
+
+    const response = await post({})
+
+    expect(response.status).toBe(200)
+  })
+})
+
+describe("POST /api/assistant with a custom preset open", () => {
+  const OWNED = {
+    id: "cp-1",
+    user_id: USER.id,
+    preset_code: "b0",
+    colours: JSON.stringify({ theme: "#DE00CE", overrides: {} }),
+  }
+
+  /** The database as the turn sees it: the custom preset, no answers used. */
+  function storedPreset(row: Record<string, unknown> | null) {
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("FROM custom_presets")) return { rows: row ? [row] : [] }
+      if (sql.includes("SELECT generations"))
+        return { rows: [{ generations: 0 }] }
+      return { rows: [], rowCount: 1 }
+    })
+  }
+
+  const EDIT = {
+    assistantMessage: "Made the theme green.",
+    style: null,
+    font: null,
+    fontHeading: null,
+    iconLibrary: null,
+    radius: null,
+    baseColor: null,
+    theme: "green",
+    chartColor: null,
+    overrides: [],
+    removeOverrides: [],
+  }
+
+  function edited() {
+    return query.mock.calls.find(([sql]) =>
+      String(sql).includes("UPDATE custom_presets")
+    )
+  }
+
+  it("edits the open custom preset instead of finding presets", async () => {
+    storedPreset(OWNED)
+    generateText.mockResolvedValue({ output: EDIT })
+
+    const response = await post({
+      customPresetId: "cp-1",
+      messages: [{ role: "user", content: "make it green" }],
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body).toMatchObject({
+      phase: "custom",
+      // Named as the Theme picker shows it.
+      assistantMessage: "Made the theme Green.",
+      changed: ["Theme: Green"],
+      customPreset: { id: "cp-1", colours: { overrides: {} } },
+    })
+    expect(body.customPreset.colours.theme).toBeUndefined()
+    expect(edited()?.[1].slice(0, 2)).toEqual(["cp-1", USER.id])
+    expect(String(generateText.mock.calls[0][0].system)).toContain(
+      "editing one custom shadcn preset"
+    )
+    expect(countedGenerations()).toHaveLength(1)
+  })
+
+  it("saves nothing when nothing changed", async () => {
+    storedPreset(OWNED)
+    generateText.mockResolvedValue({
+      output: { ...EDIT, theme: null, assistantMessage: "Which part?" },
+    })
+
+    const response = await post({ customPresetId: "cp-1" })
+
+    expect((await response.json()).changed).toEqual([])
+    expect(edited()).toBeUndefined()
+  })
+
+  it("won't edit someone else's custom preset, or ask the model", async () => {
+    storedPreset({ ...OWNED, user_id: "someone-else" })
+
+    const response = await post({ customPresetId: "cp-1" })
+
+    expect(response.status).toBe(404)
     expect(generateText).not.toHaveBeenCalled()
   })
 })

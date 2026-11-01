@@ -30,7 +30,7 @@ export function Announcement({
       <Badge
         render={
           <Link href="/changelog">
-            New: shadcn themes, with font pairing
+            New: custom presets, built with Ask AI
             <ArrowRightIcon
               weight="bold"
               className="size-3.5 shrink-0"

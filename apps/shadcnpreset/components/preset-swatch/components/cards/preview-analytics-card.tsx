@@ -2,8 +2,8 @@
 
 import { Area, AreaChart } from "recharts"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/cn-ui/badge"
+import { Button } from "@/components/cn-ui/button"
 import {
   Card,
   CardDescription,
