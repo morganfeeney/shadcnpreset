@@ -31,7 +31,7 @@ function getFontVars(resolved: ResolvedPreset): ThemeVars {
   }
 }
 
-function formatCssBlock(selector: string, vars: ThemeVars) {
+export function formatCssBlock(selector: string, vars: ThemeVars) {
   const lines = Object.entries(vars).map(
     ([key, value]) => `  --${key}: ${value};`
   )

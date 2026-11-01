@@ -144,6 +144,21 @@ async function ensureDbInitialized() {
         created_at BIGINT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS custom_presets (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        preset_code TEXT NOT NULL,
+        colours TEXT NOT NULL,
+        chat_id TEXT,
+        created_at BIGINT NOT NULL,
+        updated_at BIGINT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS assistant_usage (
+        user_id TEXT PRIMARY KEY,
+        generations INT NOT NULL DEFAULT 0
+      );
+
       CREATE INDEX IF NOT EXISTS idx_preset_votes_code ON preset_votes(preset_code);
       CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
       CREATE INDEX IF NOT EXISTS idx_assistant_chats_user_updated

@@ -3,8 +3,8 @@
 import type { IconLibraryName } from "shadcn/icons"
 
 import { IconPlaceholder } from "@/components/icon-placeholder"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/cn-ui/badge"
+import { Button } from "@/components/cn-ui/button"
 import {
   Card,
   CardDescription,

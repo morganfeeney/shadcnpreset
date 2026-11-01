@@ -17,7 +17,16 @@ import {
   describeGeneratedPreviewIssue,
   validateGeneratedPreviewSource,
 } from "@/lib/generated-preview/validate"
+import {
+  countGeneration,
+  freeGenerationLimit,
+  getGenerations,
+} from "@/lib/assistant-usage"
 import { getSessionUser } from "@/lib/auth"
+import {
+  getCustomPreset,
+  updateCustomPreset,
+} from "@/lib/custom-preset-store"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
@@ -32,6 +41,12 @@ import {
 import { extractNamedPresetCode } from "@/lib/search/assistant/named-preset"
 import { toPersistedAssistantMessage } from "@/lib/search/assistant/message-persistence"
 import { normalizeQuickReplies } from "@/lib/search/assistant/quick-replies"
+import {
+  applyCustomPresetEdit,
+  buildCustomPresetEditPrompt,
+  customPresetEditSchema,
+  tidyEditReply,
+} from "@/lib/search/assistant/custom-preset-edit"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
 import {
   assistantTurnOutputSchema,
@@ -87,6 +102,8 @@ const bodySchema = z.object({
     .max(4),
   previousPresetCodes: z.array(z.string().min(2).max(32)).max(4).optional(),
   livePresetCode: z.string().min(2).max(32).optional(),
+  /** A custom preset open beside the chat: the turn edits it instead. */
+  customPresetId: z.string().min(1).max(64).optional(),
 })
 
 function buildLivePresetContext(
@@ -456,6 +473,19 @@ export async function POST(request: Request) {
   }
   const history = storedChat?.messages ?? []
 
+  // Past the free answers, the assistant is Pro. Their presets stay theirs.
+  const limit = freeGenerationLimit()
+  if (limit !== null && (await getGenerations(user.id)) >= limit) {
+    return NextResponse.json(
+      {
+        error: `You've used your ${limit} free generations.`,
+        code: "pro_required",
+        limit,
+      },
+      { status: 402 }
+    )
+  }
+
   const modelId = process.env.OPENAI_ASSISTANT_MODEL ?? "gpt-4o-mini"
   // What was last offered in this chat, which the client used to work out and
   // send. It is in the history now, so only the fallback has to come over the
@@ -517,6 +547,16 @@ export async function POST(request: Request) {
       { error: "Send a user message first." },
       { status: 400 }
     )
+  }
+
+  if (parsed.data.customPresetId) {
+    return answerCustomPresetTurn({
+      user,
+      customPresetId: parsed.data.customPresetId,
+      chatId: parsed.data.chatId,
+      chatMessages,
+      modelId,
+    })
   }
 
   const system = [
@@ -603,6 +643,7 @@ export async function POST(request: Request) {
         chatId: parsed.data.chatId,
         messages: persistedMessages,
       })
+      await countGeneration(user.id)
       return NextResponse.json({ ...previewTurn, chatId: persisted.chatId })
     }
 
@@ -631,6 +672,7 @@ export async function POST(request: Request) {
         chatId: parsed.data.chatId,
         messages: persistedMessages,
       })
+      await countGeneration(user.id)
       return NextResponse.json({ ...ready, chatId: persisted.chatId })
     }
 
@@ -653,9 +695,108 @@ export async function POST(request: Request) {
       messages: persistedMessages,
     })
 
+    await countGeneration(user.id)
     return NextResponse.json({ ...gatheringTurn, chatId: persisted.chatId })
   } catch (err) {
     console.error("[api/assistant]", err)
+    const { status, body } = mapProviderError(err)
+    return NextResponse.json(body, { status })
+  }
+}
+
+/**
+ * A turn while a custom preset is open beside the chat: the message is a
+ * change to it, so the model returns an edit rather than presets. The edit is
+ * applied and saved here, and the reply says what changed; the chat keeps
+ * the turn like any other.
+ */
+async function answerCustomPresetTurn({
+  user,
+  customPresetId,
+  chatId,
+  chatMessages,
+  modelId,
+}: {
+  user: { id: string; name: string }
+  customPresetId: string
+  chatId: string | undefined
+  chatMessages: z.infer<typeof bodySchema>["messages"]
+  modelId: string
+}) {
+  const stored = await getCustomPreset(customPresetId)
+  if (!stored || stored.userId !== user.id) {
+    return NextResponse.json(
+      {
+        error: "That custom preset can't be changed from here.",
+        code: "custom_preset_missing",
+      },
+      { status: 404 }
+    )
+  }
+
+  try {
+    const result = await generateText({
+      model: openai(modelId),
+      system: buildCustomPresetEditPrompt(stored.presetCode, stored.colours),
+      messages: chatMessages.map((m) => ({ role: m.role, content: m.content })),
+      output: Output.object({
+        schema: customPresetEditSchema,
+        name: "CustomPresetEdit",
+        description:
+          "The changes asked for to the open custom preset, every other field null.",
+      }),
+      temperature: 0.2,
+      maxRetries: 0,
+    })
+    const edit = result.output
+    if (!edit) {
+      return NextResponse.json(
+        {
+          error: "The model did not return structured output. Try again.",
+          code: "no_output",
+        },
+        { status: 502 }
+      )
+    }
+
+    const next = applyCustomPresetEdit(stored, edit)
+    const reply = tidyEditReply(edit.assistantMessage, edit)
+    if (next.changed.length) {
+      await updateCustomPreset({
+        id: stored.id,
+        userId: user.id,
+        presetCode: next.presetCode,
+        colours: next.colours,
+      })
+    }
+
+    const persisted = await saveAssistantChatForUser({
+      user,
+      chatId,
+      messages: [
+        ...chatMessages.map((message) => toPersistedAssistantMessage(message)),
+        {
+          role: "assistant" as const,
+          kind: "text" as const,
+          content: reply,
+        },
+      ],
+    })
+    await countGeneration(user.id)
+
+    return NextResponse.json({
+      phase: "custom",
+      assistantMessage: reply,
+      changed: next.changed,
+      customPreset: {
+        id: stored.id,
+        presetCode: next.presetCode,
+        colours: next.colours,
+      },
+      chatId: persisted.chatId,
+    })
+  } catch (err) {
+    console.error("[api/assistant] custom preset turn", err)
     const { status, body } = mapProviderError(err)
     return NextResponse.json(body, { status })
   }
