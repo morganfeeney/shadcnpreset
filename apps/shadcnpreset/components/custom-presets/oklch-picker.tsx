@@ -22,10 +22,7 @@ import {
 } from "@/lib/oklch-colour"
 import { cn } from "@/lib/utils"
 
-/**
- * The area's pixels: about its size on screen, so the edge of what a screen
- * shows stays smooth, and still quick enough to repaint while the hue drags.
- */
+/** The area's size on screen, in CSS pixels. */
 const AREA_WIDTH = 240
 const AREA_HEIGHT = 144
 
@@ -67,13 +64,22 @@ export function OklchPicker({
     onChange(value, settle)
   }
 
+  // Painted at the screen's density (to 2x, still quick while the hue
+  // drags), so the edge of what a screen shows is as sharp as the text.
+  const [density] = React.useState(() =>
+    typeof window === "undefined"
+      ? 1
+      : Math.min(2, Math.max(1, Math.round(window.devicePixelRatio)))
+  )
+  const width = AREA_WIDTH * density
+  const height = AREA_HEIGHT * density
   const canvas = React.useRef<HTMLCanvasElement>(null)
   React.useEffect(() => {
     const context = canvas.current?.getContext("2d")
     if (!context) return
-    const pixels = paintArea(lch.h, AREA_WIDTH, AREA_HEIGHT)
-    context.putImageData(new ImageData(pixels, AREA_WIDTH, AREA_HEIGHT), 0, 0)
-  }, [lch.h])
+    const pixels = paintArea(lch.h, width, height)
+    context.putImageData(new ImageData(pixels, width, height), 0, 0)
+  }, [lch.h, width, height])
 
   const dragging = React.useRef(false)
   function pickAt(event: React.PointerEvent<HTMLDivElement>, settle: boolean) {
@@ -112,8 +118,8 @@ export function OklchPicker({
       >
         <canvas
           ref={canvas}
-          width={AREA_WIDTH}
-          height={AREA_HEIGHT}
+          width={width}
+          height={height}
           className="absolute inset-0 size-full"
         />
         <span

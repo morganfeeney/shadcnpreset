@@ -5,6 +5,7 @@ import {
   areaPosition,
   formatOklch,
   MAX_CHROMA,
+  maxOnScreenChroma,
   onScreen,
   paintArea,
   readOklch,
@@ -51,6 +52,28 @@ describe("the area", () => {
     // Low chroma, mid lightness: shown. Full chroma: past any screen.
     expect(alpha(0, 5)).toBe(255)
     expect(alpha(19, 5)).toBe(0)
+  })
+
+  it("finds the screen's edge where culori does", () => {
+    for (const h of [0, 22.2, 90, 150, 265, 330]) {
+      for (const l of [0.2, 0.5, 0.72, 0.9]) {
+        const c = maxOnScreenChroma(l, h)
+        expect(onScreen({ l, c: Math.max(0, c - 0.002), h })).toBe(true)
+        expect(onScreen({ l, c: c + 0.002, h })).toBe(false)
+      }
+    }
+  })
+
+  it("leaves each row's edge pixel partly clear, so the edge is smooth", () => {
+    const pixels = paintArea(150, 200, 100)
+    const row = Array.from(
+      { length: 200 },
+      (_, x) => pixels[(50 * 200 + x) * 4 + 3]
+    )
+    const edge = row.findIndex((alpha) => alpha < 255)
+    expect(row.slice(0, edge).every((alpha) => alpha === 255)).toBe(true)
+    expect(row[edge]).toBeGreaterThan(0)
+    expect(row.slice(edge + 1).every((alpha) => alpha === 0)).toBe(true)
   })
 
   it("puts a colour where picking that point gives it back", () => {
