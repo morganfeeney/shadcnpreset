@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation"
 
+import { buildCustomPreset } from "@/lib/custom-preset"
+import { CUSTOM_COLOURS_STYLE_ID } from "@/lib/custom-preset-frame"
+import { getCustomPreset } from "@/lib/custom-preset-store"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import { getPresetGoogleFontStylesheetHrefs } from "@/lib/preset-google-fonts"
 import { isLocalPresetPreviewExample } from "@/lib/preset-preview"
@@ -32,6 +35,12 @@ export default async function PresetPreviewExamplePage({
 
   const { combinedCss } = bundle
   const { code, style, baseColor, font, fontHeading } = bundle.resolved
+  // A custom preset's colours over the preset's own: saved ones for the first
+  // paint, then whatever its editor sends while it is open.
+  const custom = query.custom ? await getCustomPreset(query.custom) : null
+  const customCss = custom
+    ? (buildCustomPreset(code, custom.colours)?.css ?? "")
+    : ""
   const styleClass = `style-${style}`
   const baseColorClass = `base-color-${baseColor}`
   const presetPreviewFontValues = [
@@ -64,6 +73,10 @@ export default async function PresetPreviewExamplePage({
         <style
           id={PRESET_PREVIEW_THEME_STYLE_ID}
           dangerouslySetInnerHTML={{ __html: combinedCss }}
+        />
+        <style
+          id={CUSTOM_COLOURS_STYLE_ID}
+          dangerouslySetInnerHTML={{ __html: customCss }}
         />
         <PresetPreviewExampleShell
           slug={slug}

@@ -1,46 +1,16 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
-// The preview cards load fonts at import, which only Next's compiler can
-// do; they are the site's own and never render here (no mode yet).
-vi.mock(
-  "@/components/preset-swatch/components/cards/claimable-balance",
-  () => ({
-    ClaimableBalance: () => null,
-  })
-)
-vi.mock("@/components/preset-swatch/components/cards/feedback-form", () => ({
-  FeedbackForm: () => null,
-}))
-vi.mock(
-  "@/components/preset-swatch/components/cards/observability-card",
-  () => ({
-    ObservabilityCard: () => null,
-  })
-)
-vi.mock("@/components/preset-swatch/components/cards/pie-chart-card", () => ({
-  PieChartCard: () => null,
-}))
-vi.mock(
-  "@/components/preset-swatch/components/cards/preview-analytics-card",
-  () => ({
-    PreviewAnalyticsCard: () => null,
-  })
-)
-vi.mock("@/components/preset-swatch/components/cards/savings-progress", () => ({
-  SavingsProgress: () => null,
-}))
-vi.mock("@/components/preset-swatch/components/cards/ui-elements", () => ({
-  UIElements: () => null,
-}))
-// The preview cards are the site's own; this file is about the facets.
-let surfaceMode: "light" | "dark" | null = null
-vi.mock("@/components/themes/theme-surface", () => ({
-  useSurfaceMode: () => surfaceMode,
-}))
 
 const { toast } = await import("sonner")
 const { withFacet } = await import("@/lib/custom-preset")
@@ -54,13 +24,14 @@ const COLOURS = { theme: "#DE00CE", overrides: {} }
 let respond: () => Response
 
 beforeEach(() => {
-  surfaceMode = null
   vi.mocked(toast.error).mockClear()
   respond = () => new Response("{}", { status: 200 })
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => respond())
   )
+  // jsdom draws nothing; the picker's area is painted in a real browser.
+  HTMLCanvasElement.prototype.getContext = () => null
 })
 
 function renderEditor(canEdit = true, code = CODE) {
@@ -75,10 +46,6 @@ function renderEditor(canEdit = true, code = CODE) {
   )
 }
 
-async function pickStyle(name: string) {
-  await pick("Style", name)
-}
-
 async function pick(facet: string, name: string) {
   fireEvent.click(screen.getByRole("combobox", { name: facet }))
   const option = await screen.findByRole("option", { name })
@@ -90,15 +57,43 @@ async function pick(facet: string, name: string) {
   })
 }
 
-function installCommands() {
-  return screen.getAllByText(/npx shadcn@/).map((node) => node.textContent)
+async function openInstall() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Install" }))
+  })
+  return screen.findByRole("dialog", { name: "Install this preset" })
+}
+
+async function installCommands() {
+  const menu = await openInstall()
+  return within(menu)
+    .getAllByText(/npx shadcn@/)
+    .map((node) => node.textContent)
+}
+
+/** Opens a custom colour's picker and types a colour into it. */
+async function typeColour(field: string, value: string) {
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole("button", { name: new RegExp(`^${field}:`) })
+    )
+  })
+  const text = await screen.findByRole("textbox", { name: "Colour" })
+  await act(async () => {
+    fireEvent.change(text, { target: { value } })
+    fireEvent.keyDown(text, { key: "Enter" })
+  })
+}
+
+function preview() {
+  return document.querySelector("iframe") as HTMLIFrameElement
 }
 
 describe("CustomPresetEditor", () => {
-  it("installs the preset, then the colours from its own link", () => {
+  it("installs the preset, then the colours from its own link", async () => {
     renderEditor()
 
-    expect(installCommands()).toEqual(
+    expect(await installCommands()).toEqual(
       expect.arrayContaining([
         `npx shadcn@latest init --preset ${CODE}`,
         "npx shadcn@latest add https://shadcnpreset.com/r/custom/cp-1.json",
@@ -106,21 +101,51 @@ describe("CustomPresetEditor", () => {
     )
   })
 
-  it("saves a changed facet and installs the new preset", async () => {
+  it("shows create's preview of the preset with its colours", async () => {
     renderEditor()
 
-    await pickStyle("Nova")
+    await waitFor(() =>
+      expect(preview().getAttribute("src")).toBe(
+        `/preset-preview/preview?preset=${CODE}&custom=cp-1`
+      )
+    )
+  })
+
+  it("switches the preview between views", async () => {
+    renderEditor()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Dashboard" }))
+    })
+
+    await waitFor(() =>
+      expect(preview().getAttribute("src")).toContain(
+        "/preset-preview/dashboard?"
+      )
+    )
+    expect(
+      screen
+        .getByRole("button", { name: "Dashboard" })
+        .getAttribute("aria-pressed")
+    ).toBe("true")
+  })
+
+  it("saves a changed facet, previews and installs the new preset", async () => {
+    renderEditor()
+
+    await pick("Style", "Nova")
 
     expect(fetch).toHaveBeenCalledWith(
       "/api/custom-presets/cp-1",
       expect.objectContaining({ method: "PATCH" })
     )
-    const sent = JSON.parse(
-      String(vi.mocked(fetch).mock.calls[0][1]?.body)
-    ) as { presetCode: string }
-    expect(sent.presetCode).not.toBe(CODE)
-    expect(installCommands()).toContain(
-      `npx shadcn@latest init --preset ${sent.presetCode}`
+    const code = sentCode()
+    expect(code).not.toBe(CODE)
+    await waitFor(() =>
+      expect(preview().getAttribute("src")).toContain(`preset=${code}&`)
+    )
+    expect(await installCommands()).toContain(
+      `npx shadcn@latest init --preset ${code}`
     )
   })
 
@@ -128,10 +153,10 @@ describe("CustomPresetEditor", () => {
     respond = () => new Response("{}", { status: 500 })
     renderEditor()
 
-    await pickStyle("Nova")
+    await pick("Style", "Nova")
 
     await waitFor(() => expect(toast.error).toHaveBeenCalled())
-    expect(installCommands()).toContain(
+    expect(await installCommands()).toContain(
       `npx shadcn@latest init --preset ${CODE}`
     )
   })
@@ -139,34 +164,14 @@ describe("CustomPresetEditor", () => {
   it("lets only the person who made it change it", () => {
     renderEditor(false)
 
+    const style = screen.getByRole("combobox", { name: "Style" })
     expect(
-      screen
-        .getByRole("combobox", { name: "Style" })
-        .hasAttribute("disabled") ||
-        screen
-          .getByRole("combobox", { name: "Style" })
-          .getAttribute("aria-disabled") === "true" ||
-        screen
-          .getByRole("combobox", { name: "Style" })
-          .hasAttribute("data-disabled")
+      style.hasAttribute("disabled") || style.hasAttribute("data-disabled")
     ).toBe(true)
     expect(
       screen.getByText("Only the person who made this preset can change it.")
     ).toBeTruthy()
-  })
-
-  it("redraws the preview with a picked radius", async () => {
-    surfaceMode = "light"
-    renderEditor()
-    const preview = screen.getByRole("region", {
-      name: "Your custom preset on example components",
-    }).parentElement as HTMLElement
-    const before = preview.style.getPropertyValue("--radius")
-
-    await pick("Radius", "Large")
-
-    expect(preview.style.getPropertyValue("--radius")).toBe("0.875rem")
-    expect(before).not.toBe("0.875rem")
+    expect(screen.getByRole("heading", { name: "Custom preset" })).toBeTruthy()
   })
 
   it("locks the radius on Lyra, which is always square", () => {
@@ -180,23 +185,19 @@ describe("CustomPresetEditor", () => {
     expect(screen.getByText(/Lyra is always square/)).toBeTruthy()
   })
 
-  it("shows a custom theme colour as Custom, with its value", () => {
+  it("shows a custom theme colour by its value", () => {
     renderEditor()
 
     expect(
-      screen.getByRole("combobox", { name: "Theme" }).textContent
-    ).toContain("Custom")
-    expect(
-      (
-        screen.getByRole("textbox", {
-          name: "Theme colour",
-        }) as HTMLInputElement
-      ).value
-    ).toBe("#DE00CE")
+      screen.getByRole("button", { name: "Theme colour: #DE00CE" })
+    ).toBeTruthy()
+    expect(screen.queryByRole("combobox", { name: "Theme" })).toBeNull()
   })
 
-  it("saves an exact theme colour typed in, and puts it in the CSS", async () => {
+  it("saves an exact theme colour typed in, without reloading the preview", async () => {
     renderEditor()
+    await waitFor(() => expect(preview().getAttribute("src")).toBeTruthy())
+    const before = preview().getAttribute("src")
 
     await typeColour("Theme colour", "oklch(0.6 0.2 150)")
 
@@ -204,7 +205,8 @@ describe("CustomPresetEditor", () => {
       theme: "oklch(0.6 0.2 150)",
       overrides: {},
     })
-    expect(cssText()).toContain("--primary: oklch(0.6 0.2 150);")
+    expect(preview().getAttribute("src")).toBe(before)
+    expect(await cssText()).toContain("--primary: oklch(0.6 0.2 150);")
   })
 
   it("keeps the colour when what's typed isn't one", async () => {
@@ -214,38 +216,33 @@ describe("CustomPresetEditor", () => {
 
     expect(fetch).not.toHaveBeenCalled()
     expect(
-      (
-        screen.getByRole("textbox", {
-          name: "Theme colour",
-        }) as HTMLInputElement
-      ).value
-    ).toBe("#DE00CE")
+      screen.getByRole("button", { name: "Theme colour: #DE00CE" })
+    ).toBeTruthy()
   })
 
-  it("goes back to a list theme, dropping the custom colour", async () => {
+  it("goes back to a listed theme, dropping the custom colour", async () => {
     renderEditor()
 
-    await pick("Theme", "Blue")
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use a listed Theme" })
+      )
+    })
 
     expect(sentColours()).toEqual({ overrides: {} })
-    expect(screen.queryByRole("textbox", { name: "Theme colour" })).toBeNull()
-    expect(sentCode()).toBe(withFacet(CODE, "theme", "blue"))
+    expect(screen.getByRole("combobox", { name: "Theme" })).toBeTruthy()
   })
 
-  it("starts a custom base colour from the picker's own", async () => {
+  it("starts a custom base colour from the listed one", async () => {
     renderEditor()
 
-    await pick("Base Color", "Custom")
+    await pick("Base", "Custom…")
 
     const base = (sentColours() as { baseColor?: string }).baseColor
     expect(base).toEqual(expect.any(String))
     expect(
-      (
-        screen.getByRole("textbox", {
-          name: "Base Color colour",
-        }) as HTMLInputElement
-      ).value
-    ).toBe(base)
+      screen.getByRole("button", { name: `Base colour: ${base}` })
+    ).toBeTruthy()
   })
 
   it("overrides a single colour on top of the pickers", async () => {
@@ -260,7 +257,7 @@ describe("CustomPresetEditor", () => {
       theme: "#DE00CE",
       overrides: { primary: "#123456" },
     })
-    expect(cssText()).toContain("--primary: #123456;")
+    expect(await cssText()).toContain("--primary: #123456;")
   })
 
   it("goes back to the saved colour when a change does not save", async () => {
@@ -271,27 +268,26 @@ describe("CustomPresetEditor", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalled())
     expect(
-      (
-        screen.getByRole("textbox", {
-          name: "Theme colour",
-        }) as HTMLInputElement
-      ).value
-    ).toBe("#DE00CE")
+      screen.getByRole("button", { name: "Theme colour: #DE00CE" })
+    ).toBeTruthy()
   })
 
   it("copies each install command exactly as shown", async () => {
     const writeText = vi.fn(async () => {})
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     renderEditor()
+    const menu = await openInstall()
 
     await act(async () => {
       fireEvent.click(
-        screen.getByRole("button", { name: "Copy the new project command" })
+        within(menu).getByRole("button", {
+          name: "Copy the new project command",
+        })
       )
     })
     await act(async () => {
       fireEvent.click(
-        screen.getByRole("button", { name: "Copy the colours command" })
+        within(menu).getByRole("button", { name: "Copy the colours command" })
       )
     })
 
@@ -299,17 +295,23 @@ describe("CustomPresetEditor", () => {
       [`npx shadcn@latest init --preset ${CODE}`],
       ["npx shadcn@latest add https://shadcnpreset.com/r/custom/cp-1.json"],
     ])
-    expect(screen.getAllByRole("button", { name: "Copied" })).toHaveLength(2)
+  })
+
+  it("shares the preset's own page", async () => {
+    const writeText = vi.fn(async () => {})
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
+    renderEditor()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Share" }))
+    })
+
+    expect(writeText).toHaveBeenCalledWith(
+      "https://shadcnpreset.com/custom-presets/cp-1"
+    )
+    expect(screen.getByRole("button", { name: "Copied" })).toBeTruthy()
   })
 })
-
-async function typeColour(label: string, value: string) {
-  const field = screen.getByRole("textbox", { name: label })
-  await act(async () => {
-    fireEvent.change(field, { target: { value } })
-    fireEvent.keyDown(field, { key: "Enter" })
-  })
-}
 
 function sentCode() {
   const body = vi.mocked(fetch).mock.calls.at(-1)?.[1]?.body
@@ -321,8 +323,10 @@ function sentColours() {
   return (JSON.parse(String(body)) as { colours: unknown }).colours
 }
 
-function cssText() {
-  return [...document.querySelectorAll("pre")]
+/** The colours as CSS, read from the install menu. */
+async function cssText() {
+  const menu = await openInstall()
+  return [...menu.querySelectorAll("pre")]
     .map((pre) => pre.textContent)
     .join("\n")
 }

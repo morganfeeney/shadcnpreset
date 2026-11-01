@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { formatHex, parse } from "culori"
 import { PlusIcon, XIcon } from "lucide-react"
 
+import { OklchField } from "@/components/custom-presets/oklch-picker"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -13,11 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  BRAND_TOKENS,
-  isUsableColour,
-  type BrandToken,
-} from "@/lib/brand-theme"
+import { BRAND_TOKENS, type BrandToken } from "@/lib/brand-theme"
 import type { CustomColours } from "@/lib/custom-colours"
 
 /** The list value that means "my own colour" in a colour picker. */
@@ -25,9 +20,32 @@ export const CUSTOM = "custom"
 
 export type SwatchItem = { value: string; label: string; swatch: string }
 
+type OnCustom = (colour: string, settle: boolean) => void
+
 /**
- * One of shadcn create's colour pickers: its list, plus "Custom", which opens
- * a field for one exact colour.
+ * A label and its control, one row of the properties column. The label is
+ * the control's name, so it reads the same to a screen reader.
+ */
+export function PropertyRow({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-20 shrink-0 text-xs text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex min-w-0 flex-1 items-center gap-1">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * One of shadcn create's colour pickers: its list, plus "Custom", which turns
+ * it into one exact colour picked in OKLCH, until cleared back to the list.
  */
 export function ColourPicker({
   label,
@@ -46,30 +64,50 @@ export function ColourPicker({
   disabled: boolean
   onPick: (value: string) => void
   /** `settle` is false while a picker is still being dragged. */
-  onCustom: (colour: string, settle: boolean) => void
+  onCustom: OnCustom
 }) {
-  const options = [
-    ...items,
-    { value: CUSTOM, label: "Custom", swatch: custom ?? "" },
-  ]
-  const current = custom ? CUSTOM : value
-  const swatch = options.find((item) => item.value === current)?.swatch
+  if (custom) {
+    return (
+      <PropertyRow label={label}>
+        <OklchField
+          label={`${label} colour`}
+          colour={custom}
+          disabled={disabled}
+          onChange={onCustom}
+          className="flex-1"
+        />
+        {disabled ? null : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Use a listed ${label}`}
+            onClick={() => onPick(value)}
+          >
+            <XIcon />
+          </Button>
+        )}
+      </PropertyRow>
+    )
+  }
 
+  const listed = items.find((item) => item.value === value)
+  const options = [...items, { value: CUSTOM, label: "Custom…", swatch: "" }]
   return (
-    <div className="grid content-start gap-1.5 text-xs font-medium text-muted-foreground">
-      <span>{label}</span>
+    <PropertyRow label={label}>
       <Select
         items={options}
-        value={current}
+        value={value}
         disabled={disabled}
         onValueChange={(next: string | null) => {
-          if (!next || next === current) return
-          if (next === CUSTOM) onCustom(swatch || "#808080", true)
+          if (!next || next === value) return
+          // Custom starts from the listed colour, to move from there.
+          if (next === CUSTOM) onCustom(listed?.swatch || "#808080", true)
           else onPick(next)
         }}
       >
-        <SelectTrigger aria-label={label} className="w-full bg-background">
-          {swatch ? <Swatch colour={swatch} /> : null}
+        <SelectTrigger aria-label={label} size="sm" className="w-full">
+          {listed ? <Swatch colour={listed.swatch} /> : null}
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-80">
@@ -81,15 +119,7 @@ export function ColourPicker({
           ))}
         </SelectContent>
       </Select>
-      {custom ? (
-        <ColourField
-          label={`${label} colour`}
-          colour={custom}
-          disabled={disabled}
-          onChange={onCustom}
-        />
-      ) : null}
-    </div>
+    </PropertyRow>
   )
 }
 
@@ -97,72 +127,9 @@ function Swatch({ colour }: { colour: string }) {
   return (
     <span
       aria-hidden
-      className="size-3.5 shrink-0 rounded-full border"
+      className="size-3.5 shrink-0 rounded-sm border"
       style={{ background: colour }}
     />
-  )
-}
-
-/**
- * One exact colour: picked from the system picker, or typed as any CSS
- * colour (oklch included). What is typed only counts once it is a colour.
- */
-export function ColourField({
-  label,
-  colour,
-  disabled,
-  onChange,
-}: {
-  label: string
-  colour: string
-  disabled: boolean
-  onChange: (colour: string, settle: boolean) => void
-}) {
-  const [draft, setDraft] = React.useState(colour)
-  const [synced, setSynced] = React.useState(colour)
-  if (colour !== synced) {
-    setSynced(colour)
-    setDraft(colour)
-  }
-
-  function commit() {
-    const value = draft.trim()
-    if (value === colour) return
-    if (isUsableColour(value)) onChange(value, true)
-    else setDraft(colour)
-  }
-
-  const parsed = parse(colour)
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <label
-        className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border has-disabled:cursor-default"
-        style={{ background: colour }}
-      >
-        <span className="sr-only">Pick {label}</span>
-        <input
-          type="color"
-          value={parsed ? formatHex(parsed) : "#000000"}
-          disabled={disabled}
-          className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-default"
-          onInput={(event) => onChange(event.currentTarget.value, false)}
-          onChange={(event) => onChange(event.currentTarget.value, true)}
-        />
-      </label>
-      <Input
-        aria-label={label}
-        value={draft}
-        disabled={disabled}
-        spellCheck={false}
-        className="h-8 min-w-0 flex-1 font-mono text-xs text-foreground"
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") commit()
-        }}
-      />
-    </div>
   )
 }
 
@@ -201,24 +168,33 @@ export function ColourOverrides({
   }
 
   return (
-    <section aria-label="Override colours" className="grid grid-cols-1 gap-2">
-      <div className="grid grid-cols-1 gap-0.5">
-        <h2 className="text-xs font-medium text-muted-foreground">
-          Override colours
-        </h2>
-        {set.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            The pickers set every colour. Override one when it has to be exact.
-          </p>
+    <div className="grid grid-cols-1 gap-2">
+      <PropertyRow label="Overrides">
+        <span className="flex h-7 min-w-0 flex-1 items-center rounded-md bg-muted px-2 text-xs text-muted-foreground">
+          {set.length ? `${set.length} set` : "None"}
+        </span>
+        {!disabled && unset.length ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Override a colour"
+            onClick={() => {
+              const token = unset[0]
+              onChange(
+                { ...overrides, [token]: current[token] ?? "#808080" },
+                true
+              )
+            }}
+          >
+            <PlusIcon />
+          </Button>
         ) : null}
-      </div>
+      </PropertyRow>
       {set.length ? (
-        <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <ul aria-label="Override colours" className="grid grid-cols-1 gap-1.5">
           {set.map((token) => (
-            <li
-              key={token}
-              className="flex items-center gap-1.5 rounded-lg border bg-background p-1.5"
-            >
+            <li key={token} className="flex items-center gap-1">
               <Select
                 items={[token, ...unset].map((value) => ({
                   value,
@@ -232,7 +208,8 @@ export function ColourOverrides({
               >
                 <SelectTrigger
                   aria-label={`${tokenLabel(token)} override`}
-                  className="h-8 w-36 shrink-0 bg-background"
+                  size="sm"
+                  className="w-20 shrink-0 text-xs"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -244,17 +221,16 @@ export function ColourOverrides({
                   ))}
                 </SelectContent>
               </Select>
-              <div className="min-w-0 flex-1">
-                <ColourField
-                  label={`${tokenLabel(token)} colour`}
-                  colour={overrides[token] ?? ""}
-                  disabled={disabled}
-                  onChange={(colour, settle) =>
-                    onChange({ ...overrides, [token]: colour }, settle)
-                  }
-                />
-              </div>
-              {!disabled ? (
+              <OklchField
+                label={`${tokenLabel(token)} colour`}
+                colour={overrides[token] ?? ""}
+                disabled={disabled}
+                onChange={(colour, settle) =>
+                  onChange({ ...overrides, [token]: colour }, settle)
+                }
+                className="flex-1"
+              />
+              {disabled ? null : (
                 <Button
                   type="button"
                   variant="ghost"
@@ -268,29 +244,11 @@ export function ColourOverrides({
                 >
                   <XIcon />
                 </Button>
-              ) : null}
+              )}
             </li>
           ))}
         </ul>
       ) : null}
-      {!disabled && unset.length ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={() => {
-            const token = unset[0]
-            onChange(
-              { ...overrides, [token]: current[token] ?? "#808080" },
-              true
-            )
-          }}
-        >
-          <PlusIcon data-icon="inline-start" />
-          Override a colour
-        </Button>
-      ) : null}
-    </section>
+    </div>
   )
 }

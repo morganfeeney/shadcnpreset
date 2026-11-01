@@ -13,7 +13,7 @@ type CustomPresetPageProps = {
 
 // One person's preset behind an unguessable link: kept out of search.
 export const metadata: Metadata = {
-  title: "Your custom preset",
+  title: "Custom preset",
   robots: { index: false, follow: false },
 }
 
@@ -29,8 +29,8 @@ export default async function CustomPresetPage({
   if (!stored) notFound()
 
   return (
-    <main className="min-w-0 flex-1 pt-6 px-safe pb-20 lg:px-10">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-0 px-2 pb-2">
+      <div className="h-full overflow-hidden rounded-lg border">
         <CustomPresetEditor
           id={stored.id}
           initialCode={stored.presetCode}

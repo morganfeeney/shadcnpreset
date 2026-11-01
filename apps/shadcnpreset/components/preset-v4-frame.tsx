@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
+import { CUSTOM_COLOURS_MESSAGE_TYPE } from "@/lib/custom-preset-frame"
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
 import {
   GENERATED_PREVIEW_MESSAGE_TYPE,
@@ -20,6 +21,8 @@ type PresetV4FrameProps = {
   title: string
   className?: string
   generatedPreview?: GeneratedPreviewPayload | null
+  /** A custom preset's colours, sent in as they change rather than reloading. */
+  customColoursCss?: string
 } & Omit<
   React.ComponentPropsWithoutRef<"iframe">,
   "src" | "title" | "className" | "onLoad" | "sandbox"
@@ -33,6 +36,7 @@ export function PresetV4Frame({
   className,
   onLoad,
   generatedPreview,
+  customColoursCss,
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
@@ -99,19 +103,32 @@ export function PresetV4Frame({
     )
   }, [generatedPreview, targetOrigin])
 
+  const postCustomColours = React.useCallback(() => {
+    const frameWindow = iframeRef.current?.contentWindow
+    if (!frameWindow || customColoursCss === undefined) {
+      return
+    }
+    frameWindow.postMessage(
+      { type: CUSTOM_COLOURS_MESSAGE_TYPE, css: customColoursCss },
+      targetOrigin
+    )
+  }, [customColoursCss, targetOrigin])
+
   const postThemeModeWithRetry = React.useCallback(() => {
     clearRetryTimers()
     postThemeMode()
     postGeneratedPreview()
+    postCustomColours()
 
     // The iframe app can hydrate after load; resend for a short window to avoid races.
     retryTimersRef.current = [200, 800].map((delay) =>
       window.setTimeout(() => {
         postThemeMode()
         postGeneratedPreview()
+        postCustomColours()
       }, delay)
     )
-  }, [clearRetryTimers, postGeneratedPreview, postThemeMode])
+  }, [clearRetryTimers, postCustomColours, postGeneratedPreview, postThemeMode])
 
   React.useEffect(() => {
     hasLoadedRef.current = false
@@ -131,6 +148,13 @@ export function PresetV4Frame({
     }
     postGeneratedPreview()
   }, [postGeneratedPreview])
+
+  React.useEffect(() => {
+    if (!hasLoadedRef.current) {
+      return
+    }
+    postCustomColours()
+  }, [postCustomColours])
 
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
