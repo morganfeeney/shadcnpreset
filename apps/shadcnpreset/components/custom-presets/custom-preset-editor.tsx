@@ -208,7 +208,17 @@ export function CustomPresetEditor({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-        <PreviewCanvas id={id} code={code} css={preset.css} />
+        <PreviewCanvas
+          id={id}
+          code={code}
+          layout={[
+            resolved.style,
+            resolved.font,
+            resolved.fontHeading,
+            resolved.iconLibrary,
+          ].join(" ")}
+          css={preset.css}
+        />
 
         <aside
           aria-label="Customise"
@@ -338,20 +348,26 @@ function FacetSelect({
 }
 
 /**
- * Create's preview of the preset, its colours sent in as they change: a
- * change of style or font reloads it, a colour only repaints it.
+ * Create's preview of the preset. Only a change to its `layout` (the style,
+ * fonts and icons, which the frame lays out from its code) reloads it; every
+ * colour and the radius arrive as `css`, listed or custom alike, and repaint
+ * it in place.
  */
 function PreviewCanvas({
   id,
   code,
+  layout,
   css,
 }: {
   id: string
   code: string
+  layout: string
   css: string
 }) {
   const [view, setView] = React.useState<CustomPresetView>("preview")
-  const src = customPresetPreviewSrc(view, code, id)
+  const [frame, setFrame] = React.useState({ code, layout })
+  if (layout !== frame.layout) setFrame({ code, layout })
+  const src = customPresetPreviewSrc(view, frame.code, id)
   // Shown once it has taken the site's mode, which arrives after it loads:
   // until then it paints light, a flash on every change of style or font.
   const [shownSrc, setShownSrc] = React.useState<string | null>(null)

@@ -149,6 +149,19 @@ describe("CustomPresetEditor", () => {
     )
   })
 
+  it("repaints a listed colour or radius without reloading the preview", async () => {
+    renderEditor()
+    await waitFor(() => expect(preview().getAttribute("src")).toBeTruthy())
+    const before = preview().getAttribute("src")
+
+    await pick("Chart", "Amber")
+    await pick("Radius", "Large")
+
+    expect(sentCode()).not.toBe(CODE)
+    expect(preview().getAttribute("src")).toBe(before)
+    expect(await cssText()).toContain("--radius: 0.875rem;")
+  })
+
   it("goes back to the saved preset when a change does not save", async () => {
     respond = () => new Response("{}", { status: 500 })
     renderEditor()
