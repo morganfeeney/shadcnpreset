@@ -22,9 +22,12 @@ import {
 } from "@/lib/oklch-colour"
 import { cn } from "@/lib/utils"
 
-/** The area is painted small and scaled up: colour changes slowly across it. */
-const AREA_WIDTH = 120
-const AREA_HEIGHT = 72
+/**
+ * The area's pixels: about its size on screen, so the edge of what a screen
+ * shows stays smooth, and still quick enough to repaint while the hue drags.
+ */
+const AREA_WIDTH = 240
+const AREA_HEIGHT = 144
 
 const HUE_TRACK = `linear-gradient(to right, ${Array.from(
   { length: 13 },
