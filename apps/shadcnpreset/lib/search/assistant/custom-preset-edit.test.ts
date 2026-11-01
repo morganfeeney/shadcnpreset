@@ -85,7 +85,7 @@ describe("applyCustomPresetEdit", () => {
 
 describe("withPresetParts", () => {
   it("takes the fonts and style but none of the colours", () => {
-    const code = withPresetParts(CODE, {
+    const { presetCode: code, changed } = withPresetParts(CODE, {
       ...NOTHING,
       style: "mira",
       font: "raleway",
@@ -98,6 +98,11 @@ describe("withPresetParts", () => {
     expect(preset?.font).toBe("raleway")
     expect(preset?.fontHeading).toBe("lora")
     expect(preset?.theme).toBe("neutral")
+    expect(changed).toEqual([
+      "Style: Mira",
+      "Font: Raleway",
+      "Heading font: Lora",
+    ])
   })
 })
 

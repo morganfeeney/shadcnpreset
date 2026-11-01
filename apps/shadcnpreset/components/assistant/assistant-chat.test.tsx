@@ -152,6 +152,7 @@ function mockFetch() {
       const body = JSON.parse(String(init.body)) as {
         chatId?: string
         customPresetId?: string
+        messages: { content: string }[]
       }
       sendBodies.push(body)
       if (releaseSend === null) {
@@ -172,6 +173,20 @@ function mockFetch() {
       // A chat is named when its first answer is ready, not before.
       const chatId = body.chatId ?? NEW_CHAT_ID
       storedChatIds.add(chatId)
+      if (/custom preset/i.test(body.messages.at(-1)?.content ?? "")) {
+        return jsonResponse({
+          phase: "custom",
+          created: true,
+          assistantMessage: "Made your custom preset.",
+          changed: [],
+          customPreset: {
+            id: "cp-made",
+            presetCode: "b0-made",
+            colours: { theme: "#0876BD", overrides: {} },
+          },
+          chatId,
+        })
+      }
       if (body.customPresetId) {
         return jsonResponse({
           phase: "custom",
@@ -303,7 +318,8 @@ async function deliverNavigations({ staleParams = false } = {}) {
   while (navigations.length) {
     const href = navigations.shift() as string
     window.history.pushState(null, "", href)
-    const chatId = href === "/assistant" ? null : (href.split("/").pop() ?? null)
+    const path = href.split("?")[0]
+    const chatId = path === "/assistant" ? null : (path.split("/").pop() ?? null)
     await act(async () => {
       applyNavigation(staleParams ? STALE_PARAMS : chatId)
       await Promise.resolve()
@@ -770,5 +786,26 @@ describe("AssistantChat custom preset panel", () => {
       name: "Custom preset",
     })
     expect(within(offer).getByText("Make a custom preset with #0876BD")).toBeTruthy()
+  })
+})
+
+describe("AssistantChat asked for a custom preset", () => {
+  it("opens the one the answer made, and the new chat's address keeps it", async () => {
+    renderPage()
+    await sendPrompt("Make a custom preset with #0876BD")
+
+    expect(await screen.findByText("Made your custom preset.")).toBeTruthy()
+    expect(await screen.findByText("Custom preset cp-made")).toBeTruthy()
+    await deliverNavigations()
+    expect(window.location.pathname).toBe(`/assistant/${NEW_CHAT_ID}`)
+    expect(new URLSearchParams(window.location.search).get("preset")).toBe(
+      "cp-made"
+    )
+    expect(screen.getByText("Custom preset cp-made")).toBeTruthy()
+    expect(
+      screen
+        .getByRole("region", { name: "Custom preset", hidden: true })
+        .hasAttribute("data-open")
+    ).toBe(true)
   })
 })

@@ -63,9 +63,13 @@ export type EditedCustomPreset = {
   colours: CustomColours
 }
 
-/** The answer while a custom preset is open: an edit to it, not presets. */
+/**
+ * The answer while a custom preset is open, an edit to it, or to a request
+ * that made one (`created`), instead of presets.
+ */
 type CustomPresetTurn = {
   phase: "custom"
+  created?: boolean
   assistantMessage: string
   changed: string[]
   customPreset: EditedCustomPreset
@@ -219,6 +223,11 @@ type UseAssistantChatOptions = {
   customPresetId?: string | null
   /** An edit to that custom preset has been saved. */
   onCustomPresetEdited?: (preset: EditedCustomPreset) => void
+  /**
+   * A message asked for a custom preset and the answer made it. Called before
+   * `onChatCreated`, so a new chat's address can carry it.
+   */
+  onCustomPresetCreated?: (preset: EditedCustomPreset) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -240,6 +249,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onCustomPresetEditedRef.current = onCustomPresetEdited
   }, [onCustomPresetEdited])
+  const onCustomPresetCreated = options?.onCustomPresetCreated
+  const onCustomPresetCreatedRef = React.useRef(onCustomPresetCreated)
+  React.useEffect(() => {
+    onCustomPresetCreatedRef.current = onCustomPresetCreated
+  }, [onCustomPresetCreated])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -534,7 +548,8 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         onPreviewRef.current?.(data.preview)
       }
       if (data.phase === "custom") {
-        onCustomPresetEditedRef.current?.(data.customPreset)
+        if (data.created) onCustomPresetCreatedRef.current?.(data.customPreset)
+        else onCustomPresetEditedRef.current?.(data.customPreset)
       }
 
       // The answer names the chat: it exists now, it belongs in the history,

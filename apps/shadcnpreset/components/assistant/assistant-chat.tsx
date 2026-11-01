@@ -65,11 +65,22 @@ export function AssistantChat({
         ["customPreset", preset.id],
         (previous) => (previous ? { ...previous, ...preset } : previous)
       ),
+    // Asked for by name, it opens beside the answer that made it.
+    onCustomPresetCreated: (preset) => {
+      queryClient.setQueryData(["customPreset", preset.id], {
+        ...preset,
+        canEdit: true,
+      })
+      workspace.show(preset.id)
+    },
     // The answer has made this page a conversation worth returning to, so it
     // gains an address. Replace, not push: nobody navigated here, the page
-    // they were already on became the chat.
+    // they were already on became the chat. A custom preset the answer opened
+    // stays open.
     onChatCreated: (chatId) =>
-      router.replace(assistantChatPath(chatId), { scroll: false }),
+      router.replace(`${assistantChatPath(chatId)}${window.location.search}`, {
+        scroll: false,
+      }),
   })
   const {
     activeChatId,
