@@ -323,7 +323,9 @@ function FacetSelect({
         <SelectTrigger aria-label={label} size="sm" className="w-full">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="max-h-80">
+        {/* Under the field, as every menu in the column opens: lining the
+          chosen item up with it lifts a long list over the rows above. */}
+        <SelectContent alignItemWithTrigger={false} className="max-h-72">
           {items.map((item) => (
             <SelectItem key={item.value} value={item.value}>
               {item.label}

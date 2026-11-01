@@ -110,7 +110,7 @@ export function ColourPicker({
           {listed ? <Swatch colour={listed.swatch} /> : null}
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="max-h-80">
+        <SelectContent alignItemWithTrigger={false} className="max-h-72">
           {options.map((item) => (
             <SelectItem key={item.value} value={item.value}>
               {item.swatch ? <Swatch colour={item.swatch} /> : null}
@@ -213,7 +213,10 @@ export function ColourOverrides({
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-80">
+                <SelectContent
+                  alignItemWithTrigger={false}
+                  className="max-h-72"
+                >
                   {[token, ...unset].map((value) => (
                     <SelectItem key={value} value={value}>
                       {tokenLabel(value)}
