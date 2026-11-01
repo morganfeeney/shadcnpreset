@@ -508,7 +508,8 @@ function InstallMenu({
 
 /**
  * Code to copy, with its copy button in the corner: a one-line command, or
- * (`block`) a stylesheet that scrolls.
+ * (`block`) a stylesheet that scrolls. A command longer than its box fades
+ * out before the button, and its end clears the fade once scrolled to.
  */
 function CopyableCode({
   children,
@@ -523,11 +524,13 @@ function CopyableCode({
 }) {
   const { isCopied, copyToClipboard } = useCopyToClipboard()
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative rounded-lg border bg-muted/40", className)}>
       <pre
         className={cn(
-          "overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-12 font-mono text-xs",
-          block && "max-h-72 overflow-y-auto leading-relaxed"
+          "overflow-x-auto p-3 font-mono text-xs",
+          block
+            ? "max-h-72 overflow-y-auto pr-12 leading-relaxed"
+            : "mask-[linear-gradient(to_right,black_calc(100%-4.5rem),transparent_calc(100%-2.75rem))] pr-20"
         )}
       >
         {children}
