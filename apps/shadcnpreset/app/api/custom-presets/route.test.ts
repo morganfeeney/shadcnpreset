@@ -10,6 +10,13 @@ vi.mock("@/lib/db", () => ({
   query: (...args: unknown[]) => query(...args),
 }))
 
+const generateText = vi.fn()
+vi.mock("ai", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("ai")>()),
+  generateText: (...args: unknown[]) => generateText(...args),
+}))
+
+const { resolvePresetFromCode } = await import("@/lib/preset")
 const { POST } = await import("@/app/api/custom-presets/route")
 const { GET: READ, PATCH } = await import("@/app/api/custom-presets/[id]/route")
 const { GET } = await import("@/app/r/custom/[file]/route")
@@ -28,7 +35,27 @@ beforeEach(() => {
   vi.clearAllMocks()
   getSessionUser.mockResolvedValue({ id: "user-1", name: "Morgan" })
   query.mockResolvedValue({ rows: [], rowCount: 1 })
+  generateText.mockRejectedValue(new Error("No model in tests"))
 })
+
+/** What the model reads from a message that only gives fonts. */
+function fontsRead(font: string, fontHeading: string) {
+  return {
+    output: {
+      assistantMessage: "",
+      style: null,
+      font,
+      fontHeading,
+      iconLibrary: null,
+      radius: null,
+      baseColor: null,
+      theme: "#ff0000",
+      chartColor: null,
+      overrides: [],
+      removeOverrides: [],
+    },
+  }
+}
 
 describe("POST /api/custom-presets", () => {
   it("saves the preset with the colours read from the message", async () => {
@@ -50,6 +77,32 @@ describe("POST /api/custom-presets", () => {
       overrides: { accent: "#254467" },
     })
     expect(params[4]).toBe("chat-1")
+  })
+
+  it("takes the fonts the message asks for, and its colours exactly", async () => {
+    generateText.mockResolvedValue(fontsRead("raleway", "lora"))
+
+    await POST(
+      request("POST", {
+        presetCode: CODE,
+        text: "Make a custom preset with Lora, Raleway and oklch(70.4% .191 22.216)",
+      })
+    )
+
+    const [, params] = query.mock.calls[0]
+    const preset = resolvePresetFromCode(params[2])
+    expect(preset?.font).toBe("raleway")
+    expect(preset?.fontHeading).toBe("lora")
+    expect(JSON.parse(params[3]).theme).toBe("oklch(70.4% .191 22.216)")
+  })
+
+  it("still makes it from the colours when the request cannot be read", async () => {
+    const response = await POST(
+      request("POST", { presetCode: CODE, text: "Lora and #DE00CE" })
+    )
+
+    expect(response.status).toBe(200)
+    expect(query.mock.calls[0][1][2]).toBe(CODE)
   })
 
   it("asks someone signed out to sign in", async () => {
