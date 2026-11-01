@@ -2,23 +2,22 @@
 
 import * as React from "react"
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react"
+import { ChevronDownIcon, LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { PresetFontLoader } from "@/components/preset-font-loader"
-import { PresetThemeSurface } from "@/components/preset-theme-surface"
-import { ClaimableBalance } from "@/components/preset-swatch/components/cards/claimable-balance"
-import { FeedbackForm } from "@/components/preset-swatch/components/cards/feedback-form"
-import { ObservabilityCard } from "@/components/preset-swatch/components/cards/observability-card"
-import { PieChartCard } from "@/components/preset-swatch/components/cards/pie-chart-card"
-import { PreviewAnalyticsCard } from "@/components/preset-swatch/components/cards/preview-analytics-card"
-import { SavingsProgress } from "@/components/preset-swatch/components/cards/savings-progress"
-import { UIElements } from "@/components/preset-swatch/components/cards/ui-elements"
 import {
   ColourOverrides,
   ColourPicker,
+  PropertyRow,
   type SwatchItem,
 } from "@/components/custom-presets/colour-controls"
-import { useSurfaceMode } from "@/components/themes/theme-surface"
+import { PresetV4Frame } from "@/components/preset-v4-frame"
+import { Button } from "@/components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -26,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import type { CustomColours, CustomSlot } from "@/lib/custom-colours"
@@ -34,13 +33,18 @@ import {
   buildCustomPreset,
   CUSTOM_PRESET_COLOUR_FACETS,
   CUSTOM_PRESET_FACETS,
+  customPresetPath,
   customPresetRegistryPath,
   facetValueLabel,
   installablePresetCode,
   withFacet,
-  type CustomPreset,
   type CustomPresetFacet,
 } from "@/lib/custom-preset"
+import {
+  CUSTOM_PRESET_VIEWS,
+  customPresetPreviewSrc,
+  type CustomPresetView,
+} from "@/lib/custom-preset-frame"
 import { trackEvent } from "@/lib/analytics-events"
 import { cn } from "@/lib/utils"
 import { BASE_COLORS } from "@/registry/base-colors"
@@ -53,11 +57,23 @@ const SAVE_DELAY_MS = 400
 
 type Draft = { code: string; colours: CustomColours }
 
+const FACET_LABEL: Record<
+  (typeof CUSTOM_PRESET_FACETS)[number]["key"],
+  string
+> = {
+  style: "Style",
+  radius: "Radius",
+  iconLibrary: "Icons",
+  font: "Font",
+  fontHeading: "Headings",
+}
+
 /**
- * A custom preset: its colours and the preset's facets to change, a preview
- * in its style and fonts, and how to install it. Changes save as they are
- * made, so the install link always gives what is on screen; only the person
- * who made it can change anything.
+ * A custom preset to work on: create's preview in its colours, and a column
+ * of everything to change beside it. Changes save as they are made, so the
+ * install link always gives what is on screen; only the person who made it
+ * can change anything. `start` and `end` go either side of its bar, for the
+ * panel's way back to the chat and its close button.
  */
 export function CustomPresetEditor({
   id,
@@ -65,15 +81,16 @@ export function CustomPresetEditor({
   colours: initialColours,
   canEdit,
   origin,
-  embedded = false,
+  start,
+  end,
 }: {
   id: string
   initialCode: string
   colours: CustomColours
   canEdit: boolean
   origin: string
-  /** In the assistant's panel, whose own header names it: no page heading. */
-  embedded?: boolean
+  start?: React.ReactNode
+  end?: React.ReactNode
 }) {
   const [draft, setDraft] = React.useState<Draft>({
     code: initialCode,
@@ -145,105 +162,148 @@ export function CustomPresetEditor({
     chartColor: resolved.effectiveChartColor,
   }
 
-  return (
-    <div
-      className={
-        embedded ? "grid grid-cols-1 gap-8" : "grid grid-cols-1 gap-12"
-      }
-    >
-      {embedded ? null : (
-        <header className="grid max-w-3xl gap-4">
-          <h1 className="text-4xl font-semibold tracking-tight">
-            Your custom preset
-          </h1>
-          <p className="text-muted-foreground">
-            Started from preset <code className="font-mono">{initialCode}</code>
-            , with your colours in place of its own. Light and dark, with every
-            text colour checked for contrast.
-          </p>
-        </header>
-      )}
-
-      <section aria-label="Preset" className="grid grid-cols-1 gap-6">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {CUSTOM_PRESET_COLOUR_FACETS.map(({ key, label }) => (
-            <ColourPicker
-              key={key}
-              label={label}
-              items={colourItems(key, resolved.baseColor)}
-              value={listValue[key]}
-              custom={colours[key]}
-              disabled={!canEdit}
-              onPick={(value) => pickColour(key, value)}
-              onCustom={(colour, settle) => customColour(key, colour, settle)}
-            />
-          ))}
-          {CUSTOM_PRESET_FACETS.map(({ key, label, values }) => {
-            // Lyra is square whatever radius it holds, as the create page
-            // shows it: the radius it renders with, and no other choice.
-            const locked = key === "radius" && radiusLocked
-            return (
-              <FacetSelect
-                key={key}
-                label={label}
-                value={locked ? resolved.effectiveRadius : resolved[key]}
-                items={values.map((value) => ({
-                  value,
-                  label: facetValueLabel(key, value),
-                }))}
-                disabled={!canEdit || locked}
-                onChange={(value) => change(key, value)}
-              />
-            )
-          })}
-        </div>
-        <ColourOverrides
-          overrides={colours.overrides}
-          current={theme.light}
-          disabled={!canEdit}
-          onChange={(overrides, settle) => {
-            if (settle)
-              trackEvent("custom_preset_change", { facet: "overrides" })
-            update({ code, colours: { ...colours, overrides } }, settle)
-          }}
-        />
-        <p className="text-sm text-muted-foreground">
-          {canEdit
-            ? "Change anything. Your colours stay, and the preview follows."
-            : "Only the person who made this preset can change it."}
-          {radiusLocked
-            ? " Lyra is always square, so its radius is fixed."
-            : null}
-        </p>
-      </section>
-
-      {theme.adjustments.length || theme.lowContrast.length ? (
-        <section aria-label="Notes" className="grid grid-cols-1 gap-1 text-sm">
-          {theme.adjustments.map((note) => (
-            <p key={note}>{note}</p>
-          ))}
-          {theme.lowContrast.map(({ mode, pair, ratio }) => (
-            <p key={`${mode}-${pair}`} className="text-muted-foreground">
-              Your overrides put {pair} at {ratio}:1 in {mode} mode, below the
-              4.5:1 body text needs. Kept as you set them.
-            </p>
-          ))}
-        </section>
-      ) : null}
-
-      <CustomPresetShowcase preset={preset} />
-
-      <CustomPresetInstall
-        code={installablePresetCode(code)}
-        css={preset.css}
-        registryUrl={`${origin}${customPresetRegistryPath(id)}`}
-        summary={[
-          facetValueLabel("style", resolved.style),
-          facetValueLabel("font", resolved.font),
-          facetValueLabel("iconLibrary", resolved.iconLibrary),
-        ]}
+  function facetSelect(key: (typeof CUSTOM_PRESET_FACETS)[number]["key"]) {
+    const facet = CUSTOM_PRESET_FACETS.find((f) => f.key === key)!
+    // Lyra is square whatever radius it holds, as the create page shows it:
+    // the radius it renders with, and no other choice.
+    const locked = key === "radius" && radiusLocked
+    return (
+      <FacetSelect
+        key={key}
+        label={FACET_LABEL[key]}
+        value={locked ? resolved.effectiveRadius : resolved[key]}
+        items={facet.values.map((value) => ({
+          value,
+          label: facetValueLabel(key, value),
+        }))}
+        disabled={!canEdit || locked}
+        onChange={(value) => change(key, value)}
       />
+    )
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b px-2 lg:px-3">
+        {start}
+        <span
+          aria-hidden
+          className="size-3 shrink-0 rounded-sm"
+          style={{ background: theme.light.primary }}
+        />
+        <h2 className="truncate text-sm font-semibold">
+          {canEdit ? "Your custom preset" : "Custom preset"}
+        </h2>
+        <code className="hidden font-mono text-xs text-muted-foreground sm:inline">
+          {code}
+        </code>
+        <span className="flex-1" />
+        <ShareButton url={`${origin}${customPresetPath(id)}`} />
+        <InstallMenu
+          code={installablePresetCode(code)}
+          css={preset.css}
+          registryUrl={`${origin}${customPresetRegistryPath(id)}`}
+        />
+        {end}
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+        <PreviewCanvas
+          id={id}
+          code={code}
+          layout={[
+            resolved.style,
+            resolved.font,
+            resolved.fontHeading,
+            resolved.iconLibrary,
+          ].join(" ")}
+          css={preset.css}
+        />
+
+        <aside
+          aria-label="Customise"
+          className="shrink-0 border-t text-sm lg:w-72 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l"
+        >
+          <PropertySection title="Colours">
+            {CUSTOM_PRESET_COLOUR_FACETS.map(({ key, label }) => (
+              <ColourPicker
+                key={key}
+                label={label.replace(" Color", "")}
+                items={colourItems(key, resolved.baseColor)}
+                value={listValue[key]}
+                custom={colours[key]}
+                disabled={!canEdit}
+                onPick={(value) => pickColour(key, value)}
+                onCustom={(colour, settle) => customColour(key, colour, settle)}
+              />
+            ))}
+            <ColourOverrides
+              overrides={colours.overrides}
+              current={theme.light}
+              disabled={!canEdit}
+              onChange={(overrides, settle) => {
+                if (settle)
+                  trackEvent("custom_preset_change", { facet: "overrides" })
+                update({ code, colours: { ...colours, overrides } }, settle)
+              }}
+            />
+            {theme.adjustments.length || theme.lowContrast.length ? (
+              <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
+                {theme.adjustments.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
+                {theme.lowContrast.map(({ mode, pair, ratio }) => (
+                  <p key={`${mode}-${pair}`}>
+                    Your overrides put {pair} at {ratio}:1 in {mode} mode, below
+                    the 4.5:1 body text needs. Kept as you set them.
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </PropertySection>
+
+          <PropertySection title="Style">
+            {facetSelect("style")}
+            {facetSelect("radius")}
+            {facetSelect("iconLibrary")}
+            {radiusLocked ? (
+              <p className="text-xs text-muted-foreground">
+                Lyra is always square, so its radius is fixed.
+              </p>
+            ) : null}
+          </PropertySection>
+
+          <PropertySection title="Typography">
+            {facetSelect("font")}
+            {facetSelect("fontHeading")}
+          </PropertySection>
+
+          {canEdit ? null : (
+            <p className="px-4 pb-4 text-xs text-muted-foreground">
+              Only the person who made this preset can change it.
+            </p>
+          )}
+        </aside>
+      </div>
     </div>
+  )
+}
+
+function PropertySection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      aria-label={title}
+      className="grid grid-cols-1 gap-2.5 border-b px-4 py-4 last:border-b-0"
+    >
+      <h3 className="text-xs font-semibold">{title}</h3>
+      {children}
+    </section>
   )
 }
 
@@ -261,8 +321,7 @@ function FacetSelect({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="grid content-start gap-1.5 text-xs font-medium text-muted-foreground">
-      {label}
+    <PropertyRow label={label}>
       <Select
         items={items}
         value={value}
@@ -271,10 +330,12 @@ function FacetSelect({
           if (next) onChange(next)
         }}
       >
-        <SelectTrigger aria-label={label} className="w-full bg-background">
+        <SelectTrigger aria-label={label} size="sm" className="w-full">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="max-h-80">
+        {/* Under the field, as every menu in the column opens: lining the
+          chosen item up with it lifts a long list over the rows above. */}
+        <SelectContent alignItemWithTrigger={false} className="max-h-72">
           {items.map((item) => (
             <SelectItem key={item.value} value={item.value}>
               {item.label}
@@ -282,46 +343,94 @@ function FacetSelect({
           ))}
         </SelectContent>
       </Select>
-    </label>
+    </PropertyRow>
   )
 }
 
-/** The preset's style, fonts and icons, in its colours, in the site's mode. */
-function CustomPresetShowcase({ preset }: { preset: CustomPreset }) {
-  const mode = useSurfaceMode()
-  const { resolved, registryTheme } = preset
-  if (!mode) {
-    return (
-      <div
-        aria-hidden
-        className="min-h-[40rem] animate-pulse rounded-2xl bg-muted"
-      />
-    )
-  }
+/**
+ * Create's preview of the preset. Only a change to its `layout` (the style,
+ * fonts and icons, which the frame lays out from its code) reloads it; every
+ * colour and the radius arrive as `css`, listed or custom alike, and repaint
+ * it in place.
+ */
+function PreviewCanvas({
+  id,
+  code,
+  layout,
+  css,
+}: {
+  id: string
+  code: string
+  layout: string
+  css: string
+}) {
+  const [view, setView] = React.useState<CustomPresetView>("preview")
+  const [frame, setFrame] = React.useState({ code, layout })
+  if (layout !== frame.layout) setFrame({ code, layout })
+  const src = customPresetPreviewSrc(view, frame.code, id)
+  // Shown once it has taken the site's mode, which arrives after it loads:
+  // until then it paints light, a flash on every change of style or font.
+  const [shownSrc, setShownSrc] = React.useState<string | null>(null)
+  const shown = shownSrc === src
 
   return (
-    <PresetThemeSurface
-      registryTheme={registryTheme}
-      surfaceMode={mode}
-      bodyFont={resolved.font}
-      headingFont={resolved.fontHeading}
-      styleName={resolved.style}
-      className="rounded-2xl border bg-muted p-4 text-foreground md:p-6 dark:bg-background"
-    >
-      <PresetFontLoader fontValues={[resolved.font, resolved.fontHeading]} />
-      <section
-        aria-label="Your custom preset on example components"
-        className="columns-1 gap-4 *:mb-4 *:break-inside-avoid md:columns-2 xl:columns-3"
+    <div className="relative h-[70svh] shrink-0 bg-muted p-3 lg:h-auto lg:min-h-0 lg:flex-1 lg:p-5">
+      <PresetV4Frame
+        src={src}
+        title="Your custom preset in create's preview"
+        customColoursCss={css}
+        className={cn(
+          "block size-full rounded-lg border bg-background shadow-lg transition-opacity duration-150",
+          !shown && "opacity-0"
+        )}
+        onLoad={() => window.setTimeout(() => setShownSrc(src), 250)}
+      />
+      {shown ? null : (
+        <div className="absolute inset-0 grid place-items-center">
+          <Spinner />
+        </div>
+      )}
+      <div
+        role="toolbar"
+        aria-label="Preview"
+        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-0.5 rounded-lg border bg-popover p-1 shadow-md lg:bottom-8"
       >
-        <PreviewAnalyticsCard />
-        <UIElements />
-        <FeedbackForm />
-        <PieChartCard />
-        <SavingsProgress />
-        <ClaimableBalance />
-        <ObservabilityCard iconLibrary={resolved.iconLibrary} />
-      </section>
-    </PresetThemeSurface>
+        {CUSTOM_PRESET_VIEWS.map(({ example, label }) => (
+          <Button
+            key={example}
+            type="button"
+            size="sm"
+            variant={view === example ? "secondary" : "ghost"}
+            aria-pressed={view === example}
+            onClick={() => setView(example)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ShareButton({ url }: { url: string }) {
+  const { isCopied, copyToClipboard } = useCopyToClipboard()
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        void copyToClipboard(url)
+        trackEvent("custom_preset_share", {})
+      }}
+    >
+      {isCopied ? (
+        <CheckIcon data-icon="inline-start" />
+      ) : (
+        <LinkIcon data-icon="inline-start" />
+      )}
+      {isCopied ? "Copied" : "Share"}
+    </Button>
   )
 }
 
@@ -329,77 +438,71 @@ function CustomPresetShowcase({ preset }: { preset: CustomPreset }) {
  * Two steps: the preset itself (a preset code holds everything but exact
  * colours), then the colours from this preset's registry item.
  */
-function CustomPresetInstall({
+function InstallMenu({
   code,
   css,
   registryUrl,
-  summary,
 }: {
   code: string
   css: string
   registryUrl: string
-  summary: string[]
 }) {
   return (
-    <section className="grid grid-cols-1 gap-6">
-      <div className="grid grid-cols-1 gap-1.5">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Install this preset
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          The whole preset: {summary.join(", ")}, its radius, and your colours.
-          Free.
-        </p>
-      </div>
+    <Popover>
+      <PopoverTrigger render={<Button type="button" size="sm" />}>
+        Install
+        <ChevronDownIcon data-icon="inline-end" />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        aria-label="Install this preset"
+        className="grid w-[min(28rem,calc(100vw-2rem))] grid-cols-1 gap-4 p-4"
+      >
+        <div className="grid grid-cols-1 gap-2">
+          <h3 className="text-sm font-medium">1. Set up the preset</h3>
+          <Tabs defaultValue="new">
+            <TabsList>
+              <TabsTrigger value="new">New project</TabsTrigger>
+              <TabsTrigger value="existing">Existing project</TabsTrigger>
+            </TabsList>
+            <TabsContent value="new">
+              <CopyableCode label="Copy the new project command">
+                {`npx ${SHADCN} init --preset ${code}`}
+              </CopyableCode>
+            </TabsContent>
+            <TabsContent value="existing">
+              <CopyableCode label="Copy the existing project command">
+                {`npx ${SHADCN} apply --preset ${code}`}
+              </CopyableCode>
+            </TabsContent>
+          </Tabs>
+        </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <h3 className="font-medium">1. Set up the preset</h3>
-        <p className="text-sm text-muted-foreground">
-          The preset code holds everything but your custom colours, so this
-          installs the preset as shadcn has it. Step 2 adds your colours.
-        </p>
-        <Tabs defaultValue="new">
-          <TabsList>
-            <TabsTrigger value="new">New project</TabsTrigger>
-            <TabsTrigger value="existing">Existing project</TabsTrigger>
-          </TabsList>
-          <TabsContent value="new">
-            <CopyableCode label="Copy the new project command">
-              {`npx ${SHADCN} init --preset ${code}`}
-            </CopyableCode>
-          </TabsContent>
-          <TabsContent value="existing">
-            <CopyableCode label="Copy the existing project command">
-              {`npx ${SHADCN} apply --preset ${code}`}
-            </CopyableCode>
-          </TabsContent>
-        </Tabs>
-      </div>
+        <div className="grid grid-cols-1 gap-2">
+          <h3 className="text-sm font-medium">2. Add your colours</h3>
+          <p className="text-xs text-muted-foreground">
+            A preset code can’t hold exact colours, so they install from this
+            link. Anyone with it can use them.
+          </p>
+          <CopyableCode label="Copy the colours command">
+            {`npx ${SHADCN} add ${registryUrl}`}
+          </CopyableCode>
+        </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <h3 className="font-medium">2. Add your colours</h3>
-        <p className="text-sm text-muted-foreground">
-          A preset code can’t hold exact colours, so they install from this
-          link. Anyone with it can use them.
-        </p>
-        <CopyableCode label="Copy the colours command">
-          {`npx ${SHADCN} add ${registryUrl}`}
-        </CopyableCode>
-      </div>
-
-      <details className="grid grid-cols-1 gap-2">
-        <summary className="cursor-pointer text-sm font-medium">
-          Colours only, as CSS
-        </summary>
-        <p className="pt-2 text-sm text-muted-foreground">
-          Already on this preset? Replace the <code>:root</code> and{" "}
-          <code>.dark</code> blocks in your <code>globals.css</code>.
-        </p>
-        <CopyableCode label="Copy the CSS" block className="mt-2">
-          {css}
-        </CopyableCode>
-      </details>
-    </section>
+        <details className="grid grid-cols-1 gap-2">
+          <summary className="cursor-pointer text-sm font-medium">
+            Colours only, as CSS
+          </summary>
+          <p className="pt-2 text-xs text-muted-foreground">
+            Already on this preset? Replace the <code>:root</code> and{" "}
+            <code>.dark</code> blocks in your <code>globals.css</code>.
+          </p>
+          <CopyableCode label="Copy the CSS" block className="mt-2">
+            {css}
+          </CopyableCode>
+        </details>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -423,8 +526,8 @@ function CopyableCode({
     <div className={cn("relative", className)}>
       <pre
         className={cn(
-          "overflow-x-auto rounded-xl border bg-muted/40 p-4 pr-14 font-mono",
-          block ? "max-h-96 overflow-y-auto text-xs leading-relaxed" : "text-sm"
+          "overflow-x-auto rounded-lg border bg-muted/40 p-3 pr-12 font-mono text-xs",
+          block && "max-h-72 overflow-y-auto leading-relaxed"
         )}
       >
         {children}
@@ -433,7 +536,7 @@ function CopyableCode({
         type="button"
         variant="ghost"
         size="icon-sm"
-        className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground"
+        className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground"
         aria-label={isCopied ? "Copied" : label}
         onClick={() => void copyToClipboard(children)}
       >

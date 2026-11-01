@@ -6,6 +6,10 @@ import { useTheme } from "next-themes"
 
 import { PreviewPresetProvider } from "@/components/shadcn-examples/preview-preset"
 import { Spinner } from "@/components/ui/spinner"
+import {
+  CUSTOM_COLOURS_STYLE_ID,
+  isCustomColoursMessage,
+} from "@/lib/custom-preset-frame"
 import type { BuiltPageSpec } from "@/lib/page-builder/messages"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
@@ -246,6 +250,15 @@ export function PresetPreviewExampleShell({
 
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // Colours only from this site's own pages: the custom preset editor.
+      if (
+        event.origin === window.location.origin &&
+        isCustomColoursMessage(event.data)
+      ) {
+        const style = document.getElementById(CUSTOM_COLOURS_STYLE_ID)
+        if (style) style.textContent = event.data.css
+        return
+      }
       if (!isThemeModeMessage(event.data)) {
         return
       }

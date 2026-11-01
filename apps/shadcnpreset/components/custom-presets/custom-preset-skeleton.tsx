@@ -1,48 +1,44 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * The custom preset page while it is read, shaped like it — title, the eight
- * pickers, overrides, preview, install — so it fills the page instead of the
- * footer, and nothing jumps when the page arrives.
+ * The editor while a custom preset is read, shaped like it: the preview on
+ * its canvas and the properties column beside it, so nothing jumps.
  */
-export function CustomPresetSkeleton() {
+export function CustomPresetBodySkeleton() {
   return (
-    <main
-      className="min-w-0 flex-1 pt-6 px-safe pb-20 lg:px-10"
+    <div
       role="status"
       aria-label="Loading custom preset"
+      className="flex min-h-0 flex-1 flex-col lg:flex-row"
     >
-      <div className="mx-auto grid max-w-6xl gap-12">
-        <div className="grid max-w-3xl gap-4">
-          <Skeleton className="h-10 w-80 max-w-full" />
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
+      <div className="h-[70svh] shrink-0 bg-muted p-3 lg:h-auto lg:flex-1 lg:p-5">
+        <Skeleton className="size-full rounded-lg bg-background" />
+      </div>
+      <div className="grid shrink-0 content-start gap-2.5 border-t p-4 lg:w-72 lg:border-t-0 lg:border-l">
+        <Skeleton className="h-3 w-16" />
+        {Array.from({ length: 9 }, (_, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-7 flex-1" />
           </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-        <div className="grid gap-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="grid gap-1.5">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-9 w-full" />
-              </div>
-            ))}
-          </div>
-          <div className="grid gap-2">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-8 w-40" />
-          </div>
+/** The custom preset page while it is read: its bar, then the body. */
+export function CustomPresetSkeleton() {
+  return (
+    <main className="min-h-0 px-2 pb-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
+          <Skeleton className="h-4 w-40" />
+          <span className="flex-1" />
+          <Skeleton className="h-7 w-20" />
+          <Skeleton className="h-7 w-20" />
         </div>
-
-        <Skeleton className="min-h-[40rem] rounded-2xl" />
-
-        <div className="grid gap-4">
-          <Skeleton className="h-7 w-56" />
-          <Skeleton className="h-14 w-full rounded-xl" />
-          <Skeleton className="h-14 w-full rounded-xl" />
-        </div>
+        <CustomPresetBodySkeleton />
       </div>
     </main>
   )

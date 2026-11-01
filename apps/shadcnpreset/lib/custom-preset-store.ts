@@ -43,6 +43,24 @@ export async function createCustomPreset({
   return id
 }
 
+/** The latest custom preset someone made in a chat, if any. */
+export async function findChatCustomPreset({
+  userId,
+  chatId,
+}: {
+  userId: string
+  chatId: string
+}): Promise<string | null> {
+  const { rows } = await query<{ id: string }>(
+    `
+    SELECT id FROM custom_presets WHERE user_id = $1 AND chat_id = $2
+    ORDER BY created_at DESC LIMIT 1
+    `,
+    [userId, chatId]
+  )
+  return rows[0]?.id ?? null
+}
+
 export async function getCustomPreset(
   id: string
 ): Promise<StoredCustomPreset | null> {

@@ -69,7 +69,9 @@ describe("POST /api/custom-presets", () => {
 
     expect(response.status).toBe(200)
     expect((await response.json()).id).toEqual(expect.any(String))
-    const [sql, params] = query.mock.calls[0]
+    // After looking for one the chat already made.
+    expect(query.mock.calls[0][0]).toContain("SELECT id FROM custom_presets")
+    const [sql, params] = query.mock.calls[1]
     expect(sql).toContain("INSERT INTO custom_presets")
     expect(params.slice(1, 3)).toEqual(["user-1", CODE])
     expect(JSON.parse(params[3])).toEqual({
@@ -94,6 +96,25 @@ describe("POST /api/custom-presets", () => {
     expect(preset?.font).toBe("raleway")
     expect(preset?.fontHeading).toBe("lora")
     expect(JSON.parse(params[3]).theme).toBe("oklch(70.4% .191 22.216)")
+  })
+
+  it("reopens the custom preset the chat already made", async () => {
+    query.mockImplementation(async (sql: string) =>
+      sql.includes("SELECT id FROM custom_presets")
+        ? { rows: [{ id: "cp-made" }] }
+        : { rows: [], rowCount: 1 }
+    )
+
+    const response = await POST(
+      request("POST", { presetCode: CODE, text: "#DE00CE", chatId: "chat-1" })
+    )
+
+    expect(await response.json()).toEqual({ id: "cp-made" })
+    expect(query.mock.calls[0][1]).toEqual(["user-1", "chat-1"])
+    expect(
+      query.mock.calls.some(([sql]) => String(sql).includes("INSERT"))
+    ).toBe(false)
+    expect(generateText).not.toHaveBeenCalled()
   })
 
   it("still makes it from the colours when the request cannot be read", async () => {

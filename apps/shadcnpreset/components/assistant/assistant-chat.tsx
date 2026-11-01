@@ -65,11 +65,22 @@ export function AssistantChat({
         ["customPreset", preset.id],
         (previous) => (previous ? { ...previous, ...preset } : previous)
       ),
+    // Asked for by name, it opens beside the answer that made it.
+    onCustomPresetCreated: (preset) => {
+      queryClient.setQueryData(["customPreset", preset.id], {
+        ...preset,
+        canEdit: true,
+      })
+      workspace.show(preset.id)
+    },
     // The answer has made this page a conversation worth returning to, so it
     // gains an address. Replace, not push: nobody navigated here, the page
-    // they were already on became the chat.
+    // they were already on became the chat. A custom preset the answer opened
+    // stays open.
     onChatCreated: (chatId) =>
-      router.replace(assistantChatPath(chatId), { scroll: false }),
+      router.replace(`${assistantChatPath(chatId)}${window.location.search}`, {
+        scroll: false,
+      }),
   })
   const {
     activeChatId,
@@ -385,10 +396,10 @@ export function AssistantChat({
             "fixed inset-0 z-50 translate-x-full bg-background data-open:translate-x-0",
             // Wide screens: beside it, growing from nothing as the chat narrows.
             // Its width animates, not its flex: browsers snap a flex-grow
-            // that starts or ends at 0. The chat takes what is left, 400px
+            // that starts or ends at 0. The chat takes what is left, 300px
             // once open.
             "xl:static xl:z-auto xl:w-0 xl:flex-none xl:translate-x-0 xl:overflow-hidden xl:rounded-lg xl:border xl:border-transparent xl:opacity-0",
-            "xl:data-open:mx-2 xl:data-open:w-[calc(100%-400px-1rem)] xl:data-open:border-border xl:data-open:opacity-100",
+            "xl:data-open:mx-2 xl:data-open:w-[calc(100%-300px-1rem)] xl:data-open:border-border xl:data-open:opacity-100",
             WORKSPACE_MOTION
           )}
         >
