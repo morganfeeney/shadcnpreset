@@ -229,8 +229,8 @@ describe("POST /api/assistant with a custom preset open", () => {
     expect(response.status).toBe(200)
     expect(body).toMatchObject({
       phase: "custom",
-      // Named as the Theme picker shows it.
-      assistantMessage: "Made the theme Green.",
+      // Said from what changed, named as the Theme picker shows it.
+      assistantMessage: "Changed the Theme to Green.",
       changed: ["Theme: Green"],
       customPreset: { id: "cp-1", colours: { overrides: {} } },
     })
@@ -240,6 +240,29 @@ describe("POST /api/assistant with a custom preset open", () => {
       "editing one custom shadcn preset"
     )
     expect(countedGenerations()).toHaveLength(1)
+  })
+
+  it("saves a colour the model named but left out of its answer", async () => {
+    storedPreset(OWNED)
+    generateText.mockResolvedValue({
+      output: {
+        ...EDIT,
+        theme: null,
+        assistantMessage: "Changed the Chart Color to #00BDDF.",
+      },
+    })
+
+    const response = await post({
+      customPresetId: "cp-1",
+      messages: [
+        { role: "user", content: "now use this on the charts #00BDDF" },
+      ],
+    })
+    const body = await response.json()
+
+    expect(body.customPreset.colours.chartColor).toBe("#00BDDF")
+    expect(body.assistantMessage).toBe("Changed the Chart Color to #00BDDF.")
+    expect(JSON.parse(edited()?.[1][3]).chartColor).toBe("#00BDDF")
   })
 
   it("saves nothing when nothing changed", async () => {
@@ -336,6 +359,27 @@ describe("POST /api/assistant asking for a custom preset", () => {
     })
 
     expect((await response.json()).customPreset.presetCode).toBe("b1xTHeDQJE")
+  })
+
+  it("refuses past the account's cap, before asking the model", async () => {
+    process.env.CUSTOM_PRESET_LIMIT = "3"
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("COUNT(*)")) return { rows: [{ count: 3 }] }
+      if (sql.includes("SELECT generations"))
+        return { rows: [{ generations: 0 }] }
+      return { rows: [], rowCount: 1 }
+    })
+
+    const response = await post({
+      messages: [{ role: "user", content: ASK }],
+    })
+
+    expect(response.status).toBe(402)
+    expect((await response.json()).code).toBe("custom_preset_limit")
+    expect(generateText).not.toHaveBeenCalled()
+    expect(made()).toBeUndefined()
+    expect(countedGenerations()).toHaveLength(0)
+    delete process.env.CUSTOM_PRESET_LIMIT
   })
 
   it("leaves colours given without asking for one to the presets", async () => {

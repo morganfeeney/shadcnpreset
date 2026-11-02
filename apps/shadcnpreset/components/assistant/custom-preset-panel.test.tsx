@@ -1,25 +1,39 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+/** How many editors have been built: a new one is a reloaded preview. */
+let editorMounts = 0
+
 // The editor is tested on its own; here it shows what it was handed.
-vi.mock("@/components/custom-presets/custom-preset-editor", () => ({
-  CustomPresetEditor: (props: {
-    initialCode: string
-    canEdit: boolean
-    start: React.ReactNode
-    end: React.ReactNode
-  }) => (
-    <div>
-      {props.start}
-      <p>
-        Editor {props.initialCode} {props.canEdit ? "editable" : "read-only"}
-      </p>
-      {props.end}
-    </div>
-  ),
-}))
+vi.mock("@/components/custom-presets/custom-preset-editor", async () => {
+  const { useEffect } = await import("react")
+  return {
+    CustomPresetEditor: function Editor(props: {
+      initialCode: string
+      colours: { theme?: string }
+      canEdit: boolean
+      start: React.ReactNode
+      end: React.ReactNode
+    }) {
+      useEffect(() => {
+        editorMounts++
+      }, [])
+      return (
+        <div>
+          {props.start}
+          <p>
+            Editor {props.initialCode}{" "}
+            {props.canEdit ? "editable" : "read-only"}
+          </p>
+          <p>Theme {props.colours.theme}</p>
+          {props.end}
+        </div>
+      )
+    },
+  }
+})
 
 const { CustomPresetPanel } =
   await import("@/components/assistant/custom-preset-panel")
@@ -44,10 +58,12 @@ beforeEach(() => {
 })
 
 let onClose: ReturnType<typeof vi.fn<() => void>>
+let client: QueryClient
 
 function renderPanel() {
   onClose = vi.fn<() => void>()
-  const client = new QueryClient({
+  editorMounts = 0
+  client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   render(
@@ -66,6 +82,23 @@ describe("CustomPresetPanel", () => {
     ).toBeTruthy()
     expect(await screen.findByText("Editor b0 editable")).toBeTruthy()
     expect(fetch).toHaveBeenCalledWith("/api/custom-presets/cp-1")
+  })
+
+  it("hands an edit from the chat to the same editor, not a new one", async () => {
+    renderPanel()
+    await screen.findByText("Theme #DE00CE")
+
+    await act(async () => {
+      client.setQueryData(["customPreset", "cp-1"], {
+        id: "cp-1",
+        presetCode: "b0",
+        colours: { theme: "#00BDDF", overrides: {} },
+        canEdit: true,
+      })
+    })
+
+    expect(await screen.findByText("Theme #00BDDF")).toBeTruthy()
+    expect(editorMounts).toBe(1)
   })
 
   it("gives the editor its ways out: back to the chat, and close", async () => {

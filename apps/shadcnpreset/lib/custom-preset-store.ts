@@ -43,6 +43,42 @@ export async function createCustomPreset({
   return id
 }
 
+/**
+ * Custom presets an account keeps before Pro. Unset means no cap, as with
+ * free generations: a wall with no way through only turns people away.
+ */
+export function customPresetLimit(): number | null {
+  const raw = process.env.CUSTOM_PRESET_LIMIT
+  if (!raw) return null
+  const limit = Number.parseInt(raw, 10)
+  return Number.isFinite(limit) && limit >= 0 ? limit : null
+}
+
+/**
+ * The cap, when someone has reached it; null while they can make another.
+ * Checked before anything is asked of the model, so a refused one is free.
+ */
+export async function reachedCustomPresetLimit(
+  userId: string
+): Promise<number | null> {
+  const limit = customPresetLimit()
+  if (limit === null) return null
+  const { rows } = await query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count FROM custom_presets WHERE user_id = $1`,
+    [userId]
+  )
+  return (rows[0]?.count ?? 0) >= limit ? limit : null
+}
+
+/** The response to a request past the cap, which the page answers with Pro. */
+export function customPresetLimitResponse(limit: number) {
+  return {
+    error: `You’ve made ${limit} custom preset${limit === 1 ? "" : "s"}, as many as a free account keeps.`,
+    code: "custom_preset_limit" as const,
+    limit,
+  }
+}
+
 /** The latest custom preset someone made in a chat, if any. */
 export async function findChatCustomPreset({
   userId,

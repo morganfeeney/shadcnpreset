@@ -130,8 +130,10 @@ describe("CustomPresetEditor", () => {
     ).toBe("true")
   })
 
-  it("saves a changed facet, previews and installs the new preset", async () => {
+  it("saves a changed facet and installs the new preset, without reloading the preview", async () => {
     renderEditor()
+    await waitFor(() => expect(preview().getAttribute("src")).toBeTruthy())
+    const before = preview().getAttribute("src")
 
     await pick("Style", "Nova")
 
@@ -141,9 +143,8 @@ describe("CustomPresetEditor", () => {
     )
     const code = sentCode()
     expect(code).not.toBe(CODE)
-    await waitFor(() =>
-      expect(preview().getAttribute("src")).toContain(`preset=${code}&`)
-    )
+    // The new code is sent into the frame, which shows it in place.
+    expect(preview().getAttribute("src")).toBe(before)
     expect(await installCommands()).toContain(
       `npx shadcn@latest init --preset ${code}`
     )
@@ -160,6 +161,30 @@ describe("CustomPresetEditor", () => {
     expect(sentCode()).not.toBe(CODE)
     expect(preview().getAttribute("src")).toBe(before)
     expect(await cssText()).toContain("--radius: 0.875rem;")
+  })
+
+  it("takes an edit from the chat in place, keeping the preview's frame", async () => {
+    const view = renderEditor()
+    await waitFor(() => expect(preview().getAttribute("src")).toBeTruthy())
+    const frame = preview()
+    const src = frame.getAttribute("src")
+
+    view.rerender(
+      <CustomPresetEditor
+        id="cp-1"
+        initialCode={CODE}
+        colours={{ ...COLOURS, chartColor: "#00BDDF" }}
+        canEdit
+        origin="https://shadcnpreset.com"
+      />
+    )
+
+    expect(preview()).toBe(frame)
+    expect(preview().getAttribute("src")).toBe(src)
+    expect(
+      screen.getByRole("button", { name: "Chart colour: #00BDDF" })
+    ).toBeTruthy()
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it("goes back to the saved preset when a change does not save", async () => {

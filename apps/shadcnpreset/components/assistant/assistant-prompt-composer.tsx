@@ -38,6 +38,8 @@ type AssistantPromptComposerProps = {
   onNewChat?: () => void
   variant?: "default" | "compact"
   placeholder?: string
+  /** A note joined to the top of the input, such as a limit reached. */
+  notice?: React.ReactNode
   className?: string
 }
 
@@ -50,6 +52,7 @@ export function AssistantPromptComposer({
   onNewChat,
   variant = "default",
   placeholder,
+  notice,
   className,
 }: AssistantPromptComposerProps) {
   const [input, setInput] = React.useState("")
@@ -81,6 +84,7 @@ export function AssistantPromptComposer({
 
   return (
     <PromptInput
+      header={notice}
       onSubmit={async (message: PromptInputMessage) => {
         const text = message.text
         const previous = input
@@ -99,7 +103,7 @@ export function AssistantPromptComposer({
               // The pane below the conversation's scroller, not a sticky
               // overlay on it — it holds its place while the chat moves past.
               hasInteracted
-                ? "mt-6 max-w-4xl shrink-0 rounded-xl border border-border/60 bg-background/70 backdrop-blur supports-backdrop-filter:bg-background/55"
+                ? "max-w-4xl shrink-0 rounded-xl border border-border/60 bg-background/70 pt-0 backdrop-blur supports-backdrop-filter:bg-background/55"
                 : ""
             ),
         className

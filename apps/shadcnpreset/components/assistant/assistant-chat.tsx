@@ -12,6 +12,7 @@ import { AssistantConversation } from "@/components/assistant/assistant-conversa
 import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-card"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { ProWall } from "@/components/assistant/pro-wall"
+import { CustomPresetLimitNote } from "@/components/assistant/custom-preset-limit-note"
 import { CustomPresetOffer } from "@/components/assistant/custom-preset-offer"
 import { CustomPresetPanel } from "@/components/assistant/custom-preset-panel"
 import { useWorkspacePreset } from "@/components/assistant/use-workspace-preset"
@@ -56,6 +57,32 @@ export function AssistantChat({
   // While it is open, every message is a change to it.
   const workspace = useWorkspacePreset()
   const panelOpen = Boolean(workspace.id)
+  // The cap someone reached asking for a custom preset, noted above the
+  // composer until dismissed.
+  const [presetLimit, setPresetLimit] = React.useState<number | null>(null)
+  // When the composer grows (a note above it, a longer message) or the window
+  // changes, the conversation's box shrinks under content that does not move,
+  // hiding its end. Someone reading the end keeps it in view; someone who
+  // has scrolled back stays where they are.
+  const conversationScroller = React.useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    const scroller = conversationScroller.current
+    if (!scroller || typeof ResizeObserver === "undefined") return
+    let atEnd = true
+    const onScroll = () => {
+      atEnd =
+        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8
+    }
+    const keepEnd = new ResizeObserver(() => {
+      if (atEnd) scroller.scrollTop = scroller.scrollHeight
+    })
+    scroller.addEventListener("scroll", onScroll, { passive: true })
+    keepEnd.observe(scroller)
+    return () => {
+      keepEnd.disconnect()
+      scroller.removeEventListener("scroll", onScroll)
+    }
+  }, [])
   const chat = useAssistantChat({
     initialChatId: routeChatId,
     customPresetId: workspace.id,
@@ -65,6 +92,10 @@ export function AssistantChat({
         ["customPreset", preset.id],
         (previous) => (previous ? { ...previous, ...preset } : previous)
       ),
+    onCustomPresetLimit: (limit) => {
+      setPresetLimit(limit)
+      trackEvent("custom_preset_limit_view", {})
+    },
     // Asked for by name, it opens beside the answer that made it.
     onCustomPresetCreated: (preset) => {
       queryClient.setQueryData(["customPreset", preset.id], {
@@ -261,6 +292,7 @@ export function AssistantChat({
             )}
           >
             <div
+              ref={conversationScroller}
               className={cn(
                 showsConversation &&
                   "min-h-0 flex-1 overflow-y-auto overscroll-contain pt-10"
@@ -354,6 +386,10 @@ export function AssistantChat({
                     setPinnedOffer(offer)
                     workspace.open(id)
                   }}
+                  onLimit={(limit) => {
+                    setPresetLimit(limit)
+                    trackEvent("custom_preset_limit_view", {})
+                  }}
                   className="mx-auto w-full max-w-4xl px-4 pb-4"
                 />
               ) : showsAd ? (
@@ -380,6 +416,15 @@ export function AssistantChat({
                 onPromptSubmit={onPromptSubmit}
                 placeholder={
                   panelOpen ? "Ask for changes to this preset…" : undefined
+                }
+                notice={
+                  // A preset open beside the chat is edited, not made, so the
+                  // cap has nothing to say while it is.
+                  presetLimit !== null && !panelOpen ? (
+                    <CustomPresetLimitNote
+                      onDismiss={() => setPresetLimit(null)}
+                    />
+                  ) : null
                 }
               />
             )}

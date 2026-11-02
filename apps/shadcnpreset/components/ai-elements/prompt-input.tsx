@@ -513,6 +513,8 @@ export type PromptInputProps = Omit<
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>
   ) => void | Promise<void>;
+  // Sits on top of the input, joined to it: a note about what was sent.
+  header?: ReactNode;
 };
 
 export const PromptInput = ({
@@ -525,6 +527,7 @@ export const PromptInput = ({
   maxFileSize,
   onError,
   onSubmit,
+  header,
   children,
   ...props
 }: PromptInputProps) => {
@@ -926,6 +929,7 @@ export const PromptInput = ({
         ref={formRef}
         {...props}
       >
+        {header}
         <InputGroup className="overflow-hidden">{children}</InputGroup>
       </form>
     </>

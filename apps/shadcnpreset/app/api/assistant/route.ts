@@ -28,7 +28,9 @@ import { customColoursFrom } from "@/lib/custom-colours"
 import { DEFAULT_CUSTOM_PRESET_BASE } from "@/lib/custom-preset"
 import {
   createCustomPreset,
+  customPresetLimitResponse,
   getCustomPreset,
+  reachedCustomPresetLimit,
   updateCustomPreset,
 } from "@/lib/custom-preset-store"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
@@ -50,7 +52,8 @@ import {
   buildCustomPresetEditPrompt,
   customPresetEditSchema,
   describeMadeCustomPreset,
-  tidyEditReply,
+  editReply,
+  fillNamedColours,
 } from "@/lib/search/assistant/custom-preset-edit"
 import {
   asksForCustomPreset,
@@ -788,8 +791,11 @@ async function answerCustomPresetTurn({
       )
     }
 
-    const next = applyCustomPresetEdit(stored, edit)
-    const reply = tidyEditReply(edit.assistantMessage, edit)
+    const asked =
+      [...chatMessages].reverse().find((m) => m.role === "user")?.content ?? ""
+    const filled = fillNamedColours(edit, asked)
+    const next = applyCustomPresetEdit(stored, filled)
+    const reply = editReply(next.changed, filled)
     if (next.changed.length) {
       await updateCustomPreset({
         id: stored.id,
@@ -852,6 +858,11 @@ async function makeCustomPresetTurn({
   colours: BrandColour[]
   startFrom: string | null
 }) {
+  const limit = await reachedCustomPresetLimit(user.id)
+  if (limit !== null) {
+    return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
+  }
+
   const custom = customColoursFrom(colours)
   const { presetCode, changed } = await withPartsAskedFor({
     presetCode:

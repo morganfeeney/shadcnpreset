@@ -4,6 +4,8 @@ import { resolvePresetFromCode } from "@/lib/preset"
 import {
   applyCustomPresetEdit,
   buildCustomPresetEditPrompt,
+  editReply,
+  fillNamedColours,
   tidyEditReply,
   withPresetParts,
   type CustomPresetEdit,
@@ -52,6 +54,13 @@ describe("applyCustomPresetEdit", () => {
 
     expect(result.presetCode).toBe(CODE)
     expect(result.colours.theme).toBe("oklch(0.6 0.15 150)")
+  })
+
+  it("drops the 'custom' the model copies from the prompt", () => {
+    const result = apply({ chartColor: "custom #22C55E" })
+
+    expect(result.colours.chartColor).toBe("#22C55E")
+    expect(result.changed).toEqual(["Chart Color: #22C55E"])
   })
 
   it("skips a colour it cannot use rather than guessing", () => {
@@ -103,6 +112,86 @@ describe("withPresetParts", () => {
       "Font: Raleway",
       "Heading font: Lora",
     ])
+  })
+})
+
+describe("fillNamedColours", () => {
+  it("takes the colour its reply names when the field was left empty", () => {
+    const edit = {
+      ...NOTHING,
+      assistantMessage: "Changed the Chart Color to #00BDDF.",
+    }
+    expect(
+      fillNamedColours(edit, "now use this on the charts #00BDDF").chartColor
+    ).toBe("#00BDDF")
+  })
+
+  it("reads a whole oklch colour, spaces and all", () => {
+    const edit = {
+      ...NOTHING,
+      assistantMessage: "Changed the Chart Color to oklch(0.733 0.1371 24.94).",
+    }
+    expect(
+      fillNamedColours(edit, "use this for charts oklch(0.733 0.1371 24.94)")
+        .chartColor
+    ).toBe("oklch(0.733 0.1371 24.94)")
+  })
+
+  it("takes a list name the person used", () => {
+    const edit = {
+      ...NOTHING,
+      assistantMessage: "Changed the Chart Color to Red.",
+    }
+    expect(fillNamedColours(edit, "red charts").chartColor).toBe("Red")
+  })
+
+  it("makes nothing up that the person didn't say", () => {
+    const edit = {
+      ...NOTHING,
+      assistantMessage: "Changed the Chart Color to #00BDDF.",
+    }
+    expect(fillNamedColours(edit, "make the charts blue").chartColor).toBeNull()
+  })
+
+  it("leaves a field the model set alone", () => {
+    const edit = {
+      ...NOTHING,
+      chartColor: "#111111",
+      assistantMessage: "Changed the Chart Color to #00BDDF.",
+    }
+    expect(fillNamedColours(edit, "#00BDDF charts").chartColor).toBe("#111111")
+  })
+})
+
+describe("editReply", () => {
+  it("says what changed, from the changes themselves", () => {
+    expect(
+      editReply(["Chart Color: #00BDDF", "Font: Lora"], {
+        ...NOTHING,
+        assistantMessage: "Done!",
+      })
+    ).toBe("Changed the Chart Color to #00BDDF and the Font to Lora.")
+  })
+
+  it("won't claim a change that didn't happen, whatever the verb", () => {
+    for (const assistantMessage of [
+      "Changed the Chart Color to #00BDDF.",
+      "Added a red shadow to the cards.",
+      "Please specify the shadow style or properties you'd like.",
+    ]) {
+      expect(editReply([], { ...NOTHING, assistantMessage })).toMatch(
+        /^That isn’t something a custom preset can change/
+      )
+    }
+  })
+
+  it("keeps a question when nothing was asked to change", () => {
+    expect(
+      editReply([], {
+        ...NOTHING,
+        assistantMessage: "Which part, the theme or the charts?",
+      })
+    ).toBe("Which part, the theme or the charts?")
   })
 })
 

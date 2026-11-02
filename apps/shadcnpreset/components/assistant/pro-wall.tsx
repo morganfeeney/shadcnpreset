@@ -2,12 +2,8 @@
 
 import { buttonVariants } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics-events"
+import { PRO_CHECKOUT_URL, PRO_PRICE } from "@/lib/pro"
 import { cn } from "@/lib/utils"
-
-/** Where "Go Pro" leads: a hosted checkout, set with the free limit. */
-const CHECKOUT_URL = process.env.NEXT_PUBLIC_PRO_CHECKOUT_URL
-
-const PRICE = "£8 a month"
 
 /**
  * In the composer's place once the free answers are used. What someone has
@@ -29,14 +25,14 @@ export function ProWall({ className }: { className?: string }) {
           assistant going: unlimited generations, and custom presets from a
           pasted stylesheet, a design doc or your website.
         </p>
-        {CHECKOUT_URL ? (
+        {PRO_CHECKOUT_URL ? (
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <a
-              href={CHECKOUT_URL}
+              href={PRO_CHECKOUT_URL}
               className={buttonVariants()}
               onClick={() => trackEvent("pro_checkout_click", {})}
             >
-              Go Pro, {PRICE}
+              Go Pro, {PRO_PRICE}
             </a>
             <span className="text-xs text-muted-foreground">
               Cancel anytime

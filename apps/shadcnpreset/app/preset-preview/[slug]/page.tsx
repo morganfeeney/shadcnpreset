@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation"
 
 import { buildCustomPreset } from "@/lib/custom-preset"
-import { CUSTOM_COLOURS_STYLE_ID } from "@/lib/custom-preset-frame"
+import {
+  CUSTOM_COLOURS_STYLE_ID,
+  PRESET_THEME_STYLE_ID,
+} from "@/lib/custom-preset-frame"
 import { getCustomPreset } from "@/lib/custom-preset-store"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import { getPresetGoogleFontStylesheetHrefs } from "@/lib/preset-google-fonts"
@@ -11,8 +14,6 @@ import { readBuiltPageSpec } from "@/lib/page-builder/messages"
 import { cn } from "@/lib/utils"
 
 import { PresetPreviewExampleShell } from "./preview-example-shell"
-
-const PRESET_PREVIEW_THEME_STYLE_ID = "preset-preview-example-theme"
 
 export default async function PresetPreviewExamplePage({
   params,
@@ -71,7 +72,7 @@ export default async function PresetPreviewExamplePage({
         )}
       >
         <style
-          id={PRESET_PREVIEW_THEME_STYLE_ID}
+          id={PRESET_THEME_STYLE_ID}
           dangerouslySetInnerHTML={{ __html: combinedCss }}
         />
         <style

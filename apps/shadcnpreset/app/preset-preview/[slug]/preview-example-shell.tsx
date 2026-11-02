@@ -9,7 +9,12 @@ import { Spinner } from "@/components/ui/spinner"
 import {
   CUSTOM_COLOURS_STYLE_ID,
   isCustomColoursMessage,
+  isPresetCodeMessage,
+  PRESET_THEME_STYLE_ID,
 } from "@/lib/custom-preset-frame"
+import { effectiveHeadingFont } from "@/lib/preset"
+import { getPresetGoogleFontStylesheetHrefs } from "@/lib/preset-google-fonts"
+import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import type { BuiltPageSpec } from "@/lib/page-builder/messages"
 import type { LocalPresetPreviewExample } from "@/lib/preset-preview"
 
@@ -218,13 +223,59 @@ export function PresetPreviewExampleShell({
     () => fontReadyGateKey.length === 0
   )
 
+  // The custom preset editor sends a new code as its style, fonts or icons
+  // change, shown here in place rather than by loading the page again.
+  const [code, setCode] = React.useState(presetCode)
+  const live = React.useMemo(
+    () => (code === presetCode ? null : getPresetThemeCssBundle(code)),
+    [code, presetCode]
+  )
+  const styleClass = live ? `style-${live.resolved.style}` : bodyStyleClass
+  const baseColorClass = live
+    ? `base-color-${live.resolved.baseColor}`
+    : bodyBaseColorClass
+
   React.useLayoutEffect(() => {
     const body = document.body
-    body.classList.add(bodyStyleClass, bodyBaseColorClass)
+    body.classList.add(styleClass, baseColorClass)
     return () => {
-      body.classList.remove(bodyStyleClass, bodyBaseColorClass)
+      body.classList.remove(styleClass, baseColorClass)
     }
-  }, [bodyStyleClass, bodyBaseColorClass])
+  }, [styleClass, baseColorClass])
+
+  React.useLayoutEffect(() => {
+    if (!live) return
+    const theme = document.getElementById(PRESET_THEME_STYLE_ID)
+    if (theme) theme.textContent = live.combinedCss
+    const root = document.querySelector(".preset-preview-root")
+    if (root) {
+      for (const name of [...root.classList]) {
+        if (name.startsWith("style-") || name.startsWith("base-color-")) {
+          root.classList.remove(name)
+        }
+      }
+      root.classList.add(styleClass, baseColorClass)
+    }
+    const { font, fontHeading } = live.resolved
+    const loaded = [...document.querySelectorAll("link[rel=stylesheet]")].map(
+      (link) => link.getAttribute("href")
+    )
+    for (const href of getPresetGoogleFontStylesheetHrefs([
+      font,
+      effectiveHeadingFont(font, fontHeading),
+    ])) {
+      if (loaded.includes(href)) continue
+      const link = document.createElement("link")
+      link.rel = "stylesheet"
+      link.href = href
+      document.head.append(link)
+    }
+    // The icons read the preset from the address.
+    const url = new URL(window.location.href)
+    url.searchParams.set("preset", live.resolved.code)
+    // Next only syncs the address into useSearchParams for state it didn't write.
+    window.history.replaceState(null, "", url)
+  }, [live, styleClass, baseColorClass])
 
   React.useLayoutEffect(() => {
     if (fontReadyGateKey.length === 0) {
@@ -250,14 +301,18 @@ export function PresetPreviewExampleShell({
 
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Colours only from this site's own pages: the custom preset editor.
-      if (
-        event.origin === window.location.origin &&
-        isCustomColoursMessage(event.data)
-      ) {
-        const style = document.getElementById(CUSTOM_COLOURS_STYLE_ID)
-        if (style) style.textContent = event.data.css
-        return
+      // Colours and codes only from this site's own pages: the custom
+      // preset editor.
+      if (event.origin === window.location.origin) {
+        if (isCustomColoursMessage(event.data)) {
+          const style = document.getElementById(CUSTOM_COLOURS_STYLE_ID)
+          if (style) style.textContent = event.data.css
+          return
+        }
+        if (isPresetCodeMessage(event.data)) {
+          if (getPresetThemeCssBundle(event.data.code)) setCode(event.data.code)
+          return
+        }
       }
       if (!isThemeModeMessage(event.data)) {
         return
@@ -273,6 +328,10 @@ export function PresetPreviewExampleShell({
   }
 
   return (
-    <ExampleView slug={slug} presetCode={presetCode} builtPage={builtPage} />
+    <ExampleView
+      slug={slug}
+      presetCode={live ? live.resolved.code : presetCode}
+      builtPage={builtPage}
+    />
   )
 }

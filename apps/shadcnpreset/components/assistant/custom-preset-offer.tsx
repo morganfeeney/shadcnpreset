@@ -24,6 +24,7 @@ export function CustomPresetOffer({
   chatId,
   openId,
   onOpen,
+  onLimit,
   className,
 }: {
   /** The message the colours came in; the server reads them from it. */
@@ -34,6 +35,8 @@ export function CustomPresetOffer({
   /** The custom preset open beside the chat, if any. */
   openId: string | null
   onOpen: (id: string) => void
+  /** Making one went past the cap an account keeps. */
+  onLimit: (limit: number) => void
   className?: string
 }) {
   const [making, setMaking] = React.useState(false)
@@ -60,11 +63,19 @@ export function CustomPresetOffer({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ presetCode, text, chatId }),
     }).catch(() => null)
-    const body = response?.ok
-      ? ((await response.json()) as { id?: string })
+    const body = response
+      ? ((await response.json().catch(() => null)) as {
+          id?: string
+          code?: string
+          limit?: number
+        } | null)
       : null
     setMaking(false)
-    if (!body?.id) {
+    if (body?.code === "custom_preset_limit") {
+      onLimit(body.limit ?? 0)
+      return
+    }
+    if (!response?.ok || !body?.id) {
       toast.error("That didn’t go through. Try again in a moment.")
       return
     }
@@ -81,7 +92,7 @@ export function CustomPresetOffer({
     <aside aria-label="Custom preset" className={className}>
       <div
         className={cn(
-          "flex flex-col gap-4 rounded-lg border p-4 transition-colors sm:flex-row sm:items-center",
+          "flex flex-col gap-4 rounded-lg border p-4 transition-colors sm:flex-row",
           isOpen && "border-primary"
         )}
       >
@@ -97,11 +108,12 @@ export function CustomPresetOffer({
             </li>
           ))}
         </ul>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="-mt-1 flex min-w-0 flex-1 flex-col gap-1">
           <p className="truncate text-sm font-medium">{title}</p>
           <p className="text-xs text-balance text-muted-foreground">
-            Presets choose from a fixed set of colours, so none can use yours
-            exactly. See this preset in your colours and install it, free.
+            Presets use a fixed colour palette, so they can&#39;t match your
+            exact colours. Create a custom preset to see your colours in action
+            and get the code.
           </p>
         </div>
         <Button
