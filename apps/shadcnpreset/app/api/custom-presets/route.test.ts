@@ -36,6 +36,7 @@ beforeEach(() => {
   getSessionUser.mockResolvedValue({ id: "user-1", name: "Morgan" })
   query.mockResolvedValue({ rows: [], rowCount: 1 })
   generateText.mockRejectedValue(new Error("No model in tests"))
+  delete process.env.CUSTOM_PRESET_LIMIT
 })
 
 /** What the model reads from a message that only gives fonts. */
@@ -96,6 +97,44 @@ describe("POST /api/custom-presets", () => {
     expect(preset?.font).toBe("raleway")
     expect(preset?.fontHeading).toBe("lora")
     expect(JSON.parse(params[3]).theme).toBe("oklch(70.4% .191 22.216)")
+  })
+
+  it("refuses past the account's cap, before asking the model", async () => {
+    process.env.CUSTOM_PRESET_LIMIT = "3"
+    query.mockImplementation(async (sql: string) =>
+      sql.includes("COUNT(*)")
+        ? { rows: [{ count: 3 }] }
+        : { rows: [], rowCount: 1 }
+    )
+
+    const response = await POST(
+      request("POST", { presetCode: CODE, text: "#DE00CE", chatId: "chat-1" })
+    )
+
+    expect(response.status).toBe(402)
+    expect(await response.json()).toMatchObject({
+      code: "custom_preset_limit",
+      limit: 3,
+    })
+    expect(
+      query.mock.calls.some(([sql]) => String(sql).includes("INSERT"))
+    ).toBe(false)
+    expect(generateText).not.toHaveBeenCalled()
+  })
+
+  it("makes one under the cap", async () => {
+    process.env.CUSTOM_PRESET_LIMIT = "3"
+    query.mockImplementation(async (sql: string) =>
+      sql.includes("COUNT(*)")
+        ? { rows: [{ count: 2 }] }
+        : { rows: [], rowCount: 1 }
+    )
+
+    const response = await POST(
+      request("POST", { presetCode: CODE, text: "#DE00CE" })
+    )
+
+    expect(response.status).toBe(200)
   })
 
   it("reopens the custom preset the chat already made", async () => {

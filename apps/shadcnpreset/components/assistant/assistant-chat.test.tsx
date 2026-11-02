@@ -121,6 +121,8 @@ const PRESETS = [
 let failSend = false
 /** The send answers that the free generations are used up. */
 let proRequired = false
+/** The account has made as many custom presets as it keeps. */
+let presetLimitReached = false
 /** Held, the answer has not arrived yet. */
 let releaseSend: (() => void) | null = null
 let failChatDetail = false
@@ -174,6 +176,12 @@ function mockFetch() {
       const chatId = body.chatId ?? NEW_CHAT_ID
       storedChatIds.add(chatId)
       if (/custom preset/i.test(body.messages.at(-1)?.content ?? "")) {
+        if (presetLimitReached) {
+          return new Response(
+            JSON.stringify({ code: "custom_preset_limit", limit: 3 }),
+            { status: 402 }
+          )
+        }
         return jsonResponse({
           phase: "custom",
           created: true,
@@ -370,6 +378,7 @@ beforeEach(() => {
   sendBodies.length = 0
   failSend = false
   proRequired = false
+  presetLimitReached = false
   releaseSend = () => {}
   // Shared across tests, so a later assertion could otherwise pass on an
   // earlier test's toast.
@@ -807,5 +816,54 @@ describe("AssistantChat asked for a custom preset", () => {
         .getByRole("region", { name: "Custom preset", hidden: true })
         .hasAttribute("data-open")
     ).toBe(true)
+  })
+
+  it("offers Pro, and gives the question back, once the account's cap is reached", async () => {
+    presetLimitReached = true
+    renderPage()
+    const composer = screen.getByRole("textbox")
+    const form = composer.closest("form") as HTMLFormElement
+    const setValue = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set
+    await act(async () => {
+      setValue?.call(composer, "Make a custom preset with #0876BD")
+      composer.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    await act(async () => {
+      form.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true })
+      )
+    })
+
+    const note = await screen.findByRole("status", {
+      name: "Custom preset limit",
+    })
+    expect(
+      within(note).getByText(
+        "Upgrade to Pro to unlock unlimited custom presets."
+      )
+    ).toBeTruthy()
+    // Back in the box to send later, and not left in the conversation.
+    await waitFor(() =>
+      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
+        "Make a custom preset with #0876BD"
+      )
+    )
+    expect(
+      screen
+        .queryAllByText("Make a custom preset with #0876BD")
+        .filter((node) => node.tagName !== "TEXTAREA")
+    ).toHaveLength(0)
+
+    await act(async () => {
+      within(note).getByRole("button", { name: "Dismiss" }).click()
+    })
+    expect(
+      screen.queryByRole("status", { name: "Custom preset limit" })
+    ).toBeNull()
+    expect(screen.queryByText(/Custom preset cp-/)).toBeNull()
+    expect(toast.error).not.toHaveBeenCalled()
   })
 })

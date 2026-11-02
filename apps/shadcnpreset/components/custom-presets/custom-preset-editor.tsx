@@ -102,9 +102,22 @@ export function CustomPresetEditor({
     [code, colours]
   )
 
-  // What the server last accepted, to go back to when a save fails.
+  // An edit from elsewhere (the chat) replaces what is on screen, in place.
+  const [given, setGiven] = React.useState<Draft>(draft)
+  if (given.code !== initialCode || given.colours !== initialColours) {
+    const next = { code: initialCode, colours: initialColours }
+    setGiven(next)
+    setDraft(next)
+  }
+
+  // What the server last accepted, to go back to when a save fails. An edit
+  // that arrives is already saved, and wins over a drag still waiting to be.
   const saved = React.useRef(draft)
   const pendingSave = React.useRef<number | undefined>(undefined)
+  React.useEffect(() => {
+    window.clearTimeout(pendingSave.current)
+    saved.current = given
+  }, [given])
   React.useEffect(() => () => window.clearTimeout(pendingSave.current), [])
 
   function update(next: Draft, settle = true) {
@@ -208,17 +221,7 @@ export function CustomPresetEditor({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-        <PreviewCanvas
-          id={id}
-          code={code}
-          layout={[
-            resolved.style,
-            resolved.font,
-            resolved.fontHeading,
-            resolved.iconLibrary,
-          ].join(" ")}
-          css={preset.css}
-        />
+        <PreviewCanvas id={id} code={code} css={preset.css} />
 
         <aside
           aria-label="Customise"
@@ -348,26 +351,24 @@ function FacetSelect({
 }
 
 /**
- * Create's preview of the preset. Only a change to its `layout` (the style,
- * fonts and icons, which the frame lays out from its code) reloads it; every
- * colour and the radius arrive as `css`, listed or custom alike, and repaint
- * it in place.
+ * Create's preview of the preset. It loads once per view; after that every
+ * change, its code (style, fonts, icons) and its colours alike, is sent in
+ * and shown in place.
  */
 function PreviewCanvas({
   id,
   code,
-  layout,
   css,
 }: {
   id: string
   code: string
-  layout: string
   css: string
 }) {
   const [view, setView] = React.useState<CustomPresetView>("preview")
-  const [frame, setFrame] = React.useState({ code, layout })
-  if (layout !== frame.layout) setFrame({ code, layout })
-  const src = customPresetPreviewSrc(view, frame.code, id)
+  // The code the frame first loads with, kept until the view changes.
+  const [loaded, setLoaded] = React.useState({ view, code })
+  if (loaded.view !== view) setLoaded({ view, code })
+  const src = customPresetPreviewSrc(view, loaded.code, id)
   // Shown once it has taken the site's mode, which arrives after it loads:
   // until then it paints light, a flash on every change of style or font.
   const [shownSrc, setShownSrc] = React.useState<string | null>(null)
@@ -379,6 +380,7 @@ function PreviewCanvas({
         src={src}
         title="Your custom preset in create's preview"
         customColoursCss={css}
+        presetCode={code}
         className={cn(
           "block size-full rounded-lg border bg-background shadow-lg transition-opacity duration-150",
           !shown && "opacity-0"

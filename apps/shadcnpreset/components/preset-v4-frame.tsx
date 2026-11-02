@@ -3,7 +3,10 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 
-import { CUSTOM_COLOURS_MESSAGE_TYPE } from "@/lib/custom-preset-frame"
+import {
+  CUSTOM_COLOURS_MESSAGE_TYPE,
+  PRESET_CODE_MESSAGE_TYPE,
+} from "@/lib/custom-preset-frame"
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
 import {
   GENERATED_PREVIEW_MESSAGE_TYPE,
@@ -23,6 +26,8 @@ type PresetV4FrameProps = {
   generatedPreview?: GeneratedPreviewPayload | null
   /** A custom preset's colours, sent in as they change rather than reloading. */
   customColoursCss?: string
+  /** Its preset code (style, fonts, icons), sent in the same way. */
+  presetCode?: string
 } & Omit<
   React.ComponentPropsWithoutRef<"iframe">,
   "src" | "title" | "className" | "onLoad" | "sandbox"
@@ -37,6 +42,7 @@ export function PresetV4Frame({
   onLoad,
   generatedPreview,
   customColoursCss,
+  presetCode,
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
@@ -105,14 +111,24 @@ export function PresetV4Frame({
 
   const postCustomColours = React.useCallback(() => {
     const frameWindow = iframeRef.current?.contentWindow
-    if (!frameWindow || customColoursCss === undefined) {
+    if (!frameWindow) {
       return
     }
-    frameWindow.postMessage(
-      { type: CUSTOM_COLOURS_MESSAGE_TYPE, css: customColoursCss },
-      targetOrigin
-    )
-  }, [customColoursCss, targetOrigin])
+    // The code first: it replaces the preset's own theme, which the colours
+    // sit over.
+    if (presetCode !== undefined) {
+      frameWindow.postMessage(
+        { type: PRESET_CODE_MESSAGE_TYPE, code: presetCode },
+        targetOrigin
+      )
+    }
+    if (customColoursCss !== undefined) {
+      frameWindow.postMessage(
+        { type: CUSTOM_COLOURS_MESSAGE_TYPE, css: customColoursCss },
+        targetOrigin
+      )
+    }
+  }, [customColoursCss, presetCode, targetOrigin])
 
   const postThemeModeWithRetry = React.useCallback(() => {
     clearRetryTimers()

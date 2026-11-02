@@ -6,7 +6,9 @@ import { readBrandColours } from "@/lib/brand-theme"
 import { customColoursFrom } from "@/lib/custom-colours"
 import {
   createCustomPreset,
+  customPresetLimitResponse,
   findChatCustomPreset,
+  reachedCustomPresetLimit,
 } from "@/lib/custom-preset-store"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { withPartsAskedFor } from "@/lib/search/assistant/custom-preset-request"
@@ -39,6 +41,11 @@ export async function POST(request: Request) {
     ? await findChatCustomPreset({ userId: user.id, chatId })
     : null
   if (made) return NextResponse.json({ id: made })
+
+  const limit = await reachedCustomPresetLimit(user.id)
+  if (limit !== null) {
+    return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
+  }
 
   const colours = readBrandColours(parsed.data.text)
   if (!colours.length) {

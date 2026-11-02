@@ -68,8 +68,9 @@ export function CustomPresetPanel({
   if (preset.data) {
     return (
       <CustomPresetEditor
-        // An edit from the chat replaces what is open: start again from it.
-        key={`${id}:${preset.data.presetCode}:${JSON.stringify(preset.data.colours)}`}
+        // Another preset is another editor. An edit from the chat arrives as
+        // new props instead, so the preview keeps its frame and repaints.
+        key={id}
         id={id}
         initialCode={preset.data.presetCode}
         colours={preset.data.colours}

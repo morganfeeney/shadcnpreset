@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
 const onOpen = vi.fn()
+const onLimit = vi.fn()
 
 const { trackEvent } = await import("@/lib/analytics-events")
 const { toast } = await import("sonner")
@@ -34,6 +35,7 @@ function renderOffer() {
       chatId="chat-1"
       openId={null}
       onOpen={onOpen}
+      onLimit={onLimit}
     />
   )
 }
@@ -68,6 +70,19 @@ describe("CustomPresetOffer", () => {
       })
     )
     expect(onOpen).toHaveBeenCalledWith("cp-1")
+  })
+
+  it("offers Pro, not an error, once the account's cap is reached", async () => {
+    respond = () =>
+      new Response(JSON.stringify({ code: "custom_preset_limit", limit: 3 }), {
+        status: 402,
+      })
+    renderOffer()
+    await useColours()
+
+    expect(onLimit).toHaveBeenCalledWith(3)
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(toast.error).not.toHaveBeenCalled()
   })
 
   it("reopens the one it made rather than making another", async () => {

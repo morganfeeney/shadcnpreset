@@ -109,7 +109,17 @@ Other parts take list values only: style (${list(PRESET_FILTER_OPTIONS.styles)})
 
 Overrides set one token to an exact colour (${list(BRAND_TOKENS)}). Use them only when the person names a specific part, like "make the background #101418". Use removeOverrides to drop one.
 
-assistantMessage: say plainly what you changed, in one or two sentences, naming things as the pickers show them ("Inter", "Green", "Large", not "inter"). If the request is unclear, change nothing and ask.`
+assistantMessage: say plainly what you changed, in one or two sentences, naming things as the pickers show them ("Inter", "Green", "Large", not "inter"). If the request is unclear, change nothing and ask.
+
+Only the fields above can change. Shadows, spacing, padding, borders, sizes and any other CSS can't: for those, change nothing and say so plainly, without asking for details.`
+}
+
+/**
+ * A colour as the model gave it, less the "custom" it copies from how the
+ * prompt describes the preset ("Chart Color: custom #22C55E").
+ */
+function asWritten(colour: string) {
+  return colour.trim().replace(/^custom\s+/i, "")
 }
 
 /**
@@ -129,7 +139,7 @@ export function applyCustomPresetEdit(
   const changed: string[] = []
 
   for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
-    const value = edit[key]?.trim()
+    const value = edit[key] ? asWritten(edit[key]) : undefined
     if (!value) continue
     const name = value.toLowerCase()
     if (COLOUR_LISTS[key].includes(name)) {
@@ -156,7 +166,8 @@ export function applyCustomPresetEdit(
     )
   }
 
-  for (const { token, colour } of edit.overrides) {
+  for (const { token, colour: given } of edit.overrides) {
+    const colour = asWritten(given)
     if (!isUsableColour(colour)) continue
     colours.overrides[token as BrandToken] = colour
     changed.push(`${token}: ${colour}`)
@@ -220,6 +231,69 @@ export function describeMadeCustomPreset(
   }
   return `Made your custom preset: ${parts.join(", ")}. It’s open beside the chat. Change anything there, or tell me here.`
 }
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+/**
+ * The edit with any colour its own reply names filled in. Models write "Changed
+ * the Chart Color to #00BDDF" and leave `chartColor` empty often enough that
+ * the change would be lost; the value is taken only when the person's message
+ * holds it too, so nothing is made up.
+ */
+export function fillNamedColours(
+  edit: CustomPresetEdit,
+  message: string
+): CustomPresetEdit {
+  const filled = { ...edit }
+  const asked = message.toLowerCase()
+  for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
+    if (filled[key]) continue
+    // A colour function, a hex, or a list name, as the reply wrote it.
+    const named = new RegExp(
+      `${escapeRegExp(label)}\\s+to\\s+(?:custom\\s+)?([a-z]+\\([^)]*\\)|#[0-9a-f]{3,8}|[a-z-]+)`,
+      "i"
+    ).exec(edit.assistantMessage)
+    const value = named?.[1]
+    if (!value || !asked.includes(value.toLowerCase())) continue
+    const name = value.toLowerCase()
+    if (COLOUR_LISTS[key].includes(name) || isUsableColour(value)) {
+      filled[key] = value
+    }
+  }
+  return filled
+}
+
+/** "Theme: Green" as "the Theme to Green", for a reply. */
+function describeChange(change: string) {
+  const [part, value] = change.split(": ")
+  if (value === "removed") return `removed the ${part} override`
+  return `the ${part} to ${value}`
+}
+
+/**
+ * The reply to an edit, said from what actually changed rather than from the
+ * model, which can claim a change it did not make ("Added a red shadow to
+ * the cards"). With nothing changed, its words stand only as a question.
+ */
+export function editReply(changed: string[], edit: CustomPresetEdit): string {
+  if (changed.length) {
+    const parts = changed.map(describeChange)
+    const listed =
+      parts.length === 1
+        ? parts[0]
+        : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
+    const sentence = listed.startsWith("removed") ? listed : `changed ${listed}`
+    return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
+  }
+  // Nothing changed, so anything but a question back would be a claim.
+  const message = tidyEditReply(edit.assistantMessage, edit)
+  return message.trim().endsWith("?") ? message : NOTHING_CHANGED
+}
+
+const NOTHING_CHANGED =
+  "That isn’t something a custom preset can change. It takes colours (Base, Theme, Chart and single overrides), style, fonts, icons and radius."
 
 /**
  * The reply with any value it changed named as the pickers show it: models
