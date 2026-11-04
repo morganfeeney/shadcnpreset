@@ -47,15 +47,9 @@ export async function POST(request: Request) {
     return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
   }
 
-  const colours = readBrandColours(parsed.data.text)
-  if (!colours.length) {
-    return NextResponse.json(
-      { error: "No colours a stylesheet can use were found." },
-      { status: 400 }
-    )
-  }
-
-  const custom = customColoursFrom(colours)
+  // Without exact colours it starts as the preset itself: someone refining
+  // presets makes one to change it bit by bit.
+  const custom = customColoursFrom(readBrandColours(parsed.data.text))
   const { presetCode } = await withPartsAskedFor({
     presetCode: parsed.data.presetCode,
     colours: custom,

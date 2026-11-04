@@ -62,9 +62,11 @@ vi.mock("@/components/assistant/custom-preset-panel", async () => {
   return {
     CustomPresetPanel: ({
       id,
+      waiting,
       onClose,
     }: {
       id: string
+      waiting?: boolean
       onClose: () => void
     }) => {
       const preset = useQuery({
@@ -79,6 +81,7 @@ vi.mock("@/components/assistant/custom-preset-panel", async () => {
       return (
         <div>
           <p>Custom preset {id}</p>
+          {waiting ? <p>Editor waiting for the slide</p> : null}
           <p>Panel preset code {preset.data?.presetCode ?? "loading"}</p>
           <button type="button" onClick={onClose}>
             Close custom preset
@@ -657,6 +660,41 @@ describe("AssistantChat custom preset offer", () => {
       within(offer).getByText("Make a custom preset with #0876BD")
     ).toBeTruthy()
   })
+
+  it("shows the sponsored card after one set of presets with no colours", async () => {
+    renderPage()
+    await sendPrompt("language learning app, blue or green")
+
+    await screen.findByRole("complementary", { name: "Sponsored" })
+    expect(
+      screen.queryByRole("complementary", { name: "Custom preset" })
+    ).toBeNull()
+  })
+
+  it("offers to make the preset custom once they ask for presets again", async () => {
+    renderPage()
+    await sendPrompt("language learning app, blue or green")
+    await screen.findByRole("complementary", { name: "Sponsored" })
+    await sendPrompt("closer to cyan, and lime")
+
+    const offer = await screen.findByRole("complementary", {
+      name: "Custom preset",
+    })
+    expect(within(offer).getByText("Make this preset your own")).toBeTruthy()
+    await act(async () => {
+      within(offer)
+        .getByRole("button", { name: "Make it custom" })
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    })
+
+    const call = vi
+      .mocked(fetch)
+      .mock.calls.find(([url]) => url === "/api/custom-presets")
+    expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({
+      presetCode: PRESETS[0].code,
+      text: "closer to cyan, and lime",
+    })
+  })
 })
 
 describe("AssistantChat Pro wall", () => {
@@ -727,6 +765,29 @@ describe("AssistantChat custom preset panel", () => {
 
     expect(panel().hasAttribute("data-open")).toBe(false)
     expect(window.location.search).toBe("")
+  })
+
+  it("holds the editor until the panel has slid in", async () => {
+    let slidIn = () => {}
+    const finished = new Promise<void>((resolve) => {
+      slidIn = resolve
+    })
+    // jsdom runs no transitions; this one is the panel's slide.
+    HTMLElement.prototype.getAnimations = () => [
+      { finished } as unknown as Animation,
+    ]
+    try {
+      renderPage()
+      await openFromCard()
+
+      expect(
+        await screen.findByText("Editor waiting for the slide")
+      ).toBeTruthy()
+      await act(async () => slidIn())
+      expect(screen.queryByText("Editor waiting for the slide")).toBeNull()
+    } finally {
+      delete (HTMLElement.prototype as Partial<HTMLElement>).getAnimations
+    }
   })
 
   it("opens the one the address names on arrival, without the slide", async () => {

@@ -27,9 +27,12 @@ async function fetchCustomPreset(id: string): Promise<CustomPresetResponse> {
  */
 export function CustomPresetPanel({
   id,
+  waiting = false,
   onClose,
 }: {
   id: string
+  /** Still sliding in: the skeleton holds the editor's place until it stops. */
+  waiting?: boolean
   onClose: () => void
 }) {
   const preset = useQuery({
@@ -65,7 +68,7 @@ export function CustomPresetPanel({
     </Button>
   )
 
-  if (preset.data) {
+  if (preset.data && !waiting) {
     return (
       <CustomPresetEditor
         // Another preset is another editor. An edit from the chat arrives as
@@ -90,7 +93,7 @@ export function CustomPresetPanel({
         <span className="flex-1" />
         {end}
       </header>
-      {preset.isError ? (
+      {preset.isError && !waiting ? (
         <p className="p-4 text-sm text-muted-foreground">
           This custom preset couldn’t be found.
         </p>
