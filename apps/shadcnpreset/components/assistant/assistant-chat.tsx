@@ -15,6 +15,7 @@ import { ProWall } from "@/components/assistant/pro-wall"
 import { CustomPresetLimitNote } from "@/components/assistant/custom-preset-limit-note"
 import { CustomPresetOffer } from "@/components/assistant/custom-preset-offer"
 import { CustomPresetPanel } from "@/components/assistant/custom-preset-panel"
+import { useSettledAfterMotion } from "@/components/assistant/use-settled-after-motion"
 import { useWorkspacePreset } from "@/components/assistant/use-workspace-preset"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
 import { RecentChatsList } from "@/components/assistant/recent-chats-list"
@@ -39,8 +40,7 @@ import {
 import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { trackEvent } from "@/lib/analytics-events"
 import { assistantChatPath } from "@/lib/assistant-chat-path"
-import { readBrandColours, type BrandColour } from "@/lib/brand-theme"
-import { DEFAULT_CUSTOM_PRESET_BASE } from "@/lib/custom-preset"
+import { customPresetOffer } from "@/lib/custom-preset-offer"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
@@ -145,29 +145,12 @@ export function AssistantChat({
     !pending &&
     messages.some((m) => m.role === "assistant")
 
-  // Someone who gave exact colours wants them used, which no preset can do,
-  // so the custom preset offer takes the sponsored card's place. The latest
-  // message naming any keeps it for the rest of that conversation: "bolder"
-  // still means bolder in those colours. It builds on the preset the
-  // assistant picked last, or the default before it has picked one.
-  const customPreset = React.useMemo(() => {
-    let source: { text: string; colours: BrandColour[] } | null = null
-    for (let i = messages.length - 1; i >= 0 && !source; i--) {
-      const m = messages[i]
-      if (m.role !== "user") continue
-      const colours = readBrandColours(m.content)
-      if (colours.length) source = { text: m.content, colours }
-    }
-    if (!source) return null
-    const picked = messages.findLast(
-      (m) => m.role === "assistant" && m.kind === "presets"
-    )
-    const presetCode =
-      (picked?.role === "assistant" && picked.kind === "presets"
-        ? picked.presets[0]?.code
-        : undefined) ?? DEFAULT_CUSTOM_PRESET_BASE
-    return { ...source, presetCode }
-  }, [messages])
+  // Someone wanting more than a preset can give is offered a custom preset
+  // in the sponsored card's place.
+  const customPreset = React.useMemo(
+    () => customPresetOffer(messages),
+    [messages]
+  )
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
@@ -187,6 +170,11 @@ export function AssistantChat({
   if (workspace.id && workspace.id !== shownPresetId) {
     setShownPresetId(workspace.id)
   }
+
+  // A newly opened preset's editor waits out the slide: loading its preview
+  // while the panel grows makes it judder.
+  const panelRef = React.useRef<HTMLElement>(null)
+  const settledPresetId = useSettledAfterMotion(shownPresetId, panelRef)
 
   // A link, a sidebar click and the browser's back button all arrive the same
   // way: as a new URL. The page stays mounted across those, so the chat has
@@ -230,7 +218,7 @@ export function AssistantChat({
 
   return (
     <AssistantChatProvider value={{ ...chat, deleteChat: removeChat }}>
-      <SidebarProvider className="h-full min-h-0 overflow-hidden">
+      <SidebarProvider className="@container/workspace h-full min-h-0 overflow-hidden">
         <div
           data-open={panelOpen || undefined}
           data-instant={workspace.instant || undefined}
@@ -432,6 +420,7 @@ export function AssistantChat({
         </div>
 
         <section
+          ref={panelRef}
           aria-label="Custom preset"
           inert={!panelOpen}
           data-open={panelOpen || undefined}
@@ -448,10 +437,15 @@ export function AssistantChat({
             WORKSPACE_MOTION
           )}
         >
-          {/* Laid out at its open width, so it slides in rather than reflowing. */}
-          <div className="h-full xl:min-w-[48rem]">
+          {/* At its open width (less its border) throughout, so the preview,
+            a whole page, slides in rather than reflowing every frame. */}
+          <div className="h-full xl:w-[calc(100cqw-300px-1rem-2px)]">
             {shownPresetId ? (
-              <CustomPresetPanel id={shownPresetId} onClose={workspace.close} />
+              <CustomPresetPanel
+                id={shownPresetId}
+                waiting={shownPresetId !== settledPresetId}
+                onClose={workspace.close}
+              />
             ) : null}
           </div>
         </section>

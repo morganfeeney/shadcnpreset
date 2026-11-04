@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils"
 
 /**
  * Offered under an answer to someone who gave exact colours, which no preset
- * code can hold: a custom preset puts them on the preset the assistant
- * picked. Making one saves it and opens it beside the chat, free; the card
- * then reopens that one rather than making another.
+ * code can hold, or who is adjusting the presets they were given: a custom
+ * preset makes either exact, from the preset the assistant picked. Making
+ * one saves it and opens it beside the chat, free; the card then reopens
+ * that one rather than making another.
  *
  * Counts a view per chat and set of colours, as the sponsored card counts its
  * impressions, so the makes read against it.
@@ -45,11 +46,11 @@ export function CustomPresetOffer({
   const isOpen = Boolean(madeId) && madeId === openId
   const colourKey = colours.map(({ colour }) => colour).join(",")
 
+  const colourCount = colours.length
+
   React.useEffect(() => {
-    trackEvent("custom_preset_offer_view", {
-      colour_count: colourKey.split(",").length,
-    })
-  }, [colourKey, chatId])
+    trackEvent("custom_preset_offer_view", { colour_count: colourCount })
+  }, [colourKey, colourCount, chatId])
 
   async function make() {
     if (madeId) {
@@ -83,38 +84,35 @@ export function CustomPresetOffer({
     onOpen(body.id)
   }
 
-  const title =
-    colours.length === 1
-      ? `Make a custom preset with ${colours[0].colour}`
-      : "Make a custom preset in your colours"
+  const copy = offerCopy(colours)
 
   return (
     <aside aria-label="Custom preset" className={className}>
       <div
         className={cn(
-          "flex flex-col gap-4 rounded-lg border p-4 transition-colors sm:flex-row",
+          "grid max-w-lg justify-items-start gap-4 rounded-lg border p-4 transition-colors",
           isOpen && "border-primary"
         )}
       >
-        <ul aria-label="Your colours" className="flex shrink-0 gap-1.5">
-          {colours.map(({ colour }) => (
-            <li key={colour} title={colour}>
-              <span
-                className="relative block size-10 rounded-md border"
-                style={{ background: colour }}
-              >
-                <span className="sr-only">{colour}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <div className="-mt-1 flex min-w-0 flex-1 flex-col gap-1">
-          <p className="truncate text-sm font-medium">{title}</p>
-          <p className="text-xs text-balance text-muted-foreground">
-            Presets use a fixed colour palette, so they can&#39;t match your
-            exact colours. Create a custom preset to see your colours in action
-            and get the code.
-          </p>
+        <div className="flex gap-3">
+          {colours.length ? (
+            <ul aria-label="Your colours" className="flex shrink-0 gap-1.5">
+              {colours.map(({ colour }) => (
+                <li key={colour} title={colour}>
+                  <span
+                    className="relative block size-10 rounded-md border"
+                    style={{ background: colour }}
+                  >
+                    <span className="sr-only">{colour}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="-mt-1 flex min-w-0 flex-1 flex-col gap-1">
+            <p className="truncate text-sm font-medium">{copy.title}</p>
+            <p className="text-xs text-muted-foreground">{copy.body}</p>
+          </div>
         </div>
         <Button
           type="button"
@@ -123,13 +121,28 @@ export function CustomPresetOffer({
           disabled={making}
           onClick={() => void make()}
         >
-          {making
-            ? "Opening…"
-            : isOpen
-              ? "Open on the right"
-              : "Use my colours"}
+          {making ? "Opening…" : isOpen ? "Open on the right" : copy.action}
         </Button>
       </div>
     </aside>
   )
+}
+
+/** Without colours, they have been adjusting presets rather than naming any. */
+function offerCopy(colours: BrandColour[]) {
+  if (!colours.length) {
+    return {
+      title: "Make this preset your own",
+      body: "Presets come from fixed lists, so they only get close. A custom preset changes any colour, font or corner exactly as you ask, and gives you the code.",
+      action: "Make it custom",
+    }
+  }
+  return {
+    title:
+      colours.length === 1
+        ? `Make a custom preset with ${colours[0].colour}`
+        : "Make a custom preset in your colours",
+    body: "Presets use a fixed colour palette, so they can't match your exact colours. Create a custom preset to see your colours in action and get the code.",
+    action: "Use my colours",
+  }
 }

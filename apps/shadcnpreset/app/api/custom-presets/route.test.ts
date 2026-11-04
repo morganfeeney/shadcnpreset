@@ -182,12 +182,14 @@ describe("POST /api/custom-presets", () => {
     expect(query).not.toHaveBeenCalled()
   })
 
-  it("refuses a message with no usable colours", async () => {
+  it("makes it as the preset itself when the message gives no colours", async () => {
     const response = await POST(
-      request("POST", { presetCode: CODE, text: "pantone 200 C" })
+      request("POST", { presetCode: CODE, text: "a little more rounding" })
     )
-    expect(response.status).toBe(400)
-    expect(query).not.toHaveBeenCalled()
+
+    expect(response.status).toBe(200)
+    expect(query.mock.calls[0][1][2]).toBe(CODE)
+    expect(JSON.parse(query.mock.calls[0][1][3])).toEqual({ overrides: {} })
   })
 })
 

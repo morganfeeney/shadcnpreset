@@ -2,7 +2,7 @@
 
 import { HeartIcon } from "@phosphor-icons/react"
 import { motion, useReducedMotion } from "motion/react"
-import { memo, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -159,6 +159,41 @@ export const PresetStyleOverviewCardPreview = memo(
   }
 )
 
+/**
+ * Scales content laid out at `virtualWidth` down to the wrapper's width.
+ *
+ * The transform is written straight onto the content, not kept in state or a
+ * custom property: a list narrowing (beside the assistant's custom preset
+ * panel as it slides open) resizes every card each frame, and redrawing or
+ * restyling whole previews that often judders.
+ */
+function useScaleToFit(virtualWidth: number) {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const scale = useRef(1)
+  const content = useRef<HTMLDivElement | null>(null)
+  const [measured, setMeasured] = useState(false)
+
+  const contentRef = useCallback((node: HTMLDivElement | null) => {
+    content.current = node
+    if (node) node.style.transform = `scale(${scale.current})`
+  }, [])
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return
+      scale.current = entry.contentRect.width / virtualWidth
+      contentRef(content.current)
+      setMeasured(entry.contentRect.width > 0)
+    })
+    observer.observe(wrapper)
+    return () => observer.disconnect()
+  }, [virtualWidth, contentRef])
+
+  return { wrapperRef, contentRef, measured }
+}
+
 function PresetStyleOverviewCardPreviewInner({
   code,
   title,
@@ -170,26 +205,10 @@ function PresetStyleOverviewCardPreviewInner({
   onPreview,
   hoverHint,
 }: PresetStyleOverviewCardPreviewProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null)
-  const [containerWidth, setContainerWidth] = useState(0)
+  const { wrapperRef, contentRef, measured } = useScaleToFit(virtualWidth)
   const [shouldRender, setShouldRender] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const isMobile = useIsMobile()
-
-  useEffect(() => {
-    const node = wrapperRef.current
-    if (!node) return
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const [entry] = entries
-      if (entry) {
-        setContainerWidth(entry.contentRect.width)
-      }
-    })
-    resizeObserver.observe(node)
-
-    return () => resizeObserver.disconnect()
-  }, [])
 
   useEffect(() => {
     const node = wrapperRef.current
@@ -212,7 +231,7 @@ function PresetStyleOverviewCardPreviewInner({
     intersectionObserver.observe(node)
 
     return () => intersectionObserver?.disconnect()
-  }, [isMobile])
+  }, [isMobile, wrapperRef])
 
   const isV4Iframe = previewVariant === "v4-iframe"
 
@@ -221,17 +240,12 @@ function PresetStyleOverviewCardPreviewInner({
     return getPresetPreviewUrl(code, "preview")
   }, [code, isV4Iframe])
 
-  const scale = useMemo(() => {
-    if (!containerWidth) return 1
-    return containerWidth / virtualWidth
-  }, [containerWidth, virtualWidth])
-
   const showV4UrlError =
-    isV4Iframe && shouldRender && containerWidth > 0 && previewSrc === null
+    isV4Iframe && shouldRender && measured && previewSrc === null
 
   const canRenderPreview = isV4Iframe
-    ? shouldRender && containerWidth > 0 && previewSrc !== null
-    : shouldRender && containerWidth > 0
+    ? shouldRender && measured && previewSrc !== null
+    : shouldRender && measured
 
   const showHoverHint = hoverHint ?? !onPreview
 
@@ -297,11 +311,11 @@ function PresetStyleOverviewCardPreviewInner({
           ) : (
             <>
               <CardContent
+                ref={contentRef}
                 className="pointer-events-none absolute inset-0 p-0"
                 style={{
                   width: virtualWidth,
                   height: virtualHeight,
-                  transform: `scale(${scale})`,
                   transformOrigin: "top left",
                 }}
               >
