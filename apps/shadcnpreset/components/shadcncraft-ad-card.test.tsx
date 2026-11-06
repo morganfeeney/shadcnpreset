@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { ShadcncraftAdCard } from "@/components/shadcncraft-ad-card"
@@ -37,6 +43,34 @@ describe("ShadcncraftAdCard", () => {
       partner: "shadcncraft",
       placement: "assistant-chat",
     })
+  })
+
+  it("waits until it is on screen when asked to count when seen", () => {
+    let report: IntersectionObserverCallback = () => {}
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          report = callback
+        }
+        observe() {}
+        disconnect() {}
+      }
+    )
+    render(<ShadcncraftAdCard placement="learn-end" countWhenSeen />)
+    expect(trackEvent).not.toHaveBeenCalled()
+
+    act(() => {
+      report(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver
+      )
+    })
+    expect(trackEvent).toHaveBeenCalledWith("affiliate_impression", {
+      partner: "shadcncraft",
+      placement: "learn-end",
+    })
+    vi.unstubAllGlobals()
   })
 
   it("counts an impression per conversation, not per render", () => {

@@ -5,6 +5,7 @@ import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { shadcncraftHref } from "@/lib/affiliate-link"
 import { trackEvent } from "@/lib/analytics-events"
+import { useSponsorImpression } from "@/lib/use-sponsor-impression"
 
 const PARTNER = "shadcncraft"
 
@@ -23,6 +24,12 @@ type ShadcncraftAdCardProps = {
    * and each conversation it is shown beside is an impression of its own.
    */
   impressionKey?: string
+  /**
+   * Count the impression when the card first scrolls into view rather than
+   * when it mounts. For a card at the end of a page, which many readers never
+   * reach, or one hidden at some widths.
+   */
+  countWhenSeen?: boolean
   className?: string
 }
 
@@ -37,16 +44,17 @@ type ShadcncraftAdCardProps = {
 export function ShadcncraftAdCard({
   placement,
   impressionKey,
+  countWhenSeen = false,
   className,
 }: ShadcncraftAdCardProps) {
   const href = shadcncraftHref(placement)
+  const ref = React.useRef<HTMLElement>(null)
+  const seen = useSeen(ref, countWhenSeen)
 
-  React.useEffect(() => {
-    trackEvent("affiliate_impression", { partner: PARTNER, placement })
-  }, [placement, impressionKey])
+  useSponsorImpression(seen, PARTNER, placement, impressionKey)
 
   return (
-    <aside aria-label="Sponsored" className={className}>
+    <aside ref={ref} aria-label="Sponsored" className={className}>
       <a
         href={href}
         target="_blank"
@@ -90,4 +98,28 @@ export function ShadcncraftAdCard({
       </a>
     </aside>
   )
+}
+
+/** True once the element has been on screen; always true when not watching. */
+function useSeen(ref: React.RefObject<HTMLElement | null>, watch: boolean) {
+  // Without IntersectionObserver there is no way to tell, so count on mount.
+  const [seen, setSeen] = React.useState(
+    () => !watch || typeof IntersectionObserver === "undefined"
+  )
+
+  React.useEffect(() => {
+    const node = ref.current
+    if (seen || !node) return
+    // An element hidden with display:none never intersects, so a card hidden
+    // at this width is never counted.
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      setSeen(true)
+      observer.disconnect()
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [ref, seen])
+
+  return seen
 }
