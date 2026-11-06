@@ -52,6 +52,9 @@ export function PresetV4Frame({
   const retryTimersRef = React.useRef<number[]>([])
 
   React.useEffect(() => {
+    // Reset before the new src renders: a cached page can load before any
+    // later effect runs, and resetting after would undo its load for good.
+    hasLoadedRef.current = false
     setActiveSrc(src)
   }, [src])
 
@@ -145,10 +148,6 @@ export function PresetV4Frame({
       }, delay)
     )
   }, [clearRetryTimers, postCustomColours, postGeneratedPreview, postThemeMode])
-
-  React.useEffect(() => {
-    hasLoadedRef.current = false
-  }, [activeSrc])
 
   React.useEffect(() => {
     if (!hasLoadedRef.current) {
