@@ -63,13 +63,9 @@ export type EditedCustomPreset = {
   colours: CustomColours
 }
 
-/**
- * The answer while a custom preset is open, an edit to it, or to a request
- * that made one (`created`), instead of presets.
- */
+/** The answer while a custom preset is open: an edit to it, not presets. */
 type CustomPresetTurn = {
   phase: "custom"
-  created?: boolean
   assistantMessage: string
   changed: string[]
   customPreset: EditedCustomPreset
@@ -223,13 +219,6 @@ type UseAssistantChatOptions = {
   customPresetId?: string | null
   /** An edit to that custom preset has been saved. */
   onCustomPresetEdited?: (preset: EditedCustomPreset) => void
-  /** A message asked for a custom preset past the cap an account keeps. */
-  onCustomPresetLimit?: (limit: number) => void
-  /**
-   * A message asked for a custom preset and the answer made it. Called before
-   * `onChatCreated`, so a new chat's address can carry it.
-   */
-  onCustomPresetCreated?: (preset: EditedCustomPreset) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -251,16 +240,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onCustomPresetEditedRef.current = onCustomPresetEdited
   }, [onCustomPresetEdited])
-  const onCustomPresetLimit = options?.onCustomPresetLimit
-  const onCustomPresetLimitRef = React.useRef(onCustomPresetLimit)
-  React.useEffect(() => {
-    onCustomPresetLimitRef.current = onCustomPresetLimit
-  }, [onCustomPresetLimit])
-  const onCustomPresetCreated = options?.onCustomPresetCreated
-  const onCustomPresetCreatedRef = React.useRef(onCustomPresetCreated)
-  React.useEffect(() => {
-    onCustomPresetCreatedRef.current = onCustomPresetCreated
-  }, [onCustomPresetCreated])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -424,11 +403,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         kind: "pro_required"
         args: SendVars
       }
-    | {
-        kind: "custom_preset_limit"
-        limit: number
-        args: SendVars
-      }
 
   type SendContext = {
     previousMessages: ChatMessage[]
@@ -475,15 +449,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         return { kind: "pro_required", args }
       }
 
-      if (
-        response.status === 402 &&
-        "code" in data &&
-        data.code === "custom_preset_limit"
-      ) {
-        const limit = (data as { limit?: number }).limit ?? 0
-        return { kind: "custom_preset_limit", limit, args }
-      }
-
       if (!response.ok) {
         throw new AssistantSendError(
           "error" in data && typeof data.error === "string"
@@ -524,14 +489,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         trackEvent("pro_wall_view", { page_path: pathname })
         return
       }
-      // Past the custom preset cap: the question goes back, and the page
-      // offers Pro.
-      if (result.kind === "custom_preset_limit") {
-        setMessages(context?.previousMessages ?? [])
-        onCustomPresetLimitRef.current?.(result.limit)
-        return
-      }
-
 
       const latencyMs = context
         ? Math.max(0, Date.now() - context.requestStartedAt)
@@ -576,8 +533,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         onPreviewRef.current?.(data.preview)
       }
       if (data.phase === "custom") {
-        if (data.created) onCustomPresetCreatedRef.current?.(data.customPreset)
-        else onCustomPresetEditedRef.current?.(data.customPreset)
+        onCustomPresetEditedRef.current?.(data.customPreset)
       }
 
       // The answer names the chat: it exists now, it belongs in the history,
@@ -686,13 +642,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       throw new AssistantSendError(
         "Authentication required",
         "auth_required"
-      )
-    }
-    // Thrown so the composer gives the question back, to send after Pro.
-    if (result.kind === "custom_preset_limit") {
-      throw new AssistantSendError(
-        "Custom preset limit reached",
-        "custom_preset_limit"
       )
     }
   }

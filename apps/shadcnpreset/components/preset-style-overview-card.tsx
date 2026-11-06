@@ -1,6 +1,7 @@
 "use client"
 
-import { HeartIcon } from "@phosphor-icons/react"
+import Link from "next/link"
+import { HeartIcon, PaletteIcon } from "@phosphor-icons/react"
 import { motion, useReducedMotion } from "motion/react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -15,6 +16,8 @@ import {
 import { PresetV4ScaledFrame } from "@/components/preset-v4-scaled-frame"
 import { PresetCard1StyleOverview } from "@/components/preset-swatch/components/preset-card-1-style-overview"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { usePresetCardCustomize } from "@/components/preset-card-customize"
+import { customizePresetPath } from "@/lib/preset-draft"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics-events"
@@ -306,7 +309,9 @@ function PresetStyleOverviewCardPreviewInner({
                 virtualWidth={virtualWidth}
                 className="absolute inset-0"
               />
-              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
+              {showHoverHint ? (
+                <PresetStyleOverviewCardHoverHint code={code} title={title} />
+              ) : null}
             </>
           ) : (
             <>
@@ -323,7 +328,9 @@ function PresetStyleOverviewCardPreviewInner({
                   <PresetCard1StyleOverview initialCode={code} className="h-full w-full" />
                 </div>
               </CardContent>
-              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
+              {showHoverHint ? (
+                <PresetStyleOverviewCardHoverHint code={code} title={title} />
+              ) : null}
             </>
           )
         ) : (
@@ -347,16 +354,70 @@ function PresetStyleOverviewCardPreviewInner({
   )
 }
 
-function PresetStyleOverviewCardHoverHint() {
+/**
+ * Preview, over the card's own click target that opens it, and Customize
+ * beneath it: a real control, shown on hover and while the card has focus,
+ * so a keyboard reaches it too.
+ */
+function PresetStyleOverviewCardHoverHint({
+  code,
+  title,
+}: {
+  code: string
+  title: string
+}) {
+  const inPlace = usePresetCardCustomize()
+  const customizing = inPlace?.making === code
+  const customizeClassName = cn(
+    "pointer-events-auto invisible relative group-hover/card:visible group-focus-within/card:visible focus-visible:visible",
+    customizing && "visible"
+  )
   return (
-    <div
-      aria-hidden
-      className="absolute inset-0 z-10 flex items-center justify-center rounded-t-xl rounded-b-none"
-    >
-      <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100" />
-      <span className="pointer-events-none invisible relative z-10 group-hover/card:visible">
+    <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-t-xl rounded-b-none">
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-focus-within/card:opacity-100 group-hover/card:opacity-100",
+          customizing && "opacity-100"
+        )}
+      />
+      <span
+        aria-hidden
+        className={cn(
+          "invisible relative group-hover/card:visible",
+          customizing && "visible"
+        )}
+      >
         <span className={cn(buttonVariants())}>Preview</span>
       </span>
+      {inPlace ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className={customizeClassName}
+          aria-label={`Customize preset ${title}`}
+          disabled={customizing}
+          onClick={() => inPlace.customize(code)}
+        >
+          {customizing ? "Opening…" : "Customize"}
+          <PaletteIcon data-icon="inline-end" />
+        </Button>
+      ) : (
+        <Link
+          href={customizePresetPath(code)}
+          className={cn(buttonVariants({ variant: "secondary" }), customizeClassName)}
+          aria-label={`Customize preset ${title}`}
+          onClick={() =>
+            trackEvent("custom_preset_customize_click", {
+              preset_code: code,
+              page_path: getPagePath(),
+            })
+          }
+        >
+          Customize
+          <PaletteIcon data-icon="inline-end" />
+        </Link>
+      )}
     </div>
   )
 }

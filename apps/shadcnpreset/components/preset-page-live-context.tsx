@@ -2,67 +2,34 @@
 
 import * as React from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { decodePreset, encodePreset } from "shadcn/preset"
 
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
 import {
   getGeneratedPreviewServerSnapshot,
   getGeneratedPreviewSnapshot,
-  setStoredGeneratedPreview,
   subscribeToGeneratedPreview,
 } from "@/lib/generated-preview/store"
 import {
   parsePresetPreviewPageName,
-  parsePresetSidebarTab,
   presetBrowsePath,
-  PRESET_CHAT_PARAM,
   type PresetPreviewPageName,
-  type PresetSidebarTab,
 } from "@/lib/preset-preview"
 import { syncPresetPageSocialMeta } from "@/lib/sync-preset-social-meta"
 
 type PresetPageLiveContextValue = {
   livePresetCode: string
-  canonicalPresetCode: string
   view: PresetPreviewPageName
-  tab: PresetSidebarTab
-  generatedPreview: GeneratedPreviewPayload | null
   /**
-   * A generated view was linked to, and its preview is still being recovered
-   * from the chat in the URL. The tab and the pane hold their shape for this
-   * window rather than falling back to the default view and snapping back.
+   * A preview generated in Ask AI, held for this session. Ask AI stores it as
+   * it links here, so the generated view has something to show.
    */
-  generatedPreviewPending: boolean
+  generatedPreview: GeneratedPreviewPayload | null
   selectLivePreset: (preset: string) => void
   setLiveView: (view: PresetPreviewPageName) => void
-  setLiveTab: (tab: PresetSidebarTab) => void
-  setGeneratedPreview: (preview: GeneratedPreviewPayload | null) => void
-  /**
-   * Shows a generated preview in the main pane, switching preset when the
-   * preview names a different one (e.g. "show buttons with preset b0"). One
-   * navigation, so preset and view cannot race each other.
-   */
-  showGeneratedPreview: (
-    preview: GeneratedPreviewPayload & { presetCode?: string }
-  ) => void
-  /**
-   * Drops the generated preview this session was holding and returns the pane
-   * to the preset's own views. The chat it came from is left alone; the URL
-   * gives up the linked chat too, so a reload does not restore either.
-   */
-  clearGeneratedPreview: () => void
 }
-
-/** How long to wait for a linked chat before giving up on its preview. */
-const GENERATED_PREVIEW_RESTORE_TIMEOUT_MS = 8000
 
 const PresetPageLiveContext =
   React.createContext<PresetPageLiveContextValue | null>(null)
-
-function normalizeCanonical(code: string): string {
-  const decoded = decodePreset(code)
-  return decoded ? encodePreset(decoded) : code
-}
 
 export function PresetPageLiveProvider({
   children,
@@ -74,7 +41,6 @@ export function PresetPageLiveProvider({
   const searchParams = useSearchParams()
   const livePresetCode = params.code ?? ""
   const view = parsePresetPreviewPageName(searchParams.get("view"))
-  const tab = parsePresetSidebarTab(searchParams.get("tab"))
   // Session-scoped and client-only: the server snapshot is null so hydration
   // matches, then React swaps in any preview stored earlier this session.
   const generatedPreview = React.useSyncExternalStore(
@@ -83,132 +49,44 @@ export function PresetPageLiveProvider({
     getGeneratedPreviewServerSnapshot
   )
 
-  // Bounded: a chat that never arrives — signed out, deleted, a bad id — must
-  // not leave the pane spinning. On timeout the view falls back as before.
-  const wantsRestore =
-    view === "generated" && Boolean(searchParams.get(PRESET_CHAT_PARAM))
-  const [restoreTimedOut, setRestoreTimedOut] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!wantsRestore) return
-    const id = window.setTimeout(
-      () => setRestoreTimedOut(true),
-      GENERATED_PREVIEW_RESTORE_TIMEOUT_MS
-    )
-    return () => window.clearTimeout(id)
-  }, [wantsRestore])
-
-  const generatedPreviewPending =
-    wantsRestore && !generatedPreview && !restoreTimedOut
-
-  const canonicalPresetCode = React.useMemo(
-    () => normalizeCanonical(livePresetCode),
-    [livePresetCode]
-  )
-
   const selectLivePreset = React.useCallback(
     (preset: string) => {
       if (preset === livePresetCode) return
-      router.push(presetBrowsePath(preset, view, tab), { scroll: false })
+      router.push(presetBrowsePath(preset, view), { scroll: false })
     },
-    [livePresetCode, router, tab, view]
+    [livePresetCode, router, view]
   )
 
   const setLiveView = React.useCallback(
     (next: PresetPreviewPageName) => {
       if (next === view) return
-      router.replace(presetBrowsePath(livePresetCode, next, tab), {
-        scroll: false,
-      })
+      // A draft in the address stays with the preset as its view changes.
+      router.replace(
+        presetBrowsePath(
+          livePresetCode,
+          next,
+          new URLSearchParams(window.location.search)
+        ),
+        { scroll: false }
+      )
     },
-    [livePresetCode, router, tab, view]
-  )
-
-  const setLiveTab = React.useCallback(
-    (next: PresetSidebarTab) => {
-      if (next === tab) return
-      router.replace(presetBrowsePath(livePresetCode, view, next), {
-        scroll: false,
-      })
-    },
-    [livePresetCode, router, tab, view]
+    [livePresetCode, router, view]
   )
 
   React.useEffect(() => {
     if (!livePresetCode) return
-    let cancelled = false
-
-    void (async () => {
-      await syncPresetPageSocialMeta(livePresetCode)
-      if (cancelled) {
-        return
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
+    void syncPresetPageSocialMeta(livePresetCode)
   }, [livePresetCode])
-
-  const setGeneratedPreview = React.useCallback(
-    (preview: GeneratedPreviewPayload | null) => {
-      setStoredGeneratedPreview(preview)
-    },
-    []
-  )
-
-  const showGeneratedPreview = React.useCallback(
-    (preview: GeneratedPreviewPayload & { presetCode?: string }) => {
-      setStoredGeneratedPreview({ title: preview.title, code: preview.code })
-      const nextCode = preview.presetCode ?? livePresetCode
-      router.replace(presetBrowsePath(nextCode, "generated", tab), {
-        scroll: false,
-      })
-    },
-    [livePresetCode, router, tab]
-  )
-
-  /**
-   * Only replaces the URL when it is actually carrying generated-view state,
-   * so clearing an already-plain page is not a navigation.
-   */
-  const clearGeneratedPreview = React.useCallback(() => {
-    setStoredGeneratedPreview(null)
-    if (view === "preview" && !searchParams.get(PRESET_CHAT_PARAM)) return
-    router.replace(presetBrowsePath(livePresetCode, "preview", tab), {
-      scroll: false,
-    })
-  }, [livePresetCode, router, searchParams, tab, view])
 
   const value = React.useMemo(
     () => ({
       livePresetCode,
-      canonicalPresetCode,
       view,
-      tab,
       generatedPreview,
-      generatedPreviewPending,
       selectLivePreset,
       setLiveView,
-      setLiveTab,
-      setGeneratedPreview,
-      showGeneratedPreview,
-      clearGeneratedPreview,
     }),
-    [
-      livePresetCode,
-      canonicalPresetCode,
-      view,
-      tab,
-      generatedPreview,
-      generatedPreviewPending,
-      selectLivePreset,
-      setLiveView,
-      setLiveTab,
-      setGeneratedPreview,
-      showGeneratedPreview,
-      clearGeneratedPreview,
-    ]
+    [livePresetCode, view, generatedPreview, selectLivePreset, setLiveView]
   )
 
   return (

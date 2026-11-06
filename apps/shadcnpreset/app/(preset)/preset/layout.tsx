@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { cacheLife } from "next/cache"
 
 import { PresetPageLiveProvider } from "@/components/preset-page-live-context"
+import { WideLayoutNoFooter } from "@/components/wide-layout-no-footer"
 import { getVotedPresetsFeed } from "@/lib/preset-feed"
 import { toPresetSidebarItem } from "@/lib/preset-sidebar-item"
 
@@ -25,11 +26,14 @@ export default async function PresetLayout({
 }) {
   const communityItems = await getCachedCommunitySidebarItems()
 
+  // The preset fills the window under the header, as the customizer does.
   return (
-    <PresetPageLiveProvider>
-      <PresetBrowseSurface communityItems={communityItems}>
-        {children}
-      </PresetBrowseSurface>
-    </PresetPageLiveProvider>
+    <WideLayoutNoFooter>
+      <PresetPageLiveProvider>
+        <PresetBrowseSurface communityItems={communityItems}>
+          {children}
+        </PresetBrowseSurface>
+      </PresetPageLiveProvider>
+    </WideLayoutNoFooter>
   )
 }

@@ -42,7 +42,6 @@ vi.mock("ai", async (importOriginal) => ({
 }))
 
 const { POST } = await import("@/app/api/assistant/route")
-const { resolvePresetFromCode } = await import("@/lib/preset")
 
 const USER = { id: "user-1", name: "Morgan" }
 /** An id for a chat that used to exist. */
@@ -288,108 +287,30 @@ describe("POST /api/assistant with a custom preset open", () => {
 })
 
 describe("POST /api/assistant asking for a custom preset", () => {
-  const ASK = "Make a custom preset with Lora, Raleway and #DE00CE"
-
-  const FONTS = {
-    assistantMessage: "",
-    style: null,
-    font: "raleway",
-    fontHeading: "lora",
-    iconLibrary: null,
-    radius: null,
-    baseColor: null,
-    theme: "#000000",
-    chartColor: null,
-    overrides: [],
-    removeOverrides: [],
-  }
-
   function made() {
     return query.mock.calls.find(([sql]) =>
       String(sql).includes("INSERT INTO custom_presets")
     )
   }
 
-  it("makes it with the fonts asked for and the colours exactly", async () => {
-    generateText.mockResolvedValue({ output: FONTS })
-
-    const response = await post({
-      messages: [{ role: "user", content: ASK }],
-    })
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(body).toMatchObject({
-      phase: "custom",
-      created: true,
-      chatId: "server-minted",
-      customPreset: { colours: { theme: "#DE00CE", overrides: {} } },
-    })
-    expect(body.assistantMessage).toContain("Raleway with Lora for headings")
-    const preset = resolvePresetFromCode(body.customPreset.presetCode)
-    expect(preset?.font).toBe("raleway")
-    expect(preset?.fontHeading).toBe("lora")
-    // Saved with the chat that asked, under the id the answer gives.
-    const [, params] = made()!
-    expect(params.slice(0, 2)).toEqual([body.customPreset.id, USER.id])
-    expect(params[4]).toBe("server-minted")
-    expect(countedGenerations()).toHaveLength(1)
-  })
-
-  it("builds on the preset last offered in the chat", async () => {
-    generateText.mockResolvedValue({
-      output: { ...FONTS, font: null, fontHeading: null },
-    })
-    getAssistantChatForUser.mockResolvedValue({
-      id: CLIENT_CHAT_ID,
+  it("answers with presets to make one from, rather than making it", async () => {
+    await post({
       messages: [
-        { role: "user", content: "Mira presets" },
-        {
-          role: "assistant",
-          kind: "presets",
-          content: "Here you go.",
-          presets: [{ code: "b1xTHeDQJE", caption: "c", description: "d" }],
-        },
+        { role: "user", content: "Make a custom preset with #DE00CE" },
       ],
     })
 
-    const response = await post({
-      chatId: CLIENT_CHAT_ID,
-      messages: [{ role: "user", content: ASK }],
-    })
-
-    expect((await response.json()).customPreset.presetCode).toBe("b1xTHeDQJE")
+    expect(made()).toBeUndefined()
+    expect(String(generateText.mock.calls[0][0].system)).toContain(
+      "Go straight to ready"
+    )
   })
 
-  it("refuses past the account's cap, before asking the model", async () => {
-    process.env.CUSTOM_PRESET_LIMIT = "3"
-    query.mockImplementation(async (sql: string) => {
-      if (sql.includes("COUNT(*)")) return { rows: [{ count: 3 }] }
-      if (sql.includes("SELECT generations"))
-        return { rows: [{ generations: 0 }] }
-      return { rows: [], rowCount: 1 }
-    })
+  it("lets other requests ask a question first", async () => {
+    await post({ messages: [{ role: "user", content: "Presets like #DE00CE" }] })
 
-    const response = await post({
-      messages: [{ role: "user", content: ASK }],
-    })
-
-    expect(response.status).toBe(402)
-    expect((await response.json()).code).toBe("custom_preset_limit")
-    expect(generateText).not.toHaveBeenCalled()
-    expect(made()).toBeUndefined()
-    expect(countedGenerations()).toHaveLength(0)
-    delete process.env.CUSTOM_PRESET_LIMIT
-  })
-
-  it("leaves colours given without asking for one to the presets", async () => {
-    await post({
-      messages: [{ role: "user", content: "Presets like #DE00CE" }],
-    })
-
-    expect(made()).toBeUndefined()
     expect(String(generateText.mock.calls[0][0].system)).not.toContain(
-      "editing one custom shadcn preset"
+      "They asked for a custom preset"
     )
   })
 })

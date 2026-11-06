@@ -35,7 +35,7 @@ function writeParam(id: string | null, how: "push" | "replace") {
 /**
  * The custom preset open in the assistant's panel, kept in `?preset=` so a
  * reload or a shared link opens it again. Opening is a step Back undoes;
- * closing is not a step of its own, and nor is showing one an answer made.
+ * closing is not a step of its own.
  *
  * Read from the address rather than `useSearchParams`, which would hold the
  * whole page in Suspense. Moving to another chat drops the query, and the
@@ -52,15 +52,10 @@ export function useWorkspacePreset() {
     writeParam(next, "push")
   }, [])
 
-  const show = React.useCallback((next: string) => {
-    setMoved(true)
-    writeParam(next, "replace")
-  }, [])
-
   const close = React.useCallback(() => {
     setMoved(true)
     writeParam(null, "replace")
   }, [])
 
-  return { id, instant: !moved, open, show, close }
+  return { id, instant: !moved, open, close }
 }

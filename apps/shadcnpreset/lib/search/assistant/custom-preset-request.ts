@@ -8,11 +8,6 @@ import {
   withPresetParts,
 } from "@/lib/search/assistant/custom-preset-edit"
 
-/** "Make a custom preset with…": asked for by name, not just any colours. */
-export function asksForCustomPreset(text: string) {
-  return /\bcustom\s+presets?\b/i.test(text)
-}
-
 /**
  * The preset with any fonts, style, icons or radius the message also asks
  * for ("with Lora, Raleway and #1E3A8A"), which the preset it starts from

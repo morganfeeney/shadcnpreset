@@ -4,10 +4,10 @@ import { z } from "zod"
 import { getSessionUser } from "@/lib/auth"
 import { readBrandColours } from "@/lib/brand-theme"
 import { customColoursFrom } from "@/lib/custom-colours"
+import { customColoursSchema } from "@/lib/custom-colours-schema"
 import {
   createCustomPreset,
   customPresetLimitResponse,
-  findChatCustomPreset,
   reachedCustomPresetLimit,
 } from "@/lib/custom-preset-store"
 import { resolvePresetFromCode } from "@/lib/preset"
@@ -16,7 +16,9 @@ import { withPartsAskedFor } from "@/lib/search/assistant/custom-preset-request"
 const body = z.object({
   presetCode: z.string().trim().min(1).max(32),
   /** The message the colours were given in; the server reads them itself. */
-  text: z.string().max(8000),
+  text: z.string().max(8000).default(""),
+  /** Or the colours exactly, as a draft in the editor has them. */
+  colours: customColoursSchema.optional(),
   chatId: z.string().max(64).nullish(),
 })
 
@@ -34,32 +36,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 })
   }
 
-  // A chat's card reopens the custom preset that chat already made, however
-  // it was made (the card, or asking for one) and after a reload.
-  const chatId = parsed.data.chatId ?? null
-  const made = chatId
-    ? await findChatCustomPreset({ userId: user.id, chatId })
-    : null
-  if (made) return NextResponse.json({ id: made })
-
   const limit = await reachedCustomPresetLimit(user.id)
   if (limit !== null) {
     return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
   }
 
-  // Without exact colours it starts as the preset itself: someone refining
-  // presets makes one to change it bit by bit.
-  const custom = customColoursFrom(readBrandColours(parsed.data.text))
-  const { presetCode } = await withPartsAskedFor({
-    presetCode: parsed.data.presetCode,
-    colours: custom,
-    text: parsed.data.text,
-  })
+  // A draft is saved as it is. From a message, without exact colours it
+  // starts as the preset itself, to change bit by bit.
+  const { presetCode, colours: custom } = parsed.data.colours
+    ? { presetCode: parsed.data.presetCode, colours: parsed.data.colours }
+    : await fromMessage(parsed.data.presetCode, parsed.data.text)
   const id = await createCustomPreset({
     userId: user.id,
     presetCode,
     colours: custom,
-    chatId,
+    chatId: parsed.data.chatId ?? null,
   })
   return NextResponse.json({ id })
+}
+
+async function fromMessage(presetCode: string, text: string) {
+  const colours = customColoursFrom(readBrandColours(text))
+  const read = await withPartsAskedFor({ presetCode, colours, text })
+  return { presetCode: read.presetCode, colours }
 }

@@ -5,12 +5,7 @@ import { CheckIcon, CopyIcon } from "@phosphor-icons/react"
 import { ChevronDownIcon, LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import {
-  ColourOverrides,
-  ColourPicker,
-  PropertyRow,
-  type SwatchItem,
-} from "@/components/custom-presets/colour-controls"
+import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,27 +13,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
-import type { CustomColours, CustomSlot } from "@/lib/custom-colours"
+import type { CustomColours } from "@/lib/custom-colours"
 import {
   buildCustomPreset,
-  CUSTOM_PRESET_COLOUR_FACETS,
-  CUSTOM_PRESET_FACETS,
   customPresetPath,
   customPresetRegistryPath,
-  facetValueLabel,
   installablePresetCode,
-  withFacet,
-  type CustomPresetFacet,
 } from "@/lib/custom-preset"
 import {
   CUSTOM_PRESET_VIEWS,
@@ -47,8 +30,6 @@ import {
 } from "@/lib/custom-preset-frame"
 import { trackEvent } from "@/lib/analytics-events"
 import { cn } from "@/lib/utils"
-import { BASE_COLORS } from "@/registry/base-colors"
-import { THEMES } from "@/registry/themes"
 
 const SHADCN = process.env.NEXT_PUBLIC_RC ? "shadcn@rc" : "shadcn@latest"
 
@@ -56,17 +37,6 @@ const SHADCN = process.env.NEXT_PUBLIC_RC ? "shadcn@rc" : "shadcn@latest"
 const SAVE_DELAY_MS = 400
 
 type Draft = { code: string; colours: CustomColours }
-
-const FACET_LABEL: Record<
-  (typeof CUSTOM_PRESET_FACETS)[number]["key"],
-  string
-> = {
-  style: "Style",
-  radius: "Radius",
-  iconLibrary: "Icons",
-  font: "Font",
-  fontHeading: "Headings",
-}
 
 /**
  * A custom preset to work on: create's preview in its colours, and a column
@@ -146,54 +116,8 @@ export function CustomPresetEditor({
     toast.error("That change didn’t save. Try again in a moment.")
   }
 
-  function change(facet: CustomPresetFacet, value: string) {
-    const next = withFacet(code, facet, value)
-    if (!next || next === code) return
-    trackEvent("custom_preset_change", { facet, value })
-    update({ code: next, colours })
-  }
-
-  /** A list choice in a colour picker, which drops that picker's custom colour. */
-  function pickColour(slot: CustomSlot, value: string) {
-    const next = withFacet(code, slot, value) ?? code
-    trackEvent("custom_preset_change", { facet: slot, value })
-    update({ code: next, colours: { ...colours, [slot]: undefined } })
-  }
-
-  function customColour(slot: CustomSlot, colour: string, settle: boolean) {
-    if (settle)
-      trackEvent("custom_preset_change", { facet: slot, value: "custom" })
-    update({ code, colours: { ...colours, [slot]: colour } }, settle)
-  }
-
   if (!preset) return null
-  const { resolved, colours: theme } = preset
-  const radiusLocked = resolved.style === "lyra"
-  const listValue: Record<CustomSlot, string> = {
-    baseColor: resolved.baseColor,
-    theme: resolved.theme,
-    chartColor: resolved.effectiveChartColor,
-  }
-
-  function facetSelect(key: (typeof CUSTOM_PRESET_FACETS)[number]["key"]) {
-    const facet = CUSTOM_PRESET_FACETS.find((f) => f.key === key)!
-    // Lyra is square whatever radius it holds, as the create page shows it:
-    // the radius it renders with, and no other choice.
-    const locked = key === "radius" && radiusLocked
-    return (
-      <FacetSelect
-        key={key}
-        label={FACET_LABEL[key]}
-        value={locked ? resolved.effectiveRadius : resolved[key]}
-        items={facet.values.map((value) => ({
-          value,
-          label: facetValueLabel(key, value),
-        }))}
-        disabled={!canEdit || locked}
-        onChange={(value) => change(key, value)}
-      />
-    )
-  }
+  const { colours: theme } = preset
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -225,128 +149,17 @@ export function CustomPresetEditor({
 
         <aside
           aria-label="Customise"
-          className="shrink-0 border-t text-sm lg:w-72 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l"
+          className="shrink-0 border-t lg:w-72 lg:overflow-y-auto lg:overscroll-contain lg:border-t-0 lg:border-l"
         >
-          <PropertySection title="Colours">
-            {CUSTOM_PRESET_COLOUR_FACETS.map(({ key, label }) => (
-              <ColourPicker
-                key={key}
-                label={label.replace(" Color", "")}
-                items={colourItems(key, resolved.baseColor)}
-                value={listValue[key]}
-                custom={colours[key]}
-                disabled={!canEdit}
-                onPick={(value) => pickColour(key, value)}
-                onCustom={(colour, settle) => customColour(key, colour, settle)}
-              />
-            ))}
-            <ColourOverrides
-              overrides={colours.overrides}
-              current={theme.light}
-              disabled={!canEdit}
-              onChange={(overrides, settle) => {
-                if (settle)
-                  trackEvent("custom_preset_change", { facet: "overrides" })
-                update({ code, colours: { ...colours, overrides } }, settle)
-              }}
-            />
-            {theme.adjustments.length || theme.lowContrast.length ? (
-              <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
-                {theme.adjustments.map((note) => (
-                  <p key={note}>{note}</p>
-                ))}
-                {theme.lowContrast.map(({ mode, pair, ratio }) => (
-                  <p key={`${mode}-${pair}`}>
-                    Your overrides put {pair} at {ratio}:1 in {mode} mode, below
-                    the 4.5:1 body text needs. Kept as you set them.
-                  </p>
-                ))}
-              </div>
-            ) : null}
-          </PropertySection>
-
-          <PropertySection title="Style">
-            {facetSelect("style")}
-            {facetSelect("radius")}
-            {facetSelect("iconLibrary")}
-            {radiusLocked ? (
-              <p className="text-xs text-muted-foreground">
-                Lyra is always square, so its radius is fixed.
-              </p>
-            ) : null}
-          </PropertySection>
-
-          <PropertySection title="Typography">
-            {facetSelect("font")}
-            {facetSelect("fontHeading")}
-          </PropertySection>
-
-          {canEdit ? null : (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">
-              Only the person who made this preset can change it.
-            </p>
-          )}
+          <CustomPresetProperties
+            code={code}
+            colours={colours}
+            canEdit={canEdit}
+            onValueChange={update}
+          />
         </aside>
       </div>
     </div>
-  )
-}
-
-function PropertySection({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section
-      aria-label={title}
-      className="grid grid-cols-1 gap-2.5 border-b px-4 py-4 last:border-b-0"
-    >
-      <h3 className="text-xs font-semibold">{title}</h3>
-      {children}
-    </section>
-  )
-}
-
-function FacetSelect({
-  label,
-  value,
-  items,
-  disabled,
-  onChange,
-}: {
-  label: string
-  value: string
-  items: { value: string; label: string }[]
-  disabled: boolean
-  onChange: (value: string) => void
-}) {
-  return (
-    <PropertyRow label={label}>
-      <Select
-        items={items}
-        value={value}
-        disabled={disabled}
-        onValueChange={(next: string | null) => {
-          if (next) onChange(next)
-        }}
-      >
-        <SelectTrigger aria-label={label} size="sm" className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        {/* Under the field, as every menu in the column opens: lining the
-          chosen item up with it lifts a long list over the rows above. */}
-        <SelectContent alignItemWithTrigger={false} className="max-h-72">
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </PropertyRow>
   )
 }
 
@@ -553,27 +366,4 @@ function CopyableCode({
       </Button>
     </div>
   )
-}
-
-const BASE_NAMES = new Set<string>(BASE_COLORS.map((base) => base.name))
-
-/**
- * A colour picker's list, as shadcn create offers it: the base colours, or
- * the themes that go with the base (its own, plus every coloured one).
- */
-function colourItems(slot: CustomSlot, baseColor: string): SwatchItem[] {
-  const themes =
-    slot === "baseColor"
-      ? BASE_COLORS
-      : THEMES.filter(
-          (theme) => theme.name === baseColor || !BASE_NAMES.has(theme.name)
-        )
-  return themes.map((theme) => {
-    const light = theme.cssVars?.light as Record<string, string>
-    return {
-      value: theme.name,
-      label: facetValueLabel("theme", theme.name),
-      swatch: slot === "baseColor" ? light["muted-foreground"] : light.primary,
-    }
-  })
 }

@@ -70,9 +70,7 @@ describe("POST /api/custom-presets", () => {
 
     expect(response.status).toBe(200)
     expect((await response.json()).id).toEqual(expect.any(String))
-    // After looking for one the chat already made.
-    expect(query.mock.calls[0][0]).toContain("SELECT id FROM custom_presets")
-    const [sql, params] = query.mock.calls[1]
+    const [sql, params] = query.mock.calls[0]
     expect(sql).toContain("INSERT INTO custom_presets")
     expect(params.slice(1, 3)).toEqual(["user-1", CODE])
     expect(JSON.parse(params[3])).toEqual({
@@ -137,23 +135,13 @@ describe("POST /api/custom-presets", () => {
     expect(response.status).toBe(200)
   })
 
-  it("reopens the custom preset the chat already made", async () => {
-    query.mockImplementation(async (sql: string) =>
-      sql.includes("SELECT id FROM custom_presets")
-        ? { rows: [{ id: "cp-made" }] }
-        : { rows: [], rowCount: 1 }
-    )
+  it("makes a new one each time, even in the same chat", async () => {
+    await POST(request("POST", { presetCode: CODE, text: "", chatId: "chat-1" }))
+    await POST(request("POST", { presetCode: CODE, text: "", chatId: "chat-1" }))
 
-    const response = await POST(
-      request("POST", { presetCode: CODE, text: "#DE00CE", chatId: "chat-1" })
-    )
-
-    expect(await response.json()).toEqual({ id: "cp-made" })
-    expect(query.mock.calls[0][1]).toEqual(["user-1", "chat-1"])
     expect(
-      query.mock.calls.some(([sql]) => String(sql).includes("INSERT"))
-    ).toBe(false)
-    expect(generateText).not.toHaveBeenCalled()
+      query.mock.calls.filter(([sql]) => String(sql).includes("INSERT"))
+    ).toHaveLength(2)
   })
 
   it("still makes it from the colours when the request cannot be read", async () => {
@@ -163,6 +151,32 @@ describe("POST /api/custom-presets", () => {
 
     expect(response.status).toBe(200)
     expect(query.mock.calls[0][1][2]).toBe(CODE)
+  })
+
+  it("saves a draft's colours as given, without asking the model", async () => {
+    const colours = { theme: "#CC5500", overrides: { background: "#101418" } }
+
+    const response = await POST(
+      request("POST", { presetCode: CODE, colours })
+    )
+
+    expect(response.status).toBe(200)
+    const [, params] = query.mock.calls[0]
+    expect(params[2]).toBe(CODE)
+    expect(JSON.parse(params[3])).toEqual(colours)
+    expect(generateText).not.toHaveBeenCalled()
+  })
+
+  it("refuses a draft colour a stylesheet can't use", async () => {
+    const response = await POST(
+      request("POST", {
+        presetCode: CODE,
+        colours: { theme: "burnt orange", overrides: {} },
+      })
+    )
+
+    expect(response.status).toBe(400)
+    expect(query).not.toHaveBeenCalled()
   })
 
   it("asks someone signed out to sign in", async () => {

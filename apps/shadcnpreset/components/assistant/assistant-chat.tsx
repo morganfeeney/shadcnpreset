@@ -13,8 +13,9 @@ import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-c
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
 import { ProWall } from "@/components/assistant/pro-wall"
 import { CustomPresetLimitNote } from "@/components/assistant/custom-preset-limit-note"
-import { CustomPresetOffer } from "@/components/assistant/custom-preset-offer"
 import { CustomPresetPanel } from "@/components/assistant/custom-preset-panel"
+import { useCustomizePreset } from "@/components/assistant/use-customize-preset"
+import { PresetCardCustomizeProvider } from "@/components/preset-card-customize"
 import { useSettledAfterMotion } from "@/components/assistant/use-settled-after-motion"
 import { useWorkspacePreset } from "@/components/assistant/use-workspace-preset"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
@@ -40,7 +41,7 @@ import {
 import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { trackEvent } from "@/lib/analytics-events"
 import { assistantChatPath } from "@/lib/assistant-chat-path"
-import { customPresetOffer } from "@/lib/custom-preset-offer"
+import { customizeRequestText } from "@/lib/customize-preset"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
@@ -92,18 +93,6 @@ export function AssistantChat({
         ["customPreset", preset.id],
         (previous) => (previous ? { ...previous, ...preset } : previous)
       ),
-    onCustomPresetLimit: (limit) => {
-      setPresetLimit(limit)
-      trackEvent("custom_preset_limit_view", {})
-    },
-    // Asked for by name, it opens beside the answer that made it.
-    onCustomPresetCreated: (preset) => {
-      queryClient.setQueryData(["customPreset", preset.id], {
-        ...preset,
-        canEdit: true,
-      })
-      workspace.show(preset.id)
-    },
     // The answer has made this page a conversation worth returning to, so it
     // gains an address. Replace, not push: nobody navigated here, the page
     // they were already on became the chat. A custom preset the answer opened
@@ -145,25 +134,25 @@ export function AssistantChat({
     !pending &&
     messages.some((m) => m.role === "assistant")
 
-  // Someone wanting more than a preset can give is offered a custom preset
-  // in the sponsored card's place.
-  const customPreset = React.useMemo(
-    () => customPresetOffer(messages),
-    [messages]
-  )
+  // Any preset in the chat can be customized, from its card.
+  const { customize, making } = useCustomizePreset({
+    chatId: activeChatId,
+    text: customizeRequestText(messages),
+    onOpen: (id) => {
+      trackEvent("custom_preset_panel_open", {})
+      workspace.open(id)
+    },
+    onLimit: (limit) => {
+      setPresetLimit(limit)
+      trackEvent("custom_preset_limit_view", {})
+    },
+  })
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
   }, [])
 
   const urlChatId = useUrlChatId()
-
-  // Once a custom preset is opened, the card stays its way back in: colours
-  // given while it was open were changes to it, not a new one to make. While
-  // it is open, the panel stands in for the card.
-  const [pinnedOffer, setPinnedOffer] =
-    React.useState<typeof customPreset>(null)
-  const offer = pinnedOffer ?? customPreset
 
   // Kept through the close, so the panel does not empty as it slides away.
   const [shownPresetId, setShownPresetId] = React.useState(workspace.id)
@@ -300,42 +289,45 @@ export function AssistantChat({
               {isChatHydrating ? <AssistantChatSkeleton /> : null}
 
               {hasInteracted && !isChatHydrating ? (
-                <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
-                  <AssistantConversation
-                    messages={messages}
-                    pending={pending}
-                    pendingKind={pendingKind}
-                    scrollLatestIntoView
-                    renderPreview={(m) =>
-                      m.preview.presetCode ? (
-                        <AssistantPreviewCard
-                          preview={m.preview}
-                          openHref={presetBrowsePath(
-                            m.preview.presetCode,
-                            "generated",
-                            "ask-ai",
-                            activeChatId ?? undefined
-                          )}
-                        />
-                      ) : (
-                        <AssistantPreviewCard preview={m.preview} />
-                      )
-                    }
-                    renderPresets={(m, i) => (
-                      <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
-                        {m.presets.map((p, presetIndex) => (
-                          <li key={`${i}-${presetIndex}-${p.code}`}>
-                            <PresetStyleOverviewCard
-                              code={p.code}
-                              title={p.code}
-                              description={p.description}
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  />
-                </div>
+                <PresetCardCustomizeProvider
+                  customize={customize}
+                  making={making}
+                >
+                  <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
+                    <AssistantConversation
+                      messages={messages}
+                      pending={pending}
+                      pendingKind={pendingKind}
+                      scrollLatestIntoView
+                      renderPreview={(m) =>
+                        m.preview.presetCode ? (
+                          <AssistantPreviewCard
+                            preview={m.preview}
+                            openHref={presetBrowsePath(
+                              m.preview.presetCode,
+                              "generated"
+                            )}
+                          />
+                        ) : (
+                          <AssistantPreviewCard preview={m.preview} />
+                        )
+                      }
+                      renderPresets={(m, i) => (
+                        <ul className="mt-4 grid gap-4 @min-lg:grid-cols-2">
+                          {m.presets.map((p, presetIndex) => (
+                            <li key={`${i}-${presetIndex}-${p.code}`}>
+                              <PresetStyleOverviewCard
+                                code={p.code}
+                                title={p.code}
+                                description={p.description}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    />
+                  </div>
+                </PresetCardCustomizeProvider>
               ) : null}
 
               {lastTurn?.phase === "gathering" &&
@@ -362,25 +354,7 @@ export function AssistantChat({
                 </div>
               ) : null}
 
-              {panelOpen ? null : showsAd && offer ? (
-                <CustomPresetOffer
-                  text={offer.text}
-                  colours={offer.colours}
-                  presetCode={offer.presetCode}
-                  chatId={activeChatId}
-                  openId={workspace.id}
-                  onOpen={(id) => {
-                    trackEvent("custom_preset_panel_open", {})
-                    setPinnedOffer(offer)
-                    workspace.open(id)
-                  }}
-                  onLimit={(limit) => {
-                    setPresetLimit(limit)
-                    trackEvent("custom_preset_limit_view", {})
-                  }}
-                  className="mx-auto w-full max-w-4xl px-4 pb-4"
-                />
-              ) : showsAd ? (
+              {showsAd && !panelOpen ? (
                 <ShadcncraftAdCard
                   placement="assistant-chat"
                   impressionKey={activeChatId ?? undefined}

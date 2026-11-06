@@ -11,21 +11,16 @@ describe("presetBrowsePath", () => {
     expect(presetBrowsePath("b5aFUJkSzC")).toBe("/preset/b5aFUJkSzC")
   })
 
-  it("carries view and tab", () => {
-    expect(presetBrowsePath("b5aFUJkSzC", "generated", "ask-ai")).toBe(
-      "/preset/b5aFUJkSzC?view=generated&tab=ask-ai"
+  it("carries the view", () => {
+    expect(presetBrowsePath("b5aFUJkSzC", "generated")).toBe(
+      "/preset/b5aFUJkSzC?view=generated"
     )
   })
 
-  it("carries a chat so a linked conversation opens in the sidebar", () => {
-    expect(
-      presetBrowsePath("b5aFUJkSzC", "generated", "ask-ai", "abc-123")
-    ).toBe("/preset/b5aFUJkSzC?view=generated&tab=ask-ai&chat=abc-123")
-  })
-
-  it("ignores an empty chat id", () => {
-    expect(presetBrowsePath("b5aFUJkSzC", "preview", "community", "")).toBe(
-      "/preset/b5aFUJkSzC"
+  it("keeps the rest of the address, such as a draft", () => {
+    const query = new URLSearchParams({ view: "generated", draft: "b4x" })
+    expect(presetBrowsePath("b5aFUJkSzC", "preview", query)).toBe(
+      "/preset/b5aFUJkSzC?draft=b4x"
     )
   })
 })

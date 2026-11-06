@@ -2,20 +2,13 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getSessionUser } from "@/lib/auth"
-import { BRAND_TOKENS, isUsableColour } from "@/lib/brand-theme"
+import { customColoursSchema } from "@/lib/custom-colours-schema"
 import { getCustomPreset, updateCustomPreset } from "@/lib/custom-preset-store"
 import { resolvePresetFromCode } from "@/lib/preset"
 
-const colour = z.string().trim().min(1).max(64).refine(isUsableColour)
-
 const body = z.object({
   presetCode: z.string().trim().min(1).max(32),
-  colours: z.object({
-    baseColor: colour.optional(),
-    theme: colour.optional(),
-    chartColor: colour.optional(),
-    overrides: z.record(z.enum(BRAND_TOKENS), colour),
-  }),
+  colours: customColoursSchema,
 })
 
 /** Saves a custom preset as its page has it: the preset and its colours. */

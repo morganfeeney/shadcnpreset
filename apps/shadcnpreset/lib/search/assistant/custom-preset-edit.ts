@@ -202,36 +202,6 @@ export function withPresetParts(presetCode: string, edit: CustomPresetEdit) {
   return { presetCode: next.presetCode, changed }
 }
 
-/**
- * The reply to a request that made a custom preset: what it holds, so the
- * fonts and colours asked for can be checked at a glance, and where it is.
- */
-export function describeMadeCustomPreset(
-  presetCode: string,
-  colours: CustomColours
-) {
-  const preset = resolvePresetFromCode(presetCode)
-  const parts: string[] = []
-  if (preset) {
-    const font = facetValueLabel("font", preset.font)
-    parts.push(`${facetValueLabel("style", preset.style)} style`)
-    parts.push(
-      preset.fontHeading === "inherit" || preset.fontHeading === preset.font
-        ? `${font} font`
-        : `${font} with ${facetValueLabel("fontHeading", preset.fontHeading)} for headings`
-    )
-    parts.push(`${facetValueLabel("iconLibrary", preset.iconLibrary)} icons`)
-  }
-  for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
-    const colour = colours[key]
-    if (colour) parts.push(`${label.toLowerCase()} ${colour}`)
-  }
-  for (const [token, colour] of Object.entries(colours.overrides)) {
-    parts.push(`${token} ${colour}`)
-  }
-  return `Made your custom preset: ${parts.join(", ")}. It’s open beside the chat. Change anything there, or tell me here.`
-}
-
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }

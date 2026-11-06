@@ -87,9 +87,11 @@ export function PresetLiveHero({
 export function PresetButtons({
   preset,
   sharePath,
+  size = "lg",
 }: {
   preset: string
   sharePath?: string
+  size?: "sm" | "lg"
 }) {
   const [hasCopied, setHasCopied] = React.useState(false)
   const [getCodeOpen, setGetCodeOpen] = React.useState(false)
@@ -115,16 +117,16 @@ export function PresetButtons({
 
   return (
     <>
-      <PresetVoteButton size="lg" code={preset} />
-      <Button size="lg" variant="outline" onClick={() => setPitchOpen(true)}>
+      <PresetVoteButton size={size} code={preset} />
+      <Button size={size} variant="outline" onClick={() => setPitchOpen(true)}>
         <ShadcncraftLogo className="size-4" />
         Get the blocks
       </Button>
-      <Button size="lg" variant="outline" onClick={() => setGetCodeOpen(true)}>
+      <Button size={size} variant="outline" onClick={() => setGetCodeOpen(true)}>
         <CodeIcon className="size-4" />
         Code
       </Button>
-      <Button variant="outline" size="lg" onClick={handleShare}>
+      <Button variant="outline" size={size} onClick={handleShare}>
         {hasCopied ? "Copied" : "Share"}
         {hasCopied ? (
           <CheckIcon aria-hidden className="size-4" />
@@ -134,7 +136,7 @@ export function PresetButtons({
       </Button>
       <Link
         href={`/pdp/${preset}`}
-        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+        className={cn(buttonVariants({ variant: "outline", size }))}
       >
         Details <InfoIcon />
       </Link>

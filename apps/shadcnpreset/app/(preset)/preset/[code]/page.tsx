@@ -11,7 +11,7 @@ import { buildPageMetadata, getPresetOgImageUrl } from "@/lib/page-metadata"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { parsePresetPreviewPageName } from "@/lib/preset-preview"
 
-import { PresetBrowsePreview } from "../browse-surface"
+import { PresetBrowsePreview } from "../preset-browse-preview"
 
 type PresetPageProps = {
   params: Promise<{
