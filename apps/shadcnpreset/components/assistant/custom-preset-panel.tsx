@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { ChevronLeftIcon, XIcon } from "lucide-react"
+import { CaretLeftIcon, XIcon } from "@phosphor-icons/react"
 
 import { CustomPresetEditor } from "@/components/custom-presets/custom-preset-editor"
 import { CustomPresetBodySkeleton } from "@/components/custom-presets/custom-preset-skeleton"
@@ -51,7 +51,7 @@ export function CustomPresetPanel({
       className="xl:hidden"
       onClick={onClose}
     >
-      <ChevronLeftIcon data-icon="inline-start" />
+      <CaretLeftIcon data-icon="inline-start" />
       Chat
     </Button>
   )

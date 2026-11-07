@@ -1,16 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, CodeIcon } from "@phosphor-icons/react"
-import { LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
-import { GetCodeDialog } from "@/components/get-code-dialog"
+import {
+  PresetCodeButton,
+  PresetShareButton,
+} from "@/components/preset-action-buttons"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import type { CustomColours } from "@/lib/custom-colours"
 import {
   buildCustomPreset,
@@ -128,9 +128,8 @@ export function CustomPresetEditor({
           {code}
         </code>
         <span className="flex-1" />
-        <ShareButton url={`${origin}${customPresetPath(id, code)}`} />
-        <CodeButton
-          code={installablePresetCode(code)}
+        <PresetCodeButton
+          presetCode={installablePresetCode(code)}
           customColours={
             hasColours(colours)
               ? {
@@ -139,6 +138,10 @@ export function CustomPresetEditor({
                 }
               : undefined
           }
+        />
+        <PresetShareButton
+          getUrl={() => `${origin}${customPresetPath(id, code)}`}
+          onShare={() => trackEvent("custom_preset_share", {})}
         />
         {end}
       </header>
@@ -226,49 +229,3 @@ function PreviewCanvas({
   )
 }
 
-/** The same Code dialog as a preset's page, with this preset's colours. */
-function CodeButton({
-  code,
-  customColours,
-}: {
-  code: string
-  customColours?: { css: string; registryUrl?: string }
-}) {
-  const [open, setOpen] = React.useState(false)
-  return (
-    <>
-      <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        <CodeIcon data-icon="inline-start" />
-        Code
-      </Button>
-      <GetCodeDialog
-        open={open}
-        onOpenChange={setOpen}
-        presetCode={code}
-        customColours={customColours}
-      />
-    </>
-  )
-}
-
-function ShareButton({ url }: { url: string }) {
-  const { isCopied, copyToClipboard } = useCopyToClipboard()
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      onClick={() => {
-        void copyToClipboard(url)
-        trackEvent("custom_preset_share", {})
-      }}
-    >
-      {isCopied ? (
-        <CheckIcon data-icon="inline-start" />
-      ) : (
-        <LinkIcon data-icon="inline-start" />
-      )}
-      {isCopied ? "Copied" : "Share"}
-    </Button>
-  )
-}
