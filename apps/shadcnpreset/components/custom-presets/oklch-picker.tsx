@@ -283,23 +283,20 @@ function ColourText({
 export function OklchField({
   label,
   colour,
-  disabled,
   onChange,
   className,
 }: {
   label: string
   colour: string
-  disabled: boolean
   onChange: OnChange
   className?: string
 }) {
   return (
     <Popover>
       <PopoverTrigger
-        disabled={disabled}
         aria-label={`${label}: ${colour}`}
         className={cn(
-          "flex h-7 min-w-0 items-center gap-2 rounded-md bg-muted px-2 text-left text-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default data-popup-open:ring-1 data-popup-open:ring-ring",
+          "flex h-7 min-w-0 items-center gap-2 rounded-md bg-muted px-2 text-left text-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50 data-popup-open:ring-1 data-popup-open:ring-ring",
           className
         )}
       >

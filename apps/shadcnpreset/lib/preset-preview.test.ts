@@ -16,13 +16,6 @@ describe("presetBrowsePath", () => {
       "/preset/b5aFUJkSzC?view=generated"
     )
   })
-
-  it("keeps the rest of the address, such as a draft", () => {
-    const query = new URLSearchParams({ view: "generated", draft: "b4x" })
-    expect(presetBrowsePath("b5aFUJkSzC", "preview", query)).toBe(
-      "/preset/b5aFUJkSzC?draft=b4x"
-    )
-  })
 })
 
 describe("preview credits", () => {

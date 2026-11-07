@@ -56,9 +56,11 @@ type AssistantChatDetailResponse = {
   }
 }
 
-/** A custom preset as an edit to it left it, for the panel showing it. */
-export type EditedCustomPreset = {
-  id: string
+/**
+ * The preset open beside the chat, as it stands: what a turn edits, and what
+ * an edit leaves for the panel to show.
+ */
+export type CustomizedPreset = {
   presetCode: string
   colours: CustomColours
 }
@@ -68,7 +70,7 @@ type CustomPresetTurn = {
   phase: "custom"
   assistantMessage: string
   changed: string[]
-  customPreset: EditedCustomPreset
+  customPreset: CustomizedPreset
 }
 
 type AssistantSendResponse =
@@ -215,10 +217,10 @@ type UseAssistantChatOptions = {
    * coming back to and the surface can give it an address.
    */
   onChatCreated?: (chatId: string) => void
-  /** A custom preset open beside the chat: sends edit it instead. */
-  customPresetId?: string | null
-  /** An edit to that custom preset has been saved. */
-  onCustomPresetEdited?: (preset: EditedCustomPreset) => void
+  /** A preset open beside the chat to customize: sends edit it instead. */
+  customPreset?: CustomizedPreset | null
+  /** A turn has edited it, for the panel to show. */
+  onCustomPresetEdited?: (preset: CustomizedPreset) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -234,7 +236,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onChatCreatedRef.current = onChatCreated
   }, [onChatCreated])
-  const customPresetId = options?.customPresetId ?? null
+  const customPreset = options?.customPreset ?? null
   const onCustomPresetEdited = options?.onCustomPresetEdited
   const onCustomPresetEditedRef = React.useRef(onCustomPresetEdited)
   React.useEffect(() => {
@@ -385,7 +387,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     previousPresetCodes: string[]
     chatId: string | null
     livePresetCode?: string
-    customPresetId: string | null
+    customPreset: CustomizedPreset | null
   }
 
   type SendData =
@@ -421,7 +423,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
           livePresetCode: args.livePresetCode,
-          customPresetId: args.customPresetId ?? undefined,
+          customPreset: args.customPreset ?? undefined,
         }),
       })
       const raw = await response.text()
@@ -635,7 +637,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       previousPresetCodes,
       chatId: activeChatId,
       livePresetCode,
-      customPresetId,
+      customPreset,
     })
 
     if (result.kind === "auth_required") {

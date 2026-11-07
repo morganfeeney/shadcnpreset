@@ -1,13 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, CodeIcon, ShareIcon } from "@phosphor-icons/react"
+import Link from "next/link"
+import {
+  CheckIcon,
+  CodeIcon,
+  InfoIcon,
+  ShareIcon,
+} from "@phosphor-icons/react"
 
 import { GetCodeDialog } from "@/components/get-code-dialog"
 import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
 import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo"
-import { Button } from "@/components/ui/button"
+import { PresetVoteButton } from "@/components/preset-vote-button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { cn } from "@/lib/utils"
 
 type Size = "sm" | "lg"
 
@@ -110,4 +118,58 @@ function PresetShareButton({
   )
 }
 
-export { PresetBlocksButton, PresetCodeButton, PresetShareButton }
+/**
+ * Everything to do with a preset, in order: like it, get the blocks, its
+ * code, share it, its details, then anything the page adds.
+ */
+function PresetActionButtons({
+  preset,
+  sharePath,
+  size = "lg",
+  customColours,
+  children,
+}: {
+  preset: string
+  /** What Share copies, when the page's address isn't the preset's own. */
+  sharePath?: string
+  size?: Size
+  /** Custom colours, for the Code dialog to install. */
+  customColours?: { css: string; registryUrl?: string }
+  /** More actions, after the rest. */
+  children?: React.ReactNode
+}) {
+  return (
+    <>
+      <PresetVoteButton size={size} code={preset} />
+      <PresetBlocksButton size={size} presetCode={preset} />
+      <PresetCodeButton
+        size={size}
+        presetCode={preset}
+        customColours={customColours}
+      />
+      <PresetShareButton
+        size={size}
+        getUrl={() =>
+          sharePath
+            ? new URL(sharePath, window.location.origin).href
+            : window.location.href
+        }
+      />
+      <Link
+        href={`/pdp/${preset}`}
+        className={cn(buttonVariants({ variant: "outline", size }))}
+      >
+        <InfoIcon data-icon="inline-start" className="size-4" />
+        Details
+      </Link>
+      {children}
+    </>
+  )
+}
+
+export {
+  PresetActionButtons,
+  PresetBlocksButton,
+  PresetCodeButton,
+  PresetShareButton,
+}

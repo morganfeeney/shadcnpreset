@@ -2,12 +2,10 @@
 
 import * as React from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { trackEvent } from "@/lib/analytics-events"
 import {
-  customPresetPath,
   replaceQuery,
   withoutArrival,
   withSaveOnArrival,
@@ -24,20 +22,23 @@ export type SavedCustomPreset = {
 }
 
 /**
- * Saving a customized preset to someone's account, staying on its page.
- * Their own saved preset is updated; anything else is saved as a new one,
- * within the free cap. Signed out, it asks them to sign in, noting in the
- * address (which already holds the changes) to save on the way back; closing
- * the dialog drops the note.
+ * Saving a customized preset to someone's account. Their own saved preset is
+ * updated; anything else is saved as a new one, within the free cap. Resolves
+ * to the saved preset's id, for the page to show it by, or null when it
+ * isn't saved. Signed out, it asks them to sign in, noting in the address
+ * (which already holds the changes) to save on the way back; closing the
+ * dialog drops the note.
  */
 export function useSaveCustomPreset() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const ensureAuthenticated = useAuthStore((s) => s.ensureAuthenticated)
   const [saving, setSaving] = React.useState(false)
 
   const save = React.useCallback(
-    async (value: PresetDraft, saved: SavedCustomPreset | null) => {
+    async (
+      value: PresetDraft,
+      saved: SavedCustomPreset | null
+    ): Promise<string | null> => {
       if (!(await ensureAuthenticated())) {
         replaceQuery(
           withSaveOnArrival(new URLSearchParams(window.location.search))
@@ -49,7 +50,7 @@ export function useSaveCustomPreset() {
             withoutArrival(new URLSearchParams(window.location.search))
           )
         })
-        return
+        return null
       }
 
       setSaving(true)
@@ -84,18 +85,8 @@ export function useSaveCustomPreset() {
           canEdit: true,
         }
         queryClient.setQueryData(["customPreset", id], next)
-        const path = customPresetPath(id, value.code)
-        router.replace(path, { scroll: false })
-        toast.success("Saved", {
-          action: {
-            label: "Copy link",
-            onClick: () =>
-              void navigator.clipboard.writeText(
-                new URL(path, window.location.origin).href
-              ),
-          },
-        })
-        return
+        toast.success("Saved")
+        return id
       }
 
       if (body?.code === "custom_preset_limit") {
@@ -117,11 +108,12 @@ export function useSaveCustomPreset() {
               : undefined,
           }
         )
-        return
+        return null
       }
       toast.error("That didn’t save. Try again in a moment.")
+      return null
     },
-    [ensureAuthenticated, queryClient, router]
+    [ensureAuthenticated, queryClient]
   )
 
   return { save, saving }

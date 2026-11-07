@@ -62,7 +62,6 @@ describe("PresetStyleOverviewCardPreview", () => {
     render(
       <PresetCardCustomizeProvider
         customize={customize}
-        making={null}
         customizeOnClick
       >
         {card()}

@@ -7,7 +7,6 @@ import {
   editReply,
   fillNamedColours,
   tidyEditReply,
-  withPresetParts,
   type CustomPresetEdit,
 } from "@/lib/search/assistant/custom-preset-edit"
 
@@ -89,29 +88,6 @@ describe("applyCustomPresetEdit", () => {
       { ...NOTHING, removeOverrides: ["background"] }
     )
     expect(removed.colours.overrides).toEqual({})
-  })
-})
-
-describe("withPresetParts", () => {
-  it("takes the fonts and style but none of the colours", () => {
-    const { presetCode: code, changed } = withPresetParts(CODE, {
-      ...NOTHING,
-      style: "mira",
-      font: "raleway",
-      fontHeading: "lora",
-      theme: "green",
-    })
-    const preset = resolvePresetFromCode(code)
-
-    expect(preset?.style).toBe("mira")
-    expect(preset?.font).toBe("raleway")
-    expect(preset?.fontHeading).toBe("lora")
-    expect(preset?.theme).toBe("neutral")
-    expect(changed).toEqual([
-      "Style: Mira",
-      "Font: Raleway",
-      "Heading font: Lora",
-    ])
   })
 })
 

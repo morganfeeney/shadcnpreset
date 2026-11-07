@@ -1,21 +1,14 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 
-import {
-  PresetBlocksButton,
-  PresetCodeButton,
-  PresetShareButton,
-} from "@/components/preset-action-buttons"
-import { PresetVoteButton } from "@/components/preset-vote-button"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { PresetActionButtons } from "@/components/preset-action-buttons"
+import { Button } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
-import { CheckIcon, CopyIcon, InfoIcon } from "@phosphor-icons/react"
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react"
 import { formatPresetCardDescription } from "@/lib/preset-card-description"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
-import { cn } from "@/lib/utils"
 
 export function PresetCodeTitle({
   presetCode,
@@ -73,52 +66,11 @@ export function PresetLiveHero({
     <div className="flex flex-wrap items-start justify-between gap-4 py-6">
       <PresetCodeTitle presetCode={code} description={description} />
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <PresetButtons preset={resolved?.code ?? code} sharePath={sharePath} />
+        <PresetActionButtons
+          preset={resolved?.code ?? code}
+          sharePath={sharePath}
+        />
       </div>
     </div>
-  )
-}
-
-export function PresetButtons({
-  preset,
-  sharePath,
-  size = "lg",
-  customColours,
-  children,
-}: {
-  preset: string
-  sharePath?: string
-  size?: "sm" | "lg"
-  /** Custom colours, for the Code dialog to install. */
-  customColours?: { css: string; registryUrl?: string }
-  /** More actions, after the rest. */
-  children?: React.ReactNode
-}) {
-  return (
-    <>
-      <PresetVoteButton size={size} code={preset} />
-      <PresetBlocksButton size={size} presetCode={preset} />
-      <PresetCodeButton
-        size={size}
-        presetCode={preset}
-        customColours={customColours}
-      />
-      <PresetShareButton
-        size={size}
-        getUrl={() =>
-          sharePath
-            ? new URL(sharePath, window.location.origin).href
-            : window.location.href
-        }
-      />
-      <Link
-        href={`/pdp/${preset}`}
-        className={cn(buttonVariants({ variant: "outline", size }))}
-      >
-        <InfoIcon data-icon="inline-start" className="size-4" />
-        Details
-      </Link>
-      {children}
-    </>
   )
 }

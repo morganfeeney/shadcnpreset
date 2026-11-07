@@ -3,7 +3,6 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQueryClient } from "@tanstack/react-query"
 import { SquarePen } from "lucide-react"
 import { toast } from "sonner"
 
@@ -11,11 +10,10 @@ import { AssistantChatProvider } from "@/components/assistant/assistant-chat-con
 import { AssistantConversation } from "@/components/assistant/assistant-conversation"
 import { AssistantPreviewCard } from "@/components/assistant/assistant-preview-card"
 import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt-composer"
+import { AssistantPresetPanel } from "@/components/assistant/assistant-preset-panel"
 import { ProWall } from "@/components/assistant/pro-wall"
-import { CustomPresetLimitNote } from "@/components/assistant/custom-preset-limit-note"
-import { CustomPresetPanel } from "@/components/assistant/custom-preset-panel"
-import { useCustomizePreset } from "@/components/assistant/use-customize-preset"
 import { PresetCardCustomizeProvider } from "@/components/preset-card-customize"
+import { useSavedCustomPreset } from "@/components/preset-customizer/preset-customize"
 import { useSettledAfterMotion } from "@/components/assistant/use-settled-after-motion"
 import { useWorkspacePreset } from "@/components/assistant/use-workspace-preset"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
@@ -36,12 +34,20 @@ import {
 } from "@/components/ui/sidebar"
 import {
   useAssistantChat,
-  type EditedCustomPreset,
+  type CustomizedPreset,
 } from "@/components/assistant/use-assistant-chat"
 import { useUrlChatId } from "@/components/assistant/use-url-chat-id"
 import { trackEvent } from "@/lib/analytics-events"
 import { assistantChatPath } from "@/lib/assistant-chat-path"
+import { readBrandColours } from "@/lib/brand-theme"
+import { customColoursFrom, NO_CUSTOM_COLOURS } from "@/lib/custom-colours"
 import { customizeRequestText } from "@/lib/customize-preset"
+import {
+  hasColours,
+  readPresetQuery,
+  sameColours,
+  withColours,
+} from "@/lib/preset-draft"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 
@@ -52,15 +58,23 @@ export function AssistantChat({
   routeChatId: string | null
 }) {
   const router = useRouter()
-  const queryClient = useQueryClient()
-  // A custom preset opens beside the conversation: on a wide screen the chats
-  // fold away and the chat narrows to a column; narrower, it slides over.
-  // While it is open, every message is a change to it.
+  // A preset opens beside the conversation to customize: on a wide screen the
+  // chats fold away and the chat narrows to a column; narrower, it slides
+  // over. While it is open, every message is a change to it.
   const workspace = useWorkspacePreset()
-  const panelOpen = Boolean(workspace.id)
-  // The cap someone reached asking for a custom preset, noted above the
-  // composer until dismissed.
-  const [presetLimit, setPresetLimit] = React.useState<number | null>(null)
+  const panelOpen = Boolean(workspace.code)
+  // The preset as the panel shows it, for a message to change: its code,
+  // and its colours (unsaved, or as saved).
+  const customizing = readPresetQuery(workspace.query)
+  const saved = useSavedCustomPreset(workspace.code ? customizing.custom : null)
+  const keptColours =
+    (customizing.custom && saved.data?.colours) || NO_CUSTOM_COLOURS
+  const customPreset: CustomizedPreset | null = workspace.code
+    ? {
+        presetCode: workspace.code,
+        colours: customizing.colours ?? keptColours,
+      }
+    : null
   // When the composer grows (a note above it, a longer message) or the window
   // changes, the conversation's box shrinks under content that does not move,
   // hiding its end. Someone reading the end keeps it in view; someone who
@@ -86,12 +100,16 @@ export function AssistantChat({
   }, [])
   const chat = useAssistantChat({
     initialChatId: routeChatId,
-    customPresetId: workspace.id,
-    // The panel shows what the edit saved: its editor starts again from it.
+    customPreset,
+    // The panel shows the edit as it would any change made there: another
+    // preset, and colours unsaved until saved.
     onCustomPresetEdited: (preset) =>
-      queryClient.setQueryData<EditedCustomPreset & { canEdit: boolean }>(
-        ["customPreset", preset.id],
-        (previous) => (previous ? { ...previous, ...preset } : previous)
+      workspace.goTo(
+        preset.presetCode,
+        withColours(
+          new URLSearchParams(window.location.search),
+          sameColours(preset.colours, keptColours) ? null : preset.colours
+        )
       ),
     // The answer has made this page a conversation worth returning to, so it
     // gains an address. Replace, not push: nobody navigated here, the page
@@ -134,19 +152,27 @@ export function AssistantChat({
     !pending &&
     messages.some((m) => m.role === "assistant")
 
-  // Any preset in the chat can be customized, from its card.
-  const { customize, making } = useCustomizePreset({
-    chatId: activeChatId,
-    text: customizeRequestText(messages),
-    onOpen: (id) => {
-      trackEvent("custom_preset_panel_open", {})
-      workspace.open(id)
-    },
-    onLimit: (limit) => {
-      setPresetLimit(limit)
-      trackEvent("custom_preset_limit_view", {})
-    },
+  // Any preset in the chat can be customized, from its card: shown beside
+  // the chat in any exact colours the chat asked for, as unsaved changes.
+  // One function for the life of the chat, so the cards stay memoised; it
+  // reads the latest messages when called.
+  const latestMessages = React.useRef(messages)
+  React.useEffect(() => {
+    latestMessages.current = messages
   })
+  const { show } = workspace
+  const customize = React.useCallback(
+    (code: string) => {
+      trackEvent("custom_preset_customize_click", { preset_code: code })
+      const colours = customColoursFrom(
+        readBrandColours(customizeRequestText(latestMessages.current))
+      )
+      if (show(code, hasColours(colours) ? colours : null)) {
+        trackEvent("custom_preset_panel_open", {})
+      }
+    },
+    [show]
+  )
 
   React.useEffect(() => {
     trackEvent("ai_assistant_open", { page_path: "/assistant" })
@@ -155,15 +181,20 @@ export function AssistantChat({
   const urlChatId = useUrlChatId()
 
   // Kept through the close, so the panel does not empty as it slides away.
-  const [shownPresetId, setShownPresetId] = React.useState(workspace.id)
-  if (workspace.id && workspace.id !== shownPresetId) {
-    setShownPresetId(workspace.id)
+  const [shown, setShown] = React.useState(
+    workspace.code ? { code: workspace.code, query: workspace.query } : null
+  )
+  if (
+    workspace.code &&
+    (shown?.code !== workspace.code || shown.query !== workspace.query)
+  ) {
+    setShown({ code: workspace.code, query: workspace.query })
   }
 
-  // A newly opened preset's editor waits out the slide: loading its preview
-  // while the panel grows makes it judder.
+  // The preview waits out the panel's slide in: loading it while the panel
+  // grows makes it judder.
   const panelRef = React.useRef<HTMLElement>(null)
-  const settledPresetId = useSettledAfterMotion(shownPresetId, panelRef)
+  const settledOpen = useSettledAfterMotion(panelOpen, panelRef)
 
   // A link, a sidebar click and the browser's back button all arrive the same
   // way: as a new URL. The page stays mounted across those, so the chat has
@@ -291,7 +322,6 @@ export function AssistantChat({
               {hasInteracted && !isChatHydrating ? (
                 <PresetCardCustomizeProvider
                   customize={customize}
-                  making={making}
                   customizeOnClick={panelOpen}
                 >
                   <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
@@ -380,15 +410,6 @@ export function AssistantChat({
                 placeholder={
                   panelOpen ? "Ask for changes to this preset…" : undefined
                 }
-                notice={
-                  // A preset open beside the chat is edited, not made, so the
-                  // cap has nothing to say while it is.
-                  presetLimit !== null && !panelOpen ? (
-                    <CustomPresetLimitNote
-                      onDismiss={() => setPresetLimit(null)}
-                    />
-                  ) : null
-                }
               />
             )}
           </div>
@@ -415,10 +436,12 @@ export function AssistantChat({
           {/* At its open width (less its border) throughout, so the preview,
             a whole page, slides in rather than reflowing every frame. */}
           <div className="h-full xl:w-[calc(100cqw-300px-1rem-2px)]">
-            {shownPresetId ? (
-              <CustomPresetPanel
-                id={shownPresetId}
-                waiting={shownPresetId !== settledPresetId}
+            {shown ? (
+              <AssistantPresetPanel
+                code={shown.code}
+                query={shown.query}
+                goTo={workspace.goTo}
+                waiting={panelOpen && !settledOpen}
                 onClose={workspace.close}
               />
             ) : null}

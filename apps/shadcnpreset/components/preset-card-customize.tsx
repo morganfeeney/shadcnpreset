@@ -4,11 +4,9 @@ import * as React from "react"
 
 type PresetCardCustomizeContextValue = {
   customize: (code: string) => void
-  /** The preset being made; its button says so and stays shown. */
-  making: string | null
   /**
    * A click on the card customizes it, in place of its preview, while a
-   * custom preset is already open to compare with.
+   * preset is already open beside it to customize.
    */
   customizeOnClick?: boolean
 }
@@ -23,13 +21,12 @@ const PresetCardCustomizeContext =
  */
 function PresetCardCustomizeProvider({
   customize,
-  making,
   customizeOnClick = false,
   children,
 }: PresetCardCustomizeContextValue & { children: React.ReactNode }) {
   const value = React.useMemo(
-    () => ({ customize, making, customizeOnClick }),
-    [customize, making, customizeOnClick]
+    () => ({ customize, customizeOnClick }),
+    [customize, customizeOnClick]
   )
   return (
     <PresetCardCustomizeContext.Provider value={value}>

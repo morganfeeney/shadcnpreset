@@ -50,20 +50,12 @@ const FACET_LABEL: Record<
 function CustomPresetProperties({
   code,
   colours,
-  canEdit = true,
-  sectionHeadings = true,
   onValueChange,
   className,
   ...props
 }: Omit<React.ComponentProps<"div">, "onChange"> & {
   code: string
   colours: CustomColours
-  canEdit?: boolean
-  /**
-   * Titles its sections with headings. Off on a page whose outline is its
-   * own, where they stay labels.
-   */
-  sectionHeadings?: boolean
   onValueChange: (next: CustomPresetValue, settle: boolean) => void
 }) {
   const preset = React.useMemo(
@@ -113,7 +105,7 @@ function CustomPresetProperties({
           value,
           label: facetValueLabel(key, value),
         }))}
-        disabled={!canEdit || locked}
+        disabled={locked}
         onChange={(value) => change(key, value)}
       />
     )
@@ -125,7 +117,7 @@ function CustomPresetProperties({
       className={cn("text-sm", className)}
       {...props}
     >
-      <PropertySection title="Colours" heading={sectionHeadings}>
+      <PropertySection title="Colours">
         {CUSTOM_PRESET_COLOUR_FACETS.map(({ key, label }) => (
           <ColourPicker
             key={key}
@@ -133,7 +125,6 @@ function CustomPresetProperties({
             items={colourItems(key, resolved.baseColor)}
             value={listValue[key]}
             custom={colours[key]}
-            disabled={!canEdit}
             onPick={(value) => pickColour(key, value)}
             onCustom={(colour, settle) => customColour(key, colour, settle)}
           />
@@ -141,7 +132,6 @@ function CustomPresetProperties({
         <ColourOverrides
           overrides={colours.overrides}
           current={theme.light}
-          disabled={!canEdit}
           onChange={(overrides, settle) => {
             if (settle)
               trackEvent("custom_preset_change", { facet: "overrides" })
@@ -163,7 +153,7 @@ function CustomPresetProperties({
         ) : null}
       </PropertySection>
 
-      <PropertySection title="Style" heading={sectionHeadings}>
+      <PropertySection title="Style">
         {facetSelect("style")}
         {facetSelect("radius")}
         {facetSelect("iconLibrary")}
@@ -174,36 +164,28 @@ function CustomPresetProperties({
         ) : null}
       </PropertySection>
 
-      <PropertySection title="Typography" heading={sectionHeadings}>
+      <PropertySection title="Typography">
         {facetSelect("font")}
         {facetSelect("fontHeading")}
       </PropertySection>
-
-      {canEdit ? null : (
-        <p className="px-4 pb-4 text-xs text-muted-foreground">
-          Only the person who made this preset can change it.
-        </p>
-      )}
     </div>
   )
 }
 
+/** A labelled group; a label, not a heading, so the page's outline is its own. */
 function PropertySection({
   title,
-  heading,
   children,
 }: {
   title: string
-  heading: boolean
   children: React.ReactNode
 }) {
-  const Title = heading ? "h3" : "div"
   return (
     <section
       aria-label={title}
       className="grid grid-cols-1 gap-2.5 border-b px-4 py-4 last:border-b-0"
     >
-      <Title className="text-xs font-semibold">{title}</Title>
+      <div className="text-xs font-semibold">{title}</div>
       {children}
     </section>
   )

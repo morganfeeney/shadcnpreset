@@ -55,42 +55,30 @@ vi.mock("next/link", () => ({
 }))
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
-// The panel's own editor is tested on its own; here it shows what is open,
-// read from the same query the real panel reads.
-vi.mock("@/components/assistant/custom-preset-panel", async () => {
-  const { useQuery } = await import("@tanstack/react-query")
-  return {
-    CustomPresetPanel: ({
-      id,
-      waiting,
-      onClose,
-    }: {
-      id: string
-      waiting?: boolean
-      onClose: () => void
-    }) => {
-      const preset = useQuery({
-        queryKey: ["customPreset", id],
-        queryFn: async () => ({
-          id,
-          presetCode: "b0",
-          colours: { overrides: {} },
-          canEdit: true,
-        }),
-      })
-      return (
-        <div>
-          <p>Custom preset {id}</p>
-          {waiting ? <p>Editor waiting for the slide</p> : null}
-          <p>Panel preset code {preset.data?.presetCode ?? "loading"}</p>
-          <button type="button" onClick={onClose}>
-            Close custom preset
-          </button>
-        </div>
-      )
-    },
-  }
-})
+// The customizer is tested on its own; here the panel says what is open,
+// as the address gives it.
+vi.mock("@/components/assistant/assistant-preset-panel", () => ({
+  AssistantPresetPanel: ({
+    code,
+    query,
+    waiting,
+    onClose,
+  }: {
+    code: string
+    query: URLSearchParams
+    waiting?: boolean
+    onClose: () => void
+  }) => (
+    <div>
+      <p>Preset {code}</p>
+      {query.get("custom") ? <p>Saved {query.get("custom")}</p> : null}
+      {waiting ? <p>Preview waiting for the slide</p> : null}
+      <button type="button" onClick={onClose}>
+        Close preset
+      </button>
+    </div>
+  ),
+}))
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 const { toast } = await import("sonner")
 
@@ -130,26 +118,27 @@ const { AssistantChat } = await import("@/components/assistant/assistant-chat")
 const { assistantChatPath } = await import("@/lib/assistant-chat-path")
 
 const PRESETS = [
-  { code: "aaa", description: "one" },
-  { code: "bbb", description: "two" },
-  { code: "ccc", description: "three" },
-  { code: "ddd", description: "four" },
+  { code: "b5dyaqxe6", description: "one" },
+  { code: "b4YtS7GakV", description: "two" },
+  { code: "b4xFeBLg4O", description: "three" },
+  { code: "b1ePsKcQEb", description: "four" },
 ]
+/** What the fake server's edit turns the open preset into. */
+const EDITED_CODE = "b1VlItwW"
 
 let failSend = false
 /** The send answers that the free generations are used up. */
 let proRequired = false
-/** The account has made as many custom presets as it keeps. */
-let presetLimitReached = false
-/** Custom presets the fake server has made, for their ids. */
-let madeCount = 0
 /** Held, the answer has not arrived yet. */
 let releaseSend: (() => void) | null = null
 let failChatDetail = false
 /** Chats the fake server knows about, so an unknown id behaves like one. */
 const storedChatIds = new Set<string>()
 const chatDetailRequests: string[] = []
-const sendBodies: Array<{ chatId?: string; customPresetId?: string }> = []
+const sendBodies: Array<{
+  chatId?: string
+  customPreset?: { presetCode: string; colours: unknown }
+}> = []
 
 function mockFetch() {
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -173,7 +162,7 @@ function mockFetch() {
       }
       const body = JSON.parse(String(init.body)) as {
         chatId?: string
-        customPresetId?: string
+        customPreset?: { presetCode: string; colours: unknown }
         messages: { content: string }[]
       }
       sendBodies.push(body)
@@ -195,16 +184,12 @@ function mockFetch() {
       // A chat is named when its first answer is ready, not before.
       const chatId = body.chatId ?? NEW_CHAT_ID
       storedChatIds.add(chatId)
-      if (body.customPresetId) {
+      if (body.customPreset) {
         return jsonResponse({
           phase: "custom",
           assistantMessage: "Made the theme green.",
           changed: ["Theme: Green"],
-          customPreset: {
-            id: body.customPresetId,
-            presetCode: "b0-green",
-            colours: { overrides: {} },
-          },
+          customPreset: { presetCode: EDITED_CODE, colours: { overrides: {} } },
           chatId,
         })
       }
@@ -216,15 +201,13 @@ function mockFetch() {
       })
     }
 
-    if (url === "/api/custom-presets" && init?.method === "POST") {
-      if (presetLimitReached) {
-        return new Response(
-          JSON.stringify({ code: "custom_preset_limit", limit: 3 }),
-          { status: 402 }
-        )
-      }
-      madeCount += 1
-      return jsonResponse({ id: `cp-${madeCount}` })
+    if (url === "/api/custom-presets/cp-9") {
+      return jsonResponse({
+        id: "cp-9",
+        presetCode: PRESETS[2].code,
+        colours: { overrides: {} },
+        canEdit: true,
+      })
     }
 
     if (url === "/api/assistant/chats") {
@@ -385,8 +368,6 @@ beforeEach(() => {
   sendBodies.length = 0
   failSend = false
   proRequired = false
-  presetLimitReached = false
-  madeCount = 0
   releaseSend = () => {}
   // Shared across tests, so a later assertion could otherwise pass on an
   // earlier test's toast.
@@ -622,51 +603,53 @@ async function customize(code: string) {
   })
 }
 
+/** Anything saved: customizing from a card never saves. */
 function customPresetRequests() {
   return vi
     .mocked(fetch)
-    .mock.calls.filter(([url]) => url === "/api/custom-presets")
-    .map(([, init]) => JSON.parse(String(init?.body)))
+    .mock.calls.filter(([url]) => String(url).startsWith("/api/custom-presets"))
+}
+
+function address() {
+  return new URLSearchParams(window.location.search)
 }
 
 describe("AssistantChat customizing a preset", () => {
-  it("customizes the preset whose card was clicked, in the chat's colours", async () => {
+  it("shows the preset whose card was clicked, in the chat's colours, saving nothing", async () => {
     renderPage()
     await sendPrompt("A preset with #0876BD as base color")
     await sendPrompt("make it bolder")
 
     await customize(PRESETS[1].code)
 
-    expect(customPresetRequests()).toEqual([
-      {
-        presetCode: PRESETS[1].code,
-        text: "A preset with #0876BD as base color",
-        chatId: NEW_CHAT_ID,
-      },
-    ])
-    expect(await screen.findByText("Custom preset cp-1")).toBeTruthy()
+    expect(await screen.findByText(`Preset ${PRESETS[1].code}`)).toBeTruthy()
+    expect(address().get("preset")).toBe(PRESETS[1].code)
+    expect(address().get("colours")).toContain("#0876BD")
+    expect(customPresetRequests()).toEqual([])
   })
 
-  it("reopens one it made, and makes another for a different preset", async () => {
+  it("shows it as it comes when the chat gave no exact colours", async () => {
+    renderPage()
+    await sendPrompt("Orange presets")
+
+    await customize(PRESETS[0].code)
+
+    expect(await screen.findByText(`Preset ${PRESETS[0].code}`)).toBeTruthy()
+    expect(address().has("colours")).toBe(false)
+  })
+
+  it("switches in place to another card, without a step of its own", async () => {
     renderPage()
     await sendPrompt("Orange presets")
     await customize(PRESETS[0].code)
-    await screen.findByText("Custom preset cp-1")
-    await act(async () => {
-      screen.getByRole("button", { name: "Close custom preset" }).click()
-    })
+    await screen.findByText(`Preset ${PRESETS[0].code}`)
+    const steps = window.history.length
 
-    await customize(PRESETS[0].code)
-    expect(new URLSearchParams(window.location.search).get("preset")).toBe(
-      "cp-1"
-    )
     await customize(PRESETS[1].code)
 
-    expect(customPresetRequests().map((r) => r.presetCode)).toEqual([
-      PRESETS[0].code,
-      PRESETS[1].code,
-    ])
-    expect(await screen.findByText("Custom preset cp-2")).toBeTruthy()
+    expect(await screen.findByText(`Preset ${PRESETS[1].code}`)).toBeTruthy()
+    expect(window.history.length).toBe(steps)
+    expect(customPresetRequests()).toEqual([])
   })
 
   it("keeps the sponsored card under presets, exact colours or not", async () => {
@@ -711,7 +694,7 @@ describe("AssistantChat Pro wall", () => {
   })
 })
 
-describe("AssistantChat custom preset panel", () => {
+describe("AssistantChat preset panel", () => {
   function panel() {
     return screen.getByRole("region", { name: "Custom preset", hidden: true })
   }
@@ -719,33 +702,34 @@ describe("AssistantChat custom preset panel", () => {
   async function openFromCard() {
     await sendPrompt("A preset with #0876BD as base color")
     await customize(PRESETS[0].code)
+    await screen.findByText(`Preset ${PRESETS[0].code}`)
   }
 
-  it("opens the custom preset beside the chat, and in the address", async () => {
+  async function close() {
+    await act(async () => {
+      screen.getByRole("button", { name: "Close preset" }).click()
+    })
+  }
+
+  it("opens beside the chat, and in the address", async () => {
     renderPage()
     await openFromCard()
 
-    expect(await screen.findByText("Custom preset cp-1")).toBeTruthy()
     expect(panel().hasAttribute("data-open")).toBe(true)
-    expect(new URLSearchParams(window.location.search).get("preset")).toBe(
-      "cp-1"
-    )
+    expect(address().get("preset")).toBe(PRESETS[0].code)
   })
 
   it("closes, and the address lets it go", async () => {
     renderPage()
     await openFromCard()
-    await screen.findByText("Custom preset cp-1")
 
-    await act(async () => {
-      screen.getByRole("button", { name: "Close custom preset" }).click()
-    })
+    await close()
 
     expect(panel().hasAttribute("data-open")).toBe(false)
     expect(window.location.search).toBe("")
   })
 
-  it("holds the editor until the panel has slid in", async () => {
+  it("holds the preview until the panel has slid in", async () => {
     let slidIn = () => {}
     const finished = new Promise<void>((resolve) => {
       slidIn = resolve
@@ -759,61 +743,68 @@ describe("AssistantChat custom preset panel", () => {
       await openFromCard()
 
       expect(
-        await screen.findByText("Editor waiting for the slide")
+        await screen.findByText("Preview waiting for the slide")
       ).toBeTruthy()
       await act(async () => slidIn())
-      expect(screen.queryByText("Editor waiting for the slide")).toBeNull()
+      expect(screen.queryByText("Preview waiting for the slide")).toBeNull()
     } finally {
       delete (HTMLElement.prototype as Partial<HTMLElement>).getAnimations
     }
   })
 
   it("opens the one the address names on arrival, without the slide", async () => {
-    renderPage(CHAT_ID, "?preset=cp-9")
+    renderPage(CHAT_ID, `?preset=${PRESETS[3].code}`)
 
-    expect(await screen.findByText("Custom preset cp-9")).toBeTruthy()
+    expect(await screen.findByText(`Preset ${PRESETS[3].code}`)).toBeTruthy()
     expect(panel().hasAttribute("data-open")).toBe(true)
     expect(panel().hasAttribute("data-instant")).toBe(true)
   })
 
-  it("sends to the open custom preset, and asks for changes to it", async () => {
+  it("opens an older link to a saved preset by that preset", async () => {
+    renderPage(CHAT_ID, "?preset=cp-9")
+
+    expect(await screen.findByText(`Preset ${PRESETS[2].code}`)).toBeTruthy()
+    expect(screen.getByText("Saved cp-9")).toBeTruthy()
+  })
+
+  it("sends the open preset with a message, and asks for changes to it", async () => {
     renderPage()
     await openFromCard()
-    await screen.findByText("Custom preset cp-1")
 
     expect(screen.getByRole("textbox").getAttribute("placeholder")).toBe(
       "Ask for changes to this preset…"
     )
+    const colours = JSON.parse(address().get("colours")!)
     await sendPrompt("make it green")
 
     await waitFor(() => expect(sendBodies).toHaveLength(2))
-    expect(sendBodies[0].customPresetId).toBeUndefined()
-    expect(sendBodies[1].customPresetId).toBe("cp-1")
+    expect(sendBodies[0].customPreset).toBeUndefined()
+    expect(sendBodies[1].customPreset).toEqual({
+      presetCode: PRESETS[0].code,
+      colours,
+    })
   })
 
   it("shows the edit in the chat and the panel", async () => {
     renderPage()
     await openFromCard()
-    await screen.findByText("Panel preset code b0")
 
     await sendPrompt("make it green")
 
     expect(await screen.findByText("Made the theme green.")).toBeTruthy()
-    expect(await screen.findByText("Panel preset code b0-green")).toBeTruthy()
+    expect(await screen.findByText(`Preset ${EDITED_CODE}`)).toBeTruthy()
+    expect(address().has("colours")).toBe(false)
   })
 
   it("goes back to finding presets once the panel closes", async () => {
     renderPage()
     await openFromCard()
-    await screen.findByText("Custom preset cp-1")
-    await act(async () => {
-      screen.getByRole("button", { name: "Close custom preset" }).click()
-    })
+    await close()
 
     await sendPrompt("something warmer")
 
     await waitFor(() => expect(sendBodies).toHaveLength(2))
-    expect(sendBodies[1].customPresetId).toBeUndefined()
+    expect(sendBodies[1].customPreset).toBeUndefined()
   })
 })
 
@@ -833,30 +824,5 @@ describe("AssistantChat asked for a custom preset", () => {
         .hasAttribute("data-open")
     ).toBe(false)
     expect(customPresetRequests()).toEqual([])
-  })
-
-  it("offers Pro, not an error, when customizing passes the account's cap", async () => {
-    presetLimitReached = true
-    renderPage()
-    await sendPrompt(ASK)
-
-    await customize(PRESETS[0].code)
-
-    const note = await screen.findByRole("status", {
-      name: "Custom preset limit",
-    })
-    expect(
-      within(note).getByText(
-        "Upgrade to Pro to unlock unlimited custom presets."
-      )
-    ).toBeTruthy()
-    await act(async () => {
-      within(note).getByRole("button", { name: "Dismiss" }).click()
-    })
-    expect(
-      screen.queryByRole("status", { name: "Custom preset limit" })
-    ).toBeNull()
-    expect(screen.queryByText(/Custom preset cp-/)).toBeNull()
-    expect(toast.error).not.toHaveBeenCalled()
   })
 })

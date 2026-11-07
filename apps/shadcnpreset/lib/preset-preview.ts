@@ -161,15 +161,11 @@ export function parsePresetPreviewPageName(
 
 export function presetBrowsePath(
   code: string,
-  view: PresetPreviewPageName = "preview",
-  /** Anything else the address holds, such as a draft, kept as it is. */
-  query?: URLSearchParams
+  view: PresetPreviewPageName = "preview"
 ): string {
-  const next = new URLSearchParams(query)
-  if (view === "preview") next.delete("view")
-  else next.set("view", view)
-  const search = next.toString()
-  return search ? `/preset/${code}?${search}` : `/preset/${code}`
+  return view === "preview"
+    ? `/preset/${code}`
+    : `/preset/${code}?${new URLSearchParams({ view })}`
 }
 
 export function isLocalPresetPreviewExample(

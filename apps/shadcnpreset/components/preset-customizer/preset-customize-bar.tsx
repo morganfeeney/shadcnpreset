@@ -7,8 +7,7 @@ import {
   SlidersHorizontalIcon,
 } from "@phosphor-icons/react"
 
-import { usePresetPageLive } from "@/components/preset-page-live-context"
-import { PresetBrowseControls } from "@/components/preset-browse-controls"
+import { usePresetCustomize } from "@/components/preset-customizer/preset-customize"
 import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
 import { ThemeSwatch } from "@/components/themes/theme-nav"
 import { Badge } from "@/components/ui/badge"
@@ -29,20 +28,41 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { formatPresetCardDescription } from "@/lib/preset-card-description"
 
-import { useEffectiveView } from "./effective-view"
-import { usePresetCustomize } from "./preset-customize"
+/**
+ * Along the bottom: the preset on show, its views, and Customize. `start`
+ * goes before the name and `controls` after the views, for what a page adds
+ * (the preset page's Community toggle and its previous and next).
+ */
+export function PresetCustomizeBar({
+  titleAs = "p",
+  start,
+  controls,
+}: {
+  /** The preset page names itself by its code; elsewhere it is a label. */
+  titleAs?: "h1" | "p"
+  start?: React.ReactNode
+  controls?: React.ReactNode
+}) {
+  const { value, view, setView, generatedPreview } = usePresetCustomize()
 
-/** Along the bottom: the preset on show, its views, and Customize. */
-export function PresetBrowseBar() {
   return (
     <WorkspaceBar>
       <WorkspaceBarStart>
-        <WorkspacePanelTrigger side="start" label="Community" className="md:hidden" />
-        <PresetNowShowing />
+        {start}
+        <PresetNowShowing titleAs={titleAs} />
       </WorkspaceBarStart>
       <WorkspaceBarCenter>
-        <PresetBrowseViewPicker />
-        <PresetBrowseCycleControls />
+        <PresetPreviewLayoutPicker
+          value={view}
+          onValueChange={setView}
+          presetCode={value.code}
+          adHocView={
+            generatedPreview
+              ? { page: "generated", label: generatedPreview.title }
+              : undefined
+          }
+        />
+        {controls}
       </WorkspaceBarCenter>
       <WorkspaceBarEnd>
         <WorkspacePanelTrigger
@@ -60,8 +80,7 @@ export function PresetBrowseBar() {
 }
 
 /** The preset on show, as a player names what is playing. */
-function PresetNowShowing() {
-  const { livePresetCode } = usePresetPageLive()
+function PresetNowShowing({ titleAs: Title }: { titleAs: "h1" | "p" }) {
   const { value, saved, isChanged } = usePresetCustomize()
   const { isCopied, copyToClipboard } = useCopyToClipboard()
   const resolved = resolvePresetFromCode(value.code)
@@ -73,16 +92,16 @@ function PresetNowShowing() {
       <ThemeSwatch code={value.code} className="size-10" />
       <div className="max-w-80 min-w-0">
         <div className="flex min-w-0 items-center gap-1">
-          <h1 className="truncate font-mono text-sm font-semibold">
-            {livePresetCode}
-          </h1>
+          <Title className="truncate font-mono text-sm font-semibold">
+            {value.code}
+          </Title>
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
             className="shrink-0 text-muted-foreground hover:text-foreground"
             aria-label={isCopied ? "Copied" : "Copy preset code"}
-            onClick={() => copyToClipboard(livePresetCode)}
+            onClick={() => copyToClipboard(value.code)}
           >
             {isCopied ? <CheckIcon /> : <CopyIcon />}
           </Button>
@@ -105,47 +124,5 @@ function PresetNowShowing() {
         </Tooltip>
       </div>
     </div>
-  )
-}
-
-function PresetBrowseViewPicker() {
-  const { livePresetCode, setLiveView, generatedPreview } = usePresetPageLive()
-  const view = useEffectiveView()
-  if (!resolvePresetFromCode(livePresetCode)) return null
-
-  return (
-    <PresetPreviewLayoutPicker
-      value={view}
-      onValueChange={setLiveView}
-      presetCode={livePresetCode}
-      adHocView={
-        generatedPreview
-          ? { page: "generated", label: generatedPreview.title }
-          : undefined
-      }
-    />
-  )
-}
-
-function PresetBrowseCycleControls() {
-  const { livePresetCode, selectLivePreset } = usePresetPageLive()
-  const resolved = React.useMemo(
-    () => resolvePresetFromCode(livePresetCode),
-    [livePresetCode]
-  )
-  if (!resolved) return null
-
-  return (
-    <PresetBrowseControls
-      resolved={resolved}
-      basePath="/preset"
-      cycleOnly
-      onSelectPreset={(code) => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-        selectLivePreset(code)
-      }}
-    />
   )
 }

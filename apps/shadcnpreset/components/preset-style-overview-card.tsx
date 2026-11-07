@@ -304,11 +304,7 @@ function PresetStyleOverviewCardPreviewInner({
           }
           onClick={handlePreview}
         />
-        {customizeOnClick && inPlace?.making === code ? (
-          <div className="absolute inset-0 z-40 grid place-items-center bg-background/60">
-            <Spinner />
-          </div>
-        ) : null}
+
         {showV4UrlError ? (
           <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Live preview URL could not be built for this preset code.
@@ -382,27 +378,15 @@ function PresetStyleOverviewCardHoverHint({
   title: string
 }) {
   const inPlace = usePresetCardCustomize()
-  const customizing = inPlace?.making === code
-  const customizeClassName = cn(
-    "pointer-events-auto invisible relative group-hover/card:visible group-focus-within/card:visible focus-visible:visible",
-    customizing && "visible"
-  )
+  const customizeClassName =
+    "pointer-events-auto invisible relative group-hover/card:visible group-focus-within/card:visible focus-visible:visible"
   return (
     <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-t-xl rounded-b-none">
       <span
         aria-hidden
-        className={cn(
-          "absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-focus-within/card:opacity-100 group-hover/card:opacity-100",
-          customizing && "opacity-100"
-        )}
+        className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-focus-within/card:opacity-100 group-hover/card:opacity-100"
       />
-      <span
-        aria-hidden
-        className={cn(
-          "invisible relative group-hover/card:visible",
-          customizing && "visible"
-        )}
-      >
+      <span aria-hidden className="invisible relative group-hover/card:visible">
         <span className={cn(buttonVariants())}>Preview</span>
       </span>
       {inPlace ? (
@@ -411,10 +395,9 @@ function PresetStyleOverviewCardHoverHint({
           variant="secondary"
           className={customizeClassName}
           aria-label={`Customize preset ${title}`}
-          disabled={customizing}
           onClick={() => inPlace.customize(code)}
         >
-          {customizing ? "Opening…" : "Customize"}
+          Customize
           <PaletteIcon data-icon="inline-end" />
         </Button>
       ) : (

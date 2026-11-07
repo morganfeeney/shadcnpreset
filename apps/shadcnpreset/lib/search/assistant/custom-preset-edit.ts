@@ -182,26 +182,6 @@ export function applyCustomPresetEdit(
   return { presetCode, colours, changed }
 }
 
-/**
- * `presetCode` with the style, fonts, icons and radius from an edit, for a
- * custom preset being made: its colours come from the message itself, read
- * exactly, so the edit's colours are left out.
- */
-export function withPresetParts(presetCode: string, edit: CustomPresetEdit) {
-  const { changed, ...next } = applyCustomPresetEdit(
-    { presetCode, colours: { overrides: {} } },
-    {
-      ...edit,
-      baseColor: null,
-      theme: null,
-      chartColor: null,
-      overrides: [],
-      removeOverrides: [],
-    }
-  )
-  return { presetCode: next.presetCode, changed }
-}
-
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }

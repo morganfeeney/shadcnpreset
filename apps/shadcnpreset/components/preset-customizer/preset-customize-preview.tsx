@@ -3,35 +3,39 @@
 import * as React from "react"
 
 import { BuildWithPresetLink } from "@/components/page-builder/build-with-preset-link"
-import { usePresetPageLive } from "@/components/preset-page-live-context"
+import { usePresetCustomize } from "@/components/preset-customizer/preset-customize"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Spinner } from "@/components/ui/spinner"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import { getPresetPreviewView } from "@/lib/preset-preview"
 
-import { resolveEffectiveView } from "./effective-view"
-import { usePresetCustomize } from "./preset-customize"
-
 /**
- * The preset in its chosen view, with any change to it shown in place. It
- * lives in the layout and loads once per view: another preset, from
- * Customize or the list, is sent into the frame rather than loaded again.
+ * The preset in its chosen view, with every change shown in place. It loads
+ * once per view: another preset, from Customize or a list beside it, is sent
+ * into the frame rather than loaded again.
  */
-export function PresetBrowsePreview() {
-  const { livePresetCode, view: requestedView, generatedPreview } =
-    usePresetPageLive()
-  const { value, css } = usePresetCustomize()
-  const view = resolveEffectiveView(requestedView, Boolean(generatedPreview))
+export function PresetCustomizePreview() {
+  const { value, css, view, saved, generatedPreview } = usePresetCustomize()
 
-  // The preset the frame loads with, kept until the view changes.
-  const [frame, setFrame] = React.useState({ view, code: livePresetCode })
-  if (frame.view !== view) setFrame({ view, code: livePresetCode })
+  // The preset the frame loads with, kept until the view changes. A saved
+  // preset's colours paint first; any change arrives as a message.
+  const [frame, setFrame] = React.useState({
+    view,
+    code: value.code,
+    custom: saved?.id,
+  })
+  if (frame.view !== view) {
+    setFrame({ view, code: value.code, custom: saved?.id })
+  }
   const [loadedView, setLoadedView] = React.useState<string | null>(null)
   const loaded = loadedView === view
 
-  const previewSrc = getPresetPreviewUrl(frame.code, view)
+  const url = getPresetPreviewUrl(frame.code, view)
   const credit = getPresetPreviewView(view)?.credit
-  if (!previewSrc) return null
+  if (!url) return null
+  const src = frame.custom
+    ? `${url}&${new URLSearchParams({ custom: frame.custom })}`
+    : url
 
   return (
     <div
@@ -40,8 +44,8 @@ export function PresetBrowsePreview() {
     >
       <PresetV4Frame
         className="block size-full rounded-lg border bg-background shadow-lg"
-        src={previewSrc}
-        title={`Preset preview ${livePresetCode} ${view}`}
+        src={src}
+        title={`Preset preview ${value.code} ${view}`}
         generatedPreview={view === "generated" ? generatedPreview : null}
         presetCode={value.code}
         customColoursCss={css}
@@ -50,7 +54,7 @@ export function PresetBrowsePreview() {
       {/* Over the blocks it builds with, once they are there to see. */}
       {credit && loaded ? (
         <BuildWithPresetLink
-          presetCode={livePresetCode}
+          presetCode={value.code}
           placement={credit.source}
           className="absolute inset-x-0 bottom-8 mx-auto w-fit"
         />

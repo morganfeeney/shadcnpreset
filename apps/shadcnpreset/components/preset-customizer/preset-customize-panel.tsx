@@ -1,6 +1,7 @@
 "use client"
 
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
+import { usePresetCustomize } from "@/components/preset-customizer/preset-customize"
 import { Button } from "@/components/ui/button"
 import {
   WorkspacePanel,
@@ -10,11 +11,10 @@ import {
   WorkspacePanelTrigger,
 } from "@/components/workspace"
 
-import { usePresetCustomize } from "./preset-customize"
-
 /**
  * Everything to change about the preset on show. Opened again from the bar,
- * so it needs no rail of its own.
+ * so it needs no rail of its own; fixed open where the workspace doesn't
+ * collapse (Ask AI).
  */
 export function PresetCustomizePanel() {
   const { value, setValue, isChanged, reset } = usePresetCustomize()
@@ -37,7 +37,6 @@ export function PresetCustomizePanel() {
         <CustomPresetProperties
           code={value.code}
           colours={value.colours}
-          sectionHeadings={false}
           onValueChange={setValue}
         />
       </WorkspacePanelContent>

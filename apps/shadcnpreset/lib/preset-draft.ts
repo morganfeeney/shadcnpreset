@@ -1,18 +1,25 @@
 import type { CustomColours } from "@/lib/custom-colours"
 import { customColoursSchema } from "@/lib/custom-colours-schema"
+import {
+  parsePresetPreviewPageName,
+  type PresetPreviewPageName,
+} from "@/lib/preset-preview"
 
 /**
- * The preset page's address holds everything about customizing, so a reload,
- * the back button, a shared link and signing in all come back to it as it was.
+ * Customizing a preset keeps everything in the page's address, the same on
+ * the preset page and in Ask AI, so a reload, the back button, a shared link
+ * and signing in all come back to it as it was. Each page says where the
+ * preset code itself lives (its path, or Ask AI's `preset`).
  *
- * - `custom`: a saved custom preset, shown and changed on the page.
+ * - `custom`: a saved custom preset, shown and changed.
  * - `colours`: custom colours not yet saved, over the preset on show. Only
- *   these make a draft: any listed choice is just another preset, with a
- *   page of its own.
+ *   these make a draft: any listed choice is just another preset.
+ * - `view`: the block view the preset is shown in; none for the first.
  * - `customize`: open the Customize panel on arrival (a card's Customize).
  * - `save`: save on arrival, for the way back from signing in to save.
  */
 const CUSTOM = "custom"
+const VIEW = "view"
 const COLOURS = "colours"
 const CUSTOMIZE = "customize"
 const SAVE = "save"
@@ -34,12 +41,14 @@ export function readPresetQuery(query: URLSearchParams): {
   colours: CustomColours | null
   /** The saved custom preset on show. */
   custom: string | null
+  view: PresetPreviewPageName
   customize: boolean
   save: boolean
 } {
   return {
     colours: parseColours(query.get(COLOURS)),
     custom: query.get(CUSTOM),
+    view: parsePresetPreviewPageName(query.get(VIEW)),
     customize: query.has(CUSTOMIZE),
     save: query.has(SAVE),
   }
@@ -53,6 +62,31 @@ export function withColours(
   const next = new URLSearchParams(query)
   next.delete(COLOURS)
   if (colours) next.set(COLOURS, JSON.stringify(colours))
+  return next
+}
+
+/** The address with this view, or none for the first. */
+export function withView(
+  query: URLSearchParams,
+  view: PresetPreviewPageName
+): URLSearchParams {
+  const next = new URLSearchParams(query)
+  if (view === "preview") next.delete(VIEW)
+  else next.set(VIEW, view)
+  return next
+}
+
+/** The address for another preset as it comes, in the same view. */
+export function withoutChanges(query: URLSearchParams): URLSearchParams {
+  const next = withColours(withoutArrival(query), null)
+  next.delete(CUSTOM)
+  return next
+}
+
+/** The address with nothing about customizing left in it. */
+export function withoutCustomizing(query: URLSearchParams): URLSearchParams {
+  const next = withoutChanges(query)
+  next.delete(VIEW)
   return next
 }
 
@@ -80,15 +114,24 @@ export function withoutArrival(query: URLSearchParams): URLSearchParams {
   return next
 }
 
+/** Fired after this page's address changes from here, which `popstate` misses. */
+export const ADDRESS_CHANGE_EVENT = "preset-address-change"
+
 /**
- * Changes this page's address in place, as a step history doesn't keep.
- * With `null` for its state, so Next takes it as a change to sync into
- * `useSearchParams` (its own state passed back reads as its own write).
+ * Changes this page's address in place, as a step history doesn't keep, or
+ * (`push`) as one it does. With `null` for its state, so Next takes it as a
+ * change to sync into `useSearchParams` (its own state passed back reads as
+ * its own write).
  */
-export function replaceQuery(query: URLSearchParams) {
+export function replaceQuery(
+  query: URLSearchParams,
+  how: "replace" | "push" = "replace"
+) {
   const url = new URL(window.location.href)
   url.search = query.toString()
-  window.history.replaceState(null, "", url)
+  if (how === "push") window.history.pushState(null, "", url)
+  else window.history.replaceState(null, "", url)
+  window.dispatchEvent(new Event(ADDRESS_CHANGE_EVENT))
 }
 
 export function hasColours(colours: CustomColours) {
