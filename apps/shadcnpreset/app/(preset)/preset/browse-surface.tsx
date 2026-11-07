@@ -1,121 +1,108 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
+import * as React from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
-import { BuildWithPresetLink } from "@/components/page-builder/build-with-preset-link"
-import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { PresetBrowseControls } from "@/components/preset-browse-controls"
-import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
-import { PresetV4Frame } from "@/components/preset-v4-frame"
+import { PresetCustomizeProvider } from "@/components/preset-customizer/preset-customize"
+import { PresetCustomizeBar } from "@/components/preset-customizer/preset-customize-bar"
+import { PresetCustomizeCreditImpression } from "@/components/preset-customizer/preset-customize-credit"
+import { PresetCustomizePanel } from "@/components/preset-customizer/preset-customize-panel"
+import { PresetCustomizePreview } from "@/components/preset-customizer/preset-customize-preview"
+import { PresetCustomizeToolbar } from "@/components/preset-customizer/preset-customize-toolbar"
+import { usePresetPageLive } from "@/components/preset-page-live-context"
 import {
-  ShadcncraftCredit,
-  ShadcncraftCreditImpression,
-} from "@/components/shadcncraft-examples/credit"
-import { Spinner } from "@/components/ui/spinner"
-import { Container } from "@/components/zippystarter/container"
-import {
-  getPresetPreviewUrl,
-  resolvePresetFromCode,
-  type ResolvedPreset,
-} from "@/lib/preset"
-import {
-  getPresetPreviewView,
-  type PresetPreviewPageName,
-} from "@/lib/preset-preview"
+  WorkspaceBody,
+  WorkspaceMain,
+  WorkspacePanelTrigger,
+  WorkspaceProvider,
+} from "@/components/workspace"
+import { resolvePresetFromCode } from "@/lib/preset"
+import { replaceQuery } from "@/lib/preset-draft"
 import type { PresetSidebarItem } from "@/lib/preset-sidebar-item"
 
-import { PresetLiveHero } from "./components"
-import {
-  PresetBrowseSidebar,
-  PresetBrowseSidebarSheet,
-} from "./preset-browse-sidebar"
-
-type PresetBrowseSurfaceProps = {
-  communityItems: PresetSidebarItem[]
-  children: ReactNode
-}
+import { PresetCommunityPanel } from "./preset-community-panel"
+import { usePresetWorkspace } from "./use-preset-workspace"
 
 /**
- * `generated` only resolves while a preview is in session storage.
- *
- * While one is still being recovered from a linked chat the view is left alone,
- * so the pane can show it loading rather than flashing the default view and
- * snapping back once the preview arrives.
+ * The preset page: community presets on the left, the preset in the middle,
+ * everything to change about it on the right, and a bar along the bottom
+ * naming it, with its views. Either panel collapses, and the page remembers.
+ * The preset, its preview and Customize are the shared customizer, which
+ * Ask AI shows too; this page adds Community and previous and next.
  */
-function resolveEffectiveView(
-  view: PresetPreviewPageName,
-  hasGeneratedPreview: boolean,
-  pending: boolean
-): PresetPreviewPageName {
-  if (view !== "generated" || hasGeneratedPreview || pending) return view
-  return "preview"
-}
-
-function PresetBrowseHero() {
+export function PresetBrowseSurface({
+  communityItems,
+  children,
+}: {
+  communityItems: PresetSidebarItem[]
+  children: React.ReactNode
+}) {
+  const router = useRouter()
   const { livePresetCode } = usePresetPageLive()
-  if (!resolvePresetFromCode(livePresetCode)) return null
+  const query = useSearchParams()
+  const workspace = usePresetWorkspace()
 
-  return (
-    <Container aria-label="Preset details and actions" className="max-w-full">
-      <PresetLiveHero initialCode={livePresetCode} initialDescription="" />
-    </Container>
-  )
-}
-
-function PresetBrowseViewPicker() {
-  const {
-    livePresetCode,
-    view,
-    setLiveView,
-    generatedPreview,
-    generatedPreviewPending,
-  } = usePresetPageLive()
-  if (!resolvePresetFromCode(livePresetCode)) return null
-
-  const adHocView = generatedPreview
-    ? { page: "generated" as const, label: generatedPreview.title }
-    : generatedPreviewPending
-      ? { page: "generated" as const, label: "", pending: true }
-      : undefined
-
-  return (
-    <PresetPreviewLayoutPicker
-      value={resolveEffectiveView(
-        view,
-        Boolean(generatedPreview),
-        generatedPreviewPending
-      )}
-      onValueChange={setLiveView}
-      presetCode={livePresetCode}
-      adHocView={adHocView}
-    />
-  )
-}
-
-/** Lives in the layout so switching presets does not count a new impression. */
-function PresetBrowseCreditImpression() {
-  const { view, generatedPreview, generatedPreviewPending } =
-    usePresetPageLive()
-  const effectiveView = resolveEffectiveView(
-    view,
-    Boolean(generatedPreview),
-    generatedPreviewPending
+  // The code is in the path here: another one is another page.
+  const goTo = React.useCallback(
+    (code: string, next: URLSearchParams) => {
+      if (code === livePresetCode) {
+        replaceQuery(next)
+        return
+      }
+      const search = next.toString()
+      router.replace(`/preset/${code}${search ? `?${search}` : ""}`, {
+        scroll: false,
+      })
+    },
+    [livePresetCode, router]
   )
 
   return (
-    <ShadcncraftCreditImpression
-      credit={getPresetPreviewView(effectiveView)?.credit}
-    />
+    <main className="min-h-0 min-w-0 px-2 pb-2">
+      <PresetCustomizeProvider
+        code={livePresetCode}
+        query={query}
+        goTo={goTo}
+      >
+        <PresetCustomizeCreditImpression />
+        <WorkspaceProvider
+          {...workspace}
+          className="overflow-hidden rounded-lg border"
+        >
+          <WorkspaceBody>
+            <PresetCommunityPanel items={communityItems} />
+            <WorkspaceMain>
+              <PresetCustomizeToolbar />
+              <PresetCustomizePreview />
+              {children}
+            </WorkspaceMain>
+            <PresetCustomizePanel />
+          </WorkspaceBody>
+          <PresetCustomizeBar
+            titleAs="h1"
+            start={
+              <WorkspacePanelTrigger
+                side="start"
+                label="Community"
+                className="md:hidden"
+              />
+            }
+            controls={<PresetCycleControls />}
+          />
+        </WorkspaceProvider>
+      </PresetCustomizeProvider>
+    </main>
   )
 }
 
-function PresetBrowseCycleControls() {
+/** Previous, shuffle and next through the community presets. */
+function PresetCycleControls() {
   const { livePresetCode, selectLivePreset } = usePresetPageLive()
-  const resolved = useMemo(
+  const resolved = React.useMemo(
     () => resolvePresetFromCode(livePresetCode),
     [livePresetCode]
   )
-
   if (!resolved) return null
 
   return (
@@ -130,100 +117,5 @@ function PresetBrowseCycleControls() {
         selectLivePreset(code)
       }}
     />
-  )
-}
-
-export function PresetBrowseSurface({
-  communityItems,
-  children,
-}: PresetBrowseSurfaceProps) {
-  return (
-    <div className="w-full">
-      <PresetBrowseCreditImpression />
-      <main className="grid gap-2">
-        <PresetBrowseHero />
-        <Container className="grid max-w-full gap-4">
-          <div className="flex items-center justify-between gap-1.5">
-            <div className="flex min-w-0 items-center gap-2">
-              <PresetBrowseSidebarSheet communityItems={communityItems} />
-              <PresetBrowseViewPicker />
-            </div>
-            <PresetBrowseCycleControls />
-          </div>
-          <div className="flex min-h-0 items-stretch gap-4">
-            <PresetBrowseSidebar communityItems={communityItems} />
-            {children}
-          </div>
-        </Container>
-      </main>
-    </div>
-  )
-}
-
-export function PresetBrowsePreview({
-  resolved,
-  view,
-}: {
-  resolved: ResolvedPreset
-  view: PresetPreviewPageName
-}) {
-  const { generatedPreview, generatedPreviewPending } = usePresetPageLive()
-  // `?view=generated` survives reloads and shared links, but the code itself is
-  // session-scoped — fall back to the default view when there is nothing to show.
-  const effectiveView = resolveEffectiveView(
-    view,
-    Boolean(generatedPreview),
-    generatedPreviewPending
-  )
-  const frameKey = `${resolved.code}-${effectiveView}`
-  const [loadedKey, setLoadedKey] = useState<string | null>(null)
-  const loaded = loadedKey === frameKey
-  const previewSrc = getPresetPreviewUrl(resolved.code, effectiveView)
-  const credit = getPresetPreviewView(effectiveView)?.credit
-
-  if (!previewSrc) {
-    return null
-  }
-
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-2">
-      {credit ? (
-        <ShadcncraftCredit credit={credit} presetCode={resolved.code} />
-      ) : null}
-      {/* Rings and shadows paint outside a card's box, and an iframe cannot
-          paint past its own edge. The frame widens into the container's gutter
-          and examples pad it back (`px-2` inside), so content still lines up
-          with the tab row but edge-hugging cards keep their outline. */}
-      <div className="relative -mx-2 min-h-[calc(100dvh-14rem)] min-w-0 flex-1 overflow-hidden rounded-lg">
-        {/* Holding the frame back while a linked preview is still being recovered
-            leaves `loaded` false, so the overlay below covers the wait. */}
-        {generatedPreviewPending ? null : (
-          <PresetV4Frame
-            className="block h-full min-h-[calc(100dvh-14rem)] w-full border-0"
-            src={previewSrc}
-            title={`Preset preview ${resolved.code} ${effectiveView}`}
-            generatedPreview={
-              effectiveView === "generated" ? generatedPreview : null
-            }
-            onLoad={() => {
-              setLoadedKey(frameKey)
-            }}
-          />
-        )}
-        {/* Over the blocks it builds with, once they are there to see. */}
-        {credit && loaded ? (
-          <BuildWithPresetLink
-            presetCode={resolved.code}
-            placement={credit.source}
-            className="absolute inset-x-0 bottom-6 mx-auto w-fit"
-          />
-        ) : null}
-        {!loaded ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background">
-            <Spinner />
-          </div>
-        ) : null}
-      </div>
-    </div>
   )
 }

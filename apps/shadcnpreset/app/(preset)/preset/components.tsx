@@ -1,26 +1,14 @@
 "use client"
 
-import Link from "next/link"
 import * as React from "react"
 
-import { copyToClipboardWithMeta } from "@/components/copy-button"
-import { GetCodeDialog } from "@/components/get-code-dialog"
-import { PresetVoteButton } from "@/components/preset-vote-button"
-import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
-import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { PresetActionButtons } from "@/components/preset-action-buttons"
+import { Button } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
-import {
-  CheckIcon,
-  CodeIcon,
-  CopyIcon,
-  InfoIcon,
-  ShareIcon,
-} from "@phosphor-icons/react"
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react"
 import { formatPresetCardDescription } from "@/lib/preset-card-description"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { usePresetPageLiveOptional } from "@/components/preset-page-live-context"
-import { cn } from "@/lib/utils"
 
 export function PresetCodeTitle({
   presetCode,
@@ -78,76 +66,11 @@ export function PresetLiveHero({
     <div className="flex flex-wrap items-start justify-between gap-4 py-6">
       <PresetCodeTitle presetCode={code} description={description} />
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <PresetButtons preset={resolved?.code ?? code} sharePath={sharePath} />
+        <PresetActionButtons
+          preset={resolved?.code ?? code}
+          sharePath={sharePath}
+        />
       </div>
     </div>
-  )
-}
-
-export function PresetButtons({
-  preset,
-  sharePath,
-}: {
-  preset: string
-  sharePath?: string
-}) {
-  const [hasCopied, setHasCopied] = React.useState(false)
-  const [getCodeOpen, setGetCodeOpen] = React.useState(false)
-  const [pitchOpen, setPitchOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    if (hasCopied) {
-      const timer = setTimeout(() => setHasCopied(false), 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [hasCopied])
-
-  const handleShare = React.useCallback(() => {
-    const url = sharePath
-      ? new URL(sharePath, window.location.origin).href
-      : window.location.href
-    copyToClipboardWithMeta(url, {
-      name: "copy_preset_share_url",
-      properties: { url, preset },
-    })
-    setHasCopied(true)
-  }, [preset, sharePath])
-
-  return (
-    <>
-      <PresetVoteButton size="lg" code={preset} />
-      <Button size="lg" variant="outline" onClick={() => setPitchOpen(true)}>
-        <ShadcncraftLogo className="size-4" />
-        Get the blocks
-      </Button>
-      <Button size="lg" variant="outline" onClick={() => setGetCodeOpen(true)}>
-        <CodeIcon className="size-4" />
-        Code
-      </Button>
-      <Button variant="outline" size="lg" onClick={handleShare}>
-        {hasCopied ? "Copied" : "Share"}
-        {hasCopied ? (
-          <CheckIcon aria-hidden className="size-4" />
-        ) : (
-          <ShareIcon aria-hidden className="size-4" />
-        )}
-      </Button>
-      <Link
-        href={`/pdp/${preset}`}
-        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-      >
-        Details <InfoIcon />
-      </Link>
-      <ShadcncraftPitchDialog
-        open={pitchOpen}
-        onOpenChange={setPitchOpen}
-        presetCode={preset}
-      />
-      <GetCodeDialog
-        open={getCodeOpen}
-        onOpenChange={setGetCodeOpen}
-        presetCode={preset}
-      />
-    </>
   )
 }

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   CUSTOM_COLOURS_MESSAGE_TYPE,
   PRESET_CODE_MESSAGE_TYPE,
+  PREVIEW_READY_MESSAGE_TYPE,
 } from "@/lib/custom-preset-frame"
 
 const { PresetV4Frame } = await import("@/components/preset-v4-frame")
@@ -75,5 +76,30 @@ describe("PresetV4Frame with a custom preset's colours", () => {
       CUSTOM_COLOURS_MESSAGE_TYPE,
     ])
     expect(post.mock.calls[0][0].code).toBe("b4pjDW9OBU")
+  })
+
+  it("sends them when the preview says it is ready, though its load was missed", async () => {
+    const { container, rerender } = render(
+      <PresetV4Frame src={SRC} title="Preview" customColoursCss="first" />
+    )
+    const frame = container.querySelector("iframe")!
+    const post = vi.fn()
+    const preview = { postMessage: post } as unknown as Window
+    vi.spyOn(frame, "contentWindow", "get").mockReturnValue(preview)
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { type: PREVIEW_READY_MESSAGE_TYPE },
+          source: preview,
+        })
+      )
+    })
+    expect(sentColours(post)).toEqual(["first"])
+
+    rerender(
+      <PresetV4Frame src={SRC} title="Preview" customColoursCss="second" />
+    )
+    expect(sentColours(post).at(-1)).toBe("second")
   })
 })

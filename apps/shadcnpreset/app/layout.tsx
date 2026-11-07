@@ -14,6 +14,7 @@ import { siteConfig } from "@/lib/config"
 import { GoogleAnalytics } from "@/components/analytics/google-analytics"
 import { HotJar } from "@/components/analytics/hot-jar"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { SiteFloatingSponsorCard } from "@/components/floating-sponsor-card"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -70,6 +71,7 @@ export default function RootLayout({
               <PendingVoteApplier />
               <VoteAuthDialogHost />
               <TooltipProvider>{children}</TooltipProvider>
+              <SiteFloatingSponsorCard />
             </ThemeProvider>
           </QueryProvider>
         </Suspense>

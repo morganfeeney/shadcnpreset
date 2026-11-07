@@ -5,6 +5,7 @@ import { useTheme } from "next-themes"
 
 import {
   CUSTOM_COLOURS_MESSAGE_TYPE,
+  isPreviewReadyMessage,
   PRESET_CODE_MESSAGE_TYPE,
 } from "@/lib/custom-preset-frame"
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
@@ -52,6 +53,9 @@ export function PresetV4Frame({
   const retryTimersRef = React.useRef<number[]>([])
 
   React.useEffect(() => {
+    // Reset before the new src renders: a cached page can load before any
+    // later effect runs, and resetting after would undo its load for good.
+    hasLoadedRef.current = false
     setActiveSrc(src)
   }, [src])
 
@@ -147,10 +151,6 @@ export function PresetV4Frame({
   }, [clearRetryTimers, postCustomColours, postGeneratedPreview, postThemeMode])
 
   React.useEffect(() => {
-    hasLoadedRef.current = false
-  }, [activeSrc])
-
-  React.useEffect(() => {
     if (!hasLoadedRef.current) {
       return
     }
@@ -177,14 +177,22 @@ export function PresetV4Frame({
       if (iframeRef.current?.contentWindow !== event.source) {
         return
       }
-      if (!isGeneratedPreviewReadyMessage(event.data)) {
+      // The frame says when it listens: everything goes in then, whatever
+      // the load event did or didn't catch.
+      if (isPreviewReadyMessage(event.data)) {
+        hasLoadedRef.current = true
+        postThemeMode()
+        postGeneratedPreview()
+        postCustomColours()
         return
       }
-      postGeneratedPreview()
+      if (isGeneratedPreviewReadyMessage(event.data)) {
+        postGeneratedPreview()
+      }
     }
     window.addEventListener("message", handleMessage)
     return () => window.removeEventListener("message", handleMessage)
-  }, [postGeneratedPreview])
+  }, [postCustomColours, postGeneratedPreview, postThemeMode])
 
   React.useEffect(() => {
     return () => {

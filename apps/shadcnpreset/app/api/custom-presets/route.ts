@@ -2,22 +2,18 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getSessionUser } from "@/lib/auth"
-import { readBrandColours } from "@/lib/brand-theme"
-import { customColoursFrom } from "@/lib/custom-colours"
+import { customColoursSchema } from "@/lib/custom-colours-schema"
 import {
   createCustomPreset,
   customPresetLimitResponse,
-  findChatCustomPreset,
   reachedCustomPresetLimit,
 } from "@/lib/custom-preset-store"
 import { resolvePresetFromCode } from "@/lib/preset"
-import { withPartsAskedFor } from "@/lib/search/assistant/custom-preset-request"
 
+/** A customized preset, saved as it stands. */
 const body = z.object({
   presetCode: z.string().trim().min(1).max(32),
-  /** The message the colours were given in; the server reads them itself. */
-  text: z.string().max(8000),
-  chatId: z.string().max(64).nullish(),
+  colours: customColoursSchema,
 })
 
 export async function POST(request: Request) {
@@ -34,32 +30,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 })
   }
 
-  // A chat's card reopens the custom preset that chat already made, however
-  // it was made (the card, or asking for one) and after a reload.
-  const chatId = parsed.data.chatId ?? null
-  const made = chatId
-    ? await findChatCustomPreset({ userId: user.id, chatId })
-    : null
-  if (made) return NextResponse.json({ id: made })
-
   const limit = await reachedCustomPresetLimit(user.id)
   if (limit !== null) {
     return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
   }
 
-  // Without exact colours it starts as the preset itself: someone refining
-  // presets makes one to change it bit by bit.
-  const custom = customColoursFrom(readBrandColours(parsed.data.text))
-  const { presetCode } = await withPartsAskedFor({
-    presetCode: parsed.data.presetCode,
-    colours: custom,
-    text: parsed.data.text,
-  })
   const id = await createCustomPreset({
     userId: user.id,
-    presetCode,
-    colours: custom,
-    chatId,
+    presetCode: parsed.data.presetCode,
+    colours: parsed.data.colours,
+    chatId: null,
   })
   return NextResponse.json({ id })
 }

@@ -1,14 +1,14 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * The editor while a custom preset is read, shaped like it: the preview on
- * its canvas and the properties column beside it, so nothing jumps.
+ * The customizer while it waits, shaped like it: the preview on its canvas
+ * and the properties column beside it, so nothing jumps.
  */
 export function CustomPresetBodySkeleton() {
   return (
     <div
       role="status"
-      aria-label="Loading custom preset"
+      aria-label="Loading preset"
       className="flex min-h-0 flex-1 flex-col lg:flex-row"
     >
       <div className="h-[70svh] shrink-0 bg-muted p-3 lg:h-auto lg:flex-1 lg:p-5">
@@ -24,22 +24,5 @@ export function CustomPresetBodySkeleton() {
         ))}
       </div>
     </div>
-  )
-}
-
-/** The custom preset page while it is read: its bar, then the body. */
-export function CustomPresetSkeleton() {
-  return (
-    <main className="min-h-0 px-2 pb-2">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-          <Skeleton className="h-4 w-40" />
-          <span className="flex-1" />
-          <Skeleton className="h-7 w-20" />
-          <Skeleton className="h-7 w-20" />
-        </div>
-        <CustomPresetBodySkeleton />
-      </div>
-    </main>
   )
 }

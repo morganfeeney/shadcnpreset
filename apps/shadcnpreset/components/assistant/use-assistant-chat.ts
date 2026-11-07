@@ -56,23 +56,21 @@ type AssistantChatDetailResponse = {
   }
 }
 
-/** A custom preset as an edit to it left it, for the panel showing it. */
-export type EditedCustomPreset = {
-  id: string
+/**
+ * The preset open beside the chat, as it stands: what a turn edits, and what
+ * an edit leaves for the panel to show.
+ */
+export type CustomizedPreset = {
   presetCode: string
   colours: CustomColours
 }
 
-/**
- * The answer while a custom preset is open, an edit to it, or to a request
- * that made one (`created`), instead of presets.
- */
+/** The answer while a custom preset is open: an edit to it, not presets. */
 type CustomPresetTurn = {
   phase: "custom"
-  created?: boolean
   assistantMessage: string
   changed: string[]
-  customPreset: EditedCustomPreset
+  customPreset: CustomizedPreset
 }
 
 type AssistantSendResponse =
@@ -219,17 +217,10 @@ type UseAssistantChatOptions = {
    * coming back to and the surface can give it an address.
    */
   onChatCreated?: (chatId: string) => void
-  /** A custom preset open beside the chat: sends edit it instead. */
-  customPresetId?: string | null
-  /** An edit to that custom preset has been saved. */
-  onCustomPresetEdited?: (preset: EditedCustomPreset) => void
-  /** A message asked for a custom preset past the cap an account keeps. */
-  onCustomPresetLimit?: (limit: number) => void
-  /**
-   * A message asked for a custom preset and the answer made it. Called before
-   * `onChatCreated`, so a new chat's address can carry it.
-   */
-  onCustomPresetCreated?: (preset: EditedCustomPreset) => void
+  /** A preset open beside the chat to customize: sends edit it instead. */
+  customPreset?: CustomizedPreset | null
+  /** A turn has edited it, for the panel to show. */
+  onCustomPresetEdited?: (preset: CustomizedPreset) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -245,22 +236,12 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   React.useEffect(() => {
     onChatCreatedRef.current = onChatCreated
   }, [onChatCreated])
-  const customPresetId = options?.customPresetId ?? null
+  const customPreset = options?.customPreset ?? null
   const onCustomPresetEdited = options?.onCustomPresetEdited
   const onCustomPresetEditedRef = React.useRef(onCustomPresetEdited)
   React.useEffect(() => {
     onCustomPresetEditedRef.current = onCustomPresetEdited
   }, [onCustomPresetEdited])
-  const onCustomPresetLimit = options?.onCustomPresetLimit
-  const onCustomPresetLimitRef = React.useRef(onCustomPresetLimit)
-  React.useEffect(() => {
-    onCustomPresetLimitRef.current = onCustomPresetLimit
-  }, [onCustomPresetLimit])
-  const onCustomPresetCreated = options?.onCustomPresetCreated
-  const onCustomPresetCreatedRef = React.useRef(onCustomPresetCreated)
-  React.useEffect(() => {
-    onCustomPresetCreatedRef.current = onCustomPresetCreated
-  }, [onCustomPresetCreated])
   const pathname = usePathname()
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [pending, setPending] = React.useState(false)
@@ -406,7 +387,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     previousPresetCodes: string[]
     chatId: string | null
     livePresetCode?: string
-    customPresetId: string | null
+    customPreset: CustomizedPreset | null
   }
 
   type SendData =
@@ -422,11 +403,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       }
     | {
         kind: "pro_required"
-        args: SendVars
-      }
-    | {
-        kind: "custom_preset_limit"
-        limit: number
         args: SendVars
       }
 
@@ -447,7 +423,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           messages: [{ role: "user", content: args.trimmed }],
           previousPresetCodes: args.previousPresetCodes,
           livePresetCode: args.livePresetCode,
-          customPresetId: args.customPresetId ?? undefined,
+          customPreset: args.customPreset ?? undefined,
         }),
       })
       const raw = await response.text()
@@ -473,15 +449,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         data.code === "pro_required"
       ) {
         return { kind: "pro_required", args }
-      }
-
-      if (
-        response.status === 402 &&
-        "code" in data &&
-        data.code === "custom_preset_limit"
-      ) {
-        const limit = (data as { limit?: number }).limit ?? 0
-        return { kind: "custom_preset_limit", limit, args }
       }
 
       if (!response.ok) {
@@ -524,14 +491,6 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         trackEvent("pro_wall_view", { page_path: pathname })
         return
       }
-      // Past the custom preset cap: the question goes back, and the page
-      // offers Pro.
-      if (result.kind === "custom_preset_limit") {
-        setMessages(context?.previousMessages ?? [])
-        onCustomPresetLimitRef.current?.(result.limit)
-        return
-      }
-
 
       const latencyMs = context
         ? Math.max(0, Date.now() - context.requestStartedAt)
@@ -576,8 +535,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
         onPreviewRef.current?.(data.preview)
       }
       if (data.phase === "custom") {
-        if (data.created) onCustomPresetCreatedRef.current?.(data.customPreset)
-        else onCustomPresetEditedRef.current?.(data.customPreset)
+        onCustomPresetEditedRef.current?.(data.customPreset)
       }
 
       // The answer names the chat: it exists now, it belongs in the history,
@@ -679,20 +637,13 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       previousPresetCodes,
       chatId: activeChatId,
       livePresetCode,
-      customPresetId,
+      customPreset,
     })
 
     if (result.kind === "auth_required") {
       throw new AssistantSendError(
         "Authentication required",
         "auth_required"
-      )
-    }
-    // Thrown so the composer gives the question back, to send after Pro.
-    if (result.kind === "custom_preset_limit") {
-      throw new AssistantSendError(
-        "Custom preset limit reached",
-        "custom_preset_limit"
       )
     }
   }

@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shadcnpreset",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "shadcnpreset",
+        "dev"
+      ],
+      "port": 4010
+    }
+  ]
+}

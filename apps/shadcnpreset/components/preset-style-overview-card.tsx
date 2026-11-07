@@ -1,6 +1,7 @@
 "use client"
 
-import { HeartIcon } from "@phosphor-icons/react"
+import Link from "next/link"
+import { HeartIcon, PaletteIcon } from "@phosphor-icons/react"
 import { motion, useReducedMotion } from "motion/react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -15,6 +16,8 @@ import {
 import { PresetV4ScaledFrame } from "@/components/preset-v4-scaled-frame"
 import { PresetCard1StyleOverview } from "@/components/preset-swatch/components/preset-card-1-style-overview"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { usePresetCardCustomize } from "@/components/preset-card-customize"
+import { customizePresetPath } from "@/lib/preset-draft"
 import { getPresetPreviewUrl } from "@/lib/preset"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics-events"
@@ -247,9 +250,15 @@ function PresetStyleOverviewCardPreviewInner({
     ? shouldRender && measured && previewSrc !== null
     : shouldRender && measured
 
-  const showHoverHint = hoverHint ?? !onPreview
+  const inPlace = usePresetCardCustomize()
+  const customizeOnClick = Boolean(inPlace?.customizeOnClick)
+  const showHoverHint = !customizeOnClick && (hoverHint ?? !onPreview)
 
   function handlePreview() {
+    if (customizeOnClick) {
+      inPlace?.customize(code)
+      return
+    }
     if (onPreview) {
       onPreview()
       return
@@ -287,10 +296,15 @@ function PresetStyleOverviewCardPreviewInner({
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
           )}
           aria-label={
-            onPreview ? `Select preset ${title}` : `Open preview for ${title}`
+            customizeOnClick
+              ? `Customize preset ${title}`
+              : onPreview
+                ? `Select preset ${title}`
+                : `Open preview for ${title}`
           }
           onClick={handlePreview}
         />
+
         {showV4UrlError ? (
           <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Live preview URL could not be built for this preset code.
@@ -306,7 +320,9 @@ function PresetStyleOverviewCardPreviewInner({
                 virtualWidth={virtualWidth}
                 className="absolute inset-0"
               />
-              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
+              {showHoverHint ? (
+                <PresetStyleOverviewCardHoverHint code={code} title={title} />
+              ) : null}
             </>
           ) : (
             <>
@@ -323,7 +339,9 @@ function PresetStyleOverviewCardPreviewInner({
                   <PresetCard1StyleOverview initialCode={code} className="h-full w-full" />
                 </div>
               </CardContent>
-              {showHoverHint ? <PresetStyleOverviewCardHoverHint /> : null}
+              {showHoverHint ? (
+                <PresetStyleOverviewCardHoverHint code={code} title={title} />
+              ) : null}
             </>
           )
         ) : (
@@ -347,16 +365,57 @@ function PresetStyleOverviewCardPreviewInner({
   )
 }
 
-function PresetStyleOverviewCardHoverHint() {
+/**
+ * Preview, over the card's own click target that opens it, and Customize
+ * beneath it: a real control, shown on hover and while the card has focus,
+ * so a keyboard reaches it too.
+ */
+function PresetStyleOverviewCardHoverHint({
+  code,
+  title,
+}: {
+  code: string
+  title: string
+}) {
+  const inPlace = usePresetCardCustomize()
+  const customizeClassName =
+    "pointer-events-auto invisible relative group-hover/card:visible group-focus-within/card:visible focus-visible:visible"
   return (
-    <div
-      aria-hidden
-      className="absolute inset-0 z-10 flex items-center justify-center rounded-t-xl rounded-b-none"
-    >
-      <span className="pointer-events-none absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100" />
-      <span className="pointer-events-none invisible relative z-10 group-hover/card:visible">
+    <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-t-xl rounded-b-none">
+      <span
+        aria-hidden
+        className="absolute inset-0 bg-linear-to-b from-foreground/20 to-background/20 opacity-0 transition-opacity duration-200 group-focus-within/card:opacity-100 group-hover/card:opacity-100"
+      />
+      <span aria-hidden className="invisible relative group-hover/card:visible">
         <span className={cn(buttonVariants())}>Preview</span>
       </span>
+      {inPlace ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className={customizeClassName}
+          aria-label={`Customize preset ${title}`}
+          onClick={() => inPlace.customize(code)}
+        >
+          Customize
+          <PaletteIcon data-icon="inline-end" />
+        </Button>
+      ) : (
+        <Link
+          href={customizePresetPath(code)}
+          className={cn(buttonVariants({ variant: "secondary" }), customizeClassName)}
+          aria-label={`Customize preset ${title}`}
+          onClick={() =>
+            trackEvent("custom_preset_customize_click", {
+              preset_code: code,
+              page_path: getPagePath(),
+            })
+          }
+        >
+          Customize
+          <PaletteIcon data-icon="inline-end" />
+        </Link>
+      )}
     </div>
   )
 }

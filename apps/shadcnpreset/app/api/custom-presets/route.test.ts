@@ -10,13 +10,6 @@ vi.mock("@/lib/db", () => ({
   query: (...args: unknown[]) => query(...args),
 }))
 
-const generateText = vi.fn()
-vi.mock("ai", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("ai")>()),
-  generateText: (...args: unknown[]) => generateText(...args),
-}))
-
-const { resolvePresetFromCode } = await import("@/lib/preset")
 const { POST } = await import("@/app/api/custom-presets/route")
 const { GET: READ, PATCH } = await import("@/app/api/custom-presets/[id]/route")
 const { GET } = await import("@/app/r/custom/[file]/route")
@@ -35,71 +28,26 @@ beforeEach(() => {
   vi.clearAllMocks()
   getSessionUser.mockResolvedValue({ id: "user-1", name: "Morgan" })
   query.mockResolvedValue({ rows: [], rowCount: 1 })
-  generateText.mockRejectedValue(new Error("No model in tests"))
   delete process.env.CUSTOM_PRESET_LIMIT
 })
 
-/** What the model reads from a message that only gives fonts. */
-function fontsRead(font: string, fontHeading: string) {
-  return {
-    output: {
-      assistantMessage: "",
-      style: null,
-      font,
-      fontHeading,
-      iconLibrary: null,
-      radius: null,
-      baseColor: null,
-      theme: "#ff0000",
-      chartColor: null,
-      overrides: [],
-      removeOverrides: [],
-    },
-  }
-}
+const COLOURS = { theme: "#CC5500", overrides: { background: "#101418" } }
 
 describe("POST /api/custom-presets", () => {
-  it("saves the preset with the colours read from the message", async () => {
+  it("saves the preset with its colours as given", async () => {
     const response = await POST(
-      request("POST", {
-        presetCode: CODE,
-        text: "Primary #DE00CE, accent #254467",
-        chatId: "chat-1",
-      })
+      request("POST", { presetCode: CODE, colours: COLOURS })
     )
 
     expect(response.status).toBe(200)
     expect((await response.json()).id).toEqual(expect.any(String))
-    // After looking for one the chat already made.
-    expect(query.mock.calls[0][0]).toContain("SELECT id FROM custom_presets")
-    const [sql, params] = query.mock.calls[1]
+    const [sql, params] = query.mock.calls[0]
     expect(sql).toContain("INSERT INTO custom_presets")
     expect(params.slice(1, 3)).toEqual(["user-1", CODE])
-    expect(JSON.parse(params[3])).toEqual({
-      theme: "#DE00CE",
-      overrides: { accent: "#254467" },
-    })
-    expect(params[4]).toBe("chat-1")
+    expect(JSON.parse(params[3])).toEqual(COLOURS)
   })
 
-  it("takes the fonts the message asks for, and its colours exactly", async () => {
-    generateText.mockResolvedValue(fontsRead("raleway", "lora"))
-
-    await POST(
-      request("POST", {
-        presetCode: CODE,
-        text: "Make a custom preset with Lora, Raleway and oklch(70.4% .191 22.216)",
-      })
-    )
-
-    const [, params] = query.mock.calls[0]
-    const preset = resolvePresetFromCode(params[2])
-    expect(preset?.font).toBe("raleway")
-    expect(preset?.fontHeading).toBe("lora")
-    expect(JSON.parse(params[3]).theme).toBe("oklch(70.4% .191 22.216)")
-  })
-
-  it("refuses past the account's cap, before asking the model", async () => {
+  it("refuses past the account's cap", async () => {
     process.env.CUSTOM_PRESET_LIMIT = "3"
     query.mockImplementation(async (sql: string) =>
       sql.includes("COUNT(*)")
@@ -108,7 +56,7 @@ describe("POST /api/custom-presets", () => {
     )
 
     const response = await POST(
-      request("POST", { presetCode: CODE, text: "#DE00CE", chatId: "chat-1" })
+      request("POST", { presetCode: CODE, colours: COLOURS })
     )
 
     expect(response.status).toBe(402)
@@ -119,10 +67,9 @@ describe("POST /api/custom-presets", () => {
     expect(
       query.mock.calls.some(([sql]) => String(sql).includes("INSERT"))
     ).toBe(false)
-    expect(generateText).not.toHaveBeenCalled()
   })
 
-  it("makes one under the cap", async () => {
+  it("saves one under the cap", async () => {
     process.env.CUSTOM_PRESET_LIMIT = "3"
     query.mockImplementation(async (sql: string) =>
       sql.includes("COUNT(*)")
@@ -131,44 +78,35 @@ describe("POST /api/custom-presets", () => {
     )
 
     const response = await POST(
-      request("POST", { presetCode: CODE, text: "#DE00CE" })
+      request("POST", { presetCode: CODE, colours: COLOURS })
     )
 
     expect(response.status).toBe(200)
   })
 
-  it("reopens the custom preset the chat already made", async () => {
-    query.mockImplementation(async (sql: string) =>
-      sql.includes("SELECT id FROM custom_presets")
-        ? { rows: [{ id: "cp-made" }] }
-        : { rows: [], rowCount: 1 }
-    )
-
+  it("refuses a colour a stylesheet can't use", async () => {
     const response = await POST(
-      request("POST", { presetCode: CODE, text: "#DE00CE", chatId: "chat-1" })
+      request("POST", {
+        presetCode: CODE,
+        colours: { theme: "burnt orange", overrides: {} },
+      })
     )
 
-    expect(await response.json()).toEqual({ id: "cp-made" })
-    expect(query.mock.calls[0][1]).toEqual(["user-1", "chat-1"])
-    expect(
-      query.mock.calls.some(([sql]) => String(sql).includes("INSERT"))
-    ).toBe(false)
-    expect(generateText).not.toHaveBeenCalled()
+    expect(response.status).toBe(400)
+    expect(query).not.toHaveBeenCalled()
   })
 
-  it("still makes it from the colours when the request cannot be read", async () => {
-    const response = await POST(
-      request("POST", { presetCode: CODE, text: "Lora and #DE00CE" })
-    )
+  it("refuses a request without colours", async () => {
+    const response = await POST(request("POST", { presetCode: CODE }))
 
-    expect(response.status).toBe(200)
-    expect(query.mock.calls[0][1][2]).toBe(CODE)
+    expect(response.status).toBe(400)
+    expect(query).not.toHaveBeenCalled()
   })
 
   it("asks someone signed out to sign in", async () => {
     getSessionUser.mockResolvedValue(null)
     const response = await POST(
-      request("POST", { presetCode: CODE, text: "#DE00CE" })
+      request("POST", { presetCode: CODE, colours: COLOURS })
     )
     expect(response.status).toBe(401)
     expect(query).not.toHaveBeenCalled()
@@ -176,20 +114,10 @@ describe("POST /api/custom-presets", () => {
 
   it("refuses a code that is not a preset", async () => {
     const response = await POST(
-      request("POST", { presetCode: "nope", text: "#DE00CE" })
+      request("POST", { presetCode: "nope", colours: COLOURS })
     )
     expect(response.status).toBe(400)
     expect(query).not.toHaveBeenCalled()
-  })
-
-  it("makes it as the preset itself when the message gives no colours", async () => {
-    const response = await POST(
-      request("POST", { presetCode: CODE, text: "a little more rounding" })
-    )
-
-    expect(response.status).toBe(200)
-    expect(query.mock.calls[0][1][2]).toBe(CODE)
-    expect(JSON.parse(query.mock.calls[0][1][3])).toEqual({ overrides: {} })
   })
 })
 

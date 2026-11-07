@@ -23,16 +23,9 @@ import {
   getGenerations,
 } from "@/lib/assistant-usage"
 import { getSessionUser } from "@/lib/auth"
-import { readBrandColours, type BrandColour } from "@/lib/brand-theme"
-import { customColoursFrom } from "@/lib/custom-colours"
-import { DEFAULT_CUSTOM_PRESET_BASE } from "@/lib/custom-preset"
-import {
-  createCustomPreset,
-  customPresetLimitResponse,
-  getCustomPreset,
-  reachedCustomPresetLimit,
-  updateCustomPreset,
-} from "@/lib/custom-preset-store"
+import { asksForCustomPreset } from "@/lib/customize-preset"
+import type { CustomColours } from "@/lib/custom-colours"
+import { customColoursSchema } from "@/lib/custom-colours-schema"
 import { clampPresetConfigForV4Preview } from "@/lib/preset-catalog"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
@@ -51,14 +44,9 @@ import {
   applyCustomPresetEdit,
   buildCustomPresetEditPrompt,
   customPresetEditSchema,
-  describeMadeCustomPreset,
   editReply,
   fillNamedColours,
 } from "@/lib/search/assistant/custom-preset-edit"
-import {
-  asksForCustomPreset,
-  withPartsAskedFor,
-} from "@/lib/search/assistant/custom-preset-request"
 import { buildAssistantSystemPrompt } from "@/lib/search/assistant/system-prompt"
 import {
   assistantTurnOutputSchema,
@@ -114,8 +102,13 @@ const bodySchema = z.object({
     .max(4),
   previousPresetCodes: z.array(z.string().min(2).max(32)).max(4).optional(),
   livePresetCode: z.string().min(2).max(32).optional(),
-  /** A custom preset open beside the chat: the turn edits it instead. */
-  customPresetId: z.string().min(1).max(64).optional(),
+  /** A preset open beside the chat to customize: the turn edits it instead. */
+  customPreset: z
+    .object({
+      presetCode: z.string().trim().min(1).max(32),
+      colours: customColoursSchema,
+    })
+    .optional(),
 })
 
 function buildLivePresetContext(
@@ -561,40 +554,28 @@ export async function POST(request: Request) {
     )
   }
 
-  if (parsed.data.customPresetId) {
+  if (parsed.data.customPreset) {
     return answerCustomPresetTurn({
       user,
-      customPresetId: parsed.data.customPresetId,
+      customPreset: parsed.data.customPreset,
       chatId: parsed.data.chatId,
       chatMessages,
       modelId,
     })
   }
 
-  // Asked for a custom preset by name, with colours to make it in: it is made
-  // now and opens beside the chat, rather than presets that cannot hold them.
-  const askedColours = lastUserMessage
-    ? readBrandColours(lastUserMessage.content)
-    : []
-  if (
-    lastUserMessage &&
-    askedColours.length &&
-    asksForCustomPreset(lastUserMessage.content)
-  ) {
-    return makeCustomPresetTurn({
-      user,
-      chatId: parsed.data.chatId,
-      chatMessages,
-      text: lastUserMessage.content,
-      colours: askedColours,
-      startFrom: namedPresetCode ?? lastOfferedCodes?.[0] ?? null,
-    })
-  }
+  // Asked for a custom preset by name: presets now, to make one from. The page
+  // offers that under them; asking never makes one.
+  const customPresetContext =
+    lastUserMessage && asksForCustomPreset(lastUserMessage.content)
+      ? "They asked for a custom preset. Go straight to ready with presets closest to what they described; the page offers to make the one they pick custom. Don't ask a clarifying question."
+      : ""
 
   const system = [
     buildAssistantSystemPrompt(),
     livePresetContext,
     previousPresetContext,
+    customPresetContext,
   ]
     .filter((s) => s.trim().length > 0)
     .join("\n\n")
@@ -737,39 +718,36 @@ export async function POST(request: Request) {
 }
 
 /**
- * A turn while a custom preset is open beside the chat: the message is a
- * change to it, so the model returns an edit rather than presets. The edit is
- * applied and saved here, and the reply says what changed; the chat keeps
- * the turn like any other.
+ * A turn while a preset is open beside the chat to customize: the message is
+ * a change to it, so the model returns an edit rather than presets. The edit
+ * goes back to the panel, which shows it like any change made there (saving
+ * is the panel's); the reply says what changed, and the chat keeps the turn
+ * like any other.
  */
 async function answerCustomPresetTurn({
   user,
-  customPresetId,
+  customPreset,
   chatId,
   chatMessages,
   modelId,
 }: {
   user: { id: string; name: string }
-  customPresetId: string
+  customPreset: { presetCode: string; colours: CustomColours }
   chatId: string | undefined
   chatMessages: z.infer<typeof bodySchema>["messages"]
   modelId: string
 }) {
-  const stored = await getCustomPreset(customPresetId)
-  if (!stored || stored.userId !== user.id) {
-    return NextResponse.json(
-      {
-        error: "That custom preset can't be changed from here.",
-        code: "custom_preset_missing",
-      },
-      { status: 404 }
-    )
+  if (!resolvePresetFromCode(customPreset.presetCode)) {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 })
   }
 
   try {
     const result = await generateText({
       model: openai(modelId),
-      system: buildCustomPresetEditPrompt(stored.presetCode, stored.colours),
+      system: buildCustomPresetEditPrompt(
+        customPreset.presetCode,
+        customPreset.colours
+      ),
       messages: chatMessages.map((m) => ({ role: m.role, content: m.content })),
       output: Output.object({
         schema: customPresetEditSchema,
@@ -794,16 +772,8 @@ async function answerCustomPresetTurn({
     const asked =
       [...chatMessages].reverse().find((m) => m.role === "user")?.content ?? ""
     const filled = fillNamedColours(edit, asked)
-    const next = applyCustomPresetEdit(stored, filled)
+    const next = applyCustomPresetEdit(customPreset, filled)
     const reply = editReply(next.changed, filled)
-    if (next.changed.length) {
-      await updateCustomPreset({
-        id: stored.id,
-        userId: user.id,
-        presetCode: next.presetCode,
-        colours: next.colours,
-      })
-    }
 
     const persisted = await saveAssistantChatForUser({
       user,
@@ -823,87 +793,12 @@ async function answerCustomPresetTurn({
       phase: "custom",
       assistantMessage: reply,
       changed: next.changed,
-      customPreset: {
-        id: stored.id,
-        presetCode: next.presetCode,
-        colours: next.colours,
-      },
+      customPreset: { presetCode: next.presetCode, colours: next.colours },
       chatId: persisted.chatId,
     })
   } catch (err) {
     console.error("[api/assistant] custom preset turn", err)
     const { status, body } = mapProviderError(err)
     return NextResponse.json(body, { status })
-  }
-}
-
-/**
- * A custom preset made from the message asking for one: its colours read
- * exactly, the rest (fonts, style, icons, radius) by the model, on the preset
- * named or last offered in the chat, or the default. Saved with the chat, so
- * the client can open it beside the conversation that made it.
- */
-async function makeCustomPresetTurn({
-  user,
-  chatId,
-  chatMessages,
-  text,
-  colours,
-  startFrom,
-}: {
-  user: { id: string; name: string }
-  chatId: string | undefined
-  chatMessages: z.infer<typeof bodySchema>["messages"]
-  text: string
-  colours: BrandColour[]
-  startFrom: string | null
-}) {
-  const limit = await reachedCustomPresetLimit(user.id)
-  if (limit !== null) {
-    return NextResponse.json(customPresetLimitResponse(limit), { status: 402 })
-  }
-
-  const custom = customColoursFrom(colours)
-  const { presetCode, changed } = await withPartsAskedFor({
-    presetCode:
-      startFrom && resolvePresetFromCode(startFrom)
-        ? startFrom
-        : DEFAULT_CUSTOM_PRESET_BASE,
-    colours: custom,
-    text,
-  })
-  const reply = describeMadeCustomPreset(presetCode, custom)
-
-  try {
-    const persisted = await saveAssistantChatForUser({
-      user,
-      chatId,
-      messages: [
-        ...chatMessages.map((message) => toPersistedAssistantMessage(message)),
-        { role: "assistant" as const, kind: "text" as const, content: reply },
-      ],
-    })
-    const id = await createCustomPreset({
-      userId: user.id,
-      presetCode,
-      colours: custom,
-      chatId: persisted.chatId,
-    })
-    await countGeneration(user.id)
-
-    return NextResponse.json({
-      phase: "custom",
-      created: true,
-      assistantMessage: reply,
-      changed,
-      customPreset: { id, presetCode, colours: custom },
-      chatId: persisted.chatId,
-    })
-  } catch (err) {
-    console.error("[api/assistant] making a custom preset", err)
-    return NextResponse.json(
-      { error: "That custom preset didn't save. Try again in a moment." },
-      { status: 500 }
-    )
   }
 }
