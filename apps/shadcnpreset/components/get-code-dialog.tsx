@@ -260,12 +260,7 @@ export function GetCodeDialog({
   const coloursStep = (
     <div className="border-t px-6 py-5">
       <FieldSet className="min-w-0 gap-3">
-        <FieldLegend variant="label">Then add your colours</FieldLegend>
-        <FieldDescription>
-          {addCommands
-            ? "A preset code can’t hold exact colours, so they install from this preset’s own link."
-            : "A preset code can’t hold exact colours. Replace the :root and .dark blocks in your globals.css with these, or save the preset for a one-line command."}
-        </FieldDescription>
+        <FieldLegend variant="label">Your custom colors</FieldLegend>
         {addCommands ? (
           <CommandCopy
             packageManager={packageManager}

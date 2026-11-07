@@ -27,13 +27,13 @@ describe("GetCodeDialog", () => {
   it("is only the preset's command without custom colours", () => {
     renderDialog()
 
-    expect(screen.queryByText("Then add your colours")).toBeNull()
+    expect(screen.queryByText("Your custom colors")).toBeNull()
   })
 
   it("follows the command with the colours as CSS before they are saved", async () => {
     renderDialog({ css: CSS })
 
-    expect(screen.getByText("Then add your colours")).toBeTruthy()
+    expect(screen.getByText("Your custom colors")).toBeTruthy()
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Copy CSS" }))
     })
