@@ -57,17 +57,17 @@ async function pick(facet: string, name: string) {
   })
 }
 
-async function openInstall() {
+async function openCode() {
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "Install" }))
+    fireEvent.click(screen.getByRole("button", { name: "Code" }))
   })
-  return screen.findByRole("dialog", { name: "Install this preset" })
+  return screen.findByRole("dialog")
 }
 
 async function installCommands() {
-  const menu = await openInstall()
-  return within(menu)
-    .getAllByText(/npx shadcn@/)
+  const dialog = await openCode()
+  return within(dialog)
+    .getAllByText(/shadcn(@\S+)? (init|add) /)
     .map((node) => node.textContent)
 }
 
@@ -95,8 +95,10 @@ describe("CustomPresetEditor", () => {
 
     expect(await installCommands()).toEqual(
       expect.arrayContaining([
-        `npx shadcn@latest init --preset ${CODE}`,
-        "npx shadcn@latest add https://shadcnpreset.com/r/custom/cp-1.json",
+        expect.stringContaining(`init --preset ${CODE} `),
+        expect.stringContaining(
+          "add https://shadcnpreset.com/r/custom/cp-1.json"
+        ),
       ])
     )
   })
@@ -145,8 +147,10 @@ describe("CustomPresetEditor", () => {
     expect(code).not.toBe(CODE)
     // The new code is sent into the frame, which shows it in place.
     expect(preview().getAttribute("src")).toBe(before)
-    expect(await installCommands()).toContain(
-      `npx shadcn@latest init --preset ${code}`
+    expect(await installCommands()).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`init --preset ${code} `),
+      ])
     )
   })
 
@@ -194,8 +198,10 @@ describe("CustomPresetEditor", () => {
     await pick("Style", "Nova")
 
     await waitFor(() => expect(toast.error).toHaveBeenCalled())
-    expect(await installCommands()).toContain(
-      `npx shadcn@latest init --preset ${CODE}`
+    expect(await installCommands()).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`init --preset ${CODE} `),
+      ])
     )
   })
 
@@ -310,28 +316,23 @@ describe("CustomPresetEditor", () => {
     ).toBeTruthy()
   })
 
-  it("copies each install command exactly as shown", async () => {
+  it("copies the preset's command, then its colours' command", async () => {
     const writeText = vi.fn(async () => {})
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     renderEditor()
-    const menu = await openInstall()
+    const dialog = await openCode()
 
-    await act(async () => {
-      fireEvent.click(
-        within(menu).getByRole("button", {
-          name: "Copy the new project command",
-        })
-      )
-    })
-    await act(async () => {
-      fireEvent.click(
-        within(menu).getByRole("button", { name: "Copy the colours command" })
-      )
-    })
+    for (const button of within(dialog).getAllByRole("button", {
+      name: "Copy Command",
+    })) {
+      await act(async () => {
+        fireEvent.click(button)
+      })
+    }
 
     expect(writeText.mock.calls).toEqual([
-      [`npx shadcn@latest init --preset ${CODE}`],
-      ["npx shadcn@latest add https://shadcnpreset.com/r/custom/cp-1.json"],
+      [expect.stringContaining(`init --preset ${CODE} `)],
+      [expect.stringContaining("add https://shadcnpreset.com/r/custom/cp-1.json")],
     ])
   })
 
@@ -361,10 +362,13 @@ function sentColours() {
   return (JSON.parse(String(body)) as { colours: unknown }).colours
 }
 
-/** The colours as CSS, read from the install menu. */
+/** The colours as CSS, read from the Code dialog's theme. */
 async function cssText() {
-  const menu = await openInstall()
-  return [...menu.querySelectorAll("pre")]
+  const dialog = await openCode()
+  await act(async () => {
+    fireEvent.click(within(dialog).getByRole("button", { name: "Theme" }))
+  })
+  return [...dialog.querySelectorAll("pre")]
     .map((pre) => pre.textContent)
     .join("\n")
 }

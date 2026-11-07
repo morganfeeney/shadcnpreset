@@ -1,12 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon } from "@phosphor-icons/react"
+import { CheckIcon, CodeIcon } from "@phosphor-icons/react"
 import { LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { CustomPresetInstallMenu } from "@/components/custom-presets/install-menu"
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
+import { GetCodeDialog } from "@/components/get-code-dialog"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -15,6 +15,7 @@ import type { CustomColours } from "@/lib/custom-colours"
 import {
   buildCustomPreset,
   customPresetRegistryPath,
+  installablePresetCode,
 } from "@/lib/custom-preset"
 import {
   CUSTOM_PRESET_VIEWS,
@@ -22,7 +23,7 @@ import {
   type CustomPresetView,
 } from "@/lib/custom-preset-frame"
 import { trackEvent } from "@/lib/analytics-events"
-import { customPresetPath } from "@/lib/preset-draft"
+import { customPresetPath, hasColours } from "@/lib/preset-draft"
 import { cn } from "@/lib/utils"
 
 /** How long a dragged picker rests before its colour is saved. */
@@ -128,11 +129,16 @@ export function CustomPresetEditor({
         </code>
         <span className="flex-1" />
         <ShareButton url={`${origin}${customPresetPath(id, code)}`} />
-        <CustomPresetInstallMenu
-          code={code}
-          colours={colours}
-          css={preset.css}
-          registryUrl={`${origin}${customPresetRegistryPath(id)}`}
+        <CodeButton
+          code={installablePresetCode(code)}
+          customColours={
+            hasColours(colours)
+              ? {
+                  css: preset.css,
+                  registryUrl: `${origin}${customPresetRegistryPath(id)}`,
+                }
+              : undefined
+          }
         />
         {end}
       </header>
@@ -217,6 +223,31 @@ function PreviewCanvas({
         ))}
       </div>
     </div>
+  )
+}
+
+/** The same Code dialog as a preset's page, with this preset's colours. */
+function CodeButton({
+  code,
+  customColours,
+}: {
+  code: string
+  customColours?: { css: string; registryUrl?: string }
+}) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <>
+      <Button type="button" size="sm" onClick={() => setOpen(true)}>
+        <CodeIcon data-icon="inline-start" />
+        Code
+      </Button>
+      <GetCodeDialog
+        open={open}
+        onOpenChange={setOpen}
+        presetCode={code}
+        customColours={customColours}
+      />
+    </>
   )
 }
 
