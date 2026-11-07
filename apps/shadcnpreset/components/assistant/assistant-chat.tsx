@@ -292,6 +292,7 @@ export function AssistantChat({
                 <PresetCardCustomizeProvider
                   customize={customize}
                   making={making}
+                  customizeOnClick={panelOpen}
                 >
                   <div className="mx-auto grid w-full max-w-4xl transition-all duration-300">
                     <AssistantConversation

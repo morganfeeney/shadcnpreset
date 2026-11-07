@@ -250,9 +250,15 @@ function PresetStyleOverviewCardPreviewInner({
     ? shouldRender && measured && previewSrc !== null
     : shouldRender && measured
 
-  const showHoverHint = hoverHint ?? !onPreview
+  const inPlace = usePresetCardCustomize()
+  const customizeOnClick = Boolean(inPlace?.customizeOnClick)
+  const showHoverHint = !customizeOnClick && (hoverHint ?? !onPreview)
 
   function handlePreview() {
+    if (customizeOnClick) {
+      inPlace?.customize(code)
+      return
+    }
     if (onPreview) {
       onPreview()
       return
@@ -290,10 +296,19 @@ function PresetStyleOverviewCardPreviewInner({
             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
           )}
           aria-label={
-            onPreview ? `Select preset ${title}` : `Open preview for ${title}`
+            customizeOnClick
+              ? `Customize preset ${title}`
+              : onPreview
+                ? `Select preset ${title}`
+                : `Open preview for ${title}`
           }
           onClick={handlePreview}
         />
+        {customizeOnClick && inPlace?.making === code ? (
+          <div className="absolute inset-0 z-40 grid place-items-center bg-background/60">
+            <Spinner />
+          </div>
+        ) : null}
         {showV4UrlError ? (
           <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Live preview URL could not be built for this preset code.
