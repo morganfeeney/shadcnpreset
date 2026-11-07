@@ -9,17 +9,10 @@ import {
 } from "@/lib/data/metadata/preset-meta"
 import { buildPageMetadata, getPresetOgImageUrl } from "@/lib/page-metadata"
 import { resolvePresetFromCode } from "@/lib/preset"
-import { parsePresetPreviewPageName } from "@/lib/preset-preview"
-
-import { PresetBrowsePreview } from "../preset-browse-preview"
 
 type PresetPageProps = {
   params: Promise<{
     code: string
-  }>
-  searchParams: Promise<{
-    view?: string
-    tab?: string
   }>
 }
 
@@ -53,21 +46,12 @@ export async function generateMetadata({
   })
 }
 
-export default async function PresetCodePage({
-  params,
-  searchParams,
-}: PresetPageProps) {
-  const [{ code }, query] = await Promise.all([params, searchParams])
-  const preset = resolvePresetFromCode(code)
-
-  if (!preset) {
-    notFound()
-  }
-
-  return (
-    <PresetBrowsePreview
-      resolved={preset}
-      view={parsePresetPreviewPageName(query.view)}
-    />
-  )
+/**
+ * The preset itself shows in the layout, so moving between presets keeps
+ * its preview; the page only turns away a code that isn't one.
+ */
+export default async function PresetCodePage({ params }: PresetPageProps) {
+  const { code } = await params
+  if (!resolvePresetFromCode(code)) notFound()
+  return null
 }

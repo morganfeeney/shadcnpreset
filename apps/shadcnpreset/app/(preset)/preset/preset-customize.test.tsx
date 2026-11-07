@@ -110,6 +110,14 @@ function Probe() {
       >
         Back as it was
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          customize.setValue({ code: OTHER, colours: customize.value.colours })
+        }
+      >
+        Pick another style
+      </button>
       <button type="button" onClick={customize.reset}>
         Reset
       </button>
@@ -148,16 +156,17 @@ function sent(index = 0) {
   return { url, method: init?.method, body: JSON.parse(String(init?.body)) }
 }
 
-const ORANGE_DRAFT = `draft=${LIVE}&colours=${encodeURIComponent(JSON.stringify(ORANGE))}`
+const ORANGE_DRAFT = `colours=${encodeURIComponent(JSON.stringify(ORANGE))}`
+const OTHER = "b4YtS7GakV"
 
 describe("PresetCustomizeProvider", () => {
-  it("is changed while it differs from the preset, and not once put back", async () => {
+  it("is a draft while it has custom colours, and not once they go", async () => {
     renderAt(`/preset/${LIVE}`)
     expect(screen.getByText("unchanged")).toBeTruthy()
 
     await click("Make it orange")
     expect(screen.getByText("changed with colours")).toBeTruthy()
-    expect(query().get("draft")).toBe(LIVE)
+    expect(JSON.parse(query().get("colours")!)).toEqual(ORANGE)
 
     await click("Back as it was")
     expect(screen.getByText("unchanged")).toBeTruthy()
@@ -179,10 +188,30 @@ describe("PresetCustomizeProvider", () => {
     expect(screen.getByText("changed with colours")).toBeTruthy()
   })
 
-  it("reads changes that match the preset as none", () => {
-    renderAt(`/preset/${LIVE}?draft=${LIVE}`)
+  it("reads colours that set nothing as none", () => {
+    renderAt(`/preset/${LIVE}?colours=${encodeURIComponent(JSON.stringify(NONE))}`)
 
     expect(screen.getByText("unchanged")).toBeTruthy()
+  })
+
+  it("moves to another preset for a listed choice, without making a draft", async () => {
+    renderAt(`/preset/${LIVE}?view=dashboard`)
+
+    await click("Pick another style")
+
+    expect(replace).toHaveBeenCalledWith(`/preset/${OTHER}?view=dashboard`, {
+      scroll: false,
+    })
+  })
+
+  it("carries custom colours over to the other preset", async () => {
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}`)
+
+    await click("Pick another style")
+
+    expect(replace).toHaveBeenCalledWith(`/preset/${OTHER}?${ORANGE_DRAFT}`, {
+      scroll: false,
+    })
   })
 
   it("resets to the preset", async () => {
@@ -257,7 +286,7 @@ describe("PresetCustomizeProvider", () => {
 
     act(() => authListener?.({ dialogOpen: false }))
     expect(query().has("save")).toBe(false)
-    expect(query().get("draft")).toBe(LIVE)
+    expect(JSON.parse(query().get("colours")!)).toEqual(ORANGE)
   })
 
   it("saves on arriving back from signing in, once", async () => {

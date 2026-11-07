@@ -89,10 +89,13 @@ export function GetCodeDialog({
   open,
   onOpenChange,
   presetCode,
+  themeCss: customThemeCss,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   presetCode: string
+  /** Custom colours, shown in place of the preset's own theme. */
+  themeCss?: string
 }) {
   const id = React.useId()
   const [config, setConfig] = useConfig()
@@ -174,8 +177,10 @@ export function GetCodeDialog({
 
   const applyCommand = applyCommands[packageManager]
   const themeCss = React.useMemo(
-    () => getPresetThemeCssBundle(presetCode)?.combinedCss ?? "",
-    [presetCode]
+    () =>
+      customThemeCss ||
+      (getPresetThemeCssBundle(presetCode)?.combinedCss ?? ""),
+    [customThemeCss, presetCode]
   )
 
   React.useEffect(() => {

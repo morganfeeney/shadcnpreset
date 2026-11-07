@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import {
   useSaveCustomPreset,
@@ -12,28 +12,29 @@ import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { NO_CUSTOM_COLOURS } from "@/lib/custom-colours"
 import { buildCustomPreset } from "@/lib/custom-preset"
 import {
+  customPresetPath,
+  hasColours,
   readPresetQuery,
   replaceQuery,
+  sameColours,
   samePreset,
+  withColours,
   withoutArrival,
-  withPresetDraft,
   type PresetDraft,
 } from "@/lib/preset-draft"
 
 type PresetCustomizeContextValue = {
-  /** The preset as it stands, changes and all. */
+  /** The preset on show, with any custom colours. */
   value: PresetDraft
-  /** What it was before any changes: the preset, or the saved custom preset. */
-  original: PresetDraft
   /** The saved custom preset on show, if any. */
   saved: SavedCustomPreset | null
-  /** It differs from the original, and the difference isn't saved. */
+  /** Custom colours (or a saved preset's) differ from what is kept. */
   isChanged: boolean
-  /** Colours for the preview as CSS; empty for a preset as it comes. */
+  /** Colours for the preview as CSS; empty without custom colours. */
   css: string
   /** `settle` is false while a picker is being dragged. */
   setValue: (next: PresetDraft, settle?: boolean) => void
-  /** Back to the original. */
+  /** Back to the preset as it comes, or as saved. */
   reset: () => void
   /** Saves the changes, signing in first if need be. */
   save: () => void
@@ -50,13 +51,13 @@ async function fetchSavedPreset(id: string): Promise<SavedCustomPreset> {
 }
 
 /**
- * Customizing the preset on show. Everything lives in the page's address
- * (see `lib/preset-draft`), and whether it has changed is worked out by
- * comparing it with the original, never remembered: changing a setting back
- * leaves nothing to save. A picker being dragged is held here until it
- * settles, so the address isn't rewritten on every frame.
+ * Customizing the preset on show. A listed choice (style, base, theme, font
+ * and so on) is just another preset, so it moves to that preset's page; only
+ * custom colours make a draft, kept in the address until saved. Whether
+ * anything has changed is worked out by comparing, never remembered.
  */
 function PresetCustomizeProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const { livePresetCode } = usePresetPageLive()
   const query = readPresetQuery(useSearchParams())
 
@@ -68,51 +69,70 @@ function PresetCustomizeProvider({ children }: { children: React.ReactNode }) {
     staleTime: Infinity,
   })
   const saved = (query.custom && savedQuery.data) || null
+  const keptColours = saved?.colours ?? NO_CUSTOM_COLOURS
 
-  const original = React.useMemo<PresetDraft>(
-    () =>
-      saved
-        ? { code: saved.presetCode, colours: saved.colours }
-        : { code: livePresetCode, colours: NO_CUSTOM_COLOURS },
-    [saved, livePresetCode]
+  // A picker being dragged is held here until it settles, so the address
+  // isn't rewritten on every frame.
+  const [dragging, setDragging] = React.useState<PresetDraft["colours"] | null>(
+    null
   )
-  const [dragging, setDragging] = React.useState<PresetDraft | null>(null)
-  const value = dragging ?? query.draft ?? original
-  const isChanged = !samePreset(value, original)
+  const value = React.useMemo<PresetDraft>(
+    () => ({
+      code: livePresetCode,
+      colours: dragging ?? query.colours ?? keptColours,
+    }),
+    [dragging, keptColours, livePresetCode, query.colours]
+  )
+  const isChanged = saved
+    ? !samePreset(value, { code: saved.presetCode, colours: saved.colours })
+    : hasColours(value.colours)
 
-  const plain = samePreset(value, {
-    code: livePresetCode,
-    colours: NO_CUSTOM_COLOURS,
-  })
   const css = React.useMemo(
     () =>
-      plain ? "" : (buildCustomPreset(value.code, value.colours)?.css ?? ""),
-    [plain, value.code, value.colours]
+      hasColours(value.colours)
+        ? (buildCustomPreset(value.code, value.colours)?.css ?? "")
+        : "",
+    [value]
   )
 
   const setValue = React.useCallback(
     (next: PresetDraft, settle = true) => {
       if (!settle) {
-        setDragging(next)
+        setDragging(next.colours)
         return
       }
       setDragging(null)
-      replaceQuery(
-        withPresetDraft(
-          new URLSearchParams(window.location.search),
-          samePreset(next, original) ? null : next
-        )
+      const colours = sameColours(next.colours, keptColours)
+        ? null
+        : next.colours
+      const search = withColours(
+        new URLSearchParams(window.location.search),
+        colours
       )
+      if (next.code === livePresetCode) {
+        replaceQuery(search)
+        return
+      }
+      // Another preset, with the colours carried over to it.
+      const query = search.toString()
+      router.replace(`/preset/${next.code}${query ? `?${query}` : ""}`, {
+        scroll: false,
+      })
     },
-    [original]
+    [keptColours, livePresetCode, router]
   )
 
+  // Back to what is kept: the preset as it comes, or the saved preset.
   const reset = React.useCallback(() => {
     setDragging(null)
-    replaceQuery(
-      withPresetDraft(new URLSearchParams(window.location.search), null)
-    )
-  }, [])
+    if (saved && saved.presetCode !== livePresetCode) {
+      router.replace(customPresetPath(saved.id, saved.presetCode), {
+        scroll: false,
+      })
+      return
+    }
+    replaceQuery(withColours(new URLSearchParams(window.location.search), null))
+  }, [livePresetCode, router, saved])
 
   const { save: saveValue, saving } = useSaveCustomPreset()
   const save = React.useCallback(() => {
@@ -134,18 +154,8 @@ function PresetCustomizeProvider({ children }: { children: React.ReactNode }) {
   }, [query.save, ready])
 
   const context = React.useMemo(
-    () => ({
-      value,
-      original,
-      saved,
-      isChanged,
-      css,
-      setValue,
-      reset,
-      save,
-      saving,
-    }),
-    [value, original, saved, isChanged, css, setValue, reset, save, saving]
+    () => ({ value, saved, isChanged, css, setValue, reset, save, saving }),
+    [value, saved, isChanged, css, setValue, reset, save, saving]
   )
 
   return (

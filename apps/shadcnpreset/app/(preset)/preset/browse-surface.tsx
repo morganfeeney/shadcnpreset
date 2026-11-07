@@ -13,6 +13,7 @@ import type { PresetSidebarItem } from "@/lib/preset-sidebar-item"
 
 import { useEffectiveView } from "./effective-view"
 import { PresetBrowseBar } from "./preset-browse-bar"
+import { PresetBrowsePreview } from "./preset-browse-preview"
 import { PresetBrowseToolbar } from "./preset-browse-toolbar"
 import { PresetCommunityPanel } from "./preset-community-panel"
 import { PresetCustomizePanel } from "./preset-customize-panel"
@@ -45,6 +46,7 @@ export function PresetBrowseSurface({
             <PresetCommunityPanel items={communityItems} />
             <WorkspaceMain>
               <PresetBrowseToolbar />
+              <PresetBrowsePreview />
               {children}
             </WorkspaceMain>
             <PresetCustomizePanel />

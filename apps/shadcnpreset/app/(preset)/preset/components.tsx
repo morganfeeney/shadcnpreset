@@ -88,10 +88,16 @@ export function PresetButtons({
   preset,
   sharePath,
   size = "lg",
+  themeCss,
+  children,
 }: {
   preset: string
   sharePath?: string
   size?: "sm" | "lg"
+  /** Custom colours, for the Code dialog's theme. */
+  themeCss?: string
+  /** More actions, after the rest. */
+  children?: React.ReactNode
 }) {
   const [hasCopied, setHasCopied] = React.useState(false)
   const [getCodeOpen, setGetCodeOpen] = React.useState(false)
@@ -149,7 +155,9 @@ export function PresetButtons({
         open={getCodeOpen}
         onOpenChange={setGetCodeOpen}
         presetCode={preset}
+        themeCss={themeCss}
       />
+      {children}
     </>
   )
 }
