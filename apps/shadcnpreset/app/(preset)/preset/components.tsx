@@ -4,12 +4,11 @@ import Link from "next/link"
 import * as React from "react"
 
 import {
+  PresetBlocksButton,
   PresetCodeButton,
   PresetShareButton,
 } from "@/components/preset-action-buttons"
 import { PresetVoteButton } from "@/components/preset-vote-button"
-import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
-import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import { CheckIcon, CopyIcon, InfoIcon } from "@phosphor-icons/react"
@@ -95,15 +94,10 @@ export function PresetButtons({
   /** More actions, after the rest. */
   children?: React.ReactNode
 }) {
-  const [pitchOpen, setPitchOpen] = React.useState(false)
-
   return (
     <>
       <PresetVoteButton size={size} code={preset} />
-      <Button size={size} variant="outline" onClick={() => setPitchOpen(true)}>
-        <ShadcncraftLogo data-icon="inline-start" className="size-4" />
-        Get the blocks
-      </Button>
+      <PresetBlocksButton size={size} presetCode={preset} />
       <PresetCodeButton
         size={size}
         presetCode={preset}
@@ -124,11 +118,6 @@ export function PresetButtons({
         <InfoIcon data-icon="inline-start" className="size-4" />
         Details
       </Link>
-      <ShadcncraftPitchDialog
-        open={pitchOpen}
-        onOpenChange={setPitchOpen}
-        presetCode={preset}
-      />
       {children}
     </>
   )

@@ -4,6 +4,8 @@ import * as React from "react"
 import { CheckIcon, CodeIcon, ShareIcon } from "@phosphor-icons/react"
 
 import { GetCodeDialog } from "@/components/get-code-dialog"
+import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
+import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo"
 import { Button } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
@@ -13,6 +15,35 @@ type Size = "sm" | "lg"
  * The actions a preset has wherever it is shown (its page, Ask AI's panel),
  * drawn the same: outline, a Phosphor icon before the label.
  */
+
+/** Opens the pitch for the shadcncraft blocks the preset is shown with. */
+function PresetBlocksButton({
+  presetCode,
+  size = "sm",
+}: {
+  presetCode: string
+  size?: Size
+}) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <>
+      <Button
+        type="button"
+        size={size}
+        variant="outline"
+        onClick={() => setOpen(true)}
+      >
+        <ShadcncraftLogo data-icon="inline-start" className="size-4" />
+        Get the blocks
+      </Button>
+      <ShadcncraftPitchDialog
+        open={open}
+        onOpenChange={setOpen}
+        presetCode={presetCode}
+      />
+    </>
+  )
+}
 
 /** Opens the Code dialog: the preset's commands, then any custom colours. */
 function PresetCodeButton({
@@ -79,4 +110,4 @@ function PresetShareButton({
   )
 }
 
-export { PresetCodeButton, PresetShareButton }
+export { PresetBlocksButton, PresetCodeButton, PresetShareButton }

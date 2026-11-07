@@ -11,6 +11,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
+// Liking reads and writes votes of its own, which none of this is about.
+vi.mock("@/components/preset-vote-button", () => ({
+  PresetVoteButton: () => null,
+}))
 
 const { toast } = await import("sonner")
 const { withFacet } = await import("@/lib/custom-preset")
@@ -117,19 +121,15 @@ describe("CustomPresetEditor", () => {
     renderEditor()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Dashboard" }))
+      fireEvent.click(screen.getByRole("tab", { name: "Marketing" }))
     })
 
     await waitFor(() =>
-      expect(preview().getAttribute("src")).toContain(
-        "/preset-preview/dashboard?"
+      expect(preview().getAttribute("src")).toMatch(
+        /\/preset-preview\/[^?]+\?preset=.+&custom=cp-1/
       )
     )
-    expect(
-      screen
-        .getByRole("button", { name: "Dashboard" })
-        .getAttribute("aria-pressed")
-    ).toBe("true")
+    expect(preview().getAttribute("src")).not.toContain("/preset-preview/preview?")
   })
 
   it("saves a changed facet and installs the new preset, without reloading the preview", async () => {

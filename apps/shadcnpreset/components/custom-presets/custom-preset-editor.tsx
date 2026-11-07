@@ -5,11 +5,13 @@ import { toast } from "sonner"
 
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
 import {
+  PresetBlocksButton,
   PresetCodeButton,
   PresetShareButton,
 } from "@/components/preset-action-buttons"
+import { PresetPreviewLayoutPicker } from "@/components/preset-preview/layout-picker"
+import { PresetVoteButton } from "@/components/preset-vote-button"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
-import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import type { CustomColours } from "@/lib/custom-colours"
 import {
@@ -17,11 +19,8 @@ import {
   customPresetRegistryPath,
   installablePresetCode,
 } from "@/lib/custom-preset"
-import {
-  CUSTOM_PRESET_VIEWS,
-  customPresetPreviewSrc,
-  type CustomPresetView,
-} from "@/lib/custom-preset-frame"
+import { getPresetPreviewUrl } from "@/lib/preset"
+import type { PresetPreviewPageName } from "@/lib/preset-preview"
 import { trackEvent } from "@/lib/analytics-events"
 import { customPresetPath, hasColours } from "@/lib/preset-draft"
 import { cn } from "@/lib/utils"
@@ -128,6 +127,8 @@ export function CustomPresetEditor({
           {code}
         </code>
         <span className="flex-1" />
+        <PresetVoteButton size="sm" code={code} />
+        <PresetBlocksButton presetCode={code} />
         <PresetCodeButton
           presetCode={installablePresetCode(code)}
           customColours={
@@ -179,11 +180,12 @@ function PreviewCanvas({
   code: string
   css: string
 }) {
-  const [view, setView] = React.useState<CustomPresetView>("preview")
+  const [view, setView] = React.useState<PresetPreviewPageName>("preview")
   // The code the frame first loads with, kept until the view changes.
   const [loaded, setLoaded] = React.useState({ view, code })
   if (loaded.view !== view) setLoaded({ view, code })
-  const src = customPresetPreviewSrc(view, loaded.code, id)
+  // The saved colours paint first; changes arrive as messages.
+  const src = `${getPresetPreviewUrl(loaded.code, view)}&${new URLSearchParams({ custom: id })}`
   // Shown once it has taken the site's mode, which arrives after it loads:
   // until then it paints light, a flash on every change of style or font.
   const [shownSrc, setShownSrc] = React.useState<string | null>(null)
@@ -207,23 +209,13 @@ function PreviewCanvas({
           <Spinner />
         </div>
       )}
-      <div
-        role="toolbar"
-        aria-label="Preview"
-        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-0.5 rounded-lg border bg-popover p-1 shadow-md lg:bottom-8"
-      >
-        {CUSTOM_PRESET_VIEWS.map(({ example, label }) => (
-          <Button
-            key={example}
-            type="button"
-            size="sm"
-            variant={view === example ? "secondary" : "ghost"}
-            aria-pressed={view === example}
-            onClick={() => setView(example)}
-          >
-            {label}
-          </Button>
-        ))}
+      {/* The same block views as a preset's page. */}
+      <div className="absolute bottom-6 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-full border bg-popover p-1 shadow-md lg:bottom-8">
+        <PresetPreviewLayoutPicker
+          value={view}
+          onValueChange={setView}
+          presetCode={code}
+        />
       </div>
     </div>
   )

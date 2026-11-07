@@ -66,21 +66,3 @@ export function isPreviewReadyMessage(
     (value as Record<string, unknown>).type === PREVIEW_READY_MESSAGE_TYPE
   )
 }
-
-/** The preview views a custom preset is shown in, in the toolbar's order. */
-export const CUSTOM_PRESET_VIEWS = [
-  { example: "preview", label: "View 1" },
-  { example: "preview-02", label: "View 2" },
-  { example: "dashboard", label: "Dashboard" },
-] as const
-
-export type CustomPresetView = (typeof CUSTOM_PRESET_VIEWS)[number]["example"]
-
-export function customPresetPreviewSrc(
-  view: CustomPresetView,
-  presetCode: string,
-  id: string
-) {
-  const query = new URLSearchParams({ preset: presetCode, custom: id })
-  return `/preset-preview/${view}?${query}`
-}

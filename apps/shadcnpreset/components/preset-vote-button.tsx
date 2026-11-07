@@ -1,6 +1,6 @@
 "use client"
 
-import { Heart } from "lucide-react"
+import { HeartIcon } from "@phosphor-icons/react"
 
 import { Button } from "@/components/ui/button"
 import useVote from "@/hooks/use-vote"
@@ -37,9 +37,12 @@ export function PresetVoteButton({
           : "Sign in to vote"
       }
     >
-      <Heart
+      <HeartIcon
+        data-icon="inline-start"
+        weight={hasVoted ? "fill" : "regular"}
         className={cn(
-          hasVoted ? "fill-rose-500 text-rose-500" : "text-muted-foreground"
+          "size-4",
+          hasVoted ? "text-rose-500" : "text-muted-foreground"
         )}
       />
       <span>{voteCount}</span>
