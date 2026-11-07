@@ -49,6 +49,24 @@ export function isPresetCodeMessage(
   )
 }
 
+export const PREVIEW_READY_MESSAGE_TYPE = "shadcnpreset:preview-ready"
+
+/**
+ * Sent by a preview frame once it listens for the messages above, so the
+ * page sends them then rather than guessing when it has loaded.
+ */
+export type PreviewReadyMessage = { type: typeof PREVIEW_READY_MESSAGE_TYPE }
+
+export function isPreviewReadyMessage(
+  value: unknown
+): value is PreviewReadyMessage {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    (value as Record<string, unknown>).type === PREVIEW_READY_MESSAGE_TYPE
+  )
+}
+
 /** The preview views a custom preset is shown in, in the toolbar's order. */
 export const CUSTOM_PRESET_VIEWS = [
   { example: "preview", label: "View 1" },

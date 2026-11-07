@@ -1,27 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, CopyIcon } from "@phosphor-icons/react"
-import { ChevronDownIcon, LinkIcon } from "lucide-react"
+import { CheckIcon } from "@phosphor-icons/react"
+import { LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { CustomPresetInstallMenu } from "@/components/custom-presets/install-menu"
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
 import { PresetV4Frame } from "@/components/preset-v4-frame"
 import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Spinner } from "@/components/ui/spinner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 import type { CustomColours } from "@/lib/custom-colours"
 import {
   buildCustomPreset,
-  customPresetPath,
   customPresetRegistryPath,
-  installablePresetCode,
 } from "@/lib/custom-preset"
 import {
   CUSTOM_PRESET_VIEWS,
@@ -29,9 +22,8 @@ import {
   type CustomPresetView,
 } from "@/lib/custom-preset-frame"
 import { trackEvent } from "@/lib/analytics-events"
+import { customPresetPath } from "@/lib/preset-draft"
 import { cn } from "@/lib/utils"
-
-const SHADCN = process.env.NEXT_PUBLIC_RC ? "shadcn@rc" : "shadcn@latest"
 
 /** How long a dragged picker rests before its colour is saved. */
 const SAVE_DELAY_MS = 400
@@ -135,9 +127,10 @@ export function CustomPresetEditor({
           {code}
         </code>
         <span className="flex-1" />
-        <ShareButton url={`${origin}${customPresetPath(id)}`} />
-        <InstallMenu
-          code={installablePresetCode(code)}
+        <ShareButton url={`${origin}${customPresetPath(id, code)}`} />
+        <CustomPresetInstallMenu
+          code={code}
+          colours={colours}
           css={preset.css}
           registryUrl={`${origin}${customPresetRegistryPath(id)}`}
         />
@@ -246,124 +239,5 @@ function ShareButton({ url }: { url: string }) {
       )}
       {isCopied ? "Copied" : "Share"}
     </Button>
-  )
-}
-
-/**
- * Two steps: the preset itself (a preset code holds everything but exact
- * colours), then the colours from this preset's registry item.
- */
-function InstallMenu({
-  code,
-  css,
-  registryUrl,
-}: {
-  code: string
-  css: string
-  registryUrl: string
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger render={<Button type="button" size="sm" />}>
-        Install
-        <ChevronDownIcon data-icon="inline-end" />
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        aria-label="Install this preset"
-        className="grid w-[min(28rem,calc(100vw-2rem))] grid-cols-1 gap-4 p-4"
-      >
-        <div className="grid grid-cols-1 gap-2">
-          <h3 className="text-sm font-medium">1. Set up the preset</h3>
-          <Tabs defaultValue="new">
-            <TabsList>
-              <TabsTrigger value="new">New project</TabsTrigger>
-              <TabsTrigger value="existing">Existing project</TabsTrigger>
-            </TabsList>
-            <TabsContent value="new">
-              <CopyableCode label="Copy the new project command">
-                {`npx ${SHADCN} init --preset ${code}`}
-              </CopyableCode>
-            </TabsContent>
-            <TabsContent value="existing">
-              <CopyableCode label="Copy the existing project command">
-                {`npx ${SHADCN} apply --preset ${code}`}
-              </CopyableCode>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          <h3 className="text-sm font-medium">2. Add your colours</h3>
-          <p className="text-xs text-muted-foreground">
-            A preset code can’t hold exact colours, so they install from this
-            link. Anyone with it can use them.
-          </p>
-          <CopyableCode label="Copy the colours command">
-            {`npx ${SHADCN} add ${registryUrl}`}
-          </CopyableCode>
-        </div>
-
-        <details className="grid grid-cols-1 gap-2">
-          <summary className="cursor-pointer text-sm font-medium">
-            Colours only, as CSS
-          </summary>
-          <p className="pt-2 text-xs text-muted-foreground">
-            Already on this preset? Replace the <code>:root</code> and{" "}
-            <code>.dark</code> blocks in your <code>globals.css</code>.
-          </p>
-          <CopyableCode label="Copy the CSS" block className="mt-2">
-            {css}
-          </CopyableCode>
-        </details>
-      </PopoverContent>
-    </Popover>
-  )
-}
-
-/**
- * Code to copy, with its copy button in the corner: a one-line command, or
- * (`block`) a stylesheet that scrolls. A command longer than its box fades
- * out before the button, and its end clears the fade once scrolled to.
- */
-function CopyableCode({
-  children,
-  label,
-  block = false,
-  className,
-}: {
-  children: string
-  label: string
-  block?: boolean
-  className?: string
-}) {
-  const { isCopied, copyToClipboard } = useCopyToClipboard()
-  return (
-    <div className={cn("relative rounded-lg border bg-muted/40", className)}>
-      <pre
-        className={cn(
-          "overflow-x-auto p-3 font-mono text-xs",
-          block
-            ? "max-h-72 overflow-y-auto pr-12 leading-relaxed"
-            : "mask-[linear-gradient(to_right,black_calc(100%-4.5rem),transparent_calc(100%-2.75rem))] pr-20"
-        )}
-      >
-        {children}
-      </pre>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground"
-        aria-label={isCopied ? "Copied" : label}
-        onClick={() => void copyToClipboard(children)}
-      >
-        {isCopied ? (
-          <CheckIcon aria-hidden className="size-4" />
-        ) : (
-          <CopyIcon aria-hidden className="size-4" />
-        )}
-      </Button>
-    </div>
   )
 }

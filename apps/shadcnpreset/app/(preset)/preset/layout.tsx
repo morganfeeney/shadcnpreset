@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { cacheLife } from "next/cache"
 
 import { PresetPageLiveProvider } from "@/components/preset-page-live-context"
+import { Toaster } from "@/components/ui/sonner"
 import { WideLayoutNoFooter } from "@/components/wide-layout-no-footer"
 import { getVotedPresetsFeed } from "@/lib/preset-feed"
 import { toPresetSidebarItem } from "@/lib/preset-sidebar-item"
@@ -34,6 +35,7 @@ export default async function PresetLayout({
           {children}
         </PresetBrowseSurface>
       </PresetPageLiveProvider>
+      <Toaster />
     </WideLayoutNoFooter>
   )
 }

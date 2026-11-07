@@ -1,29 +1,41 @@
 "use client"
 
 import * as React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 
-import { useSaveCustomPreset } from "@/components/custom-presets/use-save-custom-preset"
+import {
+  useSaveCustomPreset,
+  type SavedCustomPreset,
+} from "@/components/custom-presets/use-save-custom-preset"
 import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { NO_CUSTOM_COLOURS } from "@/lib/custom-colours"
 import { buildCustomPreset } from "@/lib/custom-preset"
 import {
-  readPresetDraft,
+  readPresetQuery,
   replaceQuery,
+  samePreset,
   withoutArrival,
   withPresetDraft,
   type PresetDraft,
 } from "@/lib/preset-draft"
 
 type PresetCustomizeContextValue = {
-  /** The preset as it stands: the live one, or the draft made from it. */
+  /** The preset as it stands, changes and all. */
   value: PresetDraft
-  /** Something has been changed, and is not saved. */
-  isDraft: boolean
-  /** The draft's colours as CSS for the preview; empty without a draft. */
+  /** What it was before any changes: the preset, or the saved custom preset. */
+  original: PresetDraft
+  /** The saved custom preset on show, if any. */
+  saved: SavedCustomPreset | null
+  /** It differs from the original, and the difference isn't saved. */
+  isChanged: boolean
+  /** Colours for the preview as CSS; empty for a preset as it comes. */
   css: string
-  setValue: (next: PresetDraft) => void
-  /** Saves the draft, signing in first if need be. */
+  /** `settle` is false while a picker is being dragged. */
+  setValue: (next: PresetDraft, settle?: boolean) => void
+  /** Back to the original. */
+  reset: () => void
+  /** Saves the changes, signing in first if need be. */
   save: () => void
   saving: boolean
 }
@@ -31,57 +43,109 @@ type PresetCustomizeContextValue = {
 const PresetCustomizeContext =
   React.createContext<PresetCustomizeContextValue | null>(null)
 
+async function fetchSavedPreset(id: string): Promise<SavedCustomPreset> {
+  const response = await fetch(`/api/custom-presets/${id}`)
+  if (!response.ok) throw new Error("not found")
+  return (await response.json()) as SavedCustomPreset
+}
+
 /**
- * Customizing the preset on show. A change makes a draft of it, which the
- * preview shows in place and the address keeps; choosing another preset
- * leaves the draft behind. Back from signing in to save, it saves.
+ * Customizing the preset on show. Everything lives in the page's address
+ * (see `lib/preset-draft`), and whether it has changed is worked out by
+ * comparing it with the original, never remembered: changing a setting back
+ * leaves nothing to save. A picker being dragged is held here until it
+ * settles, so the address isn't rewritten on every frame.
  */
 function PresetCustomizeProvider({ children }: { children: React.ReactNode }) {
   const { livePresetCode } = usePresetPageLive()
-  const searchParams = useSearchParams()
-  const [arrival] = React.useState(() => readPresetDraft(searchParams))
-  const [state, setState] = React.useState<{
-    base: string
-    draft: PresetDraft | null
-  }>({ base: livePresetCode, draft: arrival.draft })
-  if (state.base !== livePresetCode) {
-    setState({ base: livePresetCode, draft: null })
-  }
+  const query = readPresetQuery(useSearchParams())
 
-  const draft = state.base === livePresetCode ? state.draft : null
-  const value = React.useMemo(
-    () => draft ?? { code: livePresetCode, colours: NO_CUSTOM_COLOURS },
-    [draft, livePresetCode]
+  const savedQuery = useQuery({
+    queryKey: ["customPreset", query.custom],
+    queryFn: () => fetchSavedPreset(query.custom!),
+    enabled: Boolean(query.custom),
+    retry: false,
+    staleTime: Infinity,
+  })
+  const saved = (query.custom && savedQuery.data) || null
+
+  const original = React.useMemo<PresetDraft>(
+    () =>
+      saved
+        ? { code: saved.presetCode, colours: saved.colours }
+        : { code: livePresetCode, colours: NO_CUSTOM_COLOURS },
+    [saved, livePresetCode]
   )
+  const [dragging, setDragging] = React.useState<PresetDraft | null>(null)
+  const value = dragging ?? query.draft ?? original
+  const isChanged = !samePreset(value, original)
+
+  const plain = samePreset(value, {
+    code: livePresetCode,
+    colours: NO_CUSTOM_COLOURS,
+  })
   const css = React.useMemo(
-    () => (draft ? (buildCustomPreset(draft.code, draft.colours)?.css ?? "") : ""),
-    [draft]
+    () =>
+      plain ? "" : (buildCustomPreset(value.code, value.colours)?.css ?? ""),
+    [plain, value.code, value.colours]
   )
-  const setValue = React.useCallback((next: PresetDraft) => {
-    setState((current) => ({ base: current.base, draft: next }))
+
+  const setValue = React.useCallback(
+    (next: PresetDraft, settle = true) => {
+      if (!settle) {
+        setDragging(next)
+        return
+      }
+      setDragging(null)
+      replaceQuery(
+        withPresetDraft(
+          new URLSearchParams(window.location.search),
+          samePreset(next, original) ? null : next
+        )
+      )
+    },
+    [original]
+  )
+
+  const reset = React.useCallback(() => {
+    setDragging(null)
     replaceQuery(
-      withPresetDraft(new URLSearchParams(window.location.search), next)
+      withPresetDraft(new URLSearchParams(window.location.search), null)
     )
   }, [])
 
-  const { save: saveDraft, saving } = useSaveCustomPreset()
-  const save = React.useCallback(() => void saveDraft(value), [saveDraft, value])
+  const { save: saveValue, saving } = useSaveCustomPreset()
+  const save = React.useCallback(() => {
+    if (isChanged) void saveValue(value, saved)
+  }, [isChanged, saveValue, saved, value])
 
-  // Back from signing in to save: it saves now, once.
+  // Back from signing in to save: it saves now, once, when the saved preset
+  // it changes (if any) has arrived.
+  const ready = !query.custom || !savedQuery.isPending
   const saveOnArrival = React.useEffectEvent(() => {
     replaceQuery(withoutArrival(new URLSearchParams(window.location.search)))
-    if (arrival.draft) void saveDraft(arrival.draft)
+    save()
   })
   const arrived = React.useRef(false)
   React.useEffect(() => {
-    if (!arrival.save || arrived.current) return
+    if (!query.save || !ready || arrived.current) return
     arrived.current = true
     saveOnArrival()
-  }, [arrival.save])
+  }, [query.save, ready])
 
   const context = React.useMemo(
-    () => ({ value, isDraft: Boolean(draft), css, setValue, save, saving }),
-    [value, draft, css, setValue, save, saving]
+    () => ({
+      value,
+      original,
+      saved,
+      isChanged,
+      css,
+      setValue,
+      reset,
+      save,
+      saving,
+    }),
+    [value, original, saved, isChanged, css, setValue, reset, save, saving]
   )
 
   return (

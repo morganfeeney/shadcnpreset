@@ -62,7 +62,7 @@ export function PresetBrowseBar() {
 /** The preset on show, as a player names what is playing. */
 function PresetNowShowing() {
   const { livePresetCode } = usePresetPageLive()
-  const { value, isDraft } = usePresetCustomize()
+  const { value, saved, isChanged } = usePresetCustomize()
   const { isCopied, copyToClipboard } = useCopyToClipboard()
   const resolved = resolvePresetFromCode(value.code)
   if (!resolved) return null
@@ -86,9 +86,9 @@ function PresetNowShowing() {
           >
             {isCopied ? <CheckIcon /> : <CopyIcon />}
           </Button>
-          {isDraft ? (
+          {isChanged || saved ? (
             <Badge variant="secondary" className="ml-1">
-              Draft
+              {isChanged ? "Draft" : "Custom"}
             </Badge>
           ) : null}
         </div>

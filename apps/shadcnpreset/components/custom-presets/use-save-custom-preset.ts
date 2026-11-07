@@ -1,41 +1,47 @@
 "use client"
 
 import * as React from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { trackEvent } from "@/lib/analytics-events"
-import type { CustomColours } from "@/lib/custom-colours"
-import { customPresetPath } from "@/lib/custom-preset"
 import {
+  customPresetPath,
   replaceQuery,
   withoutArrival,
   withSaveOnArrival,
+  type PresetDraft,
 } from "@/lib/preset-draft"
 import { PRO_CHECKOUT_URL } from "@/lib/pro"
 import { useAuthStore } from "@/stores/auth-store"
 
+export type SavedCustomPreset = {
+  id: string
+  presetCode: string
+  colours: PresetDraft["colours"]
+  canEdit: boolean
+}
+
 /**
- * Saving a preset someone has customized but not yet kept. Signed in, it
- * saves and moves to the saved preset's own page. Signed out, it asks them to
- * sign in, noting in the address (which already holds the draft) to save it,
- * so signing in comes back and saves it then; closing the dialog drops the
- * note. Past the free cap it offers Pro
- * and leaves the draft as it is.
+ * Saving a customized preset to someone's account, staying on its page.
+ * Their own saved preset is updated; anything else is saved as a new one,
+ * within the free cap. Signed out, it asks them to sign in, noting in the
+ * address (which already holds the changes) to save on the way back; closing
+ * the dialog drops the note.
  */
 export function useSaveCustomPreset() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const ensureAuthenticated = useAuthStore((s) => s.ensureAuthenticated)
   const [saving, setSaving] = React.useState(false)
 
   const save = React.useCallback(
-    async ({ code, colours }: { code: string; colours: CustomColours }) => {
+    async (value: PresetDraft, saved: SavedCustomPreset | null) => {
       if (!(await ensureAuthenticated())) {
         replaceQuery(
           withSaveOnArrival(new URLSearchParams(window.location.search))
         )
-        // Signing in leaves the page with the note in place; closing the
-        // dialog instead means there is nothing to save on the way back.
         const stop = useAuthStore.subscribe((state) => {
           if (state.dialogOpen) return
           stop()
@@ -45,13 +51,21 @@ export function useSaveCustomPreset() {
         })
         return
       }
+
       setSaving(true)
-      trackEvent("custom_preset_save", { preset_code: code })
-      const response = await fetch("/api/custom-presets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ presetCode: code, colours }),
-      }).catch(() => null)
+      trackEvent("custom_preset_save", { preset_code: value.code })
+      const editing = saved?.canEdit ? saved.id : null
+      const response = await fetch(
+        editing ? `/api/custom-presets/${editing}` : "/api/custom-presets",
+        {
+          method: editing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            presetCode: value.code,
+            colours: value.colours,
+          }),
+        }
+      ).catch(() => null)
       const body = response
         ? ((await response.json().catch(() => null)) as {
             id?: string
@@ -59,11 +73,31 @@ export function useSaveCustomPreset() {
             error?: string
           } | null)
         : null
-      if (response?.ok && body?.id) {
-        router.push(customPresetPath(body.id))
+      setSaving(false)
+
+      const id = editing ?? body?.id
+      if (response?.ok && id) {
+        const next: SavedCustomPreset = {
+          id,
+          presetCode: value.code,
+          colours: value.colours,
+          canEdit: true,
+        }
+        queryClient.setQueryData(["customPreset", id], next)
+        const path = customPresetPath(id, value.code)
+        router.replace(path, { scroll: false })
+        toast.success("Saved", {
+          action: {
+            label: "Copy link",
+            onClick: () =>
+              void navigator.clipboard.writeText(
+                new URL(path, window.location.origin).href
+              ),
+          },
+        })
         return
       }
-      setSaving(false)
+
       if (body?.code === "custom_preset_limit") {
         trackEvent("custom_preset_limit_view", {})
         toast.error(
@@ -87,7 +121,7 @@ export function useSaveCustomPreset() {
       }
       toast.error("That didn’t save. Try again in a moment.")
     },
-    [ensureAuthenticated, router]
+    [ensureAuthenticated, queryClient, router]
   )
 
   return { save, saving }

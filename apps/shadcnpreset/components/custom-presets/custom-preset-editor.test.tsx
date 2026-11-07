@@ -335,7 +335,7 @@ describe("CustomPresetEditor", () => {
     ])
   })
 
-  it("shares the preset's own page", async () => {
+  it("shares the saved preset on its preset's page", async () => {
     const writeText = vi.fn(async () => {})
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     renderEditor()
@@ -345,7 +345,7 @@ describe("CustomPresetEditor", () => {
     })
 
     expect(writeText).toHaveBeenCalledWith(
-      "https://shadcnpreset.com/custom-presets/cp-1"
+      `https://shadcnpreset.com/preset/${CODE}?custom=cp-1`
     )
     expect(screen.getByRole("button", { name: "Copied" })).toBeTruthy()
   })

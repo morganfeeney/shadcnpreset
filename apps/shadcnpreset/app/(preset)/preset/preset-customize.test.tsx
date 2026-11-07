@@ -1,19 +1,40 @@
 // @vitest-environment jsdom
+import * as React from "react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
-vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
-let livePresetCode = "b5dyaqxe6"
+const LIVE = "b5dyaqxe6"
 vi.mock("@/components/preset-page-live-context", () => ({
-  usePresetPageLive: () => ({ livePresetCode }),
+  usePresetPageLive: () => ({ livePresetCode: LIVE }),
 }))
 
-const push = vi.fn()
+// The address as Next keeps it: replacing it in place re-renders whatever
+// reads it.
+const addressListeners = new Set<() => void>()
+const nativeReplaceState = window.history.replaceState.bind(window.history)
+window.history.replaceState = (...args) => {
+  nativeReplaceState(...args)
+  addressListeners.forEach((listener) => listener())
+}
+function useAddress() {
+  return React.useSyncExternalStore(
+    (listener) => {
+      addressListeners.add(listener)
+      return () => addressListeners.delete(listener)
+    },
+    () => window.location.search
+  )
+}
+const replace = vi.fn((path: string) =>
+  window.history.replaceState(null, "", path)
+)
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
-  useSearchParams: () => new URLSearchParams(window.location.search),
+  useRouter: () => ({ replace }),
+  useSearchParams: () => new URLSearchParams(useAddress()),
 }))
 
 let signedIn = true
@@ -38,16 +59,28 @@ const { PresetCustomizeProvider, usePresetCustomize } = await import(
   "@/app/(preset)/preset/preset-customize"
 )
 
+const NONE = { overrides: {} }
 const ORANGE = { theme: "#CC5500", overrides: {} }
-let respond: () => Response
+
+type Reply = { status: number; body: unknown }
+let replies: Record<string, Reply>
 
 beforeEach(() => {
   vi.clearAllMocks()
   signedIn = true
-  livePresetCode = "b5dyaqxe6"
-  respond = () => new Response(JSON.stringify({ id: "cp-9" }), { status: 200 })
-  vi.stubGlobal("fetch", vi.fn(async () => respond()))
-  window.history.replaceState(null, "", "/preset/b5dyaqxe6")
+  replies = {
+    "POST /api/custom-presets": { status: 200, body: { id: "cp-9" } },
+  }
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      const reply = replies[`${init?.method ?? "GET"} ${url}`]
+      return new Response(JSON.stringify(reply?.body ?? {}), {
+        status: reply?.status ?? 404,
+      })
+    })
+  )
+  window.history.replaceState(null, "", `/preset/${LIVE}`)
 })
 
 function Probe() {
@@ -55,16 +88,30 @@ function Probe() {
   return (
     <>
       <p>
-        {customize.value.code} {customize.isDraft ? "draft" : "as is"}{" "}
-        {customize.css ? "with colours" : "no colours"}
+        {customize.isChanged ? "changed" : "unchanged"}
+        {customize.saved ? " saved" : ""}
+        {customize.css ? " with colours" : ""}
       </p>
       <button
         type="button"
-        onClick={() =>
-          customize.setValue({ code: customize.value.code, colours: ORANGE })
-        }
+        onClick={() => customize.setValue({ code: LIVE, colours: ORANGE })}
       >
         Make it orange
+      </button>
+      <button
+        type="button"
+        onClick={() => customize.setValue({ code: LIVE, colours: ORANGE }, false)}
+      >
+        Drag to orange
+      </button>
+      <button
+        type="button"
+        onClick={() => customize.setValue({ code: LIVE, colours: NONE })}
+      >
+        Back as it was
+      </button>
+      <button type="button" onClick={customize.reset}>
+        Reset
       </button>
       <button type="button" onClick={customize.save}>
         Save
@@ -73,11 +120,14 @@ function Probe() {
   )
 }
 
-function renderProbe() {
+function renderAt(path: string) {
+  window.history.replaceState(null, "", path)
   return render(
-    <PresetCustomizeProvider>
-      <Probe />
-    </PresetCustomizeProvider>
+    <QueryClientProvider client={new QueryClient()}>
+      <PresetCustomizeProvider>
+        <Probe />
+      </PresetCustomizeProvider>
+    </QueryClientProvider>
   )
 }
 
@@ -91,108 +141,146 @@ function query() {
   return new URLSearchParams(window.location.search)
 }
 
+function sent(index = 0) {
+  const [url, init] = vi.mocked(fetch).mock.calls.filter(
+    ([, init]) => init?.method
+  )[index]
+  return { url, method: init?.method, body: JSON.parse(String(init?.body)) }
+}
+
+const ORANGE_DRAFT = `draft=${LIVE}&colours=${encodeURIComponent(JSON.stringify(ORANGE))}`
+
 describe("PresetCustomizeProvider", () => {
-  it("makes a draft of the preset on show, and keeps it in the address", async () => {
-    renderProbe()
-    expect(screen.getByText("b5dyaqxe6 as is no colours")).toBeTruthy()
+  it("is changed while it differs from the preset, and not once put back", async () => {
+    renderAt(`/preset/${LIVE}`)
+    expect(screen.getByText("unchanged")).toBeTruthy()
 
     await click("Make it orange")
+    expect(screen.getByText("changed with colours")).toBeTruthy()
+    expect(query().get("draft")).toBe(LIVE)
 
-    expect(screen.getByText("b5dyaqxe6 draft with colours")).toBeTruthy()
-    expect(query().get("draft")).toBe("b5dyaqxe6")
-    expect(JSON.parse(query().get("colours")!)).toEqual(ORANGE)
-    expect(fetch).not.toHaveBeenCalled()
+    await click("Back as it was")
+    expect(screen.getByText("unchanged")).toBeTruthy()
+    expect(window.location.search).toBe("")
   })
 
-  it("comes back to the draft in the address, as after a reload", () => {
-    window.history.replaceState(
-      null,
-      "",
-      `/preset/b5dyaqxe6?draft=b5dyaqxe6&colours=${encodeURIComponent(JSON.stringify(ORANGE))}`
-    )
-    renderProbe()
+  it("leaves the address alone while a picker is dragged", async () => {
+    renderAt(`/preset/${LIVE}`)
 
-    expect(screen.getByText("b5dyaqxe6 draft with colours")).toBeTruthy()
+    await click("Drag to orange")
+
+    expect(screen.getByText("changed with colours")).toBeTruthy()
+    expect(window.location.search).toBe("")
   })
 
-  it("leaves the draft behind when another preset is chosen", async () => {
-    const { rerender } = renderProbe()
-    await click("Make it orange")
+  it("comes back to the changes in the address, as after a reload", () => {
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}`)
 
-    livePresetCode = "b4YtS7GakV"
-    rerender(
-      <PresetCustomizeProvider>
-        <Probe />
-      </PresetCustomizeProvider>
-    )
-
-    expect(screen.getByText("b4YtS7GakV as is no colours")).toBeTruthy()
+    expect(screen.getByText("changed with colours")).toBeTruthy()
   })
 
-  it("saves the draft as it is and moves to its own page", async () => {
-    renderProbe()
-    await click("Make it orange")
+  it("reads changes that match the preset as none", () => {
+    renderAt(`/preset/${LIVE}?draft=${LIVE}`)
+
+    expect(screen.getByText("unchanged")).toBeTruthy()
+  })
+
+  it("resets to the preset", async () => {
+    renderAt(`/preset/${LIVE}?view=dashboard&${ORANGE_DRAFT}`)
+
+    await click("Reset")
+
+    expect(screen.getByText("unchanged")).toBeTruthy()
+    expect(window.location.search).toBe("?view=dashboard")
+  })
+
+  it("saves the changes and stays, now showing the saved preset", async () => {
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}`)
+
     await click("Save")
 
-    const [url, init] = vi.mocked(fetch).mock.calls[0]
-    expect(url).toBe("/api/custom-presets")
-    expect(JSON.parse(String(init?.body))).toEqual({
-      presetCode: "b5dyaqxe6",
-      colours: ORANGE,
+    expect(sent()).toEqual({
+      url: "/api/custom-presets",
+      method: "POST",
+      body: { presetCode: LIVE, colours: ORANGE },
     })
-    expect(push).toHaveBeenCalledWith("/custom-presets/cp-9")
+    expect(replace).toHaveBeenCalledWith(`/preset/${LIVE}?custom=cp-9`, {
+      scroll: false,
+    })
+    expect(toast.success).toHaveBeenCalled()
+    expect(screen.getByText("unchanged saved with colours")).toBeTruthy()
   })
 
-  it("asks someone signed out to sign in, and to save on the way back", async () => {
-    signedIn = false
-    renderProbe()
+  it("shows a saved preset, and saves changes to it in place", async () => {
+    replies["GET /api/custom-presets/cp-1"] = {
+      status: 200,
+      body: { id: "cp-1", presetCode: LIVE, colours: ORANGE, canEdit: true },
+    }
+    replies["PATCH /api/custom-presets/cp-1"] = { status: 200, body: { ok: true } }
+    renderAt(`/preset/${LIVE}?custom=cp-1`)
+    await waitFor(() =>
+      expect(screen.getByText("unchanged saved with colours")).toBeTruthy()
+    )
+
+    await click("Back as it was")
+    expect(screen.getByText("changed saved")).toBeTruthy()
+    await click("Save")
+
+    expect(sent()).toEqual({
+      url: "/api/custom-presets/cp-1",
+      method: "PATCH",
+      body: { presetCode: LIVE, colours: NONE },
+    })
+  })
+
+  it("saves someone else's preset as a new one", async () => {
+    replies["GET /api/custom-presets/cp-1"] = {
+      status: 200,
+      body: { id: "cp-1", presetCode: LIVE, colours: NONE, canEdit: false },
+    }
+    renderAt(`/preset/${LIVE}?custom=cp-1`)
+    await waitFor(() => expect(screen.getByText("unchanged saved")).toBeTruthy())
+
     await click("Make it orange")
     await click("Save")
 
-    expect(ensureAuthenticated).toHaveBeenCalled()
-    expect(fetch).not.toHaveBeenCalled()
-    expect(window.location.pathname).toBe("/preset/b5dyaqxe6")
-    expect(query().get("draft")).toBe("b5dyaqxe6")
+    expect(sent().method).toBe("POST")
+  })
+
+  it("asks someone signed out to sign in, and forgets it if they don't", async () => {
+    signedIn = false
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}`)
+
+    await click("Save")
     expect(query().get("save")).toBe("1")
-  })
-
-  it("forgets to save when the sign-in dialog is closed instead", async () => {
-    signedIn = false
-    renderProbe()
-    await click("Make it orange")
-    await click("Save")
+    expect(fetch).not.toHaveBeenCalled()
 
     act(() => authListener?.({ dialogOpen: false }))
-
     expect(query().has("save")).toBe(false)
-    expect(query().get("draft")).toBe("b5dyaqxe6")
+    expect(query().get("draft")).toBe(LIVE)
   })
 
   it("saves on arriving back from signing in, once", async () => {
-    window.history.replaceState(
-      null,
-      "",
-      `/preset/b5dyaqxe6?draft=b5dyaqxe6&colours=${encodeURIComponent(JSON.stringify(ORANGE))}&save=1`
-    )
-    renderProbe()
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}&save=1`)
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/custom-presets/cp-9"))
-    expect(fetch).toHaveBeenCalledTimes(1)
-    expect(query().has("save")).toBe(false)
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(`/preset/${LIVE}?custom=cp-9`, {
+        scroll: false,
+      })
+    )
+    expect(vi.mocked(fetch).mock.calls.filter(([, i]) => i?.method)).toHaveLength(1)
   })
 
-  it("offers Pro past the free cap, and keeps the draft", async () => {
-    respond = () =>
-      new Response(
-        JSON.stringify({ code: "custom_preset_limit", error: "At the cap." }),
-        { status: 402 }
-      )
-    renderProbe()
-    await click("Make it orange")
+  it("offers Pro past the free cap, and keeps the changes", async () => {
+    replies["POST /api/custom-presets"] = {
+      status: 402,
+      body: { code: "custom_preset_limit", error: "At the cap." },
+    }
+    renderAt(`/preset/${LIVE}?${ORANGE_DRAFT}`)
+
     await click("Save")
 
     expect(toast.error).toHaveBeenCalledWith("At the cap.", expect.anything())
-    expect(push).not.toHaveBeenCalled()
-    expect(screen.getByText("b5dyaqxe6 draft with colours")).toBeTruthy()
+    expect(screen.getByText("changed with colours")).toBeTruthy()
   })
 })

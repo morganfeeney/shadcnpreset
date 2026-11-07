@@ -199,7 +199,3 @@ export function facetValueLabel(facet: CustomPresetFacet, value: string) {
 export function customPresetRegistryPath(id: string) {
   return `/r/custom/${id}.json`
 }
-
-export function customPresetPath(id: string) {
-  return `/custom-presets/${id}`
-}

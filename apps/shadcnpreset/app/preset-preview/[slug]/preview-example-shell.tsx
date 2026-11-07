@@ -10,6 +10,7 @@ import {
   CUSTOM_COLOURS_STYLE_ID,
   isCustomColoursMessage,
   isPresetCodeMessage,
+  PREVIEW_READY_MESSAGE_TYPE,
   PRESET_THEME_STYLE_ID,
 } from "@/lib/custom-preset-frame"
 import { effectiveHeadingFont } from "@/lib/preset"
@@ -225,10 +226,12 @@ export function PresetPreviewExampleShell({
 
   // The custom preset editor sends a new code as its style, fonts or icons
   // change, shown here in place rather than by loading the page again.
-  const [code, setCode] = React.useState(presetCode)
+  // A code sent by the page, once one is: the page's own again included, so
+  // going back to it puts its theme back.
+  const [code, setCode] = React.useState<string | null>(null)
   const live = React.useMemo(
-    () => (code === presetCode ? null : getPresetThemeCssBundle(code)),
-    [code, presetCode]
+    () => (code === null ? null : getPresetThemeCssBundle(code)),
+    [code]
   )
   const styleClass = live ? `style-${live.resolved.style}` : bodyStyleClass
   const baseColorClass = live
@@ -320,6 +323,13 @@ export function PresetPreviewExampleShell({
       setTheme(event.data.mode)
     }
     window.addEventListener("message", handleMessage)
+    // Listening now: the page that framed this sends what it has.
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: PREVIEW_READY_MESSAGE_TYPE },
+        window.location.origin
+      )
+    }
     return () => window.removeEventListener("message", handleMessage)
   }, [setTheme])
 

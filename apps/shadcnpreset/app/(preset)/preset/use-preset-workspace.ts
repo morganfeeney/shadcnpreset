@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 
 import { useStoredWorkspaceOpen } from "@/hooks/use-stored-workspace-open"
 import {
-  readPresetDraft,
+  readPresetQuery,
   replaceQuery,
   withoutArrival,
 } from "@/lib/preset-draft"
@@ -18,7 +18,7 @@ import {
  */
 export function usePresetWorkspace() {
   const [stored, setStored] = useStoredWorkspaceOpen("preset-workspace")
-  const customize = readPresetDraft(useSearchParams()).customize
+  const customize = readPresetQuery(useSearchParams()).customize
   const open = customize ? { ...stored, end: true } : stored
 
   const keepArrival = React.useEffectEvent(() => {
