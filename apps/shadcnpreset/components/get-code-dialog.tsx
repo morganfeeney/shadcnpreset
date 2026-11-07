@@ -31,10 +31,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useConfig } from "@/hooks/use-config"
 import { getPresetThemeCssBundle } from "@/lib/preset-theme-css"
 import { BASES, type BaseName } from "@/registry/config"
@@ -76,7 +73,7 @@ const APPLY_MODES = [
 ] as const
 type ApplyMode = (typeof APPLY_MODES)[number]["value"]
 type GetCodeTab = "new-project" | "existing-project" | "theme"
-type CopyTarget = "command" | "apply" | "theme"
+type CopyTarget = "command" | "apply" | "theme" | "colours"
 
 type GetCodeOptions = {
   template: string
@@ -89,13 +86,16 @@ export function GetCodeDialog({
   open,
   onOpenChange,
   presetCode,
-  themeCss: customThemeCss,
+  customColours,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   presetCode: string
-  /** Custom colours, shown in place of the preset's own theme. */
-  themeCss?: string
+  /**
+   * Colours a preset code can't hold: shown as the theme, and as a step
+   * after each command. Saved, they install from their registry link.
+   */
+  customColours?: { css: string; registryUrl?: string }
 }) {
   const id = React.useId()
   const [config, setConfig] = useConfig()
@@ -120,7 +120,8 @@ export function GetCodeDialog({
 
   const commands = React.useMemo(() => {
     const presetFlag = ` --preset ${presetCode}`
-    const baseFlag = options.base !== DEFAULT_BASE ? ` --base ${options.base}` : ""
+    const baseFlag =
+      options.base !== DEFAULT_BASE ? ` --base ${options.base}` : ""
     const templateFlag = ` --template ${framework}`
     const monorepoFlag = isMonorepo ? " --monorepo" : ""
     const rtlFlag = options.rtl ? " --rtl" : ""
@@ -178,9 +179,9 @@ export function GetCodeDialog({
   const applyCommand = applyCommands[packageManager]
   const themeCss = React.useMemo(
     () =>
-      customThemeCss ||
+      customColours?.css ||
       (getPresetThemeCssBundle(presetCode)?.combinedCss ?? ""),
-    [customThemeCss, presetCode]
+    [customColours?.css, presetCode]
   )
 
   React.useEffect(() => {
@@ -224,6 +225,65 @@ export function GetCodeDialog({
     })
     setCopiedTarget("theme")
   }, [presetCode, themeCss])
+
+  const addCommands = React.useMemo(() => {
+    const url = customColours?.registryUrl
+    if (!url) return null
+    return IS_LOCAL_DEV
+      ? {
+          pnpm: `shadcn add ${url}`,
+          npm: `shadcn add ${url}`,
+          yarn: `shadcn add ${url}`,
+          bun: `shadcn add ${url}`,
+        }
+      : {
+          pnpm: `pnpm dlx shadcn${SHADCN_VERSION} add ${url}`,
+          npm: `npx shadcn${SHADCN_VERSION} add ${url}`,
+          yarn: `yarn dlx shadcn${SHADCN_VERSION} add ${url}`,
+          bun: `bunx --bun shadcn${SHADCN_VERSION} add ${url}`,
+        }
+  }, [customColours?.registryUrl])
+
+  const handleCopyColours = React.useCallback(() => {
+    const text = addCommands ? addCommands[packageManager] : themeCss
+    copyToClipboardWithMeta(text, {
+      name: addCommands ? "copy_custom_colours_command" : "copy_theme_code",
+      properties: {
+        preset: presetCode,
+        format: addCommands ? "command" : "css",
+      },
+    })
+    setCopiedTarget("colours")
+  }, [addCommands, packageManager, presetCode, themeCss])
+
+  // The command sets up the preset; custom colours need this as well.
+  const coloursStep = (
+    <div className="border-t px-6 py-5">
+      <FieldSet className="min-w-0 gap-3">
+        <FieldLegend variant="label">Then add your colours</FieldLegend>
+        <FieldDescription>
+          {addCommands
+            ? "A preset code can’t hold exact colours, so they install from this preset’s own link."
+            : "A preset code can’t hold exact colours. Replace the :root and .dark blocks in your globals.css with these, or save the preset for a one-line command."}
+        </FieldDescription>
+        {addCommands ? (
+          <CommandCopy
+            packageManager={packageManager}
+            setPackageManager={(value) => {
+              setConfig((prev) => ({ ...prev, packageManager: value }))
+            }}
+            commands={addCommands}
+            copied={copiedTarget === "colours"}
+            onCopy={handleCopyColours}
+          />
+        ) : (
+          <Button onClick={handleCopyColours} className="h-9 w-full">
+            {copiedTarget === "colours" ? "Copied" : "Copy CSS"}
+          </Button>
+        )}
+      </FieldSet>
+    </div>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -356,6 +416,7 @@ export function GetCodeDialog({
                   onCopy={handleCopy}
                 />
               </DialogFooter>
+              {customColours ? coloursStep : null}
             </div>
           )}
           {activeTab === "existing-project" && (
@@ -387,6 +448,7 @@ export function GetCodeDialog({
                   onCopy={handleCopyApply}
                 />
               </DialogFooter>
+              {customColours && applyMode !== "font" ? coloursStep : null}
             </div>
           )}
           {activeTab === "theme" && (
@@ -624,7 +686,9 @@ function BaseGrid({
                   __html: item.meta?.logo ?? "",
                 }}
               />
-              <FieldTitle className="whitespace-nowrap">{item.title}</FieldTitle>
+              <FieldTitle className="whitespace-nowrap">
+                {item.title}
+              </FieldTitle>
             </FieldContent>
             <RadioGroupItem
               value={item.name}

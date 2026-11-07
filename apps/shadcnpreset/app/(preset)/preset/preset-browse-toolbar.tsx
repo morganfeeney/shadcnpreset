@@ -4,6 +4,7 @@ import { usePresetPageLive } from "@/components/preset-page-live-context"
 import { ShadcncraftCredit } from "@/components/shadcncraft-examples/credit"
 import { Button } from "@/components/ui/button"
 import { WorkspaceToolbar } from "@/components/workspace"
+import { customPresetRegistryPath } from "@/lib/custom-preset"
 import { resolvePresetFromCode } from "@/lib/preset"
 import { getPresetPreviewView } from "@/lib/preset-preview"
 
@@ -18,10 +19,11 @@ import { usePresetCustomize } from "./preset-customize"
  */
 export function PresetBrowseToolbar() {
   const { livePresetCode } = usePresetPageLive()
-  const { css, isChanged, save, saving } = usePresetCustomize()
+  const { css, saved, isChanged, save, saving } = usePresetCustomize()
   const credit = getPresetPreviewView(useEffectiveView())?.credit
   const resolved = resolvePresetFromCode(livePresetCode)
   if (!resolved) return null
+  const origin = typeof window === "undefined" ? "" : window.location.origin
 
   return (
     <WorkspaceToolbar>
@@ -34,7 +36,22 @@ export function PresetBrowseToolbar() {
       ) : null}
       {/* On a phone the actions scroll sideways rather than widen the page. */}
       <div className="ml-auto flex min-w-0 items-center gap-1.5 overflow-x-auto [&>*]:shrink-0">
-        <PresetButtons preset={resolved.code} size="sm" themeCss={css}>
+        <PresetButtons
+          preset={resolved.code}
+          size="sm"
+          customColours={
+            css
+              ? {
+                  css,
+                  // The saved link has the saved colours, not unsaved ones.
+                  registryUrl:
+                    saved && !isChanged
+                      ? `${origin}${customPresetRegistryPath(saved.id)}`
+                      : undefined,
+                }
+              : undefined
+          }
+        >
           <Button
             type="button"
             size="sm"
