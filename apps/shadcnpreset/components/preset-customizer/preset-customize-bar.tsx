@@ -81,7 +81,7 @@ export function PresetCustomizeBar({
 
 /** The preset on show, as a player names what is playing. */
 function PresetNowShowing({ titleAs: Title }: { titleAs: "h1" | "p" }) {
-  const { value, saved, isChanged } = usePresetCustomize()
+  const { value, isChanged } = usePresetCustomize()
   const { isCopied, copyToClipboard } = useCopyToClipboard()
   const resolved = resolvePresetFromCode(value.code)
   if (!resolved) return null
@@ -105,9 +105,9 @@ function PresetNowShowing({ titleAs: Title }: { titleAs: "h1" | "p" }) {
           >
             {isCopied ? <CheckIcon /> : <CopyIcon />}
           </Button>
-          {isChanged || saved ? (
+          {isChanged ? (
             <Badge variant="secondary" className="ml-1">
-              {isChanged ? "Draft" : "Custom"}
+              Custom
             </Badge>
           ) : null}
         </div>

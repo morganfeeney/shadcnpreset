@@ -6,14 +6,17 @@ import { useAddressQuery } from "@/hooks/use-address-query"
 import type { CustomColours } from "@/lib/custom-colours"
 import { resolvePresetFromCode } from "@/lib/preset"
 import {
+  hasColours,
   replaceQuery,
   withColours,
   withoutChanges,
   withoutCustomizing,
-  withSavedPreset,
+  withSavedColours,
 } from "@/lib/preset-draft"
 
 const PARAM = "preset"
+
+type SavedPreset = { presetCode?: string; colours?: CustomColours }
 
 /**
  * The preset open beside Ask AI's chat to customize, kept in `?preset=` with
@@ -33,19 +36,22 @@ export function useWorkspacePreset() {
   // (a reload, a link): shown in place, not slid in.
   const [moved, setMoved] = React.useState(false)
 
-  // Links from before named a saved custom preset by its id: shown by its
-  // preset, as the panel names them now.
+  // Links from before named a saved custom preset by its id: shown as its
+  // preset and colours, as the panel names them now.
   const legacyId = named && !code ? named : null
   React.useEffect(() => {
     if (!legacyId) return
     let active = true
     void fetch(`/api/custom-presets/${legacyId}`)
       .then((response) => (response.ok ? response.json() : null))
-      .then((saved: { presetCode?: string } | null) => {
+      .then((saved: SavedPreset | null) => {
         if (!active) return
         const address = new URLSearchParams(window.location.search)
         const next = saved?.presetCode
-          ? withSavedPreset(address, legacyId)
+          ? withSavedColours(
+              address,
+              saved.colours && hasColours(saved.colours) ? saved.colours : null
+            )
           : withoutCustomizing(address)
         if (saved?.presetCode) next.set(PARAM, saved.presetCode)
         else next.delete(PARAM)
@@ -78,14 +84,11 @@ export function useWorkspacePreset() {
   )
 
   /** The customizer's `goTo`: this preset or another, with the query given. */
-  const goTo = React.useCallback(
-    (next: string, nextQuery: URLSearchParams) => {
-      const search = new URLSearchParams(nextQuery)
-      search.set(PARAM, next)
-      replaceQuery(search)
-    },
-    []
-  )
+  const goTo = React.useCallback((next: string, nextQuery: URLSearchParams) => {
+    const search = new URLSearchParams(nextQuery)
+    search.set(PARAM, next)
+    replaceQuery(search)
+  }, [])
 
   const close = React.useCallback(() => {
     const next = withoutCustomizing(new URLSearchParams(window.location.search))

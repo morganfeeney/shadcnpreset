@@ -93,7 +93,7 @@ export function GetCodeDialog({
   presetCode: string
   /**
    * Colours a preset code can't hold: shown as the theme, and as a step
-   * after each command. Saved, they install from their registry link.
+   * after each command, installed from their registry link when given.
    */
   customColours?: { css: string; registryUrl?: string }
 }) {

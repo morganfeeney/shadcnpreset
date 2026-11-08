@@ -15,27 +15,20 @@ import { getPresetPreviewView } from "@/lib/preset-preview"
  * into the frame rather than loaded again.
  */
 export function PresetCustomizePreview() {
-  const { value, css, view, saved, generatedPreview } = usePresetCustomize()
+  const { value, css, view, generatedPreview } = usePresetCustomize()
 
-  // The preset the frame loads with, kept until the view changes. A saved
-  // preset's colours paint first; any change arrives as a message.
-  const [frame, setFrame] = React.useState({
-    view,
-    code: value.code,
-    custom: saved?.id,
-  })
+  // The preset the frame loads with, kept until the view changes. Its custom
+  // colours, and any change, arrive as messages.
+  const [frame, setFrame] = React.useState({ view, code: value.code })
   if (frame.view !== view) {
-    setFrame({ view, code: value.code, custom: saved?.id })
+    setFrame({ view, code: value.code })
   }
   const [loadedView, setLoadedView] = React.useState<string | null>(null)
   const loaded = loadedView === view
 
-  const url = getPresetPreviewUrl(frame.code, view)
+  const src = getPresetPreviewUrl(frame.code, view)
   const credit = getPresetPreviewView(view)?.credit
-  if (!url) return null
-  const src = frame.custom
-    ? `${url}&${new URLSearchParams({ custom: frame.custom })}`
-    : url
+  if (!src) return null
 
   return (
     <div

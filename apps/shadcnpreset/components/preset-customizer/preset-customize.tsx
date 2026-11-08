@@ -1,27 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { useQuery } from "@tanstack/react-query"
 
-import {
-  useSaveCustomPreset,
-  type SavedCustomPreset,
-} from "@/components/custom-presets/use-save-custom-preset"
-import { NO_CUSTOM_COLOURS } from "@/lib/custom-colours"
+import { NO_CUSTOM_COLOURS, type CustomColours } from "@/lib/custom-colours"
 import { buildCustomPreset } from "@/lib/custom-preset"
 import { useGeneratedPreview } from "@/lib/generated-preview/use-generated-preview"
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
 import {
   hasColours,
   readPresetQuery,
-  replaceQuery,
-  sameColours,
-  samePreset,
   withColours,
-  withoutArrival,
   withChat,
   withCustomizeTab,
-  withSavedPreset,
+  withSavedColours,
   withView,
   type CustomizeTab,
   type PresetDraft,
@@ -31,9 +22,7 @@ import type { PresetPreviewPageName } from "@/lib/preset-preview"
 type PresetCustomizeContextValue = {
   /** The preset on show, with any custom colours. */
   value: PresetDraft
-  /** The saved custom preset on show, if any. */
-  saved: SavedCustomPreset | null
-  /** Custom colours (or a saved preset's) differ from what is kept. */
+  /** It has custom colours: what Reset takes away. */
   isChanged: boolean
   /** Colours for the preview as CSS; empty without custom colours. */
   css: string
@@ -53,31 +42,26 @@ type PresetCustomizeContextValue = {
    * address with it, in one step: a second would race the preset's own.
    */
   setValue: (next: PresetDraft, settle?: boolean, chat?: string | null) => void
-  /** Back to the preset as it comes, or as saved. */
+  /** Back to the preset as it comes. */
   reset: () => void
-  /** Saves the changes, signing in first if need be. */
-  save: () => void
-  saving: boolean
 }
 
 const PresetCustomizeContext =
   React.createContext<PresetCustomizeContextValue | null>(null)
 
-async function fetchSavedPreset(id: string): Promise<SavedCustomPreset> {
-  const response = await fetch(`/api/custom-presets/${id}`)
-  if (!response.ok) throw new Error("not found")
-  return (await response.json()) as SavedCustomPreset
-}
-
-/** A saved custom preset, read once and kept: saving updates it in place. */
-function useSavedCustomPreset(id: string | null) {
-  return useQuery({
-    queryKey: ["customPreset", id],
-    queryFn: () => fetchSavedPreset(id!),
-    enabled: Boolean(id),
-    retry: false,
-    staleTime: Infinity,
-  })
+/**
+ * An old link's saved preset, by id: its preset and colours, to show by the
+ * address as anything else is. Null when it is gone.
+ */
+async function fetchSavedColours(
+  id: string
+): Promise<{ presetCode: string; colours: CustomColours } | null> {
+  const response = await fetch(`/api/custom-presets/${id}`).catch(() => null)
+  if (!response?.ok) return null
+  return (await response.json()) as {
+    presetCode: string
+    colours: CustomColours
+  }
 }
 
 /**
@@ -87,9 +71,8 @@ function useSavedCustomPreset(id: string | null) {
  * since only it knows where the code lives.
  *
  * A listed choice (style, base, theme, font and so on) is just another
- * preset, so it goes to that preset; only custom colours make a draft, kept
- * until saved. Whether anything has changed is worked out by comparing,
- * never remembered.
+ * preset, so it goes to that preset; only custom colours make it custom.
+ * Nothing is stored: the address is the preset, to share or install.
  */
 function PresetCustomizeProvider({
   code,
@@ -107,10 +90,6 @@ function PresetCustomizeProvider({
 }) {
   const read = readPresetQuery(query)
 
-  const savedQuery = useSavedCustomPreset(read.custom)
-  const saved = (read.custom && savedQuery.data) || null
-  const keptColours = saved?.colours ?? NO_CUSTOM_COLOURS
-
   // A picker being dragged is held here until it settles, so the address
   // isn't rewritten on every frame.
   const [dragging, setDragging] = React.useState<PresetDraft["colours"] | null>(
@@ -118,12 +97,10 @@ function PresetCustomizeProvider({
   )
   const queryColours = read.colours
   const value = React.useMemo<PresetDraft>(
-    () => ({ code, colours: dragging ?? queryColours ?? keptColours }),
-    [code, dragging, keptColours, queryColours]
+    () => ({ code, colours: dragging ?? queryColours ?? NO_CUSTOM_COLOURS }),
+    [code, dragging, queryColours]
   )
-  const isChanged = saved
-    ? !samePreset(value, { code: saved.presetCode, colours: saved.colours })
-    : hasColours(value.colours)
+  const isChanged = hasColours(value.colours)
 
   const css = React.useMemo(
     () =>
@@ -165,46 +142,48 @@ function PresetCustomizeProvider({
         return
       }
       setDragging(null)
-      const colours = sameColours(next.colours, keptColours)
-        ? null
-        : next.colours
+      const colours = hasColours(next.colours) ? next.colours : null
       // Another code is another preset, with the colours carried over to it.
       const address = withColours(current(), colours)
       goTo(next.code, chat === undefined ? address : withChat(address, chat))
     },
-    [goTo, keptColours]
+    [goTo]
   )
 
   const reset = React.useCallback(() => {
     setDragging(null)
-    goTo(saved?.presetCode ?? code, withColours(current(), null))
-  }, [code, goTo, saved])
+    goTo(code, withColours(current(), null))
+  }, [code, goTo])
 
-  const { save: saveValue, saving } = useSaveCustomPreset()
-  const save = React.useCallback(async () => {
-    if (!isChanged) return
-    const id = await saveValue(value, saved)
-    if (id) goTo(value.code, withSavedPreset(current(), id))
-  }, [goTo, isChanged, saveValue, saved, value])
-
-  // Back from signing in to save: it saves now, once, when the saved preset
-  // it changes (if any) has arrived.
-  const ready = !read.custom || !savedQuery.isPending
-  const saveOnArrival = React.useEffectEvent(() => {
-    replaceQuery(withoutArrival(current()))
-    void save()
-  })
-  const arrived = React.useRef(false)
+  // An old link names a saved preset: shown as its preset and colours in
+  // the address, like any other, once read.
+  const legacy = read.custom
   React.useEffect(() => {
-    if (!read.save || !ready || arrived.current) return
-    arrived.current = true
-    saveOnArrival()
-  }, [read.save, ready])
+    if (!legacy) return
+    let active = true
+    void fetchSavedColours(legacy).then((saved) => {
+      if (!active) return
+      const address = new URLSearchParams(window.location.search)
+      if (!saved) {
+        goTo(code, withSavedColours(address, null))
+        return
+      }
+      goTo(
+        saved.presetCode,
+        withSavedColours(
+          address,
+          hasColours(saved.colours) ? saved.colours : null
+        )
+      )
+    })
+    return () => {
+      active = false
+    }
+  }, [code, goTo, legacy])
 
   const context = React.useMemo<PresetCustomizeContextValue>(
     () => ({
       value,
-      saved,
       isChanged,
       css,
       view,
@@ -216,12 +195,9 @@ function PresetCustomizeProvider({
       generatedPreview,
       setValue,
       reset,
-      save: () => void save(),
-      saving,
     }),
     [
       value,
-      saved,
       isChanged,
       css,
       view,
@@ -233,8 +209,6 @@ function PresetCustomizeProvider({
       generatedPreview,
       setValue,
       reset,
-      save,
-      saving,
     ]
   )
 
@@ -255,4 +229,4 @@ function usePresetCustomize() {
   return context
 }
 
-export { PresetCustomizeProvider, usePresetCustomize, useSavedCustomPreset }
+export { PresetCustomizeProvider, usePresetCustomize }

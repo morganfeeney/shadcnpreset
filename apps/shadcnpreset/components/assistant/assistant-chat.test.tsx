@@ -60,18 +60,15 @@ vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
 vi.mock("@/components/assistant/assistant-preset-panel", () => ({
   AssistantPresetPanel: ({
     code,
-    query,
     waiting,
     onClose,
   }: {
     code: string
-    query: URLSearchParams
     waiting?: boolean
     onClose: () => void
   }) => (
     <div>
       <p>Preset {code}</p>
-      {query.get("custom") ? <p>Saved {query.get("custom")}</p> : null}
       {waiting ? <p>Preview waiting for the slide</p> : null}
       <button type="button" onClick={onClose}>
         Close preset
@@ -211,8 +208,7 @@ function mockFetch() {
       return jsonResponse({
         id: "cp-9",
         presetCode: PRESETS[2].code,
-        colours: { overrides: {} },
-        canEdit: true,
+        colours: { theme: "#CC5500", overrides: {} },
       })
     }
 
@@ -795,11 +791,12 @@ describe("AssistantChat preset panel", () => {
     expect(panel().hasAttribute("data-instant")).toBe(true)
   })
 
-  it("opens an older link to a saved preset by that preset", async () => {
+  it("opens an older link to a saved preset as its preset and colours", async () => {
     renderPage(CHAT_ID, "?preset=cp-9")
 
     expect(await screen.findByText(`Preset ${PRESETS[2].code}`)).toBeTruthy()
-    expect(screen.getByText("Saved cp-9")).toBeTruthy()
+    expect(address().get("colours")).toContain("#CC5500")
+    expect(address().has("custom")).toBe(false)
   })
 
   it("sends the open preset with a message, and asks for changes to it", async () => {

@@ -13,7 +13,6 @@ import { AssistantPromptComposer } from "@/components/assistant/assistant-prompt
 import { AssistantPresetPanel } from "@/components/assistant/assistant-preset-panel"
 import { ProWall } from "@/components/assistant/pro-wall"
 import { PresetCardCustomizeProvider } from "@/components/preset-card-customize"
-import { useSavedCustomPreset } from "@/components/preset-customizer/preset-customize"
 import { useSettledAfterMotion } from "@/components/assistant/use-settled-after-motion"
 import { useWorkspacePreset } from "@/components/assistant/use-workspace-preset"
 import { PresetStyleOverviewCard } from "@/components/preset-style-overview-card"
@@ -42,12 +41,7 @@ import { assistantChatPath } from "@/lib/assistant-chat-path"
 import { readBrandColours } from "@/lib/brand-theme"
 import { customColoursFrom, NO_CUSTOM_COLOURS } from "@/lib/custom-colours"
 import { customizeRequestText } from "@/lib/customize-preset"
-import {
-  hasColours,
-  readPresetQuery,
-  sameColours,
-  withColours,
-} from "@/lib/preset-draft"
+import { hasColours, readPresetQuery, withColours } from "@/lib/preset-draft"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth-store"
@@ -65,15 +59,12 @@ export function AssistantChat({
   const workspace = useWorkspacePreset()
   const panelOpen = Boolean(workspace.code)
   // The preset as the panel shows it, for a message to change: its code,
-  // and its colours (unsaved, or as saved).
+  // and its colours.
   const customizing = readPresetQuery(workspace.query)
-  const saved = useSavedCustomPreset(workspace.code ? customizing.custom : null)
-  const keptColours =
-    (customizing.custom && saved.data?.colours) || NO_CUSTOM_COLOURS
   const customPreset: CustomizedPreset | null = workspace.code
     ? {
         presetCode: workspace.code,
-        colours: customizing.colours ?? keptColours,
+        colours: customizing.colours ?? NO_CUSTOM_COLOURS,
       }
     : null
   // When the composer grows (a note above it, a longer message) or the window
@@ -103,13 +94,13 @@ export function AssistantChat({
     initialChatId: routeChatId,
     customPreset,
     // The panel shows the edit as it would any change made there: another
-    // preset, and colours unsaved until saved.
+    // preset, and its colours.
     onCustomPresetEdited: (preset) =>
       workspace.goTo(
         preset.presetCode,
         withColours(
           new URLSearchParams(window.location.search),
-          sameColours(preset.colours, keptColours) ? null : preset.colours
+          hasColours(preset.colours) ? preset.colours : null
         )
       ),
     // The answer has made this page a conversation worth returning to, so it

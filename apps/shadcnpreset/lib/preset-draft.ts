@@ -11,20 +11,18 @@ import {
  * and signing in all come back to it as it was. Each page says where the
  * preset code itself lives (its path, or Ask AI's `preset`).
  *
- * - `custom`: a saved custom preset, shown and changed.
- * - `colours`: custom colours not yet saved, over the preset on show. Only
- *   these make a draft: any listed choice is just another preset.
+ * - `colours`: custom colours over the preset on show. Only these make it
+ *   custom: any listed choice is just another preset.
  * - `view`: the block view the preset is shown in; none for the first.
  * - `customize`: open the Customize panel on arrival (a card's Customize).
  * - `tab`: Customize's tab, `ai` for Ask AI; none for Controls.
  * - `chat`: the conversation in Customize's Ask AI tab, once it has one.
- * - `save`: save on arrival, for the way back from signing in to save.
+ * - `custom`: an old link's saved preset, by id; it turns into its colours.
  */
 const CUSTOM = "custom"
 const VIEW = "view"
 const COLOURS = "colours"
 const CUSTOMIZE = "customize"
-const SAVE = "save"
 const TAB = "tab"
 const CHAT = "chat"
 
@@ -37,19 +35,18 @@ export function customizePresetPath(code: string) {
   return `/preset/${code}?${CUSTOMIZE}`
 }
 
-/** A saved custom preset, on its preset's page. */
-export function customPresetPath(id: string, code: string) {
-  return `/preset/${code}?${new URLSearchParams({ [CUSTOM]: id })}`
+/** A preset's page with these colours over it. */
+export function customColoursPath(code: string, colours: CustomColours) {
+  return `/preset/${code}?${withColours(new URLSearchParams(), colours)}`
 }
 
 export function readPresetQuery(query: URLSearchParams): {
-  /** Custom colours not yet saved; null when there are none. */
+  /** Custom colours; null when there are none. */
   colours: CustomColours | null
-  /** The saved custom preset on show. */
+  /** An old link's saved preset, to turn into its colours. */
   custom: string | null
   view: PresetPreviewPageName
   customize: boolean
-  save: boolean
   tab: CustomizeTab
   chat: string | null
 } {
@@ -58,7 +55,6 @@ export function readPresetQuery(query: URLSearchParams): {
     custom: query.get(CUSTOM),
     view: parsePresetPreviewPageName(query.get(VIEW)),
     customize: query.has(CUSTOMIZE),
-    save: query.has(SAVE),
     tab: query.get(TAB) === "ai" ? "ai" : "controls",
     chat: query.get(CHAT),
   }
@@ -83,6 +79,16 @@ export function withView(
   const next = new URLSearchParams(query)
   if (view === "preview") next.delete(VIEW)
   else next.set(VIEW, view)
+  return next
+}
+
+/** The address with an old link's saved preset turned into its colours. */
+export function withSavedColours(
+  query: URLSearchParams,
+  colours: CustomColours | null
+): URLSearchParams {
+  const next = withColours(query, colours)
+  next.delete(CUSTOM)
   return next
 }
 
@@ -124,27 +130,9 @@ export function withCustomizeTab(
   return next
 }
 
-/** The address showing this saved custom preset, with nothing left unsaved. */
-export function withSavedPreset(
-  query: URLSearchParams,
-  id: string
-): URLSearchParams {
-  const next = withColours(withoutArrival(query), null)
-  next.set(CUSTOM, id)
-  return next
-}
-
-/** The address asking to save once back from signing in. */
-export function withSaveOnArrival(query: URLSearchParams): URLSearchParams {
-  const next = new URLSearchParams(query)
-  next.set(SAVE, "1")
-  return next
-}
-
 export function withoutArrival(query: URLSearchParams): URLSearchParams {
   const next = new URLSearchParams(query)
   next.delete(CUSTOMIZE)
-  next.delete(SAVE)
   return next
 }
 

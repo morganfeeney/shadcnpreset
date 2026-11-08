@@ -195,7 +195,31 @@ export function facetValueLabel(facet: CustomPresetFacet, value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
-/** Where the colours install from, for the `shadcn add` command. */
-export function customPresetRegistryPath(id: string) {
-  return `/r/custom/${id}.json`
+/**
+ * Where a preset's custom colours install from, for the `shadcn add` command.
+ * Everything is in the path, nothing is stored: the colours as base64url, so
+ * the command pastes into any shell without quotes.
+ */
+export function customColoursRegistryPath(
+  presetCode: string,
+  colours: CustomColours
+) {
+  const encoded = btoa(JSON.stringify(colours))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+  return `/r/colours/${presetCode}/${encoded}.json`
+}
+
+/** The colours a registry path holds, unchecked; null when unreadable. */
+export function readRegistryColours(file: string): unknown {
+  const encoded = file
+    .replace(/\.json$/, "")
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+  try {
+    return JSON.parse(atob(encoded))
+  } catch {
+    return null
+  }
 }
