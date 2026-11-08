@@ -16,6 +16,8 @@ import {
  *   these make a draft: any listed choice is just another preset.
  * - `view`: the block view the preset is shown in; none for the first.
  * - `customize`: open the Customize panel on arrival (a card's Customize).
+ * - `tab`: Customize's tab, `ai` for Ask AI; none for Controls.
+ * - `chat`: the conversation in Customize's Ask AI tab, once it has one.
  * - `save`: save on arrival, for the way back from signing in to save.
  */
 const CUSTOM = "custom"
@@ -23,6 +25,10 @@ const VIEW = "view"
 const COLOURS = "colours"
 const CUSTOMIZE = "customize"
 const SAVE = "save"
+const TAB = "tab"
+const CHAT = "chat"
+
+export type CustomizeTab = "controls" | "ai"
 
 export type PresetDraft = { code: string; colours: CustomColours }
 
@@ -44,6 +50,8 @@ export function readPresetQuery(query: URLSearchParams): {
   view: PresetPreviewPageName
   customize: boolean
   save: boolean
+  tab: CustomizeTab
+  chat: string | null
 } {
   return {
     colours: parseColours(query.get(COLOURS)),
@@ -51,6 +59,8 @@ export function readPresetQuery(query: URLSearchParams): {
     view: parsePresetPreviewPageName(query.get(VIEW)),
     customize: query.has(CUSTOMIZE),
     save: query.has(SAVE),
+    tab: query.get(TAB) === "ai" ? "ai" : "controls",
+    chat: query.get(CHAT),
   }
 }
 
@@ -87,6 +97,30 @@ export function withoutChanges(query: URLSearchParams): URLSearchParams {
 export function withoutCustomizing(query: URLSearchParams): URLSearchParams {
   const next = withoutChanges(query)
   next.delete(VIEW)
+  next.delete(TAB)
+  next.delete(CHAT)
+  return next
+}
+
+/** The address with this conversation in it, or none. */
+export function withChat(
+  query: URLSearchParams,
+  chat: string | null
+): URLSearchParams {
+  const next = new URLSearchParams(query)
+  if (chat) next.set(CHAT, chat)
+  else next.delete(CHAT)
+  return next
+}
+
+/** The address with Customize on this tab, or none for Controls. */
+export function withCustomizeTab(
+  query: URLSearchParams,
+  tab: CustomizeTab
+): URLSearchParams {
+  const next = new URLSearchParams(query)
+  if (tab === "ai") next.set(TAB, "ai")
+  else next.delete(TAB)
   return next
 }
 
@@ -137,9 +171,9 @@ export function replaceQuery(
 export function hasColours(colours: CustomColours) {
   return Boolean(
     colours.baseColor ||
-      colours.theme ||
-      colours.chartColor ||
-      Object.keys(colours.overrides).length
+    colours.theme ||
+    colours.chartColor ||
+    Object.keys(colours.overrides).length
   )
 }
 

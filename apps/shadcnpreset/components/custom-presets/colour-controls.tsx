@@ -128,6 +128,8 @@ function Swatch({ colour }: { colour: string }) {
 }
 
 function tokenLabel(token: BrandToken) {
+  const chart = /^chart-(\d)$/.exec(token)
+  if (chart) return `Chart ${chart[1]}`
   const [owner, part] = token.split("-")
   return part
     ? `Text on ${owner}`

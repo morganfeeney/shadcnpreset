@@ -83,22 +83,28 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 const { toast } = await import("sonner")
 
 const ensureAuthenticated = vi.fn(async () => true)
+let authStatus: "authenticated" | "anonymous" = "authenticated"
 vi.mock("@/stores/auth-store", () => ({
   useAuthStore: (selector: (state: unknown) => unknown) =>
-    selector({ status: "authenticated", ensureAuthenticated }),
+    selector({ status: authStatus, ensureAuthenticated }),
 }))
 
 // These render a live preset in a sandboxed iframe, which none of this is
 // about.
 vi.mock("@/components/preset-style-overview-card", async () => {
-  const { usePresetCardCustomize } = await import(
-    "@/components/preset-card-customize"
-  )
+  const { usePresetCardCustomize } =
+    await import("@/components/preset-card-customize")
   return {
-    PresetStyleOverviewCard: function Card({ code }: { code: string }) {
+    PresetStyleOverviewCard: function Card({
+      code,
+      className,
+    }: {
+      code: string
+      className?: string
+    }) {
       const inPlace = usePresetCardCustomize()
       return (
-        <div data-testid="preset-card">
+        <div data-testid="preset-card" data-code={code} className={className}>
           {code}
           {inPlace ? (
             <button type="button" onClick={() => inPlace.customize(code)}>
@@ -214,7 +220,12 @@ function mockFetch() {
       return jsonResponse({
         chats: [
           { id: CHAT_ID, title: "First chat", createdAt: 2, updatedAt: 2 },
-          { id: OTHER_CHAT_ID, title: "Second chat", createdAt: 1, updatedAt: 1 },
+          {
+            id: OTHER_CHAT_ID,
+            title: "Second chat",
+            createdAt: 1,
+            updatedAt: 1,
+          },
         ],
       })
     }
@@ -255,8 +266,9 @@ function jsonResponse(body: unknown) {
 /** Re-render with the params unchanged, so only the URL has moved. */
 const STALE_PARAMS = Symbol("stale params")
 
-let applyNavigation: (next: string | null | typeof STALE_PARAMS) => void =
-  () => {}
+let applyNavigation: (
+  next: string | null | typeof STALE_PARAMS
+) => void = () => {}
 
 /** The page wired to the fake router, staying mounted across navigations. */
 function Harness({ initialRoute }: { initialRoute: string | null }) {
@@ -317,7 +329,8 @@ async function deliverNavigations({ staleParams = false } = {}) {
     const href = navigations.shift() as string
     window.history.pushState(null, "", href)
     const path = href.split("?")[0]
-    const chatId = path === "/assistant" ? null : (path.split("/").pop() ?? null)
+    const chatId =
+      path === "/assistant" ? null : (path.split("/").pop() ?? null)
     await act(async () => {
       applyNavigation(staleParams ? STALE_PARAMS : chatId)
       await Promise.resolve()
@@ -363,6 +376,7 @@ function clickLink(href: string) {
 }
 
 beforeEach(() => {
+  authStatus = "authenticated"
   navigations.length = 0
   chatDetailRequests.length = 0
   sendBodies.length = 0
@@ -555,12 +569,31 @@ describe("AssistantChat URLs", () => {
   })
 })
 
+describe("AssistantChat signed out", () => {
+  it("hands back a new chat, nothing open, for a chat's address", async () => {
+    authStatus = "anonymous"
+    renderPage(CHAT_ID, "?preset=b1ePsKcQEb&view=chat")
+
+    await deliverNavigations()
+
+    expect(window.location.pathname).toBe("/assistant")
+    expect(window.location.search).toBe("")
+    expect(
+      screen
+        .getByRole("region", { name: "Custom preset", hidden: true })
+        .hasAttribute("data-open")
+    ).toBe(false)
+  })
+})
+
 describe("AssistantChat sponsored card", () => {
   it("waits for an answer before showing the shadcncraft card", async () => {
     // Held: the question is on screen and the reply is still coming.
     releaseSend = null
     renderPage()
-    expect(screen.queryByRole("complementary", { name: "Sponsored" })).toBeNull()
+    expect(
+      screen.queryByRole("complementary", { name: "Sponsored" })
+    ).toBeNull()
 
     const composer = screen.getByRole("textbox")
     const form = composer.closest("form") as HTMLFormElement
@@ -579,7 +612,9 @@ describe("AssistantChat sponsored card", () => {
     })
 
     await waitFor(() => expect(sendBodies).toHaveLength(1))
-    expect(screen.queryByRole("complementary", { name: "Sponsored" })).toBeNull()
+    expect(
+      screen.queryByRole("complementary", { name: "Sponsored" })
+    ).toBeNull()
 
     await act(async () => {
       ;(releaseSend as unknown as () => void)?.()
@@ -587,9 +622,9 @@ describe("AssistantChat sponsored card", () => {
     })
 
     const card = await screen.findByRole("complementary", { name: "Sponsored" })
-    expect(
-      within(card).getByRole("link").getAttribute("href")
-    ).toBe("https://shadcncraft.com?atp=shadcnpreset&sub1=assistant-chat")
+    expect(within(card).getByRole("link").getAttribute("href")).toBe(
+      "https://shadcncraft.com?atp=shadcnpreset&sub1=assistant-chat"
+    )
   })
 })
 
@@ -796,6 +831,24 @@ describe("AssistantChat preset panel", () => {
     expect(address().has("colours")).toBe(false)
   })
 
+  it("marks the card being customized, through edits, until it closes", async () => {
+    const marked = () =>
+      screen
+        .getAllByTestId("preset-card")
+        .filter((card) => card.className.includes("ring-2"))
+        .map((card) => card.dataset.code)
+    renderPage()
+    await openFromCard()
+    expect(marked()).toEqual([PRESETS[0].code])
+
+    await sendPrompt("make it green")
+    await screen.findByText(`Preset ${EDITED_CODE}`)
+    expect(marked()).toEqual([PRESETS[0].code])
+
+    await close()
+    expect(marked()).toEqual([])
+  })
+
   it("goes back to finding presets once the panel closes", async () => {
     renderPage()
     await openFromCard()
@@ -816,7 +869,9 @@ describe("AssistantChat asked for a custom preset", () => {
     await sendPrompt(ASK)
 
     expect(
-      await screen.findByRole("button", { name: `Customize ${PRESETS[0].code}` })
+      await screen.findByRole("button", {
+        name: `Customize ${PRESETS[0].code}`,
+      })
     ).toBeTruthy()
     expect(
       screen

@@ -49,8 +49,14 @@ type AssistantChatDetailResponse = {
       role: "user" | "assistant"
       kind: "text" | "presets" | "preview"
       content: string
-      presets?: Extract<ChatMessage, { role: "assistant"; kind: "presets" }>["presets"]
-      preview?: Extract<ChatMessage, { role: "assistant"; kind: "preview" }>["preview"]
+      presets?: Extract<
+        ChatMessage,
+        { role: "assistant"; kind: "presets" }
+      >["presets"]
+      preview?: Extract<
+        ChatMessage,
+        { role: "assistant"; kind: "preview" }
+      >["preview"]
       followUpQuestions?: string[]
     }>
   }
@@ -114,7 +120,9 @@ function hydrateMessages(
       content: message.content,
       followUpQuestions:
         message.kind === "text" && Array.isArray(message.followUpQuestions)
-          ? message.followUpQuestions.filter((q) => q.trim().length > 0).slice(0, 4)
+          ? message.followUpQuestions
+              .filter((q) => q.trim().length > 0)
+              .slice(0, 4)
           : undefined,
     })
   }
@@ -154,7 +162,9 @@ function toPersistedMessages(
   })
 }
 
-function getLastTurnFromMessages(messages: ChatMessage[]): AssistantTurn | null {
+function getLastTurnFromMessages(
+  messages: ChatMessage[]
+): AssistantTurn | null {
   const latestAssistant = [...messages]
     .reverse()
     .find(
@@ -219,8 +229,14 @@ type UseAssistantChatOptions = {
   onChatCreated?: (chatId: string) => void
   /** A preset open beside the chat to customize: sends edit it instead. */
   customPreset?: CustomizedPreset | null
-  /** A turn has edited it, for the panel to show. */
-  onCustomPresetEdited?: (preset: CustomizedPreset) => void
+  /**
+   * A turn has edited it, for the panel to show; with the chat it is in, so
+   * a surface can address both at once.
+   */
+  onCustomPresetEdited?: (
+    preset: CustomizedPreset,
+    chatId: string | null
+  ) => void
 }
 
 export function useAssistantChat(options?: UseAssistantChatOptions) {
@@ -251,13 +267,16 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   const [activeChatId, setActiveChatId] = React.useState<string | null>(
     options?.initialChatId ?? null
   )
-  const [deletingChatId, setDeletingChatId] = React.useState<string | null>(null)
+  const [deletingChatId, setDeletingChatId] = React.useState<string | null>(
+    null
+  )
   const [composerResetKey, setComposerResetKey] = React.useState(0)
   const authStatus = useAuthStore((state) => state.status)
   const ensureAuthenticated = useAuthStore((state) => state.ensureAuthenticated)
   const queryClient = useQueryClient()
   const [syncedAuthStatus, setSyncedAuthStatus] = React.useState(authStatus)
-  const [syncedActiveChatId, setSyncedActiveChatId] = React.useState(activeChatId)
+  const [syncedActiveChatId, setSyncedActiveChatId] =
+    React.useState(activeChatId)
   const [syncedChatData, setSyncedChatData] = React.useState<
     AssistantChatDetailResponse["chat"] | undefined
   >(undefined)
@@ -285,10 +304,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     },
   })
 
-  const activeChatQuery = useQuery<
-    AssistantChatDetailResponse["chat"],
-    Error
-  >({
+  const activeChatQuery = useQuery<AssistantChatDetailResponse["chat"], Error>({
     queryKey: ["assistantChat", activeChatId],
     enabled: authStatus === "authenticated" && Boolean(activeChatId),
     // A conversation already on screen is never re-read; only opening one the
@@ -335,13 +351,16 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
    * seconds, which is what showing preset cards for every request costs
    * already.
    */
-  const pendingKind: "preview" | "presets" | null = !pending
+  const pendingKind: "preview" | "presets" | "custom" | null = !pending
     ? null
-    : looksLikePreviewRequest(
-          [...messages].reverse().find((m) => m.role === "user")?.content ?? ""
-        )
-      ? "preview"
-      : "presets"
+    : customPreset
+      ? "custom"
+      : looksLikePreviewRequest(
+            [...messages].reverse().find((m) => m.role === "user")?.content ??
+              ""
+          )
+        ? "preview"
+        : "presets"
 
   const isChatHydrating =
     Boolean(activeChatId) &&
@@ -517,7 +536,11 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
                 preview: data.preview,
               }
             : data.phase === "custom"
-              ? { role: "assistant", kind: "text", content: data.assistantMessage }
+              ? {
+                  role: "assistant",
+                  kind: "text",
+                  content: data.assistantMessage,
+                }
               : {
                   role: "assistant",
                   kind: "text",
@@ -534,15 +557,14 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
       if (data.phase === "preview") {
         onPreviewRef.current?.(data.preview)
       }
-      if (data.phase === "custom") {
-        onCustomPresetEditedRef.current?.(data.customPreset)
-      }
-
       // The answer names the chat: it exists now, it belongs in the history,
       // and there is finally something worth addressing. The surface is told
       // so it can put that address in the bar.
       const chatId =
         typeof data.chatId === "string" ? data.chatId : result.args.chatId
+      if (data.phase === "custom") {
+        onCustomPresetEditedRef.current?.(data.customPreset, chatId ?? null)
+      }
       if (chatId) {
         setSkipNextChatHydrate(true)
         queryClient.setQueryData(["assistantChat", chatId], {
@@ -615,7 +637,9 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
   async function sendContent(text: string) {
     const trimmed = text.trim()
     if (!trimmed || pending || isChatHydrating) return
-    const hasPreviousUserMessage = messages.some((message) => message.role === "user")
+    const hasPreviousUserMessage = messages.some(
+      (message) => message.role === "user"
+    )
     trackEvent("ai_assistant_prompt_submit", {
       page_path: pathname,
       assistant_prompt: trimmed,
@@ -626,7 +650,10 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
           : "preset_discovery",
     })
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }]
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: trimmed },
+    ]
     // Only the seed. What the chat last offered is in the stored history, and
     // the server prefers that over anything sent here.
     const previousPresetCodes = seedPresetCodes
@@ -641,10 +668,7 @@ export function useAssistantChat(options?: UseAssistantChatOptions) {
     })
 
     if (result.kind === "auth_required") {
-      throw new AssistantSendError(
-        "Authentication required",
-        "auth_required"
-      )
+      throw new AssistantSendError("Authentication required", "auth_required")
     }
   }
 

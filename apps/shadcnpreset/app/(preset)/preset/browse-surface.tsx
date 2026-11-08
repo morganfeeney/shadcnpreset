@@ -7,6 +7,7 @@ import { PresetBrowseControls } from "@/components/preset-browse-controls"
 import { PresetCustomizeProvider } from "@/components/preset-customizer/preset-customize"
 import { PresetCustomizeBar } from "@/components/preset-customizer/preset-customize-bar"
 import { PresetCustomizeCreditImpression } from "@/components/preset-customizer/preset-customize-credit"
+import { PresetCustomizeChat } from "@/components/preset-customizer/preset-customize-chat"
 import { PresetCustomizePanel } from "@/components/preset-customizer/preset-customize-panel"
 import { PresetCustomizePreview } from "@/components/preset-customizer/preset-customize-preview"
 import { PresetCustomizeToolbar } from "@/components/preset-customizer/preset-customize-toolbar"
@@ -60,11 +61,7 @@ export function PresetBrowseSurface({
 
   return (
     <main className="min-h-0 min-w-0 px-2 pb-2">
-      <PresetCustomizeProvider
-        code={livePresetCode}
-        query={query}
-        goTo={goTo}
-      >
+      <PresetCustomizeProvider code={livePresetCode} query={query} goTo={goTo}>
         <PresetCustomizeCreditImpression />
         <WorkspaceProvider
           {...workspace}
@@ -77,7 +74,7 @@ export function PresetBrowseSurface({
               <PresetCustomizePreview />
               {children}
             </WorkspaceMain>
-            <PresetCustomizePanel />
+            <PresetCustomizePanel chat={<PresetCustomizeChat />} />
           </WorkspaceBody>
           <PresetCustomizeBar
             titleAs="h1"

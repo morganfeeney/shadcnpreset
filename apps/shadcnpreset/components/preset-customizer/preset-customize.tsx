@@ -19,8 +19,11 @@ import {
   samePreset,
   withColours,
   withoutArrival,
+  withChat,
+  withCustomizeTab,
   withSavedPreset,
   withView,
+  type CustomizeTab,
   type PresetDraft,
 } from "@/lib/preset-draft"
 import type { PresetPreviewPageName } from "@/lib/preset-preview"
@@ -37,10 +40,19 @@ type PresetCustomizeContextValue = {
   /** The block view it is shown in. */
   view: PresetPreviewPageName
   setView: (view: PresetPreviewPageName) => void
+  /** Customize's tab, where it has more than one (the preset page). */
+  tab: CustomizeTab
+  setTab: (tab: CustomizeTab) => void
+  /** The conversation in the Ask AI tab, kept in the address. */
+  chat: string | null
+  setChat: (chat: string | null) => void
   /** A preview Ask AI generated this session, for the `generated` view. */
   generatedPreview: GeneratedPreviewPayload | null
-  /** `settle` is false while a picker is being dragged. */
-  setValue: (next: PresetDraft, settle?: boolean) => void
+  /**
+   * `settle` is false while a picker is being dragged. `chat` goes in the
+   * address with it, in one step: a second would race the preset's own.
+   */
+  setValue: (next: PresetDraft, settle?: boolean, chat?: string | null) => void
   /** Back to the preset as it comes, or as saved. */
   reset: () => void
   /** Saves the changes, signing in first if need be. */
@@ -129,13 +141,25 @@ function PresetCustomizeProvider({
   // The address as it is now, which a handler reads rather than the render's.
   const current = () => new URLSearchParams(window.location.search)
 
+  const tab = read.tab
+  const setTab = React.useCallback(
+    (next: CustomizeTab) => goTo(code, withCustomizeTab(current(), next)),
+    [code, goTo]
+  )
+
+  const chat = read.chat
+  const setChat = React.useCallback(
+    (next: string | null) => goTo(code, withChat(current(), next)),
+    [code, goTo]
+  )
+
   const setView = React.useCallback(
     (next: PresetPreviewPageName) => goTo(code, withView(current(), next)),
     [code, goTo]
   )
 
   const setValue = React.useCallback(
-    (next: PresetDraft, settle = true) => {
+    (next: PresetDraft, settle = true, chat?: string | null) => {
       if (!settle) {
         setDragging(next.colours)
         return
@@ -145,7 +169,8 @@ function PresetCustomizeProvider({
         ? null
         : next.colours
       // Another code is another preset, with the colours carried over to it.
-      goTo(next.code, withColours(current(), colours))
+      const address = withColours(current(), colours)
+      goTo(next.code, chat === undefined ? address : withChat(address, chat))
     },
     [goTo, keptColours]
   )
@@ -184,6 +209,10 @@ function PresetCustomizeProvider({
       css,
       view,
       setView,
+      tab,
+      setTab,
+      chat,
+      setChat,
       generatedPreview,
       setValue,
       reset,
@@ -197,6 +226,10 @@ function PresetCustomizeProvider({
       css,
       view,
       setView,
+      tab,
+      setTab,
+      chat,
+      setChat,
       generatedPreview,
       setValue,
       reset,

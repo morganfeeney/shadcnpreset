@@ -1,8 +1,12 @@
 "use client"
 
+import * as React from "react"
+
 import { CustomPresetProperties } from "@/components/custom-presets/custom-preset-properties"
 import { usePresetCustomize } from "@/components/preset-customizer/preset-customize"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { CustomizeTab } from "@/lib/preset-draft"
 import {
   WorkspacePanel,
   WorkspacePanelContent,
@@ -15,9 +19,21 @@ import {
  * Everything to change about the preset on show. Opened again from the bar,
  * so it needs no rail of its own; fixed open where the workspace doesn't
  * collapse (Ask AI).
+ *
+ * With `chat`, a second tab to change it by asking instead: the preset page
+ * has it, while Ask AI's own conversation sits beside its panel already.
  */
-export function PresetCustomizePanel() {
-  const { value, setValue, isChanged, reset } = usePresetCustomize()
+export function PresetCustomizePanel({ chat }: { chat?: React.ReactNode }) {
+  const { value, setValue, isChanged, reset, tab, setTab } =
+    usePresetCustomize()
+
+  const controls = (
+    <CustomPresetProperties
+      code={value.code}
+      colours={value.colours}
+      onValueChange={setValue}
+    />
+  )
   return (
     <WorkspacePanel side="end" label="Customize" collapsible="offcanvas">
       <WorkspacePanelHeader className="px-4">
@@ -33,13 +49,35 @@ export function PresetCustomizePanel() {
         </Button>
         <WorkspacePanelTrigger />
       </WorkspacePanelHeader>
-      <WorkspacePanelContent>
-        <CustomPresetProperties
-          code={value.code}
-          colours={value.colours}
-          onValueChange={setValue}
-        />
-      </WorkspacePanelContent>
+      {chat ? (
+        <WorkspacePanelContent className="flex flex-col overflow-hidden">
+          <Tabs
+            value={tab}
+            onValueChange={(next) => setTab(next as CustomizeTab)}
+            className="min-h-0 flex-1 gap-0"
+          >
+            <div className="border-b px-4 py-2.5">
+              <TabsList className="w-full">
+                <TabsTrigger value="controls">Controls</TabsTrigger>
+                <TabsTrigger value="ai">Ask AI</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="controls" className="min-h-0 overflow-y-auto">
+              {controls}
+            </TabsContent>
+            {/* Kept while on Controls, so the conversation is there to go back to. */}
+            <TabsContent
+              value="ai"
+              keepMounted
+              className="flex min-h-0 flex-col"
+            >
+              {chat}
+            </TabsContent>
+          </Tabs>
+        </WorkspacePanelContent>
+      ) : (
+        <WorkspacePanelContent>{controls}</WorkspacePanelContent>
+      )}
     </WorkspacePanel>
   )
 }

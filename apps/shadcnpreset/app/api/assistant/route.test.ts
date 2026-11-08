@@ -204,6 +204,7 @@ describe("POST /api/assistant with a preset open to customize", () => {
     chartColor: null,
     overrides: [],
     removeOverrides: [],
+    notChanged: [],
   }
 
   function wroteCustomPresets() {
@@ -236,6 +237,32 @@ describe("POST /api/assistant with a preset open to customize", () => {
       "editing one custom shadcn preset"
     )
     expect(countedGenerations()).toHaveLength(1)
+  })
+
+  it("reads a pasted theme as written: no model, no generation", async () => {
+    noAnswersUsed()
+
+    const body = await (
+      await post({
+        customPreset: OPEN,
+        messages: [
+          {
+            role: "user",
+            content:
+              ":root { --primary: #0F766E; --shadow-md: 0 1px 2px black; }",
+          },
+        ],
+      })
+    ).json()
+
+    expect(generateText).not.toHaveBeenCalled()
+    expect(body.customPreset.colours.overrides).toEqual({ primary: "#0F766E" })
+    expect(body.assistantMessage).toContain(
+      "A preset has no setting for `--shadow-md`."
+    )
+    expect(
+      query.mock.calls.some(([sql]) => String(sql).includes("assistant_usage"))
+    ).toBe(false)
   })
 
   it("leaves saving to the page: nothing is written", async () => {
@@ -314,7 +341,9 @@ describe("POST /api/assistant asking for a custom preset", () => {
   })
 
   it("lets other requests ask a question first", async () => {
-    await post({ messages: [{ role: "user", content: "Presets like #DE00CE" }] })
+    await post({
+      messages: [{ role: "user", content: "Presets like #DE00CE" }],
+    })
 
     expect(String(generateText.mock.calls[0][0].system)).not.toContain(
       "They asked for a custom preset"

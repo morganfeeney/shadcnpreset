@@ -35,6 +35,31 @@ function build(custom: Partial<CustomColours>, code = CODE) {
   )
 }
 
+describe("buildCustomTheme, a primary set by hand", () => {
+  it("says nothing about lightening the theme's primary it replaces", () => {
+    const theme = build({
+      theme: "#5A1A0A",
+      overrides: { primary: "#0F766E" },
+    })
+
+    expect(theme.dark.primary).toBe("#0F766E")
+    expect(theme.adjustments).toEqual([])
+  })
+})
+
+describe("buildCustomTheme, a ring set by hand", () => {
+  it("is the focus ring everywhere, over the one primary gives", () => {
+    const theme = build({
+      overrides: { primary: "#0000FF", ring: "#14B8A6" },
+    })
+
+    for (const mode of [theme.light, theme.dark]) {
+      expect(mode.ring).toBe("#14B8A6")
+      expect(mode["sidebar-ring"]).toBe("#14B8A6")
+    }
+  })
+})
+
 describe("buildCustomTheme", () => {
   it("is the preset's own shadcn theme when nothing is custom", () => {
     for (const code of [

@@ -263,6 +263,14 @@ const OVERRIDE_TARGETS: Record<BrandToken, string[]> = {
   "accent-foreground": ["accent-foreground", "sidebar-accent-foreground"],
   "muted-foreground": ["muted-foreground"],
   "card-foreground": ["card-foreground", "popover-foreground"],
+  destructive: ["destructive"],
+  // After primary, which sets it too, so one set by hand wins.
+  ring: ["ring", "sidebar-ring"],
+  "chart-1": ["chart-1"],
+  "chart-2": ["chart-2"],
+  "chart-3": ["chart-3"],
+  "chart-4": ["chart-4"],
+  "chart-5": ["chart-5"],
 }
 
 /** Surfaces and page text belong to one mode: a #141414 background is dark. */
@@ -339,7 +347,12 @@ export function buildCustomTheme(
     if (charts.dark?.[key]) dark[key] = charts.dark[key]
   }
 
-  if (custom.theme && contrast(dark.primary, dark.background) < UI_CONTRAST) {
+  // Not for a primary set by hand, which replaces this one anyway.
+  if (
+    custom.theme &&
+    !custom.overrides.primary &&
+    contrast(dark.primary, dark.background) < UI_CONTRAST
+  ) {
     dark.primary = separate(dark.primary, dark.background, UI_CONTRAST)
     dark["primary-foreground"] = textOn(
       dark.primary,

@@ -50,6 +50,7 @@ import {
 } from "@/lib/preset-draft"
 import { presetBrowsePath } from "@/lib/preset-preview"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function AssistantChat({
   /** The chat the URL names, or null on `/assistant`. */
@@ -161,8 +162,15 @@ export function AssistantChat({
     latestMessages.current = messages
   })
   const { show } = workspace
+  // The card being customized is marked, as the preset page marks the one on
+  // show. It is the card picked, kept through edits (each one another preset
+  // code); arriving with the panel open, the card for the preset it names.
+  const [picked, setPicked] = React.useState<string | null>(null)
+  if (!panelOpen && picked) setPicked(null)
+  const selectedCode = panelOpen ? (picked ?? workspace.code) : null
   const customize = React.useCallback(
     (code: string) => {
+      setPicked(code)
       trackEvent("custom_preset_customize_click", { preset_code: code })
       const colours = customColoursFrom(
         readBrandColours(customizeRequestText(latestMessages.current))
@@ -219,6 +227,16 @@ export function AssistantChat({
     toast.error(chatLoadError, { id: "assistant-chat-load" })
     router.replace(assistantChatPath(null), { scroll: false })
   }, [chatLoadError, router])
+
+  // A chat only opens for the account that made it, so signed out (signing
+  // out on it, or a link opened elsewhere) its address holds nothing: back to
+  // a new chat, with no preset left open beside an empty one.
+  const signedOut = useAuthStore((state) => state.status) === "anonymous"
+  React.useEffect(() => {
+    if (signedOut && urlChatId) {
+      router.replace(assistantChatPath(null), { scroll: false })
+    }
+  }, [signedOut, urlChatId, router])
 
   // Deleting the chat being read leaves the URL pointing at nothing.
   async function removeChat(chatId: string) {
@@ -351,6 +369,9 @@ export function AssistantChat({
                                 code={p.code}
                                 title={p.code}
                                 description={p.description}
+                                className={cn(
+                                  p.code === selectedCode && "ring-2 ring-ring"
+                                )}
                               />
                             </li>
                           ))}

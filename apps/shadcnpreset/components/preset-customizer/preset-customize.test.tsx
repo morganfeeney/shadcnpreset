@@ -27,9 +27,8 @@ vi.mock("@/stores/auth-store", () => ({
 const { toast } = await import("sonner")
 const { useAddressQuery } = await import("@/hooks/use-address-query")
 const { replaceQuery } = await import("@/lib/preset-draft")
-const { PresetCustomizeProvider, usePresetCustomize } = await import(
-  "@/components/preset-customizer/preset-customize"
-)
+const { PresetCustomizeProvider, usePresetCustomize } =
+  await import("@/components/preset-customizer/preset-customize")
 
 const CODE = "b5dyaqxe6"
 const OTHER = "b4YtS7GakV"
@@ -157,7 +156,9 @@ describe("PresetCustomizeProvider", () => {
     expect(screen.getByText(`${CODE} unchanged in preview`)).toBeTruthy()
 
     await click("Make it orange")
-    expect(screen.getByText(`${CODE} changed with colours in preview`)).toBeTruthy()
+    expect(
+      screen.getByText(`${CODE} changed with colours in preview`)
+    ).toBeTruthy()
     expect(JSON.parse(query().get("colours")!)).toEqual(ORANGE)
 
     await click("Back as it was")
@@ -170,14 +171,18 @@ describe("PresetCustomizeProvider", () => {
 
     await click("Drag to orange")
 
-    expect(screen.getByText(`${CODE} changed with colours in preview`)).toBeTruthy()
+    expect(
+      screen.getByText(`${CODE} changed with colours in preview`)
+    ).toBeTruthy()
     expect(query().has("colours")).toBe(false)
   })
 
   it("comes back to the colours in the address, as after a reload", () => {
     renderAt(`&${ORANGE_QUERY}`)
 
-    expect(screen.getByText(`${CODE} changed with colours in preview`)).toBeTruthy()
+    expect(
+      screen.getByText(`${CODE} changed with colours in preview`)
+    ).toBeTruthy()
   })
 
   it("goes to another preset for a listed choice, keeping the colours", async () => {
@@ -187,7 +192,9 @@ describe("PresetCustomizeProvider", () => {
 
     expect(query().get("preset")).toBe(OTHER)
     expect(JSON.parse(query().get("colours")!)).toEqual(ORANGE)
-    expect(screen.getByText(`${OTHER} changed with colours in preview`)).toBeTruthy()
+    expect(
+      screen.getByText(`${OTHER} changed with colours in preview`)
+    ).toBeTruthy()
   })
 
   it("keeps the view in the address", async () => {
@@ -231,7 +238,10 @@ describe("PresetCustomizeProvider", () => {
       status: 200,
       body: { id: "cp-1", presetCode: CODE, colours: ORANGE, canEdit: true },
     }
-    replies["PATCH /api/custom-presets/cp-1"] = { status: 200, body: { ok: true } }
+    replies["PATCH /api/custom-presets/cp-1"] = {
+      status: 200,
+      body: { ok: true },
+    }
     renderAt("&custom=cp-1")
     await waitFor(() =>
       expect(
@@ -257,7 +267,9 @@ describe("PresetCustomizeProvider", () => {
     }
     renderAt("&custom=cp-1")
     await waitFor(() =>
-      expect(screen.getByText(`${CODE} unchanged saved in preview`)).toBeTruthy()
+      expect(
+        screen.getByText(`${CODE} unchanged saved in preview`)
+      ).toBeTruthy()
     )
 
     await click("Make it orange")
@@ -299,6 +311,8 @@ describe("PresetCustomizeProvider", () => {
     await click("Save")
 
     expect(toast.error).toHaveBeenCalledWith("At the cap.", expect.anything())
-    expect(screen.getByText(`${CODE} changed with colours in preview`)).toBeTruthy()
+    expect(
+      screen.getByText(`${CODE} changed with colours in preview`)
+    ).toBeTruthy()
   })
 })
