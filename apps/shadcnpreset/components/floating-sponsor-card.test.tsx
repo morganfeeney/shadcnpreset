@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -33,6 +33,20 @@ function scrollTo(y: number) {
     Object.defineProperty(window, "scrollY", { configurable: true, value: y })
     window.dispatchEvent(new Event("scroll"))
   })
+}
+
+/** The card measures where to sit on the next frame. */
+async function nextFrame() {
+  await act(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  )
+}
+
+/** An element where a page has it, as measured. */
+function place(element: HTMLElement, box: Partial<DOMRect>) {
+  element.getBoundingClientRect = () => box as DOMRect
+  document.body.append(element)
+  return element
 }
 
 function card() {
@@ -83,7 +97,9 @@ describe("FloatingSponsorCard", () => {
 
   it("opens after a few seconds when the reader does not scroll", () => {
     vi.useFakeTimers()
-    render(<FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />)
+    render(
+      <FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />
+    )
 
     act(() => vi.advanceTimersByTime(4900))
     expect(card()?.getAttribute("data-state")).toBe("closed")
@@ -96,7 +112,9 @@ describe("FloatingSponsorCard", () => {
   it("waits for a background tab to be shown before opening", () => {
     vi.useFakeTimers()
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
-    render(<FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />)
+    render(
+      <FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />
+    )
 
     act(() => vi.advanceTimersByTime(10_000))
     expect(card()?.getAttribute("data-state")).toBe("closed")
@@ -109,39 +127,86 @@ describe("FloatingSponsorCard", () => {
     expect(card()?.getAttribute("data-state")).toBe("open")
   })
 
-  it("rises to sit above the footer instead of covering it", () => {
+  it("rises to sit above the footer instead of covering it", async () => {
     const footer = document.createElement("footer")
     document.body.append(footer)
     let footerTop = window.innerHeight + 500
-    footer.getBoundingClientRect = () => ({ top: footerTop }) as DOMRect
+    footer.getBoundingClientRect = () =>
+      ({ top: footerTop, height: 400 }) as DOMRect
     render(<FloatingSponsorCard sponsor={sponsor} placement="floating-learn" />)
     scrollTo(window.innerHeight)
+    await nextFrame()
     expect((card() as HTMLElement).style.bottom).toBe("16px")
 
     footerTop = window.innerHeight - 200
     scrollTo(window.innerHeight * 2)
+    await nextFrame()
 
     expect((card() as HTMLElement).style.bottom).toBe("216px")
     expect(card()?.getAttribute("data-state")).toBe("open")
   })
 
-  it("stays closed for this sponsor once dismissed", () => {
-    const { unmount } = render(
-      <FloatingSponsorCard sponsor={sponsor} placement="floating-learn" />
-    )
+  it("ignores a footer on a page kept hidden after leaving it", async () => {
+    place(document.createElement("footer"), {
+      top: window.innerHeight + 500,
+      height: 400,
+    })
+    // Hidden, it measures as nothing, which would read as filling the screen.
+    place(document.createElement("footer"), { top: 0, height: 0 })
+
+    render(<FloatingSponsorCard sponsor={sponsor} placement="floating-home" />)
+    await nextFrame()
+
+    expect((card() as HTMLElement).style.bottom).toBe("16px")
+  })
+
+  it("can't be closed, even where it was closed before", () => {
+    window.localStorage.setItem("sponsor-card-dismissed:shadcncraft", "1")
+    render(<FloatingSponsorCard sponsor={sponsor} placement="floating-learn" />)
     scrollTo(window.innerHeight)
 
-    fireEvent.click(screen.getByRole("button", { name: "Hide ad" }))
+    expect(card()?.getAttribute("data-state")).toBe("open")
+    expect(screen.queryByRole("button")).toBeNull()
+  })
 
-    expect(card()).toBeNull()
-    expect(trackEvent).toHaveBeenLastCalledWith("affiliate_dismiss", {
-      partner: "shadcncraft",
-      placement: "floating-learn",
-    })
+  it("sits left of a workspace's right-hand panel, above its bar", async () => {
+    const panel = document.createElement("aside")
+    panel.dataset.slot = "workspace-panel"
+    panel.dataset.side = "end"
+    place(panel, { left: window.innerWidth - 288, width: 288 })
+    const bar = document.createElement("div")
+    bar.dataset.slot = "workspace-bar"
+    place(bar, { top: window.innerHeight - 56, height: 56 })
 
-    unmount()
-    render(<FloatingSponsorCard sponsor={sponsor} placement="floating-home" />)
-    expect(card()).toBeNull()
+    render(
+      <FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />
+    )
+    await nextFrame()
+
+    expect((card() as HTMLElement).style.right).toBe("304px")
+    expect((card() as HTMLElement).style.bottom).toBe("72px")
+  })
+
+  it("moves back to the corner once the panel closes", async () => {
+    const panel = document.createElement("aside")
+    panel.dataset.slot = "workspace-panel"
+    panel.dataset.side = "end"
+    let width = 288
+    panel.getBoundingClientRect = () =>
+      ({ left: window.innerWidth - width, width }) as DOMRect
+    document.body.append(panel)
+    render(
+      <FloatingSponsorCard sponsor={sponsor} placement="floating-preset" />
+    )
+    await nextFrame()
+    expect((card() as HTMLElement).style.right).toBe("304px")
+
+    width = 0
+    panel.hidden = true
+    await nextFrame()
+    await nextFrame()
+
+    expect((card() as HTMLElement).style.right).toBe("16px")
   })
 
   it("does not float or count on narrow screens", () => {
