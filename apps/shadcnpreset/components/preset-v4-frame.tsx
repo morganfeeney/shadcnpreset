@@ -47,15 +47,11 @@ export function PresetV4Frame({
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
-  const hasLoadedRef = React.useRef(false)
   const [activeSrc, setActiveSrc] = React.useState<string | null>(null)
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
 
   React.useEffect(() => {
-    // Reset before the new src renders: a cached page can load before any
-    // later effect runs, and resetting after would undo its load for good.
-    hasLoadedRef.current = false
     setActiveSrc(src)
   }, [src])
 
@@ -150,25 +146,18 @@ export function PresetV4Frame({
     )
   }, [clearRetryTimers, postCustomColours, postGeneratedPreview, postThemeMode])
 
+  // Every change goes straight in. A page still loading misses it, but asks
+  // for everything once it listens; and a page kept while its route was away
+  // (it never reloads) gets it all again as the route shows.
   React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
-
     postThemeMode()
   }, [postThemeMode])
 
   React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
     postGeneratedPreview()
   }, [postGeneratedPreview])
 
   React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
     postCustomColours()
   }, [postCustomColours])
 
@@ -180,7 +169,6 @@ export function PresetV4Frame({
       // The frame says when it listens: everything goes in then, whatever
       // the load event did or didn't catch.
       if (isPreviewReadyMessage(event.data)) {
-        hasLoadedRef.current = true
         postThemeMode()
         postGeneratedPreview()
         postCustomColours()
@@ -194,16 +182,7 @@ export function PresetV4Frame({
     return () => window.removeEventListener("message", handleMessage)
   }, [postCustomColours, postGeneratedPreview, postThemeMode])
 
-  React.useEffect(() => {
-    return () => {
-      clearRetryTimers()
-      const frame = iframeRef.current
-      if (frame) {
-        // Encourage quicker memory reclamation on route changes/unmount.
-        frame.src = "about:blank"
-      }
-    }
-  }, [clearRetryTimers])
+  React.useEffect(() => clearRetryTimers, [clearRetryTimers])
 
   if (!activeSrc) {
     return <div className={className} aria-hidden />
@@ -219,7 +198,6 @@ export function PresetV4Frame({
       onLoad={(event) => {
         const loadedSrc = event.currentTarget.src
         if (!loadedSrc || loadedSrc === "about:blank") return
-        hasLoadedRef.current = true
         postThemeModeWithRetry()
         onLoad?.(event)
       }}
