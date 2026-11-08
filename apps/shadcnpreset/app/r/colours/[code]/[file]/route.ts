@@ -6,6 +6,7 @@ import {
   customPresetRegistryItem,
   readRegistryColours,
 } from "@/lib/custom-preset"
+import { countInstallQuietly } from "@/lib/install-counts"
 
 /**
  * A preset's custom colours as a shadcn registry item, for
@@ -23,5 +24,6 @@ export async function GET(
   if (!preset) {
     return NextResponse.json({ error: "Not found." }, { status: 404 })
   }
+  await countInstallQuietly(code)
   return NextResponse.json(customPresetRegistryItem(code, preset))
 }

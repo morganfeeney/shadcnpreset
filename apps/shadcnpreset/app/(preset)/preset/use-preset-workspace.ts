@@ -4,6 +4,7 @@ import * as React from "react"
 import { useSearchParams } from "next/navigation"
 
 import { useStoredWorkspaceOpen } from "@/hooks/use-stored-workspace-open"
+import { trackEvent } from "@/lib/analytics-events"
 import {
   readPresetQuery,
   replaceQuery,
@@ -22,6 +23,7 @@ export function usePresetWorkspace() {
   const open = customize ? { ...stored, end: true } : stored
 
   const keepArrival = React.useEffectEvent(() => {
+    trackEvent("customize_open", { how: "card" })
     setStored(open)
     replaceQuery(withoutArrival(new URLSearchParams(window.location.search)))
   })

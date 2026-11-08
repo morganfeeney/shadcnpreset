@@ -5,7 +5,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/preset/b5dyaqxe6" }))
-vi.mock("@/lib/analytics-events", () => ({ trackEvent: vi.fn() }))
+const trackEvent = vi.fn()
+vi.mock("@/lib/analytics-events", () => ({ trackEvent }))
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 let status: "authenticated" | "unauthenticated" = "authenticated"
@@ -271,5 +272,60 @@ describe("PresetCustomizePanel with Ask AI", () => {
     expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
       "Use my brand blue"
     )
+  })
+})
+
+describe("Customize use, counted", () => {
+  function events(name: string) {
+    return trackEvent.mock.calls.filter(([event]) => event === name)
+  }
+
+  it("counts choosing a tab, and clicking an example", async () => {
+    renderAt(
+      "",
+      <WorkspaceProvider collapsible={false}>
+        <PresetCustomizePanel chat={<PresetCustomizeChat />} />
+      </WorkspaceProvider>
+    )
+
+    fireEvent.click(screen.getByRole("tab", { name: "Ask AI" }))
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use my brand blue #1D4ED8" })
+      )
+    })
+
+    expect(events("customize_tab_select")).toEqual([
+      ["customize_tab_select", { tab: "ai" }],
+    ])
+    expect(events("ai_starter_click")).toEqual([
+      ["ai_starter_click", { starter: "Use my brand blue #1D4ED8" }],
+    ])
+  })
+
+  it("counts opening Customize, not its showing by default", () => {
+    function Page() {
+      const [open, setOpen] = React.useState({ start: true, end: true })
+      return (
+        <WorkspaceProvider open={open} onOpenChange={setOpen}>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => ({ ...o, end: !o.end }))}
+          >
+            Toggle Customize
+          </button>
+          <PresetCustomizePanel chat={<PresetCustomizeChat />} />
+        </WorkspaceProvider>
+      )
+    }
+    renderAt("", <Page />)
+    expect(events("customize_open")).toEqual([])
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle Customize" }))
+    fireEvent.click(screen.getByRole("button", { name: "Toggle Customize" }))
+
+    expect(events("customize_open")).toEqual([
+      ["customize_open", { how: "button" }],
+    ])
   })
 })

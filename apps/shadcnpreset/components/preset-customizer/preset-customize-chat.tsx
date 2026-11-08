@@ -11,6 +11,7 @@ import {
   type CustomizedPreset,
 } from "@/components/assistant/use-assistant-chat"
 import { usePresetCustomize } from "@/components/preset-customizer/preset-customize"
+import { trackEvent } from "@/lib/analytics-events"
 
 type Usage = { used: number; limit: number | null }
 
@@ -101,7 +102,10 @@ export function PresetCustomizeChat() {
                 <button
                   type="button"
                   disabled={chat.pending || chat.isChatHydrating}
-                  onClick={() => void chat.onPromptSubmit(starter)}
+                  onClick={() => {
+                    trackEvent("ai_starter_click", { starter })
+                    void chat.onPromptSubmit(starter)
+                  }}
                   className="w-full py-2.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none"
                 >
                   {starter}

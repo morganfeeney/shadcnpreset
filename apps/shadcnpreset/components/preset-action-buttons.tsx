@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import {
-  CheckIcon,
-  CodeIcon,
-  InfoIcon,
-  ShareIcon,
-} from "@phosphor-icons/react"
+import { CheckIcon, CodeIcon, InfoIcon, ShareIcon } from "@phosphor-icons/react"
 
 import { GetCodeDialog } from "@/components/get-code-dialog"
 import { ShadcncraftPitchDialog } from "@/components/shadcncraft-pitch/pitch-dialog"
@@ -15,6 +10,7 @@ import { ShadcncraftLogo } from "@/components/shadcncraft-pitch/shadcncraft-logo
 import { PresetVoteButton } from "@/components/preset-vote-button"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { trackEvent } from "@/lib/analytics-events"
 import { cn } from "@/lib/utils"
 
 type Size = "sm" | "lg"
@@ -153,6 +149,12 @@ function PresetActionButtons({
           sharePath
             ? new URL(sharePath, window.location.origin).href
             : window.location.href
+        }
+        onShare={() =>
+          trackEvent("preset_share_copy", {
+            preset_code: preset,
+            custom: customColours ? "yes" : "no",
+          })
         }
       />
       <Link
