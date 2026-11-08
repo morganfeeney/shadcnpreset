@@ -70,14 +70,12 @@ export const assistantTurnOutputSchema = z.object({
     .string()
     .max(60)
     .describe(
-      "Preview: short tab label (e.g. Date picker). Gathering/ready: use \"\"."
+      'Preview: short tab label (e.g. Date picker). Gathering/ready: use "".'
     ),
   previewCode: z
     .string()
     .max(24000)
-    .describe(
-      "Preview: JSX for function Preview(). Gathering/ready: use \"\"."
-    ),
+    .describe('Preview: JSX for function Preview(). Gathering/ready: use "".'),
 })
 
 export type AssistantTurnOutput = z.infer<typeof assistantTurnOutputSchema>
@@ -117,7 +115,8 @@ export type AssistantPreview = {
   preview: AssistantGeneratedPreview
 }
 
-export type AssistantTurn = AssistantGathering | AssistantReady | AssistantPreview
+export type AssistantTurn =
+  AssistantGathering | AssistantReady | AssistantPreview
 
 /** Route encodes `presetVariants` → `AssistantReady.presets` (codes + copy). */
 export type NormalizedAssistant =
@@ -129,7 +128,9 @@ export type NormalizedAssistant =
     }
   | AssistantPreview
 
-export function normalizeAssistantTurn(raw: AssistantTurnOutput): NormalizedAssistant | null {
+export function normalizeAssistantTurn(
+  raw: AssistantTurnOutput
+): NormalizedAssistant | null {
   if (raw.phase === "gathering") {
     const qs = raw.followUpQuestions.filter((q) => q.trim().length > 0)
     if (qs.length < 1) return null

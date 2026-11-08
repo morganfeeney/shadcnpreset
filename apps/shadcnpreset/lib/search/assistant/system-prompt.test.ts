@@ -12,7 +12,9 @@ describe("buildAssistantSystemPrompt", () => {
     const prompt = buildAssistantSystemPrompt()
 
     expect(prompt).toContain("## Phase: preview")
-    expect(prompt).toContain("Never use gathering for a show/display/render request")
+    expect(prompt).toContain(
+      "Never use gathering for a show/display/render request"
+    )
     expect(prompt).toContain("Go straight to preview")
   })
 

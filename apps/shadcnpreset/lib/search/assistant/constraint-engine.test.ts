@@ -69,7 +69,9 @@ describe("palette/explicit precedence", () => {
     ]
     const palette = extractPaletteConstraints(messages)
     const typography = extractTypographyConstraints(messages)
-    const explicit = applyExplicitFacetConstraints(PREV, { chartColor: "green" })
+    const explicit = applyExplicitFacetConstraints(PREV, {
+      chartColor: "green",
+    })
     const final = applyPaletteConstraints(explicit, palette)
 
     expect(final.chartColor).toBe(final.theme)
@@ -85,8 +87,9 @@ describe("palette/explicit precedence", () => {
 
   it("locks the style only when one style is named", () => {
     expect(
-      extractExplicitFacetConstraints([{ role: "user", content: "make it luma" }])
-        .style
+      extractExplicitFacetConstraints([
+        { role: "user", content: "make it luma" },
+      ]).style
     ).toBe("luma")
     expect(
       extractExplicitFacetConstraints([
@@ -152,4 +155,3 @@ describe("style directives", () => {
     expect(second.style).toBe("nova")
   })
 })
-

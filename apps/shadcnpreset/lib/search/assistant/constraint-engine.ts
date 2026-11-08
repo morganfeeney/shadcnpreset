@@ -58,9 +58,7 @@ const COLOR_WORDS_REGEX = new RegExp(`\\b(${COLOR_WORDS.join("|")})\\b`)
 const ICON_WORDS_REGEX = new RegExp(
   `\\b(icon|icons|${PRESET_ICON_LIBRARIES.join("|")})\\b`
 )
-const STYLE_WORDS_REGEX = new RegExp(
-  `\\b(${PRESET_STYLES.join("|")})\\b`
-)
+const STYLE_WORDS_REGEX = new RegExp(`\\b(${PRESET_STYLES.join("|")})\\b`)
 
 export function extractTypographyConstraints(
   messages: Array<{ role: "user" | "assistant"; content: string }>
@@ -140,14 +138,12 @@ export function detectRequestedFacetChanges(
     COLOR_WORDS_REGEX.test(t) ||
     /\b(grey|monochrome|monochromatic|grayscale|black and white)\b/.test(t)
   const mentionsChart = /\b(chart|charts)\b/.test(t)
-  const mentionsTheme = /\b(theme|palette|accent|accents|colour|color|colors|colours)\b/.test(
-    t
-  )
+  const mentionsTheme =
+    /\b(theme|palette|accent|accents|colour|color|colors|colours)\b/.test(t)
   const mentionsStyle =
     STYLE_WORDS_REGEX.test(t) || /\bstyle\b/.test(t) || /\blayout\b/.test(t)
   const mentionsHeadingTypography =
-    /\b(heading|headings)\b/.test(t) &&
-    /\b(font|fonts|serif|sans)\b/.test(t)
+    /\b(heading|headings)\b/.test(t) && /\b(font|fonts|serif|sans)\b/.test(t)
   const mentionsBodyTypography =
     /\bbody\b/.test(t) && /\b(font|fonts|serif|sans)\b/.test(t)
   const mentionsGenericTypography =
@@ -200,9 +196,10 @@ export function extractExplicitFacetConstraints(
   const chartColors = Object.keys(chartColorByWord)
   const colorWordRegex = /\b([a-z-]+)\b/g
 
-  function extractLastColorWord(
-    t: string
-  ): { theme?: PresetConfig["theme"]; baseColor?: PresetConfig["baseColor"] } {
+  function extractLastColorWord(t: string): {
+    theme?: PresetConfig["theme"]
+    baseColor?: PresetConfig["baseColor"]
+  } {
     let lastTheme: PresetConfig["theme"] | undefined
     let lastBaseColor: PresetConfig["baseColor"] | undefined
     for (const match of t.matchAll(colorWordRegex)) {
@@ -213,7 +210,9 @@ export function extractExplicitFacetConstraints(
     return { theme: lastTheme, baseColor: lastBaseColor }
   }
 
-  function extractChartColorFromText(t: string): PresetConfig["chartColor"] | undefined {
+  function extractChartColorFromText(
+    t: string
+  ): PresetConfig["chartColor"] | undefined {
     // Prefer color directly attached to "chart(s)", e.g. "amber charts".
     for (const c of chartColors) {
       const before = new RegExp(`\\b${c}\\s+(chart|charts)\\b`)
@@ -240,10 +239,7 @@ export function extractExplicitFacetConstraints(
     if (namedStyles.length === 1) out.style = namedStyles[0]
     else if (namedStyles.length > 1) delete out.style
 
-    if (
-      /\b(dark|inverted)\b/.test(t) &&
-      /\b(menu|sidebar|chrome)\b/.test(t)
-    ) {
+    if (/\b(dark|inverted)\b/.test(t) && /\b(menu|sidebar|chrome)\b/.test(t)) {
       out.menuTone = "dark"
     } else if (
       /\b(light|default)\b/.test(t) &&
@@ -298,14 +294,14 @@ export function extractStyleDirective(
     )
     if (!matchedStyle) continue
 
-    const onlyOneStyle = new RegExp(`\\bonly\\s+one\\s+${matchedStyle}\\b`).test(
-      t
-    )
+    const onlyOneStyle = new RegExp(
+      `\\bonly\\s+one\\s+${matchedStyle}\\b`
+    ).test(t)
     const oneStyle = new RegExp(`\\bone\\s+${matchedStyle}\\b`).test(t)
     const oneInStyle = new RegExp(`\\bone\\s+in\\s+${matchedStyle}\\b`).test(t)
-    const makeOneStyle = new RegExp(`\\bmake\\s+one\\s+${matchedStyle}\\b`).test(
-      t
-    )
+    const makeOneStyle = new RegExp(
+      `\\bmake\\s+one\\s+${matchedStyle}\\b`
+    ).test(t)
 
     if (/\bonly one\b/.test(t) || /\bjust one\b/.test(t)) {
       latest = { mode: "onlyOne", style: matchedStyle }
@@ -363,7 +359,8 @@ export function applyStyleDirective(
   if (previous && previous.style !== directive.style) {
     return { ...config, style: previous.style }
   }
-  const fallback = PRESET_STYLES.find((s) => s !== directive.style) ?? config.style
+  const fallback =
+    PRESET_STYLES.find((s) => s !== directive.style) ?? config.style
   return { ...config, style: fallback }
 }
 
@@ -446,7 +443,9 @@ export function applyStagePreservation(
     baseColor: changes.baseColor ? config.baseColor : previous.baseColor,
     theme: changes.theme ? config.theme : previous.theme,
     chartColor: changes.chartColor ? config.chartColor : previous.chartColor,
-    iconLibrary: changes.iconLibrary ? config.iconLibrary : previous.iconLibrary,
+    iconLibrary: changes.iconLibrary
+      ? config.iconLibrary
+      : previous.iconLibrary,
     font: changes.typographyBody ? config.font : previous.font,
     fontHeading: changes.typographyHeading
       ? config.fontHeading
