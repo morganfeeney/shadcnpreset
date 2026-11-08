@@ -15,7 +15,7 @@ import { countInstallQuietly } from "@/lib/install-counts"
  * and nothing saved.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ code: string; file: string }> }
 ) {
   const { code, file } = await params
@@ -24,6 +24,6 @@ export async function GET(
   if (!preset) {
     return NextResponse.json({ error: "Not found." }, { status: 404 })
   }
-  await countInstallQuietly(code)
+  await countInstallQuietly(request, code)
   return NextResponse.json(customPresetRegistryItem(code, preset))
 }

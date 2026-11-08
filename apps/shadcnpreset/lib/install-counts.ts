@@ -19,9 +19,16 @@ export async function countInstall(presetCode: string) {
 
 /**
  * Counts an install without ever failing one: a count that can't be kept
- * (say, the table not made yet) is logged and let go.
+ * (say, the table not made yet) is logged and let go. Only the shadcn CLI,
+ * which names itself, counts: a browser opening the link, a chat app's link
+ * preview or a crawler isn't an install.
  */
-export async function countInstallQuietly(presetCode: string) {
+export async function countInstallQuietly(
+  request: Request,
+  presetCode: string
+) {
+  const agent = request.headers.get("user-agent") ?? ""
+  if (!/^shadcn\b/i.test(agent)) return
   try {
     await countInstall(presetCode)
   } catch (error) {

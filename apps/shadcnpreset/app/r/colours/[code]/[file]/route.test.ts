@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { customColoursRegistryPath } from "@/lib/custom-preset"
 
 const { countInstallQuietly } = vi.hoisted(() => ({
-  countInstallQuietly: vi.fn(async (code: string) => {
+  countInstallQuietly: vi.fn(async (request: Request, code: string) => {
+    void request
     void code
   }),
 }))
@@ -36,7 +37,7 @@ describe("GET /r/colours/<preset>/<colours>.json", () => {
     expect(item.cssVars.light.destructive).toBe("#DC2626")
     expect(item.cssVars.dark.destructive).toBe("#DC2626")
     expect(item.cssVars.light.radius).toBeUndefined()
-    expect(countInstallQuietly).toHaveBeenCalledWith(CODE)
+    expect(countInstallQuietly).toHaveBeenCalledWith(expect.any(Request), CODE)
   })
 
   it("is not found for colours that don't read, counting nothing", async () => {

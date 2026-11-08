@@ -13,7 +13,7 @@ import { countInstallQuietly } from "@/lib/install-counts"
  * session, so the id in the link is what grants it.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ file: string }> }
 ) {
   const { file } = await params
@@ -23,6 +23,6 @@ export async function GET(
   if (!stored || !preset) {
     return NextResponse.json({ error: "Not found." }, { status: 404 })
   }
-  await countInstallQuietly(stored.presetCode)
+  await countInstallQuietly(request, stored.presetCode)
   return NextResponse.json(customPresetRegistryItem(id, preset))
 }
