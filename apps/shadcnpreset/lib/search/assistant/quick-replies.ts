@@ -61,10 +61,9 @@ export function normalizeQuickReplies(questions: string[]): string[] {
     return cleaned.slice(0, 4)
   }
 
-  const typographyChoices = dedupe(typographyOnly.map(inferTypographyLabel)).slice(
-    0,
-    2
-  )
+  const typographyChoices = dedupe(
+    typographyOnly.map(inferTypographyLabel)
+  ).slice(0, 2)
   const paletteChoices = dedupe(paletteOnly.map(inferPaletteLabel)).slice(0, 2)
 
   const composed: string[] = []

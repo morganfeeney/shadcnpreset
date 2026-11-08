@@ -52,7 +52,6 @@ export function ColourPicker({
   items,
   value,
   custom,
-  disabled,
   onPick,
   onCustom,
 }: {
@@ -61,7 +60,6 @@ export function ColourPicker({
   /** The list choice in use, ignored while a custom colour is set. */
   value: string
   custom: string | undefined
-  disabled: boolean
   onPick: (value: string) => void
   /** `settle` is false while a picker is still being dragged. */
   onCustom: OnCustom
@@ -72,21 +70,18 @@ export function ColourPicker({
         <OklchField
           label={`${label} colour`}
           colour={custom}
-          disabled={disabled}
           onChange={onCustom}
           className="flex-1"
         />
-        {disabled ? null : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Use a listed ${label}`}
-            onClick={() => onPick(value)}
-          >
-            <XIcon />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Use a listed ${label}`}
+          onClick={() => onPick(value)}
+        >
+          <XIcon />
+        </Button>
       </PropertyRow>
     )
   }
@@ -98,7 +93,6 @@ export function ColourPicker({
       <Select
         items={options}
         value={value}
-        disabled={disabled}
         onValueChange={(next: string | null) => {
           if (!next || next === value) return
           // Custom starts from the listed colour, to move from there.
@@ -134,6 +128,8 @@ function Swatch({ colour }: { colour: string }) {
 }
 
 function tokenLabel(token: BrandToken) {
+  const chart = /^chart-(\d)$/.exec(token)
+  if (chart) return `Chart ${chart[1]}`
   const [owner, part] = token.split("-")
   return part
     ? `Text on ${owner}`
@@ -147,13 +143,11 @@ function tokenLabel(token: BrandToken) {
 export function ColourOverrides({
   overrides,
   current,
-  disabled,
   onChange,
 }: {
   overrides: CustomColours["overrides"]
   /** Each token's colour as the preview shows it, to start an override from. */
   current: Record<string, string>
-  disabled: boolean
   onChange: (overrides: CustomColours["overrides"], settle: boolean) => void
 }) {
   const set = Object.keys(overrides) as BrandToken[]
@@ -173,7 +167,7 @@ export function ColourOverrides({
         <span className="flex h-7 min-w-0 flex-1 items-center rounded-md bg-muted px-2 text-xs text-muted-foreground">
           {set.length ? `${set.length} set` : "None"}
         </span>
-        {!disabled && unset.length ? (
+        {unset.length ? (
           <Button
             type="button"
             variant="ghost"
@@ -201,7 +195,6 @@ export function ColourOverrides({
                   label: tokenLabel(value),
                 }))}
                 value={token}
-                disabled={disabled}
                 onValueChange={(next: string | null) => {
                   if (next && next !== token) replace(token, next as BrandToken)
                 }}
@@ -227,27 +220,24 @@ export function ColourOverrides({
               <OklchField
                 label={`${tokenLabel(token)} colour`}
                 colour={overrides[token] ?? ""}
-                disabled={disabled}
                 onChange={(colour, settle) =>
                   onChange({ ...overrides, [token]: colour }, settle)
                 }
                 className="flex-1"
               />
-              {disabled ? null : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Remove ${tokenLabel(token)} override`}
-                  onClick={() => {
-                    const next = { ...overrides }
-                    delete next[token]
-                    onChange(next, true)
-                  }}
-                >
-                  <XIcon />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Remove ${tokenLabel(token)} override`}
+                onClick={() => {
+                  const next = { ...overrides }
+                  delete next[token]
+                  onChange(next, true)
+                }}
+              >
+                <XIcon />
+              </Button>
             </li>
           ))}
         </ul>

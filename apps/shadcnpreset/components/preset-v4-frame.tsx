@@ -5,6 +5,7 @@ import { useTheme } from "next-themes"
 
 import {
   CUSTOM_COLOURS_MESSAGE_TYPE,
+  isPreviewReadyMessage,
   PRESET_CODE_MESSAGE_TYPE,
 } from "@/lib/custom-preset-frame"
 import type { GeneratedPreviewPayload } from "@/lib/generated-preview/messages"
@@ -46,7 +47,6 @@ export function PresetV4Frame({
   ...props
 }: PresetV4FrameProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
-  const hasLoadedRef = React.useRef(false)
   const [activeSrc, setActiveSrc] = React.useState<string | null>(null)
   const { resolvedTheme } = useTheme()
   const retryTimersRef = React.useRef<number[]>([])
@@ -146,29 +146,18 @@ export function PresetV4Frame({
     )
   }, [clearRetryTimers, postCustomColours, postGeneratedPreview, postThemeMode])
 
+  // Every change goes straight in. A page still loading misses it, but asks
+  // for everything once it listens; and a page kept while its route was away
+  // (it never reloads) gets it all again as the route shows.
   React.useEffect(() => {
-    hasLoadedRef.current = false
-  }, [activeSrc])
-
-  React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
-
     postThemeMode()
   }, [postThemeMode])
 
   React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
     postGeneratedPreview()
   }, [postGeneratedPreview])
 
   React.useEffect(() => {
-    if (!hasLoadedRef.current) {
-      return
-    }
     postCustomColours()
   }, [postCustomColours])
 
@@ -177,25 +166,23 @@ export function PresetV4Frame({
       if (iframeRef.current?.contentWindow !== event.source) {
         return
       }
-      if (!isGeneratedPreviewReadyMessage(event.data)) {
+      // The frame says when it listens: everything goes in then, whatever
+      // the load event did or didn't catch.
+      if (isPreviewReadyMessage(event.data)) {
+        postThemeMode()
+        postGeneratedPreview()
+        postCustomColours()
         return
       }
-      postGeneratedPreview()
+      if (isGeneratedPreviewReadyMessage(event.data)) {
+        postGeneratedPreview()
+      }
     }
     window.addEventListener("message", handleMessage)
     return () => window.removeEventListener("message", handleMessage)
-  }, [postGeneratedPreview])
+  }, [postCustomColours, postGeneratedPreview, postThemeMode])
 
-  React.useEffect(() => {
-    return () => {
-      clearRetryTimers()
-      const frame = iframeRef.current
-      if (frame) {
-        // Encourage quicker memory reclamation on route changes/unmount.
-        frame.src = "about:blank"
-      }
-    }
-  }, [clearRetryTimers])
+  React.useEffect(() => clearRetryTimers, [clearRetryTimers])
 
   if (!activeSrc) {
     return <div className={className} aria-hidden />
@@ -211,7 +198,6 @@ export function PresetV4Frame({
       onLoad={(event) => {
         const loadedSrc = event.currentTarget.src
         if (!loadedSrc || loadedSrc === "about:blank") return
-        hasLoadedRef.current = true
         postThemeModeWithRetry()
         onLoad?.(event)
       }}

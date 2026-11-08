@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns"
 
 import { getLearnArticle, LEARN_ARTICLES } from "@/app/learn/articles"
 import { getLearnArticleHref } from "@/app/learn/learn"
+import { ShadcncraftAdCard } from "@/components/shadcncraft-ad-card"
 import { Badge } from "@/components/ui/badge"
 import { buildPageMetadata } from "@/lib/page-metadata"
 import { mdxDocumentationComponents } from "@/mdx-components"
@@ -89,6 +90,13 @@ export default async function LearnArticlePage({
             components={mdxDocumentationComponents}
           />
         </div>
+        {/* Narrow screens, where the site's floating card does not show. */}
+        <ShadcncraftAdCard
+          key={slug}
+          placement="learn-end"
+          countWhenSeen
+          className="mt-16 min-[1360px]:hidden"
+        />
       </article>
     </main>
   )

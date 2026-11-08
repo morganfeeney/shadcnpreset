@@ -1,3 +1,4 @@
+import { formatHex, parse } from "culori"
 import { z } from "zod"
 
 import {
@@ -51,6 +52,11 @@ export const customPresetEditSchema = z.object({
     .array(z.object({ token: z.enum(BRAND_TOKENS), colour: z.string() }))
     .describe("Single tokens to set exactly, only when asked for one."),
   removeOverrides: z.array(z.enum(BRAND_TOKENS)),
+  notChanged: z
+    .array(z.string())
+    .describe(
+      "Parts asked for that none of the fields above can hold, as the person named them."
+    ),
 })
 
 export type CustomPresetEdit = z.infer<typeof customPresetEditSchema>
@@ -101,17 +107,17 @@ Return only what the person asked to change; leave every other field null and th
 
 Colours work like shadcn create's three pickers, each a list name or one exact colour:
 - theme: the primary and accent colour. List: ${list(PRESET_FILTER_OPTIONS.themes)}.
-- baseColor: the neutrals (background, text, borders). List: ${list(PRESET_FILTER_OPTIONS.baseColors)}. An exact colour tints the greys with its hue.
+- baseColor: the neutrals (background, text, borders). List: ${list(PRESET_FILTER_OPTIONS.baseColors)}. An exact colour tints the greys with its hue. Change it only when they ask about the neutrals, background or greys, or describe the whole palette ("warm", "earthy"): "make it teal" is the theme alone.
 - chartColor: the chart shades. List: ${list(PRESET_FILTER_OPTIONS.themes)}.
-Use a list name when the words match one ("make it green" → theme "green"). Use an exact CSS colour (hex or oklch) when they give one, or when no list name is close ("forest green", "brand navy").
+Use a list name when the words match one ("make it green" → theme "green"). Use an exact colour when they give one, or when no list name is close ("forest green", "brand navy"): hex or oklch, never a colour word like "brown". For a mood or a kind of business, choose fitting exact colours yourself.
 
 Other parts take list values only: style (${list(PRESET_FILTER_OPTIONS.styles)}), font and fontHeading (${list(PRESET_FILTER_OPTIONS.fonts)}; fontHeading may be "inherit"), iconLibrary (${list(PRESET_FILTER_OPTIONS.iconLibraries)}), radius (${list(PRESET_FILTER_OPTIONS.radii)}). Lyra is always square.
 
-Overrides set one token to an exact colour (${list(BRAND_TOKENS)}). Use them only when the person names a specific part, like "make the background #101418". Use removeOverrides to drop one.
+Overrides set one token to an exact colour (${list(BRAND_TOKENS)}). Use them only when the person names a specific part, like "make the background #101418". Use removeOverrides to drop one. Never put a colour given for one part onto a different part: an input, popover or sidebar colour is not an accent or anything else here.
 
 assistantMessage: say plainly what you changed, in one or two sentences, naming things as the pickers show them ("Inter", "Green", "Large", not "inter"). If the request is unclear, change nothing and ask.
 
-Only the fields above can change. Shadows, spacing, padding, borders, sizes and any other CSS can't: for those, change nothing and say so plainly, without asking for details.`
+Make every change the message asks for that the fields above can hold, even when it asks for other things too. Shadows, spacing, padding, sizes, other tokens and any other CSS can't change: list those in notChanged, as they were named, and make the rest of the changes. notChanged holds only what this message asked for, and is empty when it asked for nothing they can't hold.`
 }
 
 /**
@@ -130,13 +136,20 @@ function asWritten(colour: string) {
 export function applyCustomPresetEdit(
   current: { presetCode: string; colours: CustomColours },
   edit: CustomPresetEdit
-): { presetCode: string; colours: CustomColours; changed: string[] } {
+): {
+  presetCode: string
+  colours: CustomColours
+  changed: string[]
+  /** Something asked for is how the preset is already. */
+  already: boolean
+} {
   let presetCode = current.presetCode
   const colours: CustomColours = {
     ...current.colours,
     overrides: { ...current.colours.overrides },
   }
   const changed: string[] = []
+  let already = false
 
   for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
     const value = edit[key] ? asWritten(edit[key]) : undefined
@@ -145,12 +158,21 @@ export function applyCustomPresetEdit(
     if (COLOUR_LISTS[key].includes(name)) {
       const next = withFacet(presetCode, key, name)
       if (!next) continue
+      if (next === presetCode && !colours[key]) {
+        already = true
+        continue
+      }
       presetCode = next
       delete colours[key]
       changed.push(`${label}: ${facetValueLabel(key, name)}`)
     } else if (isUsableColour(value)) {
-      colours[key] = value
-      changed.push(`${label}: ${value}`)
+      const colour = exact(value)
+      if (sameColour(colours[key], colour)) {
+        already = true
+        continue
+      }
+      colours[key] = colour
+      changed.push(`${label}: ${colour}`)
     }
   }
 
@@ -158,7 +180,11 @@ export function applyCustomPresetEdit(
     const value = edit[key as keyof CustomPresetEdit]
     if (typeof value !== "string") continue
     const next = withFacet(presetCode, key as CustomPresetFacet, value)
-    if (!next || next === presetCode) continue
+    if (!next) continue
+    if (next === presetCode) {
+      already = true
+      continue
+    }
     presetCode = next
     const label = CUSTOM_PRESET_FACETS.find((facet) => facet.key === key)?.label
     changed.push(
@@ -167,8 +193,13 @@ export function applyCustomPresetEdit(
   }
 
   for (const { token, colour: given } of edit.overrides) {
-    const colour = asWritten(given)
-    if (!isUsableColour(colour)) continue
+    const written = asWritten(given)
+    if (!isUsableColour(written)) continue
+    const colour = exact(written)
+    if (sameColour(colours.overrides[token as BrandToken], colour)) {
+      already = true
+      continue
+    }
     colours.overrides[token as BrandToken] = colour
     changed.push(`${token}: ${colour}`)
   }
@@ -179,65 +210,35 @@ export function applyCustomPresetEdit(
     }
   }
 
-  return { presetCode, colours, changed }
+  return { presetCode, colours, changed, already }
 }
 
 /**
- * `presetCode` with the style, fonts, icons and radius from an edit, for a
- * custom preset being made: its colours come from the message itself, read
- * exactly, so the edit's colours are left out.
+ * A colour word ("brown", "white") as its hex; any other colour as given. One
+ * with see-through in it ("transparent") stays a word, which hex would lose.
  */
-export function withPresetParts(presetCode: string, edit: CustomPresetEdit) {
-  const { changed, ...next } = applyCustomPresetEdit(
-    { presetCode, colours: { overrides: {} } },
-    {
-      ...edit,
-      baseColor: null,
-      theme: null,
-      chartColor: null,
-      overrides: [],
-      removeOverrides: [],
-    }
-  )
-  return { presetCode: next.presetCode, changed }
+function exact(colour: string) {
+  if (!/^[a-z]+$/i.test(colour)) return colour
+  const parsed = parse(colour)
+  if (!parsed || (parsed.alpha ?? 1) < 1) return colour
+  return formatHex(parsed) ?? colour
 }
 
-/**
- * The reply to a request that made a custom preset: what it holds, so the
- * fonts and colours asked for can be checked at a glance, and where it is.
- */
-export function describeMadeCustomPreset(
-  presetCode: string,
-  colours: CustomColours
-) {
-  const preset = resolvePresetFromCode(presetCode)
-  const parts: string[] = []
-  if (preset) {
-    const font = facetValueLabel("font", preset.font)
-    parts.push(`${facetValueLabel("style", preset.style)} style`)
-    parts.push(
-      preset.fontHeading === "inherit" || preset.fontHeading === preset.font
-        ? `${font} font`
-        : `${font} with ${facetValueLabel("fontHeading", preset.fontHeading)} for headings`
-    )
-    parts.push(`${facetValueLabel("iconLibrary", preset.iconLibrary)} icons`)
-  }
-  for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
-    const colour = colours[key]
-    if (colour) parts.push(`${label.toLowerCase()} ${colour}`)
-  }
-  for (const [token, colour] of Object.entries(colours.overrides)) {
-    parts.push(`${token} ${colour}`)
-  }
-  return `Made your custom preset: ${parts.join(", ")}. It’s open beside the chat. Change anything there, or tell me here.`
+function sameColour(a: string | undefined, b: string) {
+  return a !== undefined && a.trim().toLowerCase() === b.trim().toLowerCase()
 }
+
+/** Parts of a theme a custom preset has no place for. */
+const CANNOT_HOLD =
+  /shadow|spacing|padding|margin|gap|size|width|height|animation|motion|transition|tracking|letter|leading|line|blur|opacity|gradient|destructive|ring|sidebar|popover|input/i
 
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 /**
- * The edit with any colour its own reply names filled in. Models write "Changed
+ * The edit with any colour its own reply names filled in, and only what was
+ * asked for named as not changed. Models write "Changed
  * the Chart Color to #00BDDF" and leave `chartColor` empty often enough that
  * the change would be lost; the value is taken only when the person's message
  * holds it too, so nothing is made up.
@@ -246,8 +247,21 @@ export function fillNamedColours(
   edit: CustomPresetEdit,
   message: string
 ): CustomPresetEdit {
-  const filled = { ...edit }
   const asked = message.toLowerCase()
+  // What it says couldn't change is only something they asked for that a
+  // preset has no place for: the model also lists what it did change ("sharp
+  // corners"), the preset's own values ("lucide") or every limit there is.
+  const filled = {
+    ...edit,
+    notChanged: edit.notChanged.filter(
+      (part) =>
+        CANNOT_HOLD.test(part) &&
+        part
+          .toLowerCase()
+          .split(/[^a-z]+/)
+          .some((word) => word.length > 3 && asked.includes(word))
+    ),
+  }
   for (const { key, label } of CUSTOM_PRESET_COLOUR_FACETS) {
     if (filled[key]) continue
     // A colour function, a hex, or a list name, as the reply wrote it.
@@ -277,7 +291,11 @@ function describeChange(change: string) {
  * model, which can claim a change it did not make ("Added a red shadow to
  * the cards"). With nothing changed, its words stand only as a question.
  */
-export function editReply(changed: string[], edit: CustomPresetEdit): string {
+export function editReply(
+  changed: string[],
+  edit: CustomPresetEdit,
+  already = false
+): string {
   if (changed.length) {
     const parts = changed.map(describeChange)
     const listed =
@@ -285,12 +303,22 @@ export function editReply(changed: string[], edit: CustomPresetEdit): string {
         ? parts[0]
         : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
     const sentence = listed.startsWith("removed") ? listed : `changed ${listed}`
-    return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
+    const reply = `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
+    const missed = edit.notChanged
+    if (!missed.length) return reply
+    const named =
+      missed.length === 1
+        ? missed[0]
+        : `${missed.slice(0, -1).join(", ")} or ${missed.at(-1)}`
+    return `${reply} A custom preset can’t change ${named}.`
   }
   // Nothing changed, so anything but a question back would be a claim.
   const message = tidyEditReply(edit.assistantMessage, edit)
-  return message.trim().endsWith("?") ? message : NOTHING_CHANGED
+  if (message.trim().endsWith("?")) return message
+  return already ? ALREADY : NOTHING_CHANGED
 }
+
+const ALREADY = "The preset is like that already."
 
 const NOTHING_CHANGED =
   "That isn’t something a custom preset can change. It takes colours (Base, Theme, Chart and single overrides), style, fonts, icons and radius."

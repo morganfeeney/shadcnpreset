@@ -10,8 +10,6 @@ export type PresetPreviewPageName =
   | "chat"
   | "generated"
 
-export type PresetSidebarTab = "community" | "yours" | "ask-ai"
-
 type PresetPreviewTarget = {
   kind: "local"
   example: LocalPresetPreviewExample
@@ -161,33 +159,13 @@ export function parsePresetPreviewPageName(
   return isPresetPreviewPageName(value) ? value : "preview"
 }
 
-export function isPresetSidebarTab(
-  value: string | undefined | null
-): value is PresetSidebarTab {
-  return value === "community" || value === "yours" || value === "ask-ai"
-}
-
-export function parsePresetSidebarTab(
-  value: string | undefined | null
-): PresetSidebarTab {
-  return isPresetSidebarTab(value) ? value : "community"
-}
-
-export const PRESET_CHAT_PARAM = "chat"
-
 export function presetBrowsePath(
   code: string,
-  view: PresetPreviewPageName = "preview",
-  tab: PresetSidebarTab = "community",
-  /** Assistant chat to open in the sidebar, e.g. when linking from /assistant. */
-  chatId?: string
+  view: PresetPreviewPageName = "preview"
 ): string {
-  const params = new URLSearchParams()
-  if (view !== "preview") params.set("view", view)
-  if (tab !== "community") params.set("tab", tab)
-  if (chatId) params.set(PRESET_CHAT_PARAM, chatId)
-  const query = params.toString()
-  return query ? `/preset/${code}?${query}` : `/preset/${code}`
+  return view === "preview"
+    ? `/preset/${code}`
+    : `/preset/${code}?${new URLSearchParams({ view })}`
 }
 
 export function isLocalPresetPreviewExample(

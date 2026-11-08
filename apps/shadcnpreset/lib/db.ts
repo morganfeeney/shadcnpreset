@@ -49,7 +49,8 @@ function buildDbApplicationName() {
     return truncateApplicationName(explicitName)
   }
 
-  const source = process.env.VERCEL === "1" ? "vercel" : process.env.CI ? "ci" : "local"
+  const source =
+    process.env.VERCEL === "1" ? "vercel" : process.env.CI ? "ci" : "local"
   const runtime = sanitizeApplicationNameToken(process.env.NODE_ENV) ?? "dev"
   const project =
     sanitizeApplicationNameToken(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
@@ -57,9 +58,13 @@ function buildDbApplicationName() {
     sanitizeApplicationNameToken(process.env.npm_package_name)
   const branch = sanitizeApplicationNameToken(process.env.VERCEL_GIT_COMMIT_REF)
 
-  const tokens = [DEFAULT_APP_NAME_PREFIX, source, runtime, project, branch].filter(
-    (token): token is string => Boolean(token)
-  )
+  const tokens = [
+    DEFAULT_APP_NAME_PREFIX,
+    source,
+    runtime,
+    project,
+    branch,
+  ].filter((token): token is string => Boolean(token))
 
   return truncateApplicationName(tokens.join(":"))
 }
@@ -157,6 +162,13 @@ async function ensureDbInitialized() {
       CREATE TABLE IF NOT EXISTS assistant_usage (
         user_id TEXT PRIMARY KEY,
         generations INT NOT NULL DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS install_counts (
+        preset_code TEXT NOT NULL,
+        day DATE NOT NULL,
+        installs INT NOT NULL DEFAULT 0,
+        PRIMARY KEY (preset_code, day)
       );
 
       CREATE INDEX IF NOT EXISTS idx_preset_votes_code ON preset_votes(preset_code);

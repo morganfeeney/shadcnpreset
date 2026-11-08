@@ -7,7 +7,6 @@ import {
   editReply,
   fillNamedColours,
   tidyEditReply,
-  withPresetParts,
   type CustomPresetEdit,
 } from "@/lib/search/assistant/custom-preset-edit"
 
@@ -30,15 +29,62 @@ const NOTHING: CustomPresetEdit = {
   chartColor: null,
   overrides: [],
   removeOverrides: [],
+  notChanged: [],
 }
 
 function apply(edit: Partial<CustomPresetEdit>) {
   return applyCustomPresetEdit(CURRENT, { ...NOTHING, ...edit })
 }
 
+describe("fillNamedColours, what could not change", () => {
+  it("keeps only what the message asked for", () => {
+    const filled = fillNamedColours(
+      {
+        ...NOTHING,
+        notChanged: ["softer shadows", "sharp corners", "lucide", "spacing"],
+      },
+      "Make it teal, with softer shadows and sharp corners"
+    )
+
+    expect(filled.notChanged).toEqual(["softer shadows"])
+  })
+})
+
+describe("applyCustomPresetEdit, what changes", () => {
+  it("says nothing changed for what the preset already is", () => {
+    const result = apply({ theme: "#de00ce" })
+
+    expect(result.changed).toEqual([])
+    expect(editReply(result.changed, NOTHING, result.already)).toBe(
+      "The preset is like that already."
+    )
+  })
+
+  it("keeps a colour word as its exact colour", () => {
+    expect(apply({ baseColor: "brown" }).colours.baseColor).toBe("#a52a2a")
+  })
+
+  it("keeps transparent as it is, not black", () => {
+    const result = apply({
+      overrides: [{ token: "background", colour: "transparent" }],
+    })
+
+    expect(result.colours.overrides.background).toBe("transparent")
+  })
+
+  it("says what it could not change, after what it did", () => {
+    const edit = { ...NOTHING, theme: "Green", notChanged: ["shadows"] }
+    const result = apply(edit)
+
+    expect(editReply(result.changed, edit)).toBe(
+      "Changed the Theme to Green. A custom preset can’t change shadows."
+    )
+  })
+})
+
 describe("applyCustomPresetEdit", () => {
   it("changes nothing when nothing was asked for", () => {
-    expect(apply({})).toEqual({ ...CURRENT, changed: [] })
+    expect(apply({})).toEqual({ ...CURRENT, changed: [], already: false })
   })
 
   it("takes a list theme, dropping the custom colour", () => {
@@ -89,29 +135,6 @@ describe("applyCustomPresetEdit", () => {
       { ...NOTHING, removeOverrides: ["background"] }
     )
     expect(removed.colours.overrides).toEqual({})
-  })
-})
-
-describe("withPresetParts", () => {
-  it("takes the fonts and style but none of the colours", () => {
-    const { presetCode: code, changed } = withPresetParts(CODE, {
-      ...NOTHING,
-      style: "mira",
-      font: "raleway",
-      fontHeading: "lora",
-      theme: "green",
-    })
-    const preset = resolvePresetFromCode(code)
-
-    expect(preset?.style).toBe("mira")
-    expect(preset?.font).toBe("raleway")
-    expect(preset?.fontHeading).toBe("lora")
-    expect(preset?.theme).toBe("neutral")
-    expect(changed).toEqual([
-      "Style: Mira",
-      "Font: Raleway",
-      "Heading font: Lora",
-    ])
   })
 })
 

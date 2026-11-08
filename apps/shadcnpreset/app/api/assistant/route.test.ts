@@ -42,7 +42,6 @@ vi.mock("ai", async (importOriginal) => ({
 }))
 
 const { POST } = await import("@/app/api/assistant/route")
-const { resolvePresetFromCode } = await import("@/lib/preset")
 
 const USER = { id: "user-1", name: "Morgan" }
 /** An id for a chat that used to exist. */
@@ -178,18 +177,15 @@ describe("POST /api/assistant free generations", () => {
   })
 })
 
-describe("POST /api/assistant with a custom preset open", () => {
-  const OWNED = {
-    id: "cp-1",
-    user_id: USER.id,
-    preset_code: "b0",
-    colours: JSON.stringify({ theme: "#DE00CE", overrides: {} }),
+describe("POST /api/assistant with a preset open to customize", () => {
+  const OPEN = {
+    presetCode: "b0",
+    colours: { theme: "#DE00CE", overrides: {} },
   }
 
-  /** The database as the turn sees it: the custom preset, no answers used. */
-  function storedPreset(row: Record<string, unknown> | null) {
+  /** The database as the turn sees it: no answers used yet. */
+  function noAnswersUsed() {
     query.mockImplementation(async (sql: string) => {
-      if (sql.includes("FROM custom_presets")) return { rows: row ? [row] : [] }
       if (sql.includes("SELECT generations"))
         return { rows: [{ generations: 0 }] }
       return { rows: [], rowCount: 1 }
@@ -208,20 +204,21 @@ describe("POST /api/assistant with a custom preset open", () => {
     chartColor: null,
     overrides: [],
     removeOverrides: [],
+    notChanged: [],
   }
 
-  function edited() {
-    return query.mock.calls.find(([sql]) =>
-      String(sql).includes("UPDATE custom_presets")
+  function wroteCustomPresets() {
+    return query.mock.calls.some(([sql]) =>
+      String(sql).includes("custom_presets")
     )
   }
 
-  it("edits the open custom preset instead of finding presets", async () => {
-    storedPreset(OWNED)
+  it("edits the preset it is sent instead of finding presets", async () => {
+    noAnswersUsed()
     generateText.mockResolvedValue({ output: EDIT })
 
     const response = await post({
-      customPresetId: "cp-1",
+      customPreset: OPEN,
       messages: [{ role: "user", content: "make it green" }],
     })
     const body = await response.json()
@@ -232,18 +229,53 @@ describe("POST /api/assistant with a custom preset open", () => {
       // Said from what changed, named as the Theme picker shows it.
       assistantMessage: "Changed the Theme to Green.",
       changed: ["Theme: Green"],
-      customPreset: { id: "cp-1", colours: { overrides: {} } },
+      customPreset: { colours: { overrides: {} } },
     })
+    expect(body.customPreset.presetCode).not.toBe("b0")
     expect(body.customPreset.colours.theme).toBeUndefined()
-    expect(edited()?.[1].slice(0, 2)).toEqual(["cp-1", USER.id])
     expect(String(generateText.mock.calls[0][0].system)).toContain(
       "editing one custom shadcn preset"
     )
     expect(countedGenerations()).toHaveLength(1)
   })
 
-  it("saves a colour the model named but left out of its answer", async () => {
-    storedPreset(OWNED)
+  it("reads a pasted theme as written: no model, no generation", async () => {
+    noAnswersUsed()
+
+    const body = await (
+      await post({
+        customPreset: OPEN,
+        messages: [
+          {
+            role: "user",
+            content:
+              ":root { --primary: #0F766E; --shadow-md: 0 1px 2px black; }",
+          },
+        ],
+      })
+    ).json()
+
+    expect(generateText).not.toHaveBeenCalled()
+    expect(body.customPreset.colours.overrides).toEqual({ primary: "#0F766E" })
+    expect(body.assistantMessage).toContain(
+      "A preset has no setting for `--shadow-md`."
+    )
+    expect(
+      query.mock.calls.some(([sql]) => String(sql).includes("assistant_usage"))
+    ).toBe(false)
+  })
+
+  it("leaves saving to the page: nothing is written", async () => {
+    noAnswersUsed()
+    generateText.mockResolvedValue({ output: EDIT })
+
+    await post({ customPreset: OPEN })
+
+    expect(wroteCustomPresets()).toBe(false)
+  })
+
+  it("keeps a colour the model named but left out of its answer", async () => {
+    noAnswersUsed()
     generateText.mockResolvedValue({
       output: {
         ...EDIT,
@@ -253,7 +285,7 @@ describe("POST /api/assistant with a custom preset open", () => {
     })
 
     const response = await post({
-      customPresetId: "cp-1",
+      customPreset: OPEN,
       messages: [
         { role: "user", content: "now use this on the charts #00BDDF" },
       ],
@@ -262,134 +294,59 @@ describe("POST /api/assistant with a custom preset open", () => {
 
     expect(body.customPreset.colours.chartColor).toBe("#00BDDF")
     expect(body.assistantMessage).toBe("Changed the Chart Color to #00BDDF.")
-    expect(JSON.parse(edited()?.[1][3]).chartColor).toBe("#00BDDF")
   })
 
-  it("saves nothing when nothing changed", async () => {
-    storedPreset(OWNED)
+  it("gives the preset back as it was when nothing changed", async () => {
+    noAnswersUsed()
     generateText.mockResolvedValue({
       output: { ...EDIT, theme: null, assistantMessage: "Which part?" },
     })
 
-    const response = await post({ customPresetId: "cp-1" })
+    const body = await (await post({ customPreset: OPEN })).json()
 
-    expect((await response.json()).changed).toEqual([])
-    expect(edited()).toBeUndefined()
+    expect(body.changed).toEqual([])
+    expect(body.customPreset).toEqual(OPEN)
   })
 
-  it("won't edit someone else's custom preset, or ask the model", async () => {
-    storedPreset({ ...OWNED, user_id: "someone-else" })
+  it("refuses a code that isn't a preset, without asking the model", async () => {
+    noAnswersUsed()
 
-    const response = await post({ customPresetId: "cp-1" })
+    const response = await post({
+      customPreset: { ...OPEN, presetCode: "nope" },
+    })
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(400)
     expect(generateText).not.toHaveBeenCalled()
   })
 })
 
 describe("POST /api/assistant asking for a custom preset", () => {
-  const ASK = "Make a custom preset with Lora, Raleway and #DE00CE"
-
-  const FONTS = {
-    assistantMessage: "",
-    style: null,
-    font: "raleway",
-    fontHeading: "lora",
-    iconLibrary: null,
-    radius: null,
-    baseColor: null,
-    theme: "#000000",
-    chartColor: null,
-    overrides: [],
-    removeOverrides: [],
-  }
-
   function made() {
     return query.mock.calls.find(([sql]) =>
       String(sql).includes("INSERT INTO custom_presets")
     )
   }
 
-  it("makes it with the fonts asked for and the colours exactly", async () => {
-    generateText.mockResolvedValue({ output: FONTS })
-
-    const response = await post({
-      messages: [{ role: "user", content: ASK }],
-    })
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(body).toMatchObject({
-      phase: "custom",
-      created: true,
-      chatId: "server-minted",
-      customPreset: { colours: { theme: "#DE00CE", overrides: {} } },
-    })
-    expect(body.assistantMessage).toContain("Raleway with Lora for headings")
-    const preset = resolvePresetFromCode(body.customPreset.presetCode)
-    expect(preset?.font).toBe("raleway")
-    expect(preset?.fontHeading).toBe("lora")
-    // Saved with the chat that asked, under the id the answer gives.
-    const [, params] = made()!
-    expect(params.slice(0, 2)).toEqual([body.customPreset.id, USER.id])
-    expect(params[4]).toBe("server-minted")
-    expect(countedGenerations()).toHaveLength(1)
-  })
-
-  it("builds on the preset last offered in the chat", async () => {
-    generateText.mockResolvedValue({
-      output: { ...FONTS, font: null, fontHeading: null },
-    })
-    getAssistantChatForUser.mockResolvedValue({
-      id: CLIENT_CHAT_ID,
+  it("answers with presets to make one from, rather than making it", async () => {
+    await post({
       messages: [
-        { role: "user", content: "Mira presets" },
-        {
-          role: "assistant",
-          kind: "presets",
-          content: "Here you go.",
-          presets: [{ code: "b1xTHeDQJE", caption: "c", description: "d" }],
-        },
+        { role: "user", content: "Make a custom preset with #DE00CE" },
       ],
     })
 
-    const response = await post({
-      chatId: CLIENT_CHAT_ID,
-      messages: [{ role: "user", content: ASK }],
-    })
-
-    expect((await response.json()).customPreset.presetCode).toBe("b1xTHeDQJE")
-  })
-
-  it("refuses past the account's cap, before asking the model", async () => {
-    process.env.CUSTOM_PRESET_LIMIT = "3"
-    query.mockImplementation(async (sql: string) => {
-      if (sql.includes("COUNT(*)")) return { rows: [{ count: 3 }] }
-      if (sql.includes("SELECT generations"))
-        return { rows: [{ generations: 0 }] }
-      return { rows: [], rowCount: 1 }
-    })
-
-    const response = await post({
-      messages: [{ role: "user", content: ASK }],
-    })
-
-    expect(response.status).toBe(402)
-    expect((await response.json()).code).toBe("custom_preset_limit")
-    expect(generateText).not.toHaveBeenCalled()
     expect(made()).toBeUndefined()
-    expect(countedGenerations()).toHaveLength(0)
-    delete process.env.CUSTOM_PRESET_LIMIT
+    expect(String(generateText.mock.calls[0][0].system)).toContain(
+      "Go straight to ready"
+    )
   })
 
-  it("leaves colours given without asking for one to the presets", async () => {
+  it("lets other requests ask a question first", async () => {
     await post({
       messages: [{ role: "user", content: "Presets like #DE00CE" }],
     })
 
-    expect(made()).toBeUndefined()
     expect(String(generateText.mock.calls[0][0].system)).not.toContain(
-      "editing one custom shadcn preset"
+      "They asked for a custom preset"
     )
   })
 })

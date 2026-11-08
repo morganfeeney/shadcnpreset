@@ -27,7 +27,12 @@ const SWATCH_TOKENS = ["primary", "secondary", "chart-1", "chart-3"] as const
  * mode, cornered with the theme's own radius so square and rounded themes
  * read differently.
  */
-export function ThemeSwatch({ code }: { code: string }) {
+export function ThemeSwatch({
+  code,
+  className,
+  style,
+  ...props
+}: React.ComponentProps<"span"> & { code: string }) {
   const registryTheme = useRegistryTheme(code)
   const mode = useSurfaceMode()
   const vars =
@@ -41,12 +46,18 @@ export function ThemeSwatch({ code }: { code: string }) {
   return (
     <span
       aria-hidden
-      className="grid size-7 shrink-0 grid-cols-2 overflow-hidden bg-muted ring-1 ring-foreground/10"
+      data-slot="theme-swatch"
+      className={cn(
+        "grid size-7 shrink-0 grid-cols-2 overflow-hidden bg-muted ring-1 ring-foreground/10",
+        className
+      )}
       style={{
         // A bare `0` stays a number inside calc(), which is not a length.
         borderRadius:
           !radius || radius === "0" ? radius : `calc(${radius} * 0.6)`,
+        ...style,
       }}
+      {...props}
     >
       {vars
         ? SWATCH_TOKENS.map((token) => (

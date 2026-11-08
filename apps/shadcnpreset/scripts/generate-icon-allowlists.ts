@@ -11,6 +11,10 @@
  *
  * Icon names come from `IconPlaceholder` props, e.g.
  *   <IconPlaceholder lucide="ChevronDownIcon" tabler="IconSelector" ... />
+ * or from per-library name maps spread into it, e.g.
+ *   { lucide: "ShareIcon", remixicon: "RiShareLine", ... }
+ * Names the library does not export (labels like `lucide: "Lucide"`) are
+ * skipped.
  *
  * Usage:
  *   pnpm generate:icon-allowlists
@@ -58,6 +62,21 @@ function render(library: LibraryName, names: string[]): string {
   ].join("\n")
 }
 
+/** Icon names a source file asks for, per library: JSX props or map entries. */
+export function extractIconNames(
+  source: string
+): Record<LibraryName, string[]> {
+  const found = {} as Record<LibraryName, string[]>
+  for (const library of Object.keys(LIBRARIES) as LibraryName[]) {
+    const pattern = new RegExp(
+      `\\b${library}(?:=|\\s*:\\s*)"([A-Za-z0-9_]+)"`,
+      "g"
+    )
+    found[library] = [...source.matchAll(pattern)].map((match) => match[1]!)
+  }
+  return found
+}
+
 async function main() {
   const check = process.argv.includes("--check")
   const found: Record<LibraryName, Set<string>> = {
@@ -70,19 +89,17 @@ async function main() {
 
   for (const dir of SCAN_DIRS) {
     for await (const file of walk(dir)) {
-      const source = await readFile(file, "utf8")
+      const names = extractIconNames(await readFile(file, "utf8"))
       for (const library of Object.keys(LIBRARIES) as LibraryName[]) {
-        const pattern = new RegExp(`\\b${library}="([A-Za-z0-9_]+)"`, "g")
-        for (const match of source.matchAll(pattern)) {
-          found[library]!.add(match[1]!)
-        }
+        for (const name of names[library]) found[library].add(name)
       }
     }
   }
 
   let stale = false
   for (const library of Object.keys(LIBRARIES) as LibraryName[]) {
-    const names = [...found[library]!].sort()
+    const exports = await import(LIBRARIES[library])
+    const names = [...found[library]!].filter((name) => name in exports).sort()
     const outPath = path.join(OUT_DIR, `__${library}__.ts`)
     const next = render(library, names)
     const current = await readFile(outPath, "utf8").catch(() => null)
@@ -109,4 +126,6 @@ async function main() {
   }
 }
 
-await main()
+if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
+  await main()
+}

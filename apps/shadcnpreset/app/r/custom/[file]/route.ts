@@ -5,6 +5,7 @@ import {
   customPresetRegistryItem,
 } from "@/lib/custom-preset"
 import { getCustomPreset } from "@/lib/custom-preset-store"
+import { countInstallQuietly } from "@/lib/install-counts"
 
 /**
  * A custom preset's colours as a shadcn registry item, for
@@ -12,7 +13,7 @@ import { getCustomPreset } from "@/lib/custom-preset-store"
  * session, so the id in the link is what grants it.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ file: string }> }
 ) {
   const { file } = await params
@@ -22,5 +23,6 @@ export async function GET(
   if (!stored || !preset) {
     return NextResponse.json({ error: "Not found." }, { status: 404 })
   }
+  await countInstallQuietly(request, stored.presetCode)
   return NextResponse.json(customPresetRegistryItem(id, preset))
 }

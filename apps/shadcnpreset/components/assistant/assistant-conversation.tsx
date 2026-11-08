@@ -13,16 +13,25 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message"
 import { Shimmer } from "@/components/ai-elements/shimmer"
+import { ColourCode } from "@/components/assistant/colour-code"
+import { codeExactColours } from "@/lib/exact-colours"
+import type { Components } from "streamdown"
 import { cn } from "@/lib/utils"
 import type {
   AssistantPreviewMessage,
   ChatMessage,
 } from "@/components/assistant/use-assistant-chat"
 
+/** Replies show each colour they name with a swatch of it. */
+const REPLY_COMPONENTS: Components = { inlineCode: ColourCode }
+
 type PresetMessage = Extract<
   ChatMessage,
   { role: "assistant"; kind: "presets" }
 >
+
+/** What a turn in flight will produce: a preview, presets, or an edit. */
+type PendingKind = "preview" | "presets" | "custom"
 
 type AssistantConversationProps = {
   messages: ChatMessage[]
@@ -38,7 +47,7 @@ type AssistantConversationProps = {
    * What the turn in flight will produce, which decides the shape of the
    * placeholder. Omitted, it falls back to presets.
    */
-  pendingKind?: "preview" | "presets" | null
+  pendingKind?: PendingKind | null
   /** `compact` is the sidebar: narrower, and no preview lands in it. */
   pendingVariant?: "default" | "compact"
   className?: string
@@ -92,7 +101,9 @@ export function AssistantConversation({
                   className="@container"
                 >
                   <MessageContent className="overflow-visible">
-                    <MessageResponse>{m.content}</MessageResponse>
+                    <MessageResponse components={REPLY_COMPONENTS}>
+                      {codeExactColours(m.content)}
+                    </MessageResponse>
                     {renderPreview?.(m, i)}
                   </MessageContent>
                 </Message>
@@ -105,7 +116,9 @@ export function AssistantConversation({
                   className="@container"
                 >
                   <MessageContent className="overflow-visible">
-                    <MessageResponse>{m.content}</MessageResponse>
+                    <MessageResponse components={REPLY_COMPONENTS}>
+                      {codeExactColours(m.content)}
+                    </MessageResponse>
                     {m.presets.length ? renderPresets(m, i) : null}
                   </MessageContent>
                 </Message>
@@ -115,7 +128,9 @@ export function AssistantConversation({
               return (
                 <Message from="assistant" key={`${i}-${m.role}`}>
                   <MessageContent>
-                    <MessageResponse>{m.content}</MessageResponse>
+                    <MessageResponse components={REPLY_COMPONENTS}>
+                      {codeExactColours(m.content)}
+                    </MessageResponse>
                   </MessageContent>
                 </Message>
               )
@@ -150,7 +165,7 @@ function AssistantPending({
   kind,
   variant,
 }: {
-  kind: "preview" | "presets"
+  kind: PendingKind
   variant: "default" | "compact"
 }) {
   return (
@@ -159,7 +174,9 @@ function AssistantPending({
         <Shimmer className="text-sm">
           {kind === "preview"
             ? "Generating preview..."
-            : "Generating presets..."}
+            : kind === "custom"
+              ? "Changing the preset..."
+              : "Generating presets..."}
         </Shimmer>
         <PendingPlaceholder kind={kind} variant={variant} />
       </MessageContent>
@@ -172,9 +189,11 @@ function PendingPlaceholder({
   kind,
   variant,
 }: {
-  kind: "preview" | "presets"
+  kind: PendingKind
   variant: "default" | "compact"
 }) {
+  // An edit lands in the preset on show; the label is the whole state.
+  if (kind === "custom") return null
   if (variant === "compact") {
     // The sidebar does not render previews — they go to the main pane, and
     // only the sentence lands here. There is nothing to hold a place for, so

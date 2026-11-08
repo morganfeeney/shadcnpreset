@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { findExactColours, isCssColour } from "@/lib/exact-colours"
+import {
+  codeExactColours,
+  findExactColours,
+  isCssColour,
+} from "@/lib/exact-colours"
 
 describe("findExactColours", () => {
   it("finds hex codes of every length", () => {
@@ -53,5 +57,23 @@ describe("isCssColour", () => {
     expect(isCssColour("#DE00CE")).toBe(true)
     expect(isCssColour("oklch(0.84 0.13 178)")).toBe(true)
     expect(isCssColour("pantone 200 C")).toBe(false)
+  })
+})
+
+describe("codeExactColours", () => {
+  it("makes each colour inline code, every time it is named", () => {
+    expect(
+      codeExactColours(
+        "Changed the primary to oklch(0.55 0.16 45) and the ring to #0F766E, like the primary #0F766E."
+      )
+    ).toBe(
+      "Changed the primary to `oklch(0.55 0.16 45)` and the ring to `#0F766E`, like the primary `#0F766E`."
+    )
+  })
+
+  it("leaves code that is already code, and Pantone, as they are", () => {
+    expect(codeExactColours("Use `#fff` or Pantone 286 C")).toBe(
+      "Use `#fff` or Pantone 286 C"
+    )
   })
 })

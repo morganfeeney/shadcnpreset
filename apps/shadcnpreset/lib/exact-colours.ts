@@ -39,3 +39,20 @@ export function findExactColours(text: string): string[] {
 export function isCssColour(colour: string): boolean {
   return !/^pantone/i.test(colour)
 }
+
+/**
+ * `text` with each CSS colour in it as inline code, so a reply can show it
+ * with a swatch. Code already in backticks is left as it is.
+ */
+export function codeExactColours(text: string): string {
+  return text
+    .split(/(`[^`]*`)/)
+    .map((part) =>
+      part.startsWith("`")
+        ? part
+        : part.replace(new RegExp(EXACT_COLOUR.source, "gi"), (colour) =>
+            isCssColour(colour) ? `\`${colour}\`` : colour
+          )
+    )
+    .join("")
+}

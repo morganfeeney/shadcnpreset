@@ -17,6 +17,13 @@ export const BRAND_TOKENS = [
   "accent-foreground",
   "muted-foreground",
   "card-foreground",
+  "destructive",
+  "ring",
+  "chart-1",
+  "chart-2",
+  "chart-3",
+  "chart-4",
+  "chart-5",
 ] as const
 
 export type BrandToken = (typeof BRAND_TOKENS)[number]
