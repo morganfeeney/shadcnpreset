@@ -16,7 +16,12 @@ import { HotJar } from "@/components/analytics/hot-jar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SiteFloatingSponsorCard } from "@/components/floating-sponsor-card"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+// Variable weight plus optical size, so large headings get Inter's display cut
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  axes: ["opsz"],
+})
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],

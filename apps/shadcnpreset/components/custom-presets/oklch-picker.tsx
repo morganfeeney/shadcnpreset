@@ -41,9 +41,12 @@ type OnChange = (colour: string, settle: boolean) => void
 export function OklchPicker({
   colour,
   onChange,
+  screenNote = true,
 }: {
   colour: string
   onChange: OnChange
+  /** Say when most screens can't show the colour. Off where the page says so in its own place. */
+  screenNote?: boolean
 }) {
   // The hue lives here as well as in the colour: a grey has none, and
   // dragging through one must not lose the hue being worked in.
@@ -178,7 +181,7 @@ export function OklchPicker({
 
       <ColourText colour={colour} onChange={onChange} />
 
-      {onScreen(lch) ? null : (
+      {!screenNote || onScreen(lch) ? null : (
         <p className="text-xs text-muted-foreground">
           Past what most screens show. They show it as near as they can, and
           wide-gamut screens show it as it is.
