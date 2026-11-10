@@ -119,9 +119,10 @@ Components from other registries might not: some hard-code their colours or brin
 We tested 39 of them to see how many follow your theme, and what the rest do: see [shadcn registry components: will they match your theme?](/learn/shadcn-registries)
 */}
 
-## Adding your own colors
+## Conclusion
 
-The quickest way is the picker above: open your colour as a preset, adjust anything else there, and install it with the shadcn CLI.
-Prefer a starting point? Every one of the [shadcn colour themes](/themes) opens as a preset you can customise the same way.
-Or [ask AI for a preset](/assistant) and describe your brand colours.
-Already have a preset code? The [preset theme generator](/tools/preset-theme-generator) turns it into CSS for light and dark mode, and the [colour contrast checker](/tools/color-contrast-checker) checks any pair of colours.
+Shadcn's theming works because components read their colours from CSS variables rather than hard-coded values. Change the variables and every component built on those tokens follows along.
+
+OKLCH makes those colours easier to build and adjust. By separating lightness, chroma and hue, you can create palettes around your own brand colours without starting from scratch.
+
+The quickest way to get started is with the picker above. Choose a colour, open it as a preset and install it with the shadcn CLI. Or start with one of the [shadcn colour themes](/themes), or [generate a preset with AI](/assistant).
