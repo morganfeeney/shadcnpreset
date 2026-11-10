@@ -96,23 +96,17 @@ In neutral, stone, zinc and the rest, the primary is a near-black grey that flip
 
 ## Using your own colour
 
-Brand colours rarely land on one of shadcn's.
-To use one, work through the same decisions shadcn's themes make:
+Brand colours rarely land on one of shadcn's, and you don't need to work out the rest of the palette by hand.
+Pick your colour below and the theme generator will create an entire theme, light and dark, that you can open as a preset or copy as CSS.
 
-1. **Read its lightness.** Convert the colour to OKLCH. Up to about 0.55, white text reaches 4.5:1 on it, which is why shadcn's mid-tone themes stop at 0.56. From about 0.6, dark text reads better, as lime and yellow do. Between the two, neither may reach 4.5:1, so check both or nudge the lightness.
-2. **Build the rest around its hue.** The ring, sidebar and chart colours should share the primary's hue, at lightness levels that suit each job. Starting from the shadcn theme nearest in hue and moving it round to yours keeps those relationships intact.
-3. **Decide what happens in dark mode.** shadcn darkens its own primaries. A brand colour usually has to stay recognisable, so keep it, and only lighten it if it disappears against the dark background.
-4. **Tint the greys, lightly, if you want.** A base colour is greys with a hint of hue. Keep the chroma very low, or the greys stop reading as grey.
-5. **Check the contrast.** Primary text should reach 4.5:1 in both modes.
+<OklchShowcase variant="brand" caption="Drag in the picker or paste any CSS colour. This runs the same code as the customise panel on our preset pages. Switch the site to dark mode to see the dark values, and try the orange, yellow and dark indigo examples." />
 
-Here's that process running on a colour you choose:
+It makes the same decisions shadcn's own themes make:
 
-<OklchShowcase variant="brand" caption="Pick or type a colour. This uses the same code as the customise panel on our preset pages: your colour becomes the primary, its text is picked to reach 4.5:1, and the rest comes from shadcn's nearest theme moved round to your hue. Switch the site to dark mode to see the dark values. Try the orange and yellow examples, which need dark text, and the dark indigo, which gets lighter in dark mode." />
-
-A couple of things to notice as you try different colours.
-Light colours like the yellow switch to dark text.
-Very dark colours get a lighter primary in dark mode, so the button still stands out from the background.
-And with the greys tinted, the muted text and borders pick up some of your hue. With a strong colour like yellow that's easy to see, so decide whether you want it.
+1. **Text that reads.** Up to about 0.55 lightness, white text reaches 4.5:1 on a colour, which is why shadcn's mid-tone themes stop at 0.56. From about 0.6, dark text reads better, as it does on lime and yellow. The figure picks whichever reads better, so the orange and yellow examples get dark text. Between 0.55 and 0.6 neither may reach 4.5:1: if the contrast figure shows less, nudge the lightness.
+2. **The rest built around your hue.** The ring, sidebar and chart colours start from the shadcn theme nearest your hue, moved round to yours, so they keep the lightness each job needs.
+3. **Your colour kept in dark mode.** shadcn darkens its own primaries, but a brand colour has to stay recognisable. It's only lightened if it would disappear against the dark background, as the dark indigo is.
+4. **Greys tinted only if you ask.** A base colour is greys with a hint of hue. Switch on the tint and the muted text and borders pick up a little of yours, kept to very low chroma so they still read as grey. With a strong colour like yellow it's easy to see, so decide whether you want it.
 
 ## What this means for components you install
 
@@ -123,6 +117,7 @@ We tested 39 of them to see how many follow your theme, and what the rest do: se
 
 ## Adding your own colors
 
-Start from one of the [shadcn colour themes](/themes): every theme opens as a preset you can customise with your own colour.
+The quickest way is the picker above: open your colour as a preset, adjust anything else there, and install it with the shadcn CLI.
+Prefer a starting point? Every one of the [shadcn colour themes](/themes) opens as a preset you can customise the same way.
 Or [ask AI for a preset](/assistant) and describe your brand colours.
 Already have a preset code? The [preset theme generator](/tools/preset-theme-generator) turns it into CSS for light and dark mode, and the [colour contrast checker](/tools/color-contrast-checker) checks any pair of colours.

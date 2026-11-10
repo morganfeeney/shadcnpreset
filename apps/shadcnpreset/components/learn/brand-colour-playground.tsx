@@ -1,25 +1,37 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { converter, parse, wcagContrast } from "culori"
 import { useTheme } from "next-themes"
 
 import { Badge } from "@/components/cn-ui/badge"
-import { Button } from "@/components/cn-ui/button"
+import { Button as PreviewButton } from "@/components/cn-ui/button"
 import { Input } from "@/components/cn-ui/input"
+import { OklchPicker } from "@/components/custom-presets/oklch-picker"
 import { PresetThemeSurface } from "@/components/preset-theme-surface"
-import { Input as FieldInput } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useMounted } from "@/hooks/use-mounted"
-import { buildCustomTheme } from "@/lib/custom-colours"
-import { buildRegistryTheme, DEFAULT_CONFIG } from "@/registry/config"
+import type { CustomColours } from "@/lib/custom-colours"
+import {
+  buildCustomPreset,
+  DEFAULT_CUSTOM_PRESET_BASE,
+} from "@/lib/custom-preset"
+import { formatOklch, onScreen, readOklch } from "@/lib/oklch-colour"
+import { customColoursPath } from "@/lib/preset-draft"
 
 const toOklch = converter("oklch")
 
 /**
- * Example colours across the wheel: orange and yellow need dark text, and the
- * dark indigo gets lightened in dark mode.
+ * Example colours across the wheel, in OKLCH: orange and yellow need dark
+ * text, and the dark indigo gets lightened in dark mode.
  */
 const EXAMPLES = [
   "#0f766e",
@@ -28,15 +40,21 @@ const EXAMPLES = [
   "#ea580c",
   "#facc15",
   "#1e1b4b",
-]
+].map((hex) => formatOklch(readOklch(hex)!))
 
-/** A plain neutral preset, so the colour given is the only colour. */
-const NEUTRAL_PRESET: Parameters<typeof buildCustomTheme>[0] = {
-  baseColor: "neutral",
-  theme: "neutral",
-  effectiveChartColor: "neutral",
-  menuAccent: DEFAULT_CONFIG.menuAccent,
-  radius: undefined,
+/**
+ * A short note, explained in a tooltip. Notes sit on a line that's there
+ * anyway, or over an edge, so they never push the figure about.
+ */
+function NoteTag({ label, children }: { label: string; children: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger className="inline-flex h-5 shrink-0 items-center rounded-sm border bg-background px-1.5 text-[10px] leading-none font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {label}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-60">{children}</TooltipContent>
+    </Tooltip>
+  )
 }
 
 /** Any CSS colour as a short `oklch(l c h)`, hue to the nearest degree. */
@@ -47,8 +65,9 @@ function shortOklch(colour: string) {
 }
 
 /**
- * Turns one colour into a full theme with the same code the preset page's
- * customizer uses, and shows it on a few components in the site's mode.
+ * One colour turned into a whole preset with the same code as the customise
+ * panel on preset pages, shown on a few components in the site's mode, then
+ * opened as that preset or copied as CSS.
  */
 export function BrandColourPlayground() {
   const mounted = useMounted()
@@ -56,146 +75,183 @@ export function BrandColourPlayground() {
   const mode = mounted && resolvedTheme === "dark" ? "dark" : "light"
 
   const [colour, setColour] = React.useState(EXAMPLES[0])
-  const [draft, setDraft] = React.useState(EXAMPLES[0])
   const [tintGreys, setTintGreys] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
 
-  const theme = React.useMemo(() => {
-    const built = buildCustomTheme(NEUTRAL_PRESET, {
+  const custom = React.useMemo<CustomColours>(
+    () => ({
       theme: colour,
       chartColor: colour,
       baseColor: tintGreys ? colour : undefined,
       overrides: {},
-    })
-    const surface = buildRegistryTheme(DEFAULT_CONFIG)
-    return {
-      ...built,
-      surface: {
-        ...surface,
-        cssVars: { light: built.light, dark: built.dark },
-      },
-    }
-  }, [colour, tintGreys])
+    }),
+    [colour, tintGreys]
+  )
+  const preset = React.useMemo(
+    () => buildCustomPreset(DEFAULT_CUSTOM_PRESET_BASE, custom),
+    [custom]
+  )
+  if (!preset) return null
 
-  const vars = mode === "dark" ? theme.dark : theme.light
+  const vars = preset.colours[mode]
   const textContrast = wcagContrast(vars["primary-foreground"], vars.primary)
 
-  function choose(next: string) {
-    setDraft(next)
-    if (parse(next)) setColour(next)
+  async function copyCss() {
+    if (!preset) return
+    try {
+      await navigator.clipboard.writeText(preset.css)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard blocked: the button just doesn't confirm
+    }
   }
+
+  const picked = readOklch(colour)
+  const outOfRange = picked ? !onScreen(picked) : false
+  const lightened = mode === "dark" && preset.colours.adjustments.length > 0
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="brand-colour-value" className="text-xs">
-              Your colour
-            </Label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                aria-label="Pick a colour"
-                value={/^#[0-9a-f]{6}$/i.test(colour) ? colour : "#000000"}
-                onChange={(event) => choose(event.target.value)}
-                className="size-9 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
-              />
-              <FieldInput
-                id="brand-colour-value"
-                value={draft}
-                onChange={(event) => choose(event.target.value)}
-                spellCheck={false}
-                className="w-40 font-mono text-xs"
-              />
-            </div>
+      <div className="grid grid-cols-1 items-start gap-5 sm:grid-cols-[15rem_1fr]">
+        <div className="flex flex-col gap-3">
+          <div className="flex h-5 items-center justify-between gap-2">
+            <Label className="text-xs">Your colour</Label>
+            {outOfRange ? (
+              <NoteTag label="Outside sRGB">
+                Past what most screens show. They draw the nearest colour they
+                can, and wide-gamut screens show it as it is.
+              </NoteTag>
+            ) : null}
           </div>
-          <div className="flex flex-wrap gap-1.5 pb-1.5">
+          {/* The picker sizes its canvas to the screen, so it waits for the
+              browser; the slot is its height, so nothing moves when it lands */}
+          <div className="min-h-[242px]">
+            {mounted ? (
+              <OklchPicker
+                colour={colour}
+                onChange={(next) => setColour(next)}
+                screenNote={false}
+              />
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {EXAMPLES.map((example) => (
               <button
                 key={example}
                 type="button"
                 aria-label={`Try ${example}`}
-                onClick={() => choose(example)}
+                onClick={() => setColour(example)}
                 className="size-6 rounded-full border"
                 style={{ background: example }}
               />
             ))}
           </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="brand-colour-tint"
+              checked={tintGreys}
+              onCheckedChange={setTintGreys}
+            />
+            <Label htmlFor="brand-colour-tint" className="text-xs">
+              Tint the greys with it too
+            </Label>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch
-            id="brand-colour-tint"
-            checked={tintGreys}
-            onCheckedChange={setTintGreys}
-          />
-          <Label htmlFor="brand-colour-tint" className="text-xs">
-            Tint the greys with it too
-          </Label>
+
+        <div className="flex min-w-0 flex-col gap-3">
+          {/* Notes on the result sit over the preview's top edge, out of the flow */}
+          <div className="relative">
+            <PresetThemeSurface
+              registryTheme={preset.registryTheme}
+              surfaceMode={mode}
+              bodyFont={preset.resolved.font}
+              headingFont="inherit"
+              styleName={preset.resolved.style}
+              className="flex flex-col gap-4 rounded-lg border bg-background p-4 text-foreground"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <PreviewButton>Save changes</PreviewButton>
+                <PreviewButton variant="outline">Cancel</PreviewButton>
+                <Badge variant="secondary">Draft</Badge>
+              </div>
+              <Input
+                aria-label="Example field"
+                defaultValue="Focus to see my ring"
+              />
+              <p className="text-sm text-muted-foreground">
+                Muted text sits on the background, borders around the field.
+              </p>
+              <div className="flex h-16 items-end gap-2" aria-hidden>
+                {[0.55, 0.8, 1, 0.7, 0.45].map((height, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-t-sm"
+                    style={{
+                      height: `${height * 100}%`,
+                      background: `var(--chart-${i + 1})`,
+                    }}
+                  />
+                ))}
+              </div>
+            </PresetThemeSurface>
+            {lightened || textContrast < 4.5 ? (
+              <div className="absolute -top-2.5 right-3 flex gap-1.5">
+                {lightened ? (
+                  <NoteTag label="Lightened in dark mode">
+                    Your colour is too dark to stand out from the dark
+                    background, so dark mode uses a lighter version of it.
+                  </NoteTag>
+                ) : null}
+                {textContrast < 4.5 ? (
+                  <NoteTag label="Text under 4.5:1">
+                    Hard to read for some people. Nudge the lightness up or down
+                    until it reaches 4.5:1.
+                  </NoteTag>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+            <div>
+              <dt className="text-muted-foreground">Primary, {mode} mode</dt>
+              <dd className="font-mono">{shortOklch(vars.primary)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Button text</dt>
+              <dd className="font-mono">
+                {shortOklch(vars["primary-foreground"])}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Text contrast</dt>
+              <dd className="font-mono">{textContrast.toFixed(1)}:1</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <PresetThemeSurface
-        registryTheme={theme.surface}
-        surfaceMode={mode}
-        bodyFont={DEFAULT_CONFIG.font}
-        headingFont="inherit"
-        styleName={DEFAULT_CONFIG.style}
-        className="flex flex-col gap-4 rounded-lg border bg-background p-4 text-foreground"
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <Button>Save changes</Button>
-          <Button variant="outline">Cancel</Button>
-          <Badge variant="secondary">Draft</Badge>
-        </div>
-        <Input
-          aria-label="Example field"
-          defaultValue="Focus me to see the ring"
-          className="max-w-xs"
-        />
-        <p className="text-sm text-muted-foreground">
-          Muted text sits on the background, borders around the field.
-        </p>
-        <div className="flex h-16 items-end gap-2" aria-hidden>
-          {[0.55, 0.8, 1, 0.7, 0.45].map((height, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-t-sm"
-              style={{
-                height: `${height * 100}%`,
-                background: `var(--chart-${i + 1})`,
-              }}
+      <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+        <Button
+          nativeButton={false}
+          // Not an article link: no underline from the article's link styles
+          className="no-underline"
+          render={
+            <Link
+              href={customColoursPath(DEFAULT_CUSTOM_PRESET_BASE, custom)}
             />
-          ))}
-        </div>
-      </PresetThemeSurface>
-
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
-        <div>
-          <dt className="text-muted-foreground">Your colour</dt>
-          <dd className="font-mono">{shortOklch(colour)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Primary, {mode} mode</dt>
-          <dd className="font-mono">{shortOklch(vars.primary)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Button text</dt>
-          <dd className="font-mono">
-            {shortOklch(vars["primary-foreground"])}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Text contrast</dt>
-          <dd className="font-mono">{textContrast.toFixed(1)}:1</dd>
-        </div>
-      </dl>
-      {theme.adjustments.length ? (
-        <ul className="list-disc pl-5 text-xs text-muted-foreground">
-          {theme.adjustments.map((adjustment) => (
-            <li key={adjustment}>{adjustment}</li>
-          ))}
-        </ul>
-      ) : null}
+          }
+        >
+          Open as a preset
+        </Button>
+        <Button variant="outline" onClick={copyCss}>
+          {copied ? "Copied" : "Copy CSS"}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Every colour token, light and dark, ready to install or paste.
+        </span>
+      </div>
     </div>
   )
 }
