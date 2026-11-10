@@ -2,6 +2,7 @@ import type { MDXComponents } from "mdx/types"
 import Link from "next/link"
 
 import { AffiliateLink } from "@/components/affiliate-link"
+import { OklchShowcase } from "@/components/learn/oklch-showcase"
 import { StyleShowcase } from "@/components/learn/style-showcase"
 import { isAffiliateHref } from "@/lib/affiliate-link"
 
@@ -40,6 +41,7 @@ export const mdxDocumentationComponents = {
     </div>
   ),
   // Interactive embeds for learn articles. Live cn-ui controls per style.
+  OklchShowcase,
   StyleShowcase,
 } satisfies MDXComponents
 

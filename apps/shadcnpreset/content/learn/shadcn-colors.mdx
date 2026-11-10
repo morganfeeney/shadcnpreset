@@ -1,0 +1,147 @@
+---
+date: "2026-11-09"
+status: draft
+title: "How shadcn colors work, and how to use your own"
+description: "How shadcn/ui colours work, from CSS variables and OKLCH to the way shadcn builds its own themes, and how to turn your brand colour into a theme that holds up in light and dark mode."
+---
+
+Every shadcn/ui component gets its colours from a small set of CSS variables.
+Change the variables and every component changes with them, without touching the component code.
+That's what makes [themes](/themes) and [presets](/learn/what-is-a-shadcn-preset) work.
+
+This article covers how those variables work, why their values are written in OKLCH, how shadcn builds its own colour themes, and how to bring in a colour of your own.
+
+## How shadcn colours work
+
+When you set up shadcn/ui, your global CSS gets a block of colour variables for light mode and another for dark mode:
+
+```css
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  /* …card, popover, secondary, muted, accent, destructive, input, ring, charts, sidebar */
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  /* …the same names, dark values */
+}
+```
+
+Tailwind turns each variable into a colour you can use in classes, so components are written with names, not values:
+
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-primary: var(--primary);
+  --color-muted-foreground: var(--muted-foreground);
+}
+```
+
+```tsx
+<button className="bg-primary text-primary-foreground">Save</button>
+```
+
+A preset decides what those values are.
+The **base colour** (neutral, stone, zinc, mauve, olive, mist or taupe) sets the greys: background, borders, muted text.
+The **theme** sets the accent: primary buttons, focus rings and highlights.
+**Chart colours** and **radius** sit alongside them.
+
+## Why the values are in OKLCH
+
+Every value is written as `oklch(lightness chroma hue)`. The format separates three properties of a colour:
+
+- **Lightness** runs from 0 (black) to 1 (white).
+- **Chroma** is how colourful it is. 0 is grey. The most vivid colours reach about 0.32 on a standard (sRGB) screen, and about 0.36 on a wide-gamut (Display P3) screen, like most recent Macs and phones.
+- **Hue** is its angle around the colour wheel, from 0 to 360: about 25 is red, 145 green and 255 blue.
+
+Keeping these values separate makes palettes easier to build and adjust. You can change the hue without deliberately changing the lightness or chroma.
+
+That matters because OKLCH lightness tracks how light a colour looks more closely than older formats. HSL gives every hue the same numerical lightness, but they don't look equally light. A yellow at 50% HSL lightness looks much brighter than a blue at 50%.
+
+The numbers under each swatch below show their actual lightness, measured in OKLCH.
+
+<OklchShowcase variant="hues" caption="Drag the lightness. The OKLCH row stays even while the HSL row's measured lightness spreads out, with yellow and teal much lighter than blue and violet. Increase the chroma and some hues reach the limit of what your screen can display. A wide-gamut screen can show more vivid colours than a standard one, so those limits depend on your display." />
+
+This makes it easier to keep colours visually consistent when building a theme. Changing a primary colour from blue to orange doesn't mean starting the palette again. Keeping lightness consistent also helps maintain similar contrast, although every colour combination still needs checking: contrast depends on the text colour as well as the background.
+
+The [colour contrast checker](/tools/color-contrast-checker) lets you check a pair of values.
+
+### A real example: shadcn's primary colour
+
+Here's the primary colour from shadcn's blue theme, broken down into its three values, with its hue on a slider:
+
+<OklchShowcase variant="token" caption="Blue's light-mode --primary. Lightness stays put, and chroma stays the same until a hue can't reach it. Text contrast varies from about 5.3:1 to 6.7:1 as you move around the colour wheel: similar, but not identical." />
+
+Try moving the hue slider and you'll find a limitation: not every hue can be as colourful as every other at the same lightness. Blue at a lightness of 0.488 can reach a chroma of 0.243. Yellow at that same lightness can't get anywhere near it.
+
+When a colour asks for more chroma than the screen can display, the browser clips it to the nearest colour it can show. The same OKLCH value can therefore look more vivid on a wide-gamut screen than on a standard one.
+
+That's why theme generators need to work out the maximum available chroma for each hue rather than reuse the same number across the colour wheel.
+
+### How base colours work
+
+The greys in a preset work the same way. A base colour is a set of greys with a slight hint of hue: very low chroma, pointed towards a warm or cool part of the colour wheel.
+
+That's the difference between neutral, mist, mauve, taupe and olive.
+
+<OklchShowcase variant="greys" caption="The muted text colour from five base colours. Neutral has no chroma at all; the others lean slightly blue, pink, warm or green." />
+
+## How shadcn builds its colour themes
+
+shadcn ships 17 coloured themes, from amber to yellow, and they follow a clear pattern.
+
+- **Mid-tone accents with light text.** 15 of the 17 put their primary between 0.46 and 0.56 lightness, with near-white text tinted slightly towards the same hue. Every one passes 4.5:1 text contrast, from 4.8:1 (green) to 7.2:1 (indigo).
+- **Light accents get dark text.** Lime and yellow are the exceptions. Their primaries sit at about 0.85 lightness, too light for white text, so they use a dark text colour instead.
+- **Dark mode keeps the hue.** The dark primary stays within a few degrees of the light one, about 0.07 darker, with around 82% of the chroma. The text colour doesn't change, so contrast goes up: 6.8:1 to 9:1 for the mid-tone themes.
+
+| Theme | Light primary | Dark primary | Text contrast, light / dark |
+| --- | --- | --- | --- |
+| Blue | `oklch(0.488 0.243 264.4)` | `oklch(0.424 0.199 265.6)` | 6.3 / 8.1 |
+| Orange | `oklch(0.553 0.195 38.4)` | `oklch(0.47 0.157 37.3)` | 4.9 / 6.9 |
+| Green | `oklch(0.527 0.154 150.1)` | `oklch(0.448 0.119 151.3)` | 4.8 / 6.8 |
+| Yellow | `oklch(0.852 0.199 91.9)` | `oklch(0.795 0.184 86)` | 5.5 / 4.5 |
+
+The base colours work differently.
+In neutral, stone, zinc and the rest, the primary is a near-black grey that flips to a near-white grey in dark mode.
+
+## Using your own colour
+
+Brand colours rarely land on one of shadcn's.
+To use one, work through the same decisions shadcn's themes make:
+
+1. **Read its lightness.** Convert the colour to OKLCH. Up to about 0.55, white text reaches 4.5:1 on it, which is why shadcn's mid-tone themes stop at 0.56. From about 0.6, dark text reads better, as lime and yellow do. Between the two, neither may reach 4.5:1, so check both or nudge the lightness.
+2. **Build the rest around its hue.** The ring, sidebar and chart colours should share the primary's hue, at lightness levels that suit each job. Starting from the shadcn theme nearest in hue and moving it round to yours keeps those relationships intact.
+3. **Decide what happens in dark mode.** shadcn darkens its own primaries. A brand colour usually has to stay recognisable, so keep it, and only lighten it if it disappears against the dark background.
+4. **Tint the greys, lightly, if you want.** A base colour is greys with a hint of hue. Keep the chroma very low, or the greys stop reading as grey.
+5. **Check the contrast.** Primary text should reach 4.5:1 in both modes.
+
+Here's that process running on a colour you choose:
+
+<OklchShowcase variant="brand" caption="Pick or type a colour. This uses the same code as the customise panel on our preset pages: your colour becomes the primary, its text is picked to reach 4.5:1, and the rest comes from shadcn's nearest theme moved round to your hue. Switch the site to dark mode to see the dark values. Try the orange and yellow examples, which need dark text, and the dark indigo, which gets lighter in dark mode." />
+
+A couple of things to notice as you try different colours.
+Light colours like the yellow switch to dark text.
+Very dark colours get a lighter primary in dark mode, so the button still stands out from the background.
+And with the greys tinted, the muted text and borders pick up some of your hue. With a strong colour like yellow that's easy to see, so decide whether you want it.
+
+## What this means for components you install
+
+Everything above only reaches a component that uses the theme variables.
+shadcn/ui's own components do.
+Components from other registries might not: some hard-code their colours or bring their own.
+We tested 39 of them to see how many follow your theme, and what the rest do: see [shadcn registry components: will they match your theme?](/learn/shadcn-registries)
+
+## Getting your own colours in
+
+That's the useful thing about shadcn's approach to theming.
+You don't edit components to change how your app looks.
+Set the variables once and anything built on those tokens follows.
+
+Start from one of the [shadcn colour themes](/themes): every theme opens as a preset you can customise with your own colour.
+Or [ask AI for a preset](/assistant) and describe your brand colours.
+Already have a preset code? The [preset theme generator](/tools/preset-theme-generator) turns it into CSS for light and dark mode, and the [colour contrast checker](/tools/color-contrast-checker) checks any pair of colours.
