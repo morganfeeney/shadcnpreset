@@ -32,8 +32,8 @@ export function ToolsList({ tools }: { tools: readonly ToolListItem[] }) {
         <ToolCard
           key={tool.href}
           render={<Link href={tool.href} />}
-          className={cn("row-span-2 grid grid-rows-subgrid gap-2", {
-            "row-span-3": tool.date,
+          className={cn("row-span-2 grid content-start gap-2", {
+            "grid-rows-[auto_1fr_auto]": tool.date,
           })}
         >
           <ToolCardHeader>
