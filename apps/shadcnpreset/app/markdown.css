@@ -10,7 +10,7 @@
 
 @layer components {
   .markdown {
-    @apply text-sm leading-6 text-muted-foreground md:text-base md:leading-7;
+    @apply text-base leading-6 text-foreground/80 md:leading-7;
 
     & * {
       /* Headings. */
@@ -22,23 +22,26 @@
         scroll-margin-top: 5rem;
       }
       &:where(h1) {
-        margin-top: 2.5rem;
+        @apply mt-10;
         font-size: 1.875rem;
         line-height: calc(2.25 / 1.875);
-
-        & + p {
-          margin-top: 1rem;
-        }
 
         @media (min-width: 64rem) {
           font-size: 2.25rem;
           line-height: calc(2.5 / 2.25);
         }
       }
+      &:where(header:has(h1)) + p {
+        @apply mt-6;
+      }
       &:where(h2) {
-        margin-top: 3rem;
+        @apply mt-16;
         font-size: 1.5rem;
         line-height: calc(2 / 1.5);
+
+        & + p {
+          @apply mt-5;
+        }
       }
       &:where(h3, h4) {
         @apply mt-8 text-base font-semibold;
@@ -51,12 +54,14 @@
       &:where(p + p) {
         @apply mt-6;
       }
+      &:where(h3 + p) {
+        @apply mt-0;
+      }
 
       /* Lists. */
       &:where(ul, ol) {
         @apply my-6;
         margin-left: 1.5rem;
-        color: var(--color-muted-foreground);
       }
       &:where(ul) {
         list-style-type: disc;
@@ -65,7 +70,7 @@
         list-style-type: decimal;
       }
       &:where(li) {
-        margin-top: 0.5rem;
+        @apply mt-3;
         padding-left: 0.25rem;
       }
       &:where(li)::marker {
@@ -76,7 +81,7 @@
         );
       }
       &:where(strong, b) {
-        @apply font-semibold text-foreground/80;
+        @apply font-semibold text-foreground/90;
       }
 
       /* Links. */
@@ -139,7 +144,7 @@
         @apply my-6;
 
         & + :where(p, ul, ol) {
-          @apply mt-6;
+          @apply mt-8;
         }
       }
       &:where(:is(h2, h3, h4, p) + figure) {
