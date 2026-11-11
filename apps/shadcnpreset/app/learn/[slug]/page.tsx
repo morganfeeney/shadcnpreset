@@ -67,7 +67,7 @@ export default async function LearnArticlePage({
   return (
     <main className="py-8 md:py-24">
       <article className="mx-auto max-w-[56ch] md:max-w-[66ch]">
-        <div className="markdown text-foreground/70">
+        <div className="markdown">
           <header className="grid">
             <p className="mt-0 flex flex-wrap items-center gap-2 font-mono text-xs font-medium text-muted-foreground uppercase">
               {isDraft ? <Badge variant="default">Draft</Badge> : null}
