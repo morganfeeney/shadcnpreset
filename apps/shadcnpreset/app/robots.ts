@@ -9,7 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
       },
-      // A named group replaces "*" for that bot, so it repeats the allow.
       {
         userAgent: "AhrefsBot",
         allow: "/",
